@@ -1,24 +1,19 @@
-# README
+# 東方カラオケ検索管理サイト
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## DB作成
 
-Things you may want to cover:
+```sh
+bundle exec rails db:create
+```
 
-* Ruby version
+## DBマイグレーション
 
-* System dependencies
+```sh
+bundle exec rails db:migrate
+```
 
-* Configuration
+## 初期データ登録
 
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+```sh
+bundle exec rails db:seed
+```
