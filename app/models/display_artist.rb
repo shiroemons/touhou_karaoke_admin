@@ -1,0 +1,2 @@
+class DisplayArtist < ApplicationRecord
+end
