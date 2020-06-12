@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_06_12_141150) do
+ActiveRecord::Schema.define(version: 2020_06_12_142650) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -29,6 +29,15 @@ ActiveRecord::Schema.define(version: 2020_06_12_141150) do
     t.string "url", default: "", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "display_artists_circles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "display_artist_id", null: false
+    t.uuid "circle_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["circle_id"], name: "index_display_artists_circles_on_circle_id"
+    t.index ["display_artist_id"], name: "index_display_artists_circles_on_display_artist_id"
   end
 
   create_table "karaoke_delivery_models", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -60,4 +69,6 @@ ActiveRecord::Schema.define(version: 2020_06_12_141150) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
+  add_foreign_key "display_artists_circles", "circles"
+  add_foreign_key "display_artists_circles", "display_artists"
 end
