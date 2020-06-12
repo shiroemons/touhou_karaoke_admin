@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_06_12_150552) do
+ActiveRecord::Schema.define(version: 2020_06_12_150911) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -78,6 +78,14 @@ ActiveRecord::Schema.define(version: 2020_06_12_150552) do
     t.index ["song_id"], name: "index_song_original_songs_on_song_id"
   end
 
+  create_table "song_with_dam_ouchikaraokes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "song_id", null: false
+    t.string "url", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["song_id"], name: "index_song_with_dam_ouchikaraokes_on_song_id"
+  end
+
   create_table "song_with_joysound_utasukis", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "song_id", null: false
     t.date "delivery_deadline_date", null: false
@@ -120,6 +128,7 @@ ActiveRecord::Schema.define(version: 2020_06_12_150552) do
   add_foreign_key "display_artists_circles", "circles"
   add_foreign_key "display_artists_circles", "display_artists"
   add_foreign_key "song_original_songs", "songs"
+  add_foreign_key "song_with_dam_ouchikaraokes", "songs"
   add_foreign_key "song_with_joysound_utasukis", "songs"
   add_foreign_key "songs", "display_artists"
   add_foreign_key "songs_karaoke_delivery_models", "karaoke_delivery_models"

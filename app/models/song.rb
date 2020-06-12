@@ -1,4 +1,5 @@
 class Song < ApplicationRecord
+  has_one :song_with_dam_ouchikaraoke, dependent: :destroy
   has_one :song_with_joysound_utasuki, dependent: :destroy
 
   has_many :songs_karaoke_delivery_models
