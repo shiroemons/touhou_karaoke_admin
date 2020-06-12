@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_06_12_144812) do
+ActiveRecord::Schema.define(version: 2020_06_12_145453) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -69,6 +69,15 @@ ActiveRecord::Schema.define(version: 2020_06_12_144812) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
+  create_table "song_original_songs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "song_id", null: false
+    t.string "original_song_code", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["original_song_code"], name: "index_song_original_songs_on_original_song_code"
+    t.index ["song_id"], name: "index_song_original_songs_on_song_id"
+  end
+
   create_table "songs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "title", null: false
     t.string "title_reading", default: "", null: false
@@ -92,6 +101,7 @@ ActiveRecord::Schema.define(version: 2020_06_12_144812) do
 
   add_foreign_key "display_artists_circles", "circles"
   add_foreign_key "display_artists_circles", "display_artists"
+  add_foreign_key "song_original_songs", "songs"
   add_foreign_key "songs", "display_artists"
   add_foreign_key "songs_karaoke_delivery_models", "karaoke_delivery_models"
   add_foreign_key "songs_karaoke_delivery_models", "songs"
