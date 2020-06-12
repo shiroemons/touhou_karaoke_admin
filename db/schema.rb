@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_06_12_144221) do
+ActiveRecord::Schema.define(version: 2020_06_12_144812) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -81,7 +81,18 @@ ActiveRecord::Schema.define(version: 2020_06_12_144221) do
     t.index ["display_artist_id"], name: "index_songs_on_display_artist_id"
   end
 
+  create_table "songs_karaoke_delivery_models", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "song_id", null: false
+    t.uuid "karaoke_delivery_model_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["karaoke_delivery_model_id"], name: "idx_songs_karaoke_delivery_models_on_karaoke_delivery_model_id"
+    t.index ["song_id"], name: "index_songs_karaoke_delivery_models_on_song_id"
+  end
+
   add_foreign_key "display_artists_circles", "circles"
   add_foreign_key "display_artists_circles", "display_artists"
   add_foreign_key "songs", "display_artists"
+  add_foreign_key "songs_karaoke_delivery_models", "karaoke_delivery_models"
+  add_foreign_key "songs_karaoke_delivery_models", "songs"
 end
