@@ -1,0 +1,159 @@
+1:
+  name: EnjoyPortable
+  karaoke_type: JOYSOUND
+  order: 1
+
+2:
+  name: EnjoyStage
+  karaoke_type: JOYSOUND
+  order: 2
+
+3:
+  name: HyperJoy V2
+  karaoke_type: JOYSOUND
+  order: 3
+
+4:
+  name: CelebJoyHearts
+  karaoke_type: JOYSOUND
+  order: 4
+
+5:
+  name: HyperJoy Wave
+  karaoke_type: JOYSOUND
+  order: 5
+
+6:
+  name: JEWEL
+  karaoke_type: JOYSOUND
+  order: 6
+
+7:
+  name: CROSSO
+  karaoke_type: JOYSOUND
+  order: 7
+
+8:
+  name: JOYSOUND f1
+  karaoke_type: JOYSOUND
+  order: 8
+
+9:
+  name: JOYSOUND fR
+  karaoke_type: JOYSOUND
+  order: 9
+
+10:
+  name: JOYSOUND FESTA2
+  karaoke_type: JOYSOUND
+  order: 10
+
+11:
+  name: JOYSOUND MAX
+  karaoke_type: JOYSOUND
+  order: 11
+
+12:
+  name: JOYSOUND 響
+  karaoke_type: JOYSOUND
+  order: 12
+
+13:
+  name: JOYSOUND MAX2
+  karaoke_type: JOYSOUND
+  order: 13
+
+14:
+  name: JOYSOUND WAGON2
+  karaoke_type: JOYSOUND
+  order: 14
+
+15:
+  name: JOYSOUND 響Ⅱ
+  karaoke_type: JOYSOUND
+  order: 15
+
+16:
+  name: JOYSOUND MAX GO
+  karaoke_type: JOYSOUND
+  order: 16
+
+17:
+  name: カラオケ@DAM
+  karaoke_type: DAM
+  order: 17
+
+18:
+  name: Party DAM III
+  karaoke_type: DAM
+  order: 18
+
+19:
+  name: DAM-G30
+  karaoke_type: DAM
+  order: 19
+
+20:
+  name: DAM-G70
+  karaoke_type: DAM
+  order: 20
+
+21:
+  name: BB cyber DAM
+  karaoke_type: DAM
+  order: 21
+
+22:
+  name: FREE DAM
+  karaoke_type: DAM
+  order: 22
+
+23:
+  name: FREE DAM HD
+  karaoke_type: DAM
+  order: 23
+
+24:
+  name: Party DAM V
+  karaoke_type: DAM
+  order: 24
+
+25:
+  name: Party DAM HD
+  karaoke_type: DAM
+  order: 25
+
+26:
+  name: Party DAM 20V
+  karaoke_type: DAM
+  order: 26
+
+27:
+  name: CYBER DAM α
+  karaoke_type: DAM
+  order: 27
+
+28:
+  name: Premier DAM
+  karaoke_type: DAM
+  order: 28
+
+29:
+  name: Cyber DAM HD
+  karaoke_type: DAM
+  order: 29
+
+30:
+  name: LIVE DAM
+  karaoke_type: DAM
+  order: 30
+
+31:
+  name: LIVE DAM STADIUM
+  karaoke_type: DAM
+  order: 31
+
+32:
+  name: LIVE DAM Ai
+  karaoke_type: DAM
+  order: 32
