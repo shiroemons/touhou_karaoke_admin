@@ -9,6 +9,9 @@ class Song < ApplicationRecord
 
   belongs_to :display_artist
 
+  scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
+  scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
+
   PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) あきやまうに)
 
   def self.fetch_joysound_song
