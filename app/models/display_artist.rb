@@ -4,6 +4,7 @@ class DisplayArtist < ApplicationRecord
   has_many :songs, dependent: :destroy
 
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
+  scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
   scope :name_reading_empty, -> { where(name_reading: "") }
 
   def self.fetch_joysound_artist

@@ -15,6 +15,44 @@ class JoysoundMusicPost < ApplicationRecord
     browser.quit
   end
 
+  def self.fetch_music_post_song_joysound_url
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000])
+    search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songlist"
+
+    display_artists = DisplayArtist.music_post
+    display_artists.each do |da|
+      url = da.url + search_option
+      browser.goto(url)
+
+      loop do
+        song_list_selector = "#songlist > div.jp-cmp-music-list-001.jp-cmp-music-list-song-002 > ul > li"
+        browser.css(song_list_selector).each do |el|
+          url_path = el.at_css("a").attribute("href")
+          url = URI.join("https://www.joysound.com/", url_path).to_s
+          display_title = el.at_css("div > a > h3").inner_text
+          title = display_title.split("／").first
+          record = JoysoundMusicPost.find_by(artist: da.name, title: title)
+          if record
+            record.joysound_url = url
+            record.save! if record.changed?
+          end
+        end
+
+        next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"
+        next_text = browser.at_css(next_selector)&.inner_text
+        if next_text == "次の20件"
+          browser.at_css(next_selector).at_css("a").focus.click
+          sleep(1.0)
+        else
+          break
+        end
+      end
+    end
+  rescue => e
+    logger.error(e)
+    browser.screenshot(path: "tmp/music_post.png")
+  end
+
   private
 
   def self.music_post_parser(browser, url)
