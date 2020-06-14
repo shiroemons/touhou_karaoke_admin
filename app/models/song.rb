@@ -16,10 +16,10 @@ class Song < ApplicationRecord
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundSong.count
     JoysoundSong.all.each.with_index(1) do |js, i|
-      puts "#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%"
+      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
       title = js.display_title.split("／").first
       unless Song.exists?(title: title, url: js.url)
-        puts title
+        logger.debug(title)
         joysound_song_page_parser(js.url)
       end
     end
@@ -63,7 +63,7 @@ class Song < ApplicationRecord
         end
       end
     rescue Ferrum::TimeoutError => ex
-      p ex
+      logger.error(ex)
       retry_count += 1
       retry unless retry_count > 3
     end
