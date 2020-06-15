@@ -2,9 +2,9 @@ class Song < ApplicationRecord
   has_one :song_with_dam_ouchikaraoke, dependent: :destroy
   has_one :song_with_joysound_utasuki, dependent: :destroy
 
-  has_many :songs_karaoke_delivery_models
+  has_many :songs_karaoke_delivery_models, dependent: :destroy
   has_many :karaoke_delivery_models, through: :songs_karaoke_delivery_models
-  has_many :songs_original_songs
+  has_many :songs_original_songs, dependent: :destroy
   has_many :original_songs, through: :songs_original_songs
 
   belongs_to :display_artist
@@ -12,9 +12,20 @@ class Song < ApplicationRecord
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
 
-  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) あきやまうに)
+  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに)
+  ALLOWLIST = [
+      "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
+      "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
+  ]
 
-  def self.fetch_joysound_song
+  def self.fetch_joysound_song(url = nil)
+    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    joysound_song_page_parser(url) if url.present?
+    @browser.quit
+  end
+
+  def self.fetch_joysound_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundSong.count
@@ -53,7 +64,7 @@ class Song < ApplicationRecord
       composer_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(3) > td > div > p"
       composer = @browser.at_css(composer_selector).inner_text
 
-      if composer.in?(PERMITTED_COMPOSERS)
+      if composer.in?(PERMITTED_COMPOSERS) || ALLOWLIST.include?(url)
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
         atirst_el = @browser.at_css(artist_selector)
         artist_name = atirst_el.inner_text
