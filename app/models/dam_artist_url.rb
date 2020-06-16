@@ -1,0 +1,2 @@
+class DamArtistUrl < ApplicationRecord
+end
