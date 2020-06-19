@@ -2,6 +2,7 @@ class DisplayArtist < ApplicationRecord
   has_many :display_artists_circles
   has_many :circles, through: :display_artists_circles
   has_many :songs, dependent: :destroy
+  has_many :dam_songs, dependent: :destroy
 
   scope :dam, -> { where(karaoke_type: "DAM") }
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
