@@ -5,6 +5,31 @@ class JoysoundSong < ApplicationRecord
   scope :enabled_smartphone_service, -> { where(smartphone_service_enabled: true) }
   scope :enabled_home_karaoke, -> { where(home_karaoke_enabled: true) }
 
+  def self.add_delivery_model
+    smartphone_service = KaraokeDeliveryModel.find_by(karaoke_type: "JOYSOUND", name: "スマホサービス")
+    home_karaoke = KaraokeDeliveryModel.find_by(karaoke_type: "JOYSOUND", name: "家庭用カラオケ")
+    enabled_smartphone_service.each do |js|
+      title = js.display_title.split("／").first
+      url = js.url
+      song = Song.find_by(title: title, url: url, karaoke_type: "JOYSOUND")
+      if song.present?
+        unless song.karaoke_delivery_models&.include?(smartphone_service)
+          song.karaoke_delivery_models << smartphone_service
+        end
+      end
+    end
+    enabled_home_karaoke.each do |js|
+      title = js.display_title.split("／").first
+      url = js.url
+      song = Song.find_by(title: title, url: url, karaoke_type: "JOYSOUND")
+      if song.present?
+        unless song.karaoke_delivery_models&.include?(home_karaoke)
+          song.karaoke_delivery_models << home_karaoke
+        end
+      end
+    end
+  end
+
   def self.fetch_joysound_song
     base_url = "https://www.joysound.com/web/"
     url = "https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=0#songlist"
