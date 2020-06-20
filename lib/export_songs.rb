@@ -56,7 +56,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
   next if original_song_titles.include?("その他")
   circle = display_artist.circles.first
   json = {
-    objectId: song.id,
+    objectID: song.id,
     title: song.title,
     reading_title: song&.title_reading || '',
     display_artist: {
