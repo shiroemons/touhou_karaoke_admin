@@ -9,6 +9,7 @@ class Song < ApplicationRecord
 
   belongs_to :display_artist
 
+  scope :dam, -> { where(karaoke_type: "DAM") }
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
 
