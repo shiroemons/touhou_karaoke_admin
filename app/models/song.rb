@@ -52,6 +52,19 @@ class Song < ApplicationRecord
     @browser.quit
   end
 
+  def self.fetch_dam_songs
+    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    total_count = DamSong.count
+    DamSong.all.each.with_index(1) do |ds, i|
+      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+      logger.debug(ds.title)
+      next if Song.exists?(karaoke_type: "DAM", url: ds.url)
+      dam_song_page_parser(ds)
+    end
+    @browser.quit
+  end
+
   private
 
   def self.joysound_song_page_parser(url)
@@ -129,6 +142,56 @@ class Song < ApplicationRecord
       end
     rescue Ferrum::TimeoutError => ex
       logger.error(ex)
+      retry_count += 1
+      retry unless retry_count > 3
+    end
+  end
+
+  def self.dam_song_page_parser(dam_song)
+    retry_count = 0
+    begin
+      @browser.goto(dam_song.url)
+      sleep(1.0)
+
+      title_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
+      title = @browser.at_css(title_selector).inner_text
+
+      title_reading_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.song-yomi"
+      title_reading = @browser.at_css(title_reading_selector)&.inner_text
+      title_reading = title_reading&.gsub(/[\[\] ]/, "")
+
+      song_number_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.request-no > span"
+      song_number = @browser.at_css(song_number_selector).inner_text
+
+      record = Song.find_or_create_by!(title: title, title_reading: title_reading, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number: song_number, url: dam_song.url)
+
+      delivery_models = []
+      delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
+      delivery_models << @browser.at_css(delivery_model_selector).inner_text
+      delivery_models_selector = "#model-list > li > a"
+      delivery_models_tag = @browser.css(delivery_models_selector)
+      delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
+
+      ouchikaraoke_selector = "#anchor-pagetop > main > div > div > div.main-content > div.service-section.is-show > div.is-pc > div > a.btn-link.btn-ouchikaraoke"
+      ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
+      ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
+
+      if ouchikaraoke_url != "" && !ouchikaraoke_url.nil?
+        delivery_models.push("カラオケ@DAM")
+      end
+      kdm = delivery_models.map { |dm| @delivery_models[dm] }
+      record.karaoke_delivery_model_ids = kdm
+
+      if ouchikaraoke_url.present?
+        if record.song_with_dam_ouchikaraoke.blank?
+          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
+        else
+          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
+          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
+        end
+      end
+    rescue => e
+      logger.error(e)
       retry_count += 1
       retry unless retry_count > 3
     end
