@@ -2,13 +2,16 @@ class JoysoundSong < ApplicationRecord
   validates :display_title, presence: true
   validates :url, presence: true
 
+  scope :enabled_smartphone_service, -> { where(smartphone_service_enabled: true) }
+  scope :enabled_home_karaoke, -> { where(home_karaoke_enabled: true) }
+
   def self.fetch_joysound_song
     base_url = "https://www.joysound.com/web/"
     url = "https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=0#songlist"
-    # url = "https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=2020#songlist"
+
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     browser.goto(url)
-    # browser.screenshot(path: "joysound.png")
+
     song_selector = "#jp-cmp-main > section > jp-cmp-song-search-list > div.jp-cmp-music-list-001.jp-cmp-music-list-song-001 > ul > li"
 
     page_counter = 1
@@ -21,8 +24,11 @@ class JoysoundSong < ApplicationRecord
         smartphone_service = false
         home_karaoke = false
         el.css("div > a > div > ul > li > span").each do |tag|
-          smartphone_service = tag.inner_text == "スマホサービス"
-          home_karaoke = tag.inner_text == "家庭用カラオケ"
+          if tag.inner_text == "スマホサービス"
+            smartphone_service = true
+          elsif tag.inner_text == "家庭用カラオケ"
+            home_karaoke = true
+          end
         end
         record = self.find_or_initialize_by(display_title: display_title, url: url)
         record.smartphone_service_enabled = smartphone_service
