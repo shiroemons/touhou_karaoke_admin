@@ -9,11 +9,17 @@ class DamSong < ApplicationRecord
   )
   EXCEPTION_WORD = %w(アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS)
 
-  def self.fetch_dam_song
+  def self.fetch_dam_songs
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     DisplayArtist.dam.each do |da|
       dam_song_list_parser(da) if da.url.present?
     end
+    @browser.quit
+  end
+
+  def self.fetch_dam_song(display_artist)
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    dam_song_list_parser(display_artist) if display_artist.url.present?
     @browser.quit
   end
 
