@@ -45,7 +45,7 @@ class Song < ApplicationRecord
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundMusicPost.count
-    JoysoundMusicPost.all.each.with_index(1) do |jmp, i|
+    JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
       logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
       logger.debug(jmp.title)
       joysound_music_post_song_page_parser(jmp)
@@ -114,31 +114,41 @@ class Song < ApplicationRecord
     begin
       @browser.goto(jmp.joysound_url)
       sleep(1.0)
-
-      artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
-      atirst_el = @browser.at_css(artist_selector)
-      artist_name = atirst_el.inner_text
-      artist_url_path = atirst_el.attribute("href")
-      artist_url = URI.join(base_url, artist_url_path).to_s
-      display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
-
-      song_block_selector = "#jp-cmp-karaoke-kyokupro > div.jp-cmp-kyokupuro-block"
-      @browser.css(song_block_selector).each do |el|
-        title = el.at_css("div.jp-cmp-karaoke-details > h4").inner_text
-
-        delivery_models = []
-        el.css("div.jp-cmp-karaoke-platform > ul > li").each do |kp|
-          delivery_models.push(kp.at_css("img").attribute("alt"))
+      error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
+      error = @browser.at_css(error_selector)&.inner_text
+      if error == "このページは存在しません。"
+        record = Song.find_by(karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
+        if record
+          record.destroy!
+          jmp.destroy!
+          return
         end
-        kdm = p delivery_models.map { |dm| @delivery_models[dm] }
+      else
+        artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
+        atirst_el = @browser.at_css(artist_selector)
+        artist_name = atirst_el.inner_text
+        artist_url_path = atirst_el.attribute("href")
+        artist_url = URI.join(base_url, artist_url_path).to_s
+        display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
 
-        song = p Song.find_or_create_by!(title: title, display_artist: display_artist, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
-        song.karaoke_delivery_model_ids = kdm
-        if song.song_with_joysound_utasuki.blank?
-          song.create_song_with_joysound_utasuki(delivery_deadline_date: jmp.delivery_deadline_on, url: jmp.url)
-        else
-          song.song_with_joysound_utasuki.delivery_deadline_date = jmp.delivery_deadline_on
-          song.song_with_joysound_utasuki.save! if song.song_with_joysound_utasuki.changed?
+        song_block_selector = "#jp-cmp-karaoke-kyokupro > div.jp-cmp-kyokupuro-block"
+        @browser.css(song_block_selector).each do |el|
+          title = el.at_css("div.jp-cmp-karaoke-details > h4").inner_text
+
+          delivery_models = []
+          el.css("div.jp-cmp-karaoke-platform > ul > li").each do |kp|
+            delivery_models.push(kp.at_css("img").attribute("alt"))
+          end
+          kdm = delivery_models.map { |dm| @delivery_models[dm] }
+
+          song = Song.find_or_create_by!(title: title, display_artist: display_artist, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
+          song.karaoke_delivery_model_ids = kdm
+          if song.song_with_joysound_utasuki.blank?
+            song.create_song_with_joysound_utasuki(delivery_deadline_date: jmp.delivery_deadline_on, url: jmp.url)
+          else
+            song.song_with_joysound_utasuki.delivery_deadline_date = jmp.delivery_deadline_on
+            song.song_with_joysound_utasuki.save! if song.song_with_joysound_utasuki.changed?
+          end
         end
       end
     rescue Ferrum::TimeoutError => ex
