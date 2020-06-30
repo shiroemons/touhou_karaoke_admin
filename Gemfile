@@ -44,3 +44,4 @@ group :test do
 end
 
 gem 'ferrum'
+gem 'administrate'
