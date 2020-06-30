@@ -10,9 +10,9 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     id: Field::String.with_options(searchable: false),
     display_title: Field::String,
-    url: Field::String,
     smartphone_service_enabled: Field::Boolean,
     home_karaoke_enabled: Field::Boolean,
+    url: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
     updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
   }.freeze
@@ -23,11 +23,10 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  id
   display_title
-  url
   smartphone_service_enabled
   home_karaoke_enabled
+  url
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -35,9 +34,9 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
   id
   display_title
-  url
   smartphone_service_enabled
   home_karaoke_enabled
+  url
   created_at
   updated_at
   ].freeze
