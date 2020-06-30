@@ -19,6 +19,12 @@ class Song < ApplicationRecord
       "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
   ]
 
+  def self.not_set_original_song
+    includes(:display_artist, :original_songs).select do |song|
+      song if song.original_songs.blank?
+    end
+  end
+
   def self.fetch_joysound_song(url = nil)
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
