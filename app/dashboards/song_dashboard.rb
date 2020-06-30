@@ -8,21 +8,30 @@ class SongDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    song_with_dam_ouchikaraoke: Field::HasOne,
-    song_with_joysound_utasuki: Field::HasOne,
-    songs_karaoke_delivery_models: Field::HasMany,
-    karaoke_delivery_models: Field::HasMany,
-    songs_original_songs: Field::HasMany,
-    original_songs: Field::HasMany,
-    display_artist: Field::BelongsTo,
     id: Field::String.with_options(searchable: false),
+    display_artist: Field::BelongsTo.with_options(
+      searchable: true,
+      searchable_field: 'name',
+    ),
     title: Field::String,
     title_reading: Field::String,
     karaoke_type: Field::String,
     song_number: Field::String,
     url: Field::String,
-    created_at: Field::DateTime,
-    updated_at: Field::DateTime,
+    original_songs: Field::HasMany.with_options(
+      searchable: true,
+      searchable_field: 'title',
+    ),
+    karaoke_delivery_models: Field::HasMany.with_options(
+      searchable: true,
+      searchable_field: 'name',
+    ),
+    song_with_dam_ouchikaraoke: Field::HasOne,
+    song_with_joysound_utasuki: Field::HasOne,
+    songs_original_songs: Field::HasMany,
+    songs_karaoke_delivery_models: Field::HasMany,
+    created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -31,28 +40,28 @@ class SongDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  song_with_dam_ouchikaraoke
-  song_with_joysound_utasuki
-  songs_karaoke_delivery_models
-  karaoke_delivery_models
+  id
+  title
+  karaoke_type
+  song_number
+  url
+  original_songs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  song_with_dam_ouchikaraoke
-  song_with_joysound_utasuki
-  songs_karaoke_delivery_models
-  karaoke_delivery_models
-  songs_original_songs
-  original_songs
-  display_artist
   id
   title
   title_reading
   karaoke_type
   song_number
   url
+  display_artist
+  original_songs
+  karaoke_delivery_models
+  song_with_joysound_utasuki
+  song_with_dam_ouchikaraoke
   created_at
   updated_at
   ].freeze
@@ -61,18 +70,7 @@ class SongDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
-  song_with_dam_ouchikaraoke
-  song_with_joysound_utasuki
-  songs_karaoke_delivery_models
-  karaoke_delivery_models
-  songs_original_songs
   original_songs
-  display_artist
-  title
-  title_reading
-  karaoke_type
-  song_number
-  url
   ].freeze
 
   # COLLECTION_FILTERS
@@ -90,7 +88,7 @@ class SongDashboard < Administrate::BaseDashboard
   # Overwrite this method to customize how songs are displayed
   # across all pages of the admin dashboard.
   #
-  # def display_resource(song)
-  #   "Song ##{song.id}"
-  # end
+  def display_resource(song)
+    song.title
+  end
 end

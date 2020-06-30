@@ -13,8 +13,8 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
     url: Field::String,
     smartphone_service_enabled: Field::Boolean,
     home_karaoke_enabled: Field::Boolean,
-    created_at: Field::DateTime,
-    updated_at: Field::DateTime,
+    created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -27,6 +27,7 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   display_title
   url
   smartphone_service_enabled
+  home_karaoke_enabled
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -44,12 +45,7 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   # FORM_ATTRIBUTES
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
-  FORM_ATTRIBUTES = %i[
-  display_title
-  url
-  smartphone_service_enabled
-  home_karaoke_enabled
-  ].freeze
+  FORM_ATTRIBUTES = %i[].freeze
 
   # COLLECTION_FILTERS
   # a hash that defines filters that can be used while searching via the search

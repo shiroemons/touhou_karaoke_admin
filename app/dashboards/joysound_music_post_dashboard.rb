@@ -12,11 +12,11 @@ class JoysoundMusicPostDashboard < Administrate::BaseDashboard
     title: Field::String,
     artist: Field::String,
     producer: Field::String,
-    delivery_deadline_on: Field::Date,
+    delivery_deadline_on: Field::Date.with_options(format: "%Y/%m/%d"),
     url: Field::String,
-    created_at: Field::DateTime,
-    updated_at: Field::DateTime,
     joysound_url: Field::String,
+    created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -26,9 +26,11 @@ class JoysoundMusicPostDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
   id
-  title
   artist
+  title
   producer
+  delivery_deadline_on
+  updated_at
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -40,22 +42,15 @@ class JoysoundMusicPostDashboard < Administrate::BaseDashboard
   producer
   delivery_deadline_on
   url
+  joysound_url
   created_at
   updated_at
-  joysound_url
   ].freeze
 
   # FORM_ATTRIBUTES
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
-  FORM_ATTRIBUTES = %i[
-  title
-  artist
-  producer
-  delivery_deadline_on
-  url
-  joysound_url
-  ].freeze
+  FORM_ATTRIBUTES = %i[].freeze
 
   # COLLECTION_FILTERS
   # a hash that defines filters that can be used while searching via the search

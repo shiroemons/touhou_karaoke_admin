@@ -9,9 +9,9 @@ class DamArtistUrlDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     id: Field::String.with_options(searchable: false),
-    url: Field::String,
-    created_at: Field::DateTime,
-    updated_at: Field::DateTime,
+    url: Field::String.with_options(truncate: 100),
+    created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -22,8 +22,6 @@ class DamArtistUrlDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
   id
   url
-  created_at
-  updated_at
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
