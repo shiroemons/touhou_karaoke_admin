@@ -1,0 +1,18 @@
+ja:
+  activerecord:
+    models:
+      song: カラオケ配信曲
+      original: 原作
+      original_song: 原曲
+      karaoke_delivery_model: 配信機種
+      circle: サークル
+      display_artist: アーティスト
+      dam_song: DAM楽曲
+      joysound_song: JOYSOUND楽曲
+      joysound_music_post: ミュージックポスト(JOYSOUND)
+      song_with_joysound_utasuki: カラオケ配信曲 - ミュージックポスト(JOYSOUND)
+      song_with_dam_ouchikaraoke: カラオケ配信曲 - おうちカラオケ(DAM)
+      dam_artist_url: DAMアーティストURL
+      display_artists_circle: アーティスト - サークル
+      songs_original_song: カラオケ配信曲 - 原作
+      songs_karaoke_delivery_model: カラオケ配信曲 - 配信機種

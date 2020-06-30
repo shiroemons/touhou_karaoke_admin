@@ -1,0 +1,77 @@
+ja:
+  helpers:
+    label:
+      song:
+        display_artist: 歌手名
+        title: 曲名
+        title_reading: 曲名(読み)
+        karaoke_type: メーカー
+        song_number: 曲番号
+        url: URL
+        original_songs: 原曲
+        karaoke_delivery_models: 配信機種
+        song_with_joysound_utasuki: うたスキミュージックポスト(JOYSOUND)
+        song_with_dam_ouchikaraoke: おうちカラオケ(DAM)
+      original:
+        title: 原作名
+        short_title: 短い原作名
+        original_type: 種類
+        series_order: 順序
+        original_songs: 原曲
+      original_song:
+        original_code: 原作Code
+        original: 原作
+        title: 曲名
+        composer: 作曲者
+        track_number: トラック番号
+        is_duplicate: 再録
+        songs: 楽曲
+      karaoke_delivery_model:
+        name: 機種名
+        karaoke_type: メーカー
+        order: 順序
+        songs: 楽曲
+      circle:
+        name: サークル名
+        display_artists: アーティスト
+      display_artist:
+        name: アーティスト名
+        name_reading: アーティスト名(読み)
+        karaoke_type: メーカー
+        url: URL
+        songs: 楽曲
+        circles: サークル
+      dam_song:
+        title: 曲名
+        display_artist: アーティスト
+        url: URL
+      joysound_song:
+        display_title: 曲名
+        url: URL
+        smartphone_service_enabled: スマホサービス
+        home_karaoke_enabled: 家庭用カラオケ
+      joysound_music_post:
+        title: 曲名
+        artist: アーティスト
+        producer: 配信ユーザー
+        delivery_deadline_on: 配信期限
+        url: URL
+        joysound_url: JOYSOUND URL
+      song_with_joysound_utasuki:
+        song: 楽曲
+        delivery_deadline_date: 配信期限
+        url: URL
+      song_with_dam_ouchikaraoke:
+        song: 楽曲
+        url: URL
+      dam_artist_url:
+        url: URL
+      display_artists_circle:
+        display_artist: アーティスト
+        circle: サークル
+      songs_original_song:
+        song: 楽曲
+        original_song: 原曲
+      songs_karaoke_delivery_model:
+        song: 楽曲
+        karaoke_delivery_model: 配信機種
