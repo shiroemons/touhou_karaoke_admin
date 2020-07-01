@@ -45,3 +45,4 @@ end
 
 gem 'ferrum'
 gem 'administrate'
+gem 'activerecord-missing'
