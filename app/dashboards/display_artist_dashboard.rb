@@ -30,7 +30,7 @@ class DisplayArtistDashboard < Administrate::BaseDashboard
   name
   name_reading
   karaoke_type
-  url
+  circles
   songs
   ].freeze
 
