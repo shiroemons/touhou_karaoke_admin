@@ -8,6 +8,21 @@ module Admin
   class ApplicationController < Administrate::ApplicationController
     before_action :authenticate_admin
 
+    BROWSE_ONLY = %w[
+      originals
+      original_songs
+      karaoke_delivery_models
+      display_artists
+      dam_songs
+      joysound_songs
+      joysound_music_posts
+      song_with_joysound_utasukis
+      song_with_dam_ouchikaraokes
+      display_artists_circles
+      songs_original_songs
+      songs_karaoke_delivery_models
+    ].freeze
+
     def authenticate_admin
       # TODO Add authentication logic here.
     end
@@ -18,7 +33,14 @@ module Admin
     #   params[:per_page] || 20
     # end
     def valid_action?(name, resource = resource_class)
-      %w[new edit destroy].exclude?(name.to_s) && super
+      case resource.to_s.underscore.pluralize
+      when *%w[songs display_artists]
+        %w[new destroy].exclude?(name.to_s) && super
+      when *%w[circles dam_artist_urls]
+        %w[].exclude?(name.to_s) && super
+      when *BROWSE_ONLY
+        %w[new edit destroy].exclude?(name.to_s) && super
+      end
     end
   end
 end
