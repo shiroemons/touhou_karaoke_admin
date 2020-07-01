@@ -1,4 +1,8 @@
+require 'sidekiq/web'
+
 Rails.application.routes.draw do
+  mount Sidekiq::Web, at: "/admin/sidekiq"
+
   root to: "admin/songs#index"
   namespace :admin do
       resources :songs

@@ -46,3 +46,6 @@ end
 gem 'ferrum'
 gem 'administrate'
 gem 'activerecord-missing'
+gem 'sidekiq'
+gem 'sinatra', require: false
+gem 'redis-namespace'
