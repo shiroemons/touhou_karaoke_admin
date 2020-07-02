@@ -16,6 +16,9 @@ Rails.application.routes.draw do
       resources :fetch_joysound_songs, only: :index
     end
     resources :joysound_songs
+    namespace :joysound_music_posts do
+      resources :fetch_joysound_music_posts, only: :index
+    end
     resources :joysound_music_posts
     resources :song_with_joysound_utasukis
     resources :song_with_dam_ouchikaraokes

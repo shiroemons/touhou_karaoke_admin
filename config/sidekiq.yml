@@ -5,3 +5,4 @@ production:
 :queues:
   - default
   - fetch_joysound_song
+  - fetch_joysound_music_post
