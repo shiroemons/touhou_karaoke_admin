@@ -31,11 +31,11 @@ class JoysoundSong < ApplicationRecord
   end
 
   def self.fetch_joysound_song
-    base_url = "https://www.joysound.com/web/"
     url = "https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=0#songlist"
 
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     browser.goto(url)
+    browser.network.wait_for_idle(duration: 1.0)
 
     song_selector = "#jp-cmp-main > section > jp-cmp-song-search-list > div.jp-cmp-music-list-001.jp-cmp-music-list-song-001 > ul > li"
 
@@ -43,8 +43,7 @@ class JoysoundSong < ApplicationRecord
     loop do
       logger.info("[INFO] page #{page_counter}.")
       browser.css(song_selector).each do |el|
-        url_path = el.at_css("div > a").attribute("href")
-        url = URI.join(base_url, url_path).to_s
+        url = el.at_css("div > a").property("href")
         display_title = el.at_css("div > a > h3").inner_text
         smartphone_service = false
         home_karaoke = false
