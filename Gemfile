@@ -47,5 +47,6 @@ gem 'ferrum'
 gem 'administrate'
 gem 'activerecord-missing'
 gem 'sidekiq'
+gem 'sidekiq-limit_fetch'
 gem 'sinatra', require: false
 gem 'redis-namespace'

@@ -212,6 +212,8 @@ GEM
       connection_pool (>= 2.2.2)
       rack (~> 2.0)
       redis (>= 4.2.0)
+    sidekiq-limit_fetch (3.4.0)
+      sidekiq (>= 4)
     sinatra (2.0.8.1)
       mustermann (~> 1.0)
       rack (~> 2.0)
@@ -272,6 +274,7 @@ DEPENDENCIES
   sass-rails (>= 6)
   selenium-webdriver
   sidekiq
+  sidekiq-limit_fetch
   sinatra
   spring
   spring-watcher-listen (~> 2.0.0)
