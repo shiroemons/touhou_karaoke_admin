@@ -90,3 +90,8 @@ end
 File.open("tmp/karaoke_songs.json","w") do |file|
   file.puts(JSON.pretty_generate(jsons))
 end
+
+puts "DAM: #{Song.dam.touhou_arrange.count}曲"
+puts "JOYSOUND: #{Song.joysound.touhou_arrange.count}曲"
+puts "JOYSOUND(うたスキ): #{Song.music_post.touhou_arrange.count}曲"
+puts ""
