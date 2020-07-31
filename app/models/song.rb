@@ -13,6 +13,7 @@ class Song < ApplicationRecord
   scope :dam, -> { where(karaoke_type: "DAM") }
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
+  scope :touhou_arrange, -> { includes(:original_songs).where.not(original_songs: { original_code: "0699"}) }
 
   PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに)
   ALLOWLIST = [
@@ -53,11 +54,30 @@ class Song < ApplicationRecord
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundMusicPost.count
     JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
-      logger.debug(jmp.title)
+      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}% #{jmp.title}")
       joysound_music_post_song_page_parser(jmp)
     end
     @browser.quit
+  end
+
+  def self.refresh_joysound_music_post_song
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    total_count = Song.music_post.count
+    Song.music_post.each.with_index(1) do |song, i|
+      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}% #{song.title}")
+      browser.goto(song.url)
+      browser.network.wait_for_idle(duration: 1.0)
+
+      error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
+      error = browser.at_css(error_selector)&.inner_text
+      if error == "このページは存在しません。"
+        record = Song.find_by(karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
+        if record
+          record.destroy!
+        end
+      end
+    end
+    browser.quit
   end
 
   def self.fetch_dam_songs
@@ -76,11 +96,10 @@ class Song < ApplicationRecord
   private
 
   def self.joysound_song_page_parser(url)
-    base_url = "https://www.joysound.com/web/"
     retry_count = 0
     begin
       @browser.goto(url)
-      sleep(1.0)
+      @browser.network.wait_for_idle(duration: 1.0)
 
       composer_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(3) > td > div > p"
       composer = @browser.at_css(composer_selector).inner_text
@@ -89,8 +108,7 @@ class Song < ApplicationRecord
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
         atirst_el = @browser.at_css(artist_selector)
         artist_name = atirst_el.inner_text
-        artist_url_path = atirst_el.attribute("href")
-        artist_url = URI.join(base_url, artist_url_path).to_s
+        artist_url = atirst_el.property("href")
         display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND", url: artist_url)
 
         songs_selector = "#karaokeDeliver > div > ul > li"
@@ -116,11 +134,11 @@ class Song < ApplicationRecord
   end
 
   def self.joysound_music_post_song_page_parser(jmp)
-    base_url = "https://www.joysound.com/web/"
     retry_count = 0
     begin
+      return if jmp.joysound_url.blank?
       @browser.goto(jmp.joysound_url)
-      sleep(1.0)
+      @browser.network.wait_for_idle(duration: 1.0)
       error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
       error = @browser.at_css(error_selector)&.inner_text
       if error == "このページは存在しません。"
@@ -134,8 +152,7 @@ class Song < ApplicationRecord
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
         atirst_el = @browser.at_css(artist_selector)
         artist_name = atirst_el.inner_text
-        artist_url_path = atirst_el.attribute("href")
-        artist_url = URI.join(base_url, artist_url_path).to_s
+        artist_url = atirst_el.property("href")
         display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
 
         song_block_selector = "#jp-cmp-karaoke-kyokupro > div.jp-cmp-kyokupuro-block"
@@ -169,7 +186,7 @@ class Song < ApplicationRecord
     retry_count = 0
     begin
       @browser.goto(dam_song.url)
-      sleep(1.0)
+      @browser.network.wait_for_idle(duration: 1.0)
 
       title_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
       title = @browser.at_css(title_selector).inner_text

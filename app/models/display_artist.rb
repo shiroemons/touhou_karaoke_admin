@@ -1,5 +1,5 @@
 class DisplayArtist < ApplicationRecord
-  has_many :display_artists_circles
+  has_many :display_artists_circles, dependent: :destroy
   has_many :circles, through: :display_artists_circles
   has_many :songs, dependent: :destroy
   has_many :dam_songs, dependent: :destroy
@@ -45,7 +45,7 @@ class DisplayArtist < ApplicationRecord
           no_data = el.inner_text
           if no_data == "該当データがありません"
             JoysoundMusicPost.where(artist: artist)&.destroy_all
-            DisplayArtist.find_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")&.destory
+            DisplayArtist.find_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")&.destroy
           else
             next if DisplayArtist.exists?(name: artist, karaoke_type: "JOYSOUND(うたスキ)")
 

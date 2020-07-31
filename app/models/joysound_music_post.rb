@@ -56,13 +56,12 @@ class JoysoundMusicPost < ApplicationRecord
   private
 
   def self.music_post_parser(browser, url)
-    base_url = "https://musicpost.joysound.com/"
     browser.goto(url)
+    browser.network.wait_for_idle(duration: 1.0)
     loop do
       music_block_selector = "#box_music_list_bottom > div.music_block"
       browser.css(music_block_selector).each do |el|
-        url_path = el.at_css("a").attribute("href")
-        url = URI.join(base_url, url_path).to_s
+        music_post_url = el.at_css("a").property("href")
 
         title_selector = "div > span.music_name"
         title = el.at_css(title_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ")
@@ -73,7 +72,7 @@ class JoysoundMusicPost < ApplicationRecord
         delivery_status_selector = "div > span.delivery_status"
         delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
         delivery_deadline_on = Time.parse(delivery_status).strftime("%F")
-        record = self.find_or_initialize_by(title: title, artist: artist, producer: producer, url: url)
+        record = self.find_or_initialize_by(title: title, artist: artist, producer: producer, url: music_post_url)
         record.delivery_deadline_on = delivery_deadline_on
         if record.new_record? || record.changed?
           record.save!
