@@ -5,5 +5,7 @@ class RunFetchJoysoundSongWorker
 
   def perform(*args)
     JoysoundSong.fetch_joysound_song
+    Song.fetch_joysound_songs
+    DisplayArtist.fetch_joysound_artist
   end
 end
