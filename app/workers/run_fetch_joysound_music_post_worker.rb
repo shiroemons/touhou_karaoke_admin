@@ -5,5 +5,9 @@ class RunFetchJoysoundMusicPostWorker
 
   def perform(*args)
     JoysoundMusicPost.fetch_music_post
+    DisplayArtist.fetch_joysound_music_post_artist
+    JoysoundMusicPost.fetch_music_post_song_joysound_url
+    Song.fetch_joysound_music_post_song
+    Song.refresh_joysound_music_post_song
   end
 end
