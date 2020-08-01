@@ -18,6 +18,7 @@ class SongDashboard < Administrate::BaseDashboard
     karaoke_type: Field::String,
     song_number: Field::String,
     url: Field::String,
+    youtube_url: Field::String,
     original_songs: Field::HasMany.with_options(
       searchable: true,
       searchable_field: 'title',
@@ -41,9 +42,9 @@ class SongDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
   title
+  display_artist
   karaoke_type
   song_number
-  url
   original_songs
   ].freeze
 
@@ -53,10 +54,11 @@ class SongDashboard < Administrate::BaseDashboard
   id
   title
   title_reading
+  display_artist
   karaoke_type
   song_number
   url
-  display_artist
+  youtube_url
   original_songs
   karaoke_delivery_models
   song_with_joysound_utasuki
@@ -69,6 +71,7 @@ class SongDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
+  youtube_url
   original_songs
   ].freeze
 

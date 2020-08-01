@@ -84,6 +84,10 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
     ouchikaraoke = song.song_with_dam_ouchikaraoke
     json[:ouchikaraoke_url] = ouchikaraoke.url
   end
+  json[:videos] = []
+  if song.youtube_url.present?
+    json[:videos].push({ type: "YouTube", url: song.youtube_url })
+  end
   jsons << json
 end
 

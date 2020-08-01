@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_06_19_111400) do
+ActiveRecord::Schema.define(version: 2020_07_31_113047) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -139,6 +139,7 @@ ActiveRecord::Schema.define(version: 2020_06_19_111400) do
     t.string "url", default: "", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.string "youtube_url", default: "", null: false
     t.index ["display_artist_id"], name: "index_songs_on_display_artist_id"
   end
 
