@@ -88,6 +88,9 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
   if song.youtube_url.present?
     json[:videos].push({ type: "YouTube", url: song.youtube_url })
   end
+  if song.nicovideo_url.present?
+    json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url })
+  end
   jsons << json
 end
 
