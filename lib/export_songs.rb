@@ -84,6 +84,15 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
     ouchikaraoke = song.song_with_dam_ouchikaraoke
     json[:ouchikaraoke_url] = ouchikaraoke.url
   end
+  json[:videos] = []
+  if song.youtube_url.present?
+    m = /(?<=\?v=)(?<id>[\w\-_]+)(?!=&)/.match(song.youtube_url)
+    json[:videos].push({ type: "YouTube", url: song.youtube_url, id: m[:id] })
+  end
+  if song.nicovideo_url.present?
+    m = /(?<=watch\/)(?<id>(s|n)m\d+)(?!=&)/.match(song.nicovideo_url)
+    json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url, id: m[:id] })
+  end
   jsons << json
 end
 
