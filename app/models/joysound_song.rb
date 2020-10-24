@@ -44,7 +44,7 @@ class JoysoundSong < ApplicationRecord
       logger.info("[INFO] page #{page_counter}.")
       browser.css(song_selector).each do |el|
         url = el.at_css("div > a").property("href")
-        display_title = el.at_css("div > a > h3").inner_text
+        display_title = el.at_css("div > a > h3").inner_text.gsub(" 新曲", "")
         smartphone_service = false
         home_karaoke = false
         el.css("div > a > div > ul > li > span").each do |tag|
