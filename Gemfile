@@ -50,3 +50,4 @@ gem 'sidekiq'
 gem 'sidekiq-limit_fetch'
 gem 'sinatra', require: false
 gem 'redis-namespace'
+gem 'algoliasearch-rails'
