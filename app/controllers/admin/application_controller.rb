@@ -42,5 +42,17 @@ module Admin
         %w[new edit destroy].exclude?(name.to_s) && super
       end
     end
+
+    def order
+      @order ||= Administrate::Order.new(
+        params.fetch(resource_name, {}).fetch(:order, default_sort[:order]),
+        params.fetch(resource_name, {}).fetch(:direction, default_sort[:direction]),
+      )
+    end
+
+    # override this in specific controllers as needed
+    def default_sort
+      { order: :updated_at, direction: :desc }
+    end
   end
 end
