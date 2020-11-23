@@ -12,12 +12,16 @@ ja:
         karaoke_delivery_models: 配信機種
         song_with_joysound_utasuki: うたスキミュージックポスト(JOYSOUND)
         song_with_dam_ouchikaraoke: おうちカラオケ(DAM)
+        created_at: 作成日時
+        updated_at: 更新日時
       original:
         title: 原作名
         short_title: 短い原作名
         original_type: 種類
         series_order: 順序
         original_songs: 原曲
+        created_at: 作成日時
+        updated_at: 更新日時
       original_song:
         original_code: 原作Code
         original: 原作
@@ -26,14 +30,20 @@ ja:
         track_number: トラック番号
         is_duplicate: 再録
         songs: 楽曲
+        created_at: 作成日時
+        updated_at: 更新日時
       karaoke_delivery_model:
         name: 機種名
         karaoke_type: メーカー
         order: 順序
         songs: 楽曲
+        created_at: 作成日時
+        updated_at: 更新日時
       circle:
         name: サークル名
         display_artists: アーティスト
+        created_at: 作成日時
+        updated_at: 更新日時
       display_artist:
         name: アーティスト名
         name_reading: アーティスト名(読み)
@@ -41,15 +51,21 @@ ja:
         url: URL
         songs: 楽曲
         circles: サークル
+        created_at: 作成日時
+        updated_at: 更新日時
       dam_song:
         title: 曲名
         display_artist: アーティスト
         url: URL
+        created_at: 作成日時
+        updated_at: 更新日時
       joysound_song:
         display_title: 曲名
         url: URL
         smartphone_service_enabled: スマホサービス
         home_karaoke_enabled: 家庭用カラオケ
+        created_at: 作成日時
+        updated_at: 更新日時
       joysound_music_post:
         title: 曲名
         artist: アーティスト
@@ -57,21 +73,35 @@ ja:
         delivery_deadline_on: 配信期限
         url: URL
         joysound_url: JOYSOUND URL
+        created_at: 作成日時
+        updated_at: 更新日時
       song_with_joysound_utasuki:
         song: 楽曲
         delivery_deadline_date: 配信期限
         url: URL
+        created_at: 作成日時
+        updated_at: 更新日時
       song_with_dam_ouchikaraoke:
         song: 楽曲
         url: URL
+        created_at: 作成日時
+        updated_at: 更新日時
       dam_artist_url:
         url: URL
+        created_at: 作成日時
+        updated_at: 更新日時
       display_artists_circle:
         display_artist: アーティスト
         circle: サークル
+        created_at: 作成日時
+        updated_at: 更新日時
       songs_original_song:
         song: 楽曲
         original_song: 原曲
+        created_at: 作成日時
+        updated_at: 更新日時
       songs_karaoke_delivery_model:
         song: 楽曲
         karaoke_delivery_model: 配信機種
+        created_at: 作成日時
+        updated_at: 更新日時
