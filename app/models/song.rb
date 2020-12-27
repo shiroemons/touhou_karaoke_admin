@@ -181,9 +181,7 @@ class Song < ApplicationRecord
       error = browser.at_css(error_selector)&.inner_text
       if error == "このページは存在しません。"
         record = Song.find_by(karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
-        if record
-          record.destroy!
-        end
+        record&.destroy!
       end
     end
     browser.quit
@@ -207,6 +205,7 @@ class Song < ApplicationRecord
   def self.joysound_song_page_parser(url)
     retry_count = 0
     begin
+      @browser.network.clear(:traffic)
       @browser.goto(url)
       @browser.network.wait_for_idle(duration: 1.0)
 
@@ -236,7 +235,8 @@ class Song < ApplicationRecord
         end
       end
     rescue Ferrum::TimeoutError => ex
-      logger.error(ex)
+      logger.error("self.joysound_song_page_parser: #{ex}")
+      @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
     end
@@ -246,6 +246,7 @@ class Song < ApplicationRecord
     retry_count = 0
     begin
       return if jmp.joysound_url.blank?
+      @browser.network.clear(:traffic)
       @browser.goto(jmp.joysound_url)
       @browser.network.wait_for_idle(duration: 1.0)
       error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
@@ -285,7 +286,8 @@ class Song < ApplicationRecord
         end
       end
     rescue Ferrum::TimeoutError => ex
-      logger.error(ex)
+      logger.error("self.joysound_music_post_song_page_parser: #{ex}")
+      @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
     end
@@ -294,6 +296,7 @@ class Song < ApplicationRecord
   def self.dam_song_page_parser(dam_song)
     retry_count = 0
     begin
+      @browser.network.clear(:traffic)
       @browser.goto(dam_song.url)
       @browser.network.wait_for_idle(duration: 1.0)
 
@@ -307,35 +310,38 @@ class Song < ApplicationRecord
       song_number_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.request-no > span"
       song_number = @browser.at_css(song_number_selector).inner_text
 
-      record = Song.find_or_create_by!(title: title, title_reading: title_reading, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number: song_number, url: dam_song.url)
+      if title.present? && title_reading.present? && song_number.present?
+        record = Song.find_or_create_by!(title: title, title_reading: title_reading, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number: song_number, url: dam_song.url)
 
-      delivery_models = []
-      delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
-      delivery_models << @browser.at_css(delivery_model_selector).inner_text
-      delivery_models_selector = "#model-list > li > a"
-      delivery_models_tag = @browser.css(delivery_models_selector)
-      delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
+        delivery_models = []
+        delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
+        delivery_models << @browser.at_css(delivery_model_selector).inner_text
+        delivery_models_selector = "#model-list > li > a"
+        delivery_models_tag = @browser.css(delivery_models_selector)
+        delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
 
-      ouchikaraoke_selector = "#anchor-pagetop > main > div > div > div.main-content > div.service-section.is-show > div.is-pc > div > a.btn-link.btn-ouchikaraoke"
-      ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
-      ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
+        ouchikaraoke_selector = "#anchor-pagetop > main > div > div > div.main-content > div.service-section.is-show > div.is-pc > div > a.btn-link.btn-ouchikaraoke"
+        ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
+        ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
 
-      if ouchikaraoke_url != "" && !ouchikaraoke_url.nil?
-        delivery_models.push("カラオケ@DAM")
-      end
-      kdm = delivery_models.map { |dm| @delivery_models[dm] }
-      record.karaoke_delivery_model_ids = kdm
+        if ouchikaraoke_url.present?
+          delivery_models.push("カラオケ@DAM")
+        end
+        kdm = delivery_models.map { |dm| @delivery_models[dm] }
+        record.karaoke_delivery_model_ids = kdm
 
-      if ouchikaraoke_url.present?
-        if record.song_with_dam_ouchikaraoke.blank?
-          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
-        else
-          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
-          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
+        if ouchikaraoke_url.present?
+          if record.song_with_dam_ouchikaraoke.blank?
+            record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
+          else
+            record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
+            record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
+          end
         end
       end
     rescue => e
-      logger.error(e)
+      logger.error("self.dam_song_page_parser: #{e}")
+      @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
     end

@@ -72,6 +72,7 @@ class DisplayArtist < ApplicationRecord
           browser.screenshot(path: "tmp/music_post_#{artist.gsub("/", "／")}.png")
           error_artist << artist
         else
+          browser.network.clear(:traffic)
           retry
         end
       end
