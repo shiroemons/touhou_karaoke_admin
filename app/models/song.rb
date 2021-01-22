@@ -17,6 +17,7 @@ class Song < ApplicationRecord
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
   scope :touhou_arrange, -> { includes(:original_songs).where.not(original_songs: { original_code: "0699"}) }
   scope :youtube, -> { where.not(youtube_url: "") }
+  scope :apple_music, -> { where.not(apple_music_url: "") }
 
   PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに)
   ALLOWLIST = [
