@@ -20,6 +20,7 @@ class SongDashboard < Administrate::BaseDashboard
     url: Field::String,
     youtube_url: Field::String,
     nicovideo_url: Field::String,
+    apple_music_url: Field::String,
     original_songs: Field::HasMany.with_options(
       searchable: true,
       searchable_field: 'title',
@@ -61,6 +62,7 @@ class SongDashboard < Administrate::BaseDashboard
   url
   youtube_url
   nicovideo_url
+  apple_music_url
   original_songs
   karaoke_delivery_models
   song_with_joysound_utasuki
@@ -75,6 +77,7 @@ class SongDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
   youtube_url
   nicovideo_url
+  apple_music_url
   original_songs
   ].freeze
 
