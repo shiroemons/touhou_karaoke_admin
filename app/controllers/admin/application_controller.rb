@@ -34,7 +34,9 @@ module Admin
     # end
     def valid_action?(name, resource = resource_class)
       case resource.to_s.underscore.pluralize
-      when *%w[songs display_artists]
+      when *%w[display_artists]
+        %w[new edit].exclude?(name.to_s) && super
+      when *%w[songs]
         %w[new destroy].exclude?(name.to_s) && super
       when *%w[circles dam_artist_urls]
         %w[].exclude?(name.to_s) && super
