@@ -196,7 +196,8 @@ class Song < ApplicationRecord
     DamSong.all.each.with_index(1) do |ds, i|
       logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
       logger.debug(ds.title)
-      next if Song.exists?(karaoke_type: "DAM", url: ds.url)
+      song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
+      next if song.song_with_dam_ouchikaraoke.present?
       dam_song_page_parser(ds)
     end
     @browser.quit
@@ -322,7 +323,7 @@ class Song < ApplicationRecord
         delivery_models_tag = @browser.css(delivery_models_selector)
         delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
 
-        ouchikaraoke_selector = "#anchor-pagetop > main > div > div > div.main-content > div.service-section.is-show > div.is-pc > div > a.btn-link.btn-ouchikaraoke"
+        ouchikaraoke_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"
         ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
         ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
 

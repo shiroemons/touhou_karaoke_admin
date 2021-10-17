@@ -39,6 +39,7 @@ hivemind Procfile.dev
 ### DAM
 
 ```ruby
+DamArtistUrl.fetch_dam_artist
 DamSong.fetch_dam_songs
 Song.fetch_dam_songs
 ```
