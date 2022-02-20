@@ -2,11 +2,11 @@
   "name": "touhou_karaoke_admin",
   "private": true,
   "dependencies": {
-    "@rails/ujs": "^7.0.2",
+    "@rails/ujs": "7.0.2",
     "@rails/webpacker": "5.4.3"
   },
   "version": "0.1.0",
   "devDependencies": {
-    "webpack-dev-server": "^4.7.4"
+    "webpack-dev-server": "4.7.4"
   }
 }
