@@ -94,7 +94,7 @@ class Song < ApplicationRecord
       {
         title: os.title,
         original: {
-            title: os.original.title,
+          title: os.original.title,
             short_title: os.original.short_title
         },
         "categories.lvl0": first_category(os.original),
