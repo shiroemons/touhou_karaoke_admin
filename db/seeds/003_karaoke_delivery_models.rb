@@ -1,7 +1,7 @@
 require 'csv'
 
 insert_data = []
-now = Time.now
+now = Time.zone.now
 order = 0
 karaoke_delivery_models = CSV.table('db/fixtures/karaoke_delivery_models.tsv', col_sep: "\t", converters: nil).each do |kdm|
   order += 1
