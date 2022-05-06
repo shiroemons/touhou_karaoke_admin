@@ -2,7 +2,7 @@ class DamArtistUrl < ApplicationRecord
   validates :url, presence: true
 
   def self.fetch_dam_artist
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     DamArtistUrl.all.find_each do |dau|
       dam_artist_page_parser(dau.url)
     end

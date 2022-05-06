@@ -141,14 +141,14 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_song(url = nil)
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     joysound_song_page_parser(url) if url.present?
     @browser.quit
   end
 
   def self.fetch_joysound_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = JoysoundSong.count
     JoysoundSong.all.find_each.with_index(1) do |js, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
@@ -163,7 +163,7 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_music_post_song
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = JoysoundMusicPost.count
     JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{jmp.title}")
@@ -173,7 +173,7 @@ class Song < ApplicationRecord
   end
 
   def self.refresh_joysound_music_post_song
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = Song.music_post.count
     Song.music_post.each.with_index(1) do |song, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
@@ -192,7 +192,7 @@ class Song < ApplicationRecord
 
   def self.fetch_dam_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = DamSong.count
     DamSong.all.find_each.with_index(1) do |ds, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")

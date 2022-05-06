@@ -10,7 +10,7 @@ class DisplayArtist < ApplicationRecord
   scope :name_reading_empty, -> { where(name_reading: "") }
 
   def self.fetch_joysound_artist
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = DisplayArtist.joysound.name_reading_empty.count
     DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
@@ -29,7 +29,7 @@ class DisplayArtist < ApplicationRecord
 
   def self.fetch_joysound_music_post_artist
     base_url = "https://www.joysound.com/web/search/artist?match=1&keyword="
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000])
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
 
     artists = JoysoundMusicPost.distinct.pluck(:artist).sort
     error_artist = []
