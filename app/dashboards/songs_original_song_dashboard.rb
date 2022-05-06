@@ -11,11 +11,11 @@ class SongsOriginalSongDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     original_song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     original_song_code: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),

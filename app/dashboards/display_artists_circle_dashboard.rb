@@ -11,11 +11,11 @@ class DisplayArtistsCircleDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     display_artist: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     circle: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
     updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),

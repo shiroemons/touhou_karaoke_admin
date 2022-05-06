@@ -48,7 +48,7 @@ module Admin
     def order
       @order ||= Administrate::Order.new(
         params.fetch(resource_name, {}).fetch(:order, default_sort[:order]),
-        params.fetch(resource_name, {}).fetch(:direction, default_sort[:direction]),
+        params.fetch(resource_name, {}).fetch(:direction, default_sort[:direction])
       )
     end
 

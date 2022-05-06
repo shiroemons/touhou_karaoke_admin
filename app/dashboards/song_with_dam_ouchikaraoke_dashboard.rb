@@ -11,7 +11,7 @@ class SongWithDamOuchikaraokeDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     url: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),

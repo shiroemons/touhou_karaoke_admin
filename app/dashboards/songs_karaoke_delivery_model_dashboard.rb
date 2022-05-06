@@ -11,11 +11,11 @@ class SongsKaraokeDeliveryModelDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     karaoke_delivery_model: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
     updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),

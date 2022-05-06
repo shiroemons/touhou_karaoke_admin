@@ -11,7 +11,7 @@ class SongWithJoysoundUtasukiDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     delivery_deadline_date: Field::Date.with_options(format: "%Y/%m/%d"),
     url: Field::String,

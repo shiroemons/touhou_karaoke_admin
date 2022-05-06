@@ -11,7 +11,7 @@ class SongDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     display_artist: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     title: Field::String,
     title_reading: Field::String,
@@ -23,11 +23,11 @@ class SongDashboard < Administrate::BaseDashboard
     apple_music_url: Field::String,
     original_songs: Field::HasMany.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     karaoke_delivery_models: Field::HasMany.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     song_with_dam_ouchikaraoke: Field::HasOne,
     song_with_joysound_utasuki: Field::HasOne,

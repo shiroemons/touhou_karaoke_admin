@@ -12,7 +12,7 @@ class OriginalSongDashboard < Administrate::BaseDashboard
     original_code: Field::String,
     original: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     title: Field::String,
     composer: Field::String,
