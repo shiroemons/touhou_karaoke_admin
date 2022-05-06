@@ -15,12 +15,12 @@ def first_category(original)
 end
 
 def second_category(original)
-  "#{first_category(original)} > #{format("%#04.1f", original.series_order)}. #{original.short_title}"
+  "#{first_category(original)} > #{format('%#04.1f', original.series_order)}. #{original.short_title}"
 end
 
 def third_category(original_song)
   original = original_song.original
-  "#{second_category(original)} > #{format("%02d", original_song.track_number)}. #{original_song.title}"
+  "#{second_category(original)} > #{format('%02d', original_song.track_number)}. #{original_song.title}"
 end
 
 def original_songs_json(original_songs)

@@ -69,7 +69,7 @@ class DisplayArtist < ApplicationRecord
         logger.debug(e)
         rescue_count += 1
         if rescue_count > 3
-          browser.screenshot(path: "tmp/music_post_#{artist.tr("/", "／")}.png")
+          browser.screenshot(path: "tmp/music_post_#{artist.tr('/', '／')}.png")
           error_artist << artist
         else
           browser.network.clear(:traffic)
