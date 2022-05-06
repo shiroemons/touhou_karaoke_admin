@@ -3,7 +3,7 @@ class DamArtistUrl < ApplicationRecord
 
   def self.fetch_dam_artist
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
-    DamArtistUrl.all.each do |dau|
+    DamArtistUrl.all.find_each do |dau|
       dam_artist_page_parser(dau.url)
     end
     @browser.quit
@@ -19,13 +19,13 @@ class DamArtistUrl < ApplicationRecord
       name_reading_selector = "#anchor-pagetop > main > div > div > div.main-content > div.artist-detail > div.artist-yomi"
       name_reading = @browser.at_css(name_reading_selector).inner_text.gsub(/[\[\] ]/, "")
       if name.present? && name_reading.present?
-        record = DisplayArtist.find_or_initialize_by(karaoke_type: "DAM", url: url)
+        record = DisplayArtist.find_or_initialize_by(karaoke_type: "DAM", url:)
         record.name = name
         record.name_reading = name_reading
         record.save! if record.changed?
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error(ex)
+    rescue Ferrum::TimeoutError => e
+      logger.error(e)
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3

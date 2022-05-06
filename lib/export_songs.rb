@@ -8,32 +8,32 @@ ORIGINAL_TYPE = {
   akyus_untouched_score: "04. 幺樂団の歴史　～ Akyu's Untouched Score",
   commercial_books: "05. 商業書籍",
   other: "06. その他"
-}
+}.freeze
 
 def first_category(original)
   ORIGINAL_TYPE[original.original_type.to_sym]
 end
 
 def second_category(original)
-  "#{first_category(original)} > #{format("%#04.1f", original.series_order)}. #{original.short_title}"
+  "#{first_category(original)} > #{format('%#04.1f', original.series_order)}. #{original.short_title}"
 end
 
 def third_category(original_song)
   original = original_song.original
-  "#{second_category(original)} > #{format("%02d", original_song.track_number)}. #{original_song.title}"
+  "#{second_category(original)} > #{format('%02d', original_song.track_number)}. #{original_song.title}"
 end
 
 def original_songs_json(original_songs)
   original_songs.map do |os|
-    { 
+    {
       title: os.title,
       original: {
         title: os.original.title,
         short_title: os.original.short_title
       },
-      "categories.lvl0": first_category(os.original),
-      "categories.lvl1": second_category(os.original),
-      "categories.lvl2": third_category(os)
+      'categories.lvl0': first_category(os.original),
+      'categories.lvl1': second_category(os.original),
+      'categories.lvl2': third_category(os)
     }
   end
 end
@@ -54,6 +54,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
   original_song_titles = original_songs.map(&:title)
   next if original_song_titles.include?("オリジナル")
   next if original_song_titles.include?("その他")
+
   circle = display_artist.circles.first
   json = {
     objectID: song.id,
@@ -90,17 +91,15 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
     json[:videos].push({ type: "YouTube", url: song.youtube_url, id: m[:id] })
   end
   if song.nicovideo_url.present?
-    m = /(?<=watch\/)(?<id>(s|n)m\d+)(?!=&)/.match(song.nicovideo_url)
+    m = %r{(?<=watch/)(?<id>[s|n]m\d+)(?!=&)}.match(song.nicovideo_url)
     json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url, id: m[:id] })
   end
   json[:touhou_music] = []
-  if song.apple_music_url.present?
-    json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url })
-  end
+  json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url }) if song.apple_music_url.present?
   jsons << json
 end
 
-File.open("tmp/karaoke_songs.json","w") do |file|
+File.open("tmp/karaoke_songs.json", "w") do |file|
   file.puts(JSON.pretty_generate(jsons))
 end
 

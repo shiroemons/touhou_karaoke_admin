@@ -15,16 +15,16 @@ class Song < ApplicationRecord
   scope :dam, -> { where(karaoke_type: "DAM") }
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
-  scope :touhou_arrange, -> { includes(:original_songs).where.not(original_songs: { original_code: "0699"}) }
+  scope :touhou_arrange, -> { includes(:original_songs).where.not(original_songs: { original_code: "0699" }) }
   scope :youtube, -> { where.not(youtube_url: "") }
   scope :apple_music, -> { where.not(apple_music_url: "") }
 
-  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに)
+  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに).freeze
   ALLOWLIST = [
-      "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
-      "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
-      "https://www.joysound.com/web/search/song/225456", # Crazy speed Hight 作曲:龍5150
-  ]
+    "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
+    "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
+    "https://www.joysound.com/web/search/song/225456" # Crazy speed Hight 作曲:龍5150
+  ].freeze
   ORIGINAL_TYPE = {
     windows: "01. Windows作品",
     pc98: "02. PC-98作品",
@@ -32,9 +32,9 @@ class Song < ApplicationRecord
     akyus_untouched_score: "04. 幺樂団の歴史　～ Akyu's Untouched Score",
     commercial_books: "05. 商業書籍",
     other: "06. その他"
-  }
+  }.freeze
 
-  algoliasearch index_name: ENV['ALGOLIA_INDEX_NAME'], unless: :deleted? do
+  algoliasearch index_name: ENV.fetch('ALGOLIA_INDEX_NAME', nil), unless: :deleted? do
     attribute :title
     attribute :reading_title do
       title_reading || ''
@@ -62,7 +62,7 @@ class Song < ApplicationRecord
     end
     attribute :url
     attribute :song_number do
-      song_number if song_number.present?
+      song_number.presence
     end
     attribute :delivery_deadline_date do
       song_with_joysound_utasuki&.delivery_deadline_date&.strftime("%Y/%m/%d")
@@ -81,12 +81,12 @@ class Song < ApplicationRecord
   end
 
   def second_category(original)
-    "#{first_category(original)} > #{format("%#04.1f", original.series_order)}. #{original.short_title}"
+    "#{first_category(original)} > #{format('%#04.1f', original.series_order)}. #{original.short_title}"
   end
 
   def third_category(original_song)
     original = original_song.original
-    "#{second_category(original)} > #{format("%02d", original_song.track_number)}. #{original_song.title}"
+    "#{second_category(original)} > #{format('%02d', original_song.track_number)}. #{original_song.title}"
   end
 
   def original_songs_json(original_songs)
@@ -94,12 +94,12 @@ class Song < ApplicationRecord
       {
         title: os.title,
         original: {
-            title: os.original.title,
-            short_title: os.original.short_title
+          title: os.original.title,
+          short_title: os.original.short_title
         },
-        "categories.lvl0": first_category(os.original),
-        "categories.lvl1": second_category(os.original),
-        "categories.lvl2": third_category(os)
+        'categories.lvl0': first_category(os.original),
+        'categories.lvl1': second_category(os.original),
+        'categories.lvl2': third_category(os)
       }
     end
   end
@@ -120,7 +120,7 @@ class Song < ApplicationRecord
       v.push({ type: "YouTube", url: youtube_url, id: m[:id] })
     end
     if nicovideo_url.present?
-      m = /(?<=watch\/)(?<id>(s|n)m\d+)(?!=&)/.match(nicovideo_url)
+      m = %r{(?<=watch/)(?<id>[s|n]m\d+)(?!=&)}.match(nicovideo_url)
       v.push({ type: "ニコニコ動画", url: nicovideo_url, id: m[:id] })
     end
     v
@@ -128,6 +128,7 @@ class Song < ApplicationRecord
 
   def deleted?
     return true if original_songs.blank?
+
     original_song_titles = original_songs.map(&:title)
     original_song_titles.include?("オリジナル") || original_song_titles.include?("その他")
   end
@@ -149,10 +150,10 @@ class Song < ApplicationRecord
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundSong.count
-    JoysoundSong.all.each.with_index(1) do |js, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+    JoysoundSong.all.find_each.with_index(1) do |js, i|
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       title = js.display_title.split("／").first
-      unless Song.exists?(title: title, url: js.url, karaoke_type: "JOYSOUND")
+      unless Song.exists?(title:, url: js.url, karaoke_type: "JOYSOUND")
         logger.debug(title)
         joysound_song_page_parser(js.url)
       end
@@ -165,7 +166,7 @@ class Song < ApplicationRecord
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundMusicPost.count
     JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}% #{jmp.title}")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{jmp.title}")
       joysound_music_post_song_page_parser(jmp)
     end
     @browser.quit
@@ -175,7 +176,7 @@ class Song < ApplicationRecord
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = Song.music_post.count
     Song.music_post.each.with_index(1) do |song, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}% #{song.title}")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
       browser.goto(song.url)
       browser.network.wait_for_idle(duration: 1.0)
 
@@ -193,17 +194,16 @@ class Song < ApplicationRecord
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = DamSong.count
-    DamSong.all.each.with_index(1) do |ds, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+    DamSong.all.find_each.with_index(1) do |ds, i|
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
       next if song.song_with_dam_ouchikaraoke.present?
+
       dam_song_page_parser(ds)
     end
     @browser.quit
   end
-
-  private
 
   def self.joysound_song_page_parser(url)
     retry_count = 0
@@ -233,12 +233,12 @@ class Song < ApplicationRecord
           end
           kdm = delivery_models.map { |dm| @delivery_models[dm] }
 
-          song = Song.find_or_create_by!(title: title, display_artist: display_artist, song_number: song_number, karaoke_type: "JOYSOUND", url: @browser.current_url)
+          song = Song.find_or_create_by!(title:, display_artist:, song_number:, karaoke_type: "JOYSOUND", url: @browser.current_url)
           song.karaoke_delivery_model_ids = kdm
         end
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error("self.joysound_song_page_parser: #{ex}")
+    rescue Ferrum::TimeoutError => e
+      logger.error("self.joysound_song_page_parser: #{e}")
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
@@ -249,6 +249,7 @@ class Song < ApplicationRecord
     retry_count = 0
     begin
       return if jmp.joysound_url.blank?
+
       @browser.network.clear(:traffic)
       @browser.goto(jmp.joysound_url)
       @browser.network.wait_for_idle(duration: 1.0)
@@ -259,7 +260,7 @@ class Song < ApplicationRecord
         if record
           record.destroy!
           jmp.destroy!
-          return
+          nil
         end
       else
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
@@ -278,7 +279,7 @@ class Song < ApplicationRecord
           end
           kdm = delivery_models.map { |dm| @delivery_models[dm] }
 
-          song = Song.find_or_create_by!(title: title, display_artist: display_artist, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
+          song = Song.find_or_create_by!(title:, display_artist:, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
           song.karaoke_delivery_model_ids = kdm
           if song.song_with_joysound_utasuki.blank?
             song.create_song_with_joysound_utasuki(delivery_deadline_date: jmp.delivery_deadline_on, url: jmp.url)
@@ -288,8 +289,8 @@ class Song < ApplicationRecord
           end
         end
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error("self.joysound_music_post_song_page_parser: #{ex}")
+    rescue Ferrum::TimeoutError => e
+      logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
@@ -314,7 +315,7 @@ class Song < ApplicationRecord
       song_number = @browser.at_css(song_number_selector).inner_text
 
       if title.present? && title_reading.present? && song_number.present?
-        record = Song.find_or_create_by!(title: title, title_reading: title_reading, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number: song_number, url: dam_song.url)
+        record = Song.find_or_create_by!(title:, title_reading:, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number:, url: dam_song.url)
 
         delivery_models = []
         delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
@@ -327,22 +328,20 @@ class Song < ApplicationRecord
         ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
         ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
 
-        if ouchikaraoke_url.present?
-          delivery_models.push("カラオケ@DAM")
-        end
+        delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
         kdm = delivery_models.map { |dm| @delivery_models[dm] }
         record.karaoke_delivery_model_ids = kdm
 
-        if ouchikaraoke_url.present?
-          if record.song_with_dam_ouchikaraoke.blank?
-            record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
-          else
-            record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
-            record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
-          end
+        return if ouchikaraoke_url.blank?
+
+        if record.song_with_dam_ouchikaraoke.blank?
+          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
+        else
+          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
+          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
         end
       end
-    rescue => e
+    rescue StandardError => e
       logger.error("self.dam_song_page_parser: #{e}")
       @browser.network.clear(:traffic)
       retry_count += 1

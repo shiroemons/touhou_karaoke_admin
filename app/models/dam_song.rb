@@ -1,13 +1,13 @@
 class DamSong < ApplicationRecord
   belongs_to :display_artist
 
-  BASE_URL = "https://www.clubdam.com/karaokesearch/"
-  OPTION_PATH = "&contentsCode=&serviceCode=&serialNo=AT00001&filterTitle=&sort=3"
+  BASE_URL = "https://www.clubdam.com/karaokesearch/".freeze
+  OPTION_PATH = "&contentsCode=&serviceCode=&serialNo=AT00001&filterTitle=&sort=3".freeze
 
-  EXCEPTION_URLS = %w(
+  EXCEPTION_URLS = %w[
     https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode=43477
-  )
-  EXCEPTION_WORD = %w(アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS)
+  ].freeze
+  EXCEPTION_WORD = %w[アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS].freeze
 
   def self.fetch_dam_songs
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
@@ -22,8 +22,6 @@ class DamSong < ApplicationRecord
     dam_song_list_parser(display_artist) if display_artist.url.present?
     @browser.quit
   end
-
-  private
 
   def self.dam_song_list_parser(display_artist)
     retry_count = 0
@@ -41,22 +39,14 @@ class DamSong < ApplicationRecord
 
         description_selector = "div.result-item-inner > div.description"
         description = el.at_css(description_selector).inner_text
-        if display_artist.url.in?(EXCEPTION_URLS)
-          if description&.include?("東方")
-            DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist: display_artist)
-          end
+        if display_artist.url.in?(EXCEPTION_URLS) || EXCEPTION_WORD.any? { |w| description.include?(w) }
+          DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:) if description&.include?("東方")
         else
-          if EXCEPTION_WORD.any? { |w| description.include?(w) }
-            if description&.include?("東方")
-              DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist: display_artist)
-            end
-          else
-            DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist: display_artist)
-          end
+          DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
         end
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error(ex)
+    rescue Ferrum::TimeoutError => e
+      logger.error(e)
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3

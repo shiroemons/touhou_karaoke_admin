@@ -14,7 +14,7 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
     home_karaoke_enabled: Field::Boolean,
     url: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -23,22 +23,22 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  display_title
-  smartphone_service_enabled
-  home_karaoke_enabled
-  url
+    display_title
+    smartphone_service_enabled
+    home_karaoke_enabled
+    url
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  id
-  display_title
-  smartphone_service_enabled
-  home_karaoke_enabled
-  url
-  created_at
-  updated_at
+    id
+    display_title
+    smartphone_service_enabled
+    home_karaoke_enabled
+    url
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

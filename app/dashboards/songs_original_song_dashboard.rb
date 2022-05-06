@@ -11,15 +11,15 @@ class SongsOriginalSongDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     original_song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     original_song_code: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -28,18 +28,18 @@ class SongsOriginalSongDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  song
-  original_song
+    song
+    original_song
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  id
-  song
-  original_song
-  created_at
-  updated_at
+    id
+    song
+    original_song
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

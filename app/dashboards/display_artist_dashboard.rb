@@ -18,7 +18,7 @@ class DisplayArtistDashboard < Administrate::BaseDashboard
     circles: Field::HasMany,
     display_artists_circles: Field::HasMany,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -27,32 +27,32 @@ class DisplayArtistDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  name
-  name_reading
-  karaoke_type
-  circles
-  songs
+    name
+    name_reading
+    karaoke_type
+    circles
+    songs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  id
-  name
-  name_reading
-  karaoke_type
-  url
-  circles
-  songs
-  created_at
-  updated_at
+    id
+    name
+    name_reading
+    karaoke_type
+    url
+    circles
+    songs
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
-  circles
+    circles
   ].freeze
 
   # COLLECTION_FILTERS

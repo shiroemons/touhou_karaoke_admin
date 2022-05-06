@@ -11,7 +11,7 @@ class SongDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     display_artist: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     title: Field::String,
     title_reading: Field::String,
@@ -23,18 +23,18 @@ class SongDashboard < Administrate::BaseDashboard
     apple_music_url: Field::String,
     original_songs: Field::HasMany.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     karaoke_delivery_models: Field::HasMany.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     song_with_dam_ouchikaraoke: Field::HasOne,
     song_with_joysound_utasuki: Field::HasOne,
     songs_original_songs: Field::HasMany,
     songs_karaoke_delivery_models: Field::HasMany,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -43,42 +43,42 @@ class SongDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  title
-  display_artist
-  karaoke_type
-  song_number
-  original_songs
+    title
+    display_artist
+    karaoke_type
+    song_number
+    original_songs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  id
-  title
-  title_reading
-  display_artist
-  karaoke_type
-  song_number
-  url
-  youtube_url
-  nicovideo_url
-  apple_music_url
-  original_songs
-  karaoke_delivery_models
-  song_with_joysound_utasuki
-  song_with_dam_ouchikaraoke
-  created_at
-  updated_at
+    id
+    title
+    title_reading
+    display_artist
+    karaoke_type
+    song_number
+    url
+    youtube_url
+    nicovideo_url
+    apple_music_url
+    original_songs
+    karaoke_delivery_models
+    song_with_joysound_utasuki
+    song_with_dam_ouchikaraoke
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
-  youtube_url
-  nicovideo_url
-  apple_music_url
-  original_songs
+    youtube_url
+    nicovideo_url
+    apple_music_url
+    original_songs
   ].freeze
 
   # COLLECTION_FILTERS

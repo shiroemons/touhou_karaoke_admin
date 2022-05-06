@@ -11,14 +11,14 @@ class SongsKaraokeDeliveryModelDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     song: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'title',
+      searchable_field: 'title'
     ),
     karaoke_delivery_model: Field::BelongsTo.with_options(
       searchable: true,
-      searchable_field: 'name',
+      searchable_field: 'name'
     ),
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -27,18 +27,18 @@ class SongsKaraokeDeliveryModelDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  song
-  karaoke_delivery_model
+    song
+    karaoke_delivery_model
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  id
-  song
-  karaoke_delivery_model
-  created_at
-  updated_at
+    id
+    song
+    karaoke_delivery_model
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

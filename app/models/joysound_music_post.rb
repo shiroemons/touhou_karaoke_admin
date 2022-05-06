@@ -31,7 +31,7 @@ class JoysoundMusicPost < ApplicationRecord
           url = URI.join("https://www.joysound.com/", url_path).to_s
           display_title = el.at_css("div > a > h3").inner_text
           title = display_title.split("／").first
-          record = JoysoundMusicPost.find_by(artist: da.name, title: title)
+          record = JoysoundMusicPost.find_by(artist: da.name, title:)
           if record
             record.joysound_url = url
             record.save! if record.changed?
@@ -40,20 +40,16 @@ class JoysoundMusicPost < ApplicationRecord
 
         next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"
         next_text = browser.at_css(next_selector)&.inner_text
-        if next_text == "次の20件"
-          browser.at_css(next_selector).at_css("a").focus.click
-          sleep(1.0)
-        else
-          break
-        end
+        break unless next_text == "次の20件"
+
+        browser.at_css(next_selector).at_css("a").focus.click
+        sleep(1.0)
       end
     end
-  rescue => e
+  rescue StandardError => e
     logger.error(e)
     browser.screenshot(path: "tmp/music_post.png")
   end
-
-  private
 
   def self.music_post_parser(browser, url)
     browser.goto(url)
@@ -71,27 +67,21 @@ class JoysoundMusicPost < ApplicationRecord
         producer = el.at_css(producer_selector).inner_text.gsub("配信ユーザー:", "").squish
         delivery_status_selector = "div > span.delivery_status"
         delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
-        delivery_deadline_on = Time.parse(delivery_status).strftime("%F")
-        record = self.find_or_initialize_by(title: title, artist: artist, producer: producer, url: music_post_url)
+        delivery_deadline_on = Time.zone.parse(delivery_status).strftime("%F")
+        record = find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
         record.delivery_deadline_on = delivery_deadline_on
-        if record.new_record? || record.changed?
-          record.save!
-        end
+        record.save! if record.new_record? || record.changed?
       end
       nav_selector = "#pager_bottom > div > a"
       next_link = nil
       browser.css(nav_selector).each do |el|
         next_box = el.at_css("span.next_page.page.box")&.inner_text
-        if next_box&.start_with?("次へ")
-          next_link = el
-        end
+        next_link = el if next_box&.start_with?("次へ")
       end
-      if next_link.present?
-        next_link.focus.click
-      else
-        break
-      end
+
+      break if next_link.blank?
+
+      next_link.focus.click
     end
   end
-
 end

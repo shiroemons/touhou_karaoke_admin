@@ -13,7 +13,7 @@ class DisplayArtist < ApplicationRecord
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = DisplayArtist.joysound.name_reading_empty.count
     DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       browser.goto(da.url)
 
       artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
@@ -31,7 +31,7 @@ class DisplayArtist < ApplicationRecord
     base_url = "https://www.joysound.com/web/search/artist?match=1&keyword="
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000])
 
-    artists = JoysoundMusicPost.pluck(:artist).uniq.sort
+    artists = JoysoundMusicPost.distinct.pluck(:artist).sort
     error_artist = []
 
     artists.each do |artist|
@@ -44,7 +44,7 @@ class DisplayArtist < ApplicationRecord
         browser.css(result_list_selector).each do |el|
           no_data = el.inner_text
           if no_data == "該当データがありません"
-            JoysoundMusicPost.where(artist: artist)&.destroy_all
+            JoysoundMusicPost.where(artist:)&.destroy_all
             DisplayArtist.find_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")&.destroy
           else
             next if DisplayArtist.exists?(name: artist, karaoke_type: "JOYSOUND(うたスキ)")
@@ -60,7 +60,7 @@ class DisplayArtist < ApplicationRecord
                 artist_el = browser.at_css(artist_selector)
                 name_reading = artist_el.inner_text.gsub(/[（）]/, "")
 
-                DisplayArtist.find_or_create_by!(name: display_artist, name_reading: name_reading, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
+                DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
               end
             end
           end
@@ -69,7 +69,7 @@ class DisplayArtist < ApplicationRecord
         logger.debug(e)
         rescue_count += 1
         if rescue_count > 3
-          browser.screenshot(path: "tmp/music_post_#{artist.gsub("/", "／")}.png")
+          browser.screenshot(path: "tmp/music_post_#{artist.tr('/', '／')}.png")
           error_artist << artist
         else
           browser.network.clear(:traffic)
@@ -77,6 +77,6 @@ class DisplayArtist < ApplicationRecord
         end
       end
     end
-    logger.debug("未登録アーティスト：" + error_artist) if error_artist.present?
+    logger.debug("未登録アーティスト：#{error_artist}") if error_artist.present?
   end
 end

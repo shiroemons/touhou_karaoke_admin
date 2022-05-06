@@ -11,22 +11,14 @@ class JoysoundSong < ApplicationRecord
     enabled_smartphone_service.each do |js|
       title = js.display_title.split("／").first
       url = js.url
-      song = Song.find_by(title: title, url: url, karaoke_type: "JOYSOUND")
-      if song.present?
-        unless song.karaoke_delivery_models&.include?(smartphone_service)
-          song.karaoke_delivery_models << smartphone_service
-        end
-      end
+      song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
+      song.karaoke_delivery_models << smartphone_service if song.present? && !song.karaoke_delivery_models&.include?(smartphone_service)
     end
     enabled_home_karaoke.each do |js|
       title = js.display_title.split("／").first
       url = js.url
-      song = Song.find_by(title: title, url: url, karaoke_type: "JOYSOUND")
-      if song.present?
-        unless song.karaoke_delivery_models&.include?(home_karaoke)
-          song.karaoke_delivery_models << home_karaoke
-        end
-      end
+      song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
+      song.karaoke_delivery_models << home_karaoke if song.present? && !song.karaoke_delivery_models&.include?(home_karaoke)
     end
   end
 
@@ -48,18 +40,17 @@ class JoysoundSong < ApplicationRecord
         smartphone_service = false
         home_karaoke = false
         el.css("div > a > div > ul > li > span").each do |tag|
-          if tag.inner_text == "スマホサービス"
+          case tag.inner_text
+          when "スマホサービス"
             smartphone_service = true
-          elsif tag.inner_text == "家庭用カラオケ"
+          when "家庭用カラオケ"
             home_karaoke = true
           end
         end
-        record = self.find_or_initialize_by(display_title: display_title, url: url)
+        record = find_or_initialize_by(display_title:, url:)
         record.smartphone_service_enabled = smartphone_service
         record.home_karaoke_enabled = home_karaoke
-        if record.changed?
-          record.save!
-        end
+        record.save! if record.changed?
       end
 
       next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"

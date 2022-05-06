@@ -24,7 +24,7 @@ module Admin
     ].freeze
 
     def authenticate_admin
-      # TODO Add authentication logic here.
+      # TODO: Add authentication logic here.
     end
 
     # Override this value to specify the number of elements to display at a time
@@ -34,11 +34,11 @@ module Admin
     # end
     def valid_action?(name, resource = resource_class)
       case resource.to_s.underscore.pluralize
-      when *%w[display_artists]
+      when 'display_artists'
         %w[new edit].exclude?(name.to_s) && super
-      when *%w[songs]
+      when 'songs'
         %w[new destroy].exclude?(name.to_s) && super
-      when *%w[circles dam_artist_urls]
+      when 'circles', 'dam_artist_urls'
         %w[].exclude?(name.to_s) && super
       when *BROWSE_ONLY
         %w[new edit destroy].exclude?(name.to_s) && super
@@ -48,7 +48,7 @@ module Admin
     def order
       @order ||= Administrate::Order.new(
         params.fetch(resource_name, {}).fetch(:order, default_sort[:order]),
-        params.fetch(resource_name, {}).fetch(:direction, default_sort[:direction]),
+        params.fetch(resource_name, {}).fetch(:direction, default_sort[:direction])
       )
     end
 
