@@ -332,13 +332,13 @@ class Song < ApplicationRecord
         kdm = delivery_models.map { |dm| @delivery_models[dm] }
         record.karaoke_delivery_model_ids = kdm
 
-        if ouchikaraoke_url.present?
-          if record.song_with_dam_ouchikaraoke.blank?
-            record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
-          else
-            record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
-            record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
-          end
+        return if ouchikaraoke_url.blank?
+
+        if record.song_with_dam_ouchikaraoke.blank?
+          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
+        else
+          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
+          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
         end
       end
     rescue StandardError => e
