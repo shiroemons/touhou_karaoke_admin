@@ -44,7 +44,7 @@ class DamSong < ApplicationRecord
           DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:) if description&.include?("東方")
         elsif EXCEPTION_WORD.any? { |w| description.include?(w) }
           DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:) if description&.include?("東方")
-          else
+        else
             DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
         end
       end
