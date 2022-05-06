@@ -50,7 +50,7 @@ class JoysoundSong < ApplicationRecord
             home_karaoke = true
           end
         end
-        record = self.find_or_initialize_by(display_title:, url:)
+        record = find_or_initialize_by(display_title:, url:)
         record.smartphone_service_enabled = smartphone_service
         record.home_karaoke_enabled = home_karaoke
         record.save! if record.changed?
