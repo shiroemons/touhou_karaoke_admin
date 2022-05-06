@@ -62,7 +62,7 @@ class Song < ApplicationRecord
     end
     attribute :url
     attribute :song_number do
-      song_number if song_number.present?
+      song_number.presence
     end
     attribute :delivery_deadline_date do
       song_with_joysound_utasuki&.delivery_deadline_date&.strftime("%Y/%m/%d")
