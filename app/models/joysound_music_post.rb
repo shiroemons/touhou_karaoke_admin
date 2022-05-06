@@ -48,7 +48,7 @@ class JoysoundMusicPost < ApplicationRecord
         end
       end
     end
-  rescue => e
+  rescue StandardError => e
     logger.error(e)
     browser.screenshot(path: "tmp/music_post.png")
   end

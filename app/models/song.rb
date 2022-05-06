@@ -342,7 +342,7 @@ class Song < ApplicationRecord
           end
         end
       end
-    rescue => e
+    rescue StandardError => e
       logger.error("self.dam_song_page_parser: #{e}")
       @browser.network.clear(:traffic)
       retry_count += 1
