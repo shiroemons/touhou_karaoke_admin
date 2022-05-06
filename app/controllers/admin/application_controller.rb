@@ -34,11 +34,11 @@ module Admin
     # end
     def valid_action?(name, resource = resource_class)
       case resource.to_s.underscore.pluralize
-      when *%w[display_artists]
+      when 'display_artists'
         %w[new edit].exclude?(name.to_s) && super
-      when *%w[songs]
+      when 'songs'
         %w[new destroy].exclude?(name.to_s) && super
-      when *%w[circles dam_artist_urls]
+      when 'circles', 'dam_artist_urls'
         %w[].exclude?(name.to_s) && super
       when *BROWSE_ONLY
         %w[new edit destroy].exclude?(name.to_s) && super
