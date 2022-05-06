@@ -3,7 +3,7 @@ class RunFetchJoysoundMusicPostWorker
   sidekiq_options queue: :fetch_joysound_music_post
   Sidekiq::Queue['fetch_joysound_music_post'].limit = 1
 
-  def perform(*args)
+  def perform(*_args)
     JoysoundMusicPost.fetch_music_post
     DisplayArtist.fetch_joysound_music_post_artist
     JoysoundMusicPost.fetch_music_post_song_joysound_url
