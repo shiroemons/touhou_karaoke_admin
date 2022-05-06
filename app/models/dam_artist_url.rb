@@ -24,8 +24,8 @@ class DamArtistUrl < ApplicationRecord
         record.name_reading = name_reading
         record.save! if record.changed?
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error(ex)
+    rescue Ferrum::TimeoutError => e
+      logger.error(e)
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3

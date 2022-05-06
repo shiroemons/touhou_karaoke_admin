@@ -238,8 +238,8 @@ class Song < ApplicationRecord
           song.karaoke_delivery_model_ids = kdm
         end
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error("self.joysound_song_page_parser: #{ex}")
+    rescue Ferrum::TimeoutError => e
+      logger.error("self.joysound_song_page_parser: #{e}")
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
@@ -290,8 +290,8 @@ class Song < ApplicationRecord
           end
         end
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error("self.joysound_music_post_song_page_parser: #{ex}")
+    rescue Ferrum::TimeoutError => e
+      logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3

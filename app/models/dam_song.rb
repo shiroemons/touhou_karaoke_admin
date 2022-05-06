@@ -54,8 +54,8 @@ class DamSong < ApplicationRecord
           end
         end
       end
-    rescue Ferrum::TimeoutError => ex
-      logger.error(ex)
+    rescue Ferrum::TimeoutError => e
+      logger.error(e)
       @browser.network.clear(:traffic)
       retry_count += 1
       retry unless retry_count > 3
