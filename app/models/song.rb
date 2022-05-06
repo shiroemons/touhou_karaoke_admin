@@ -128,6 +128,7 @@ class Song < ApplicationRecord
 
   def deleted?
     return true if original_songs.blank?
+
     original_song_titles = original_songs.map(&:title)
     original_song_titles.include?("オリジナル") || original_song_titles.include?("その他")
   end
@@ -198,6 +199,7 @@ class Song < ApplicationRecord
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
       next if song.song_with_dam_ouchikaraoke.present?
+
       dam_song_page_parser(ds)
     end
     @browser.quit
@@ -249,6 +251,7 @@ class Song < ApplicationRecord
     retry_count = 0
     begin
       return if jmp.joysound_url.blank?
+
       @browser.network.clear(:traffic)
       @browser.goto(jmp.joysound_url)
       @browser.network.wait_for_idle(duration: 1.0)

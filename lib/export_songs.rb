@@ -54,6 +54,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
   original_song_titles = original_songs.map(&:title)
   next if original_song_titles.include?("オリジナル")
   next if original_song_titles.include?("その他")
+
   circle = display_artist.circles.first
   json = {
     objectID: song.id,
