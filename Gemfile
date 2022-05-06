@@ -3,7 +3,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '3.0.2'
 
-gem 'rails', '~> 6.0.4'
+gem 'rails', '~> 7.0.2'
 gem 'pg', '>= 0.18', '< 2.0'
 gem 'puma', '~> 5.6'
 gem 'sass-rails', '>= 6'
@@ -32,7 +32,6 @@ end
 
 gem 'ferrum'
 gem 'administrate'
-gem 'activerecord-missing'
 gem 'sidekiq'
 gem 'sidekiq-limit_fetch'
 gem 'sinatra', require: false
