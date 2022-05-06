@@ -24,7 +24,7 @@ class KaraokeDeliveryModelDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-  karaoke_type
+    karaoke_type
   name
   order
   songs
@@ -33,7 +33,7 @@ class KaraokeDeliveryModelDashboard < Administrate::BaseDashboard
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-  id
+    id
   name
   karaoke_type
   order
