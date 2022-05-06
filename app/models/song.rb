@@ -261,7 +261,7 @@ class Song < ApplicationRecord
         if record
           record.destroy!
           jmp.destroy!
-          return
+          nil
         end
       else
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
