@@ -97,9 +97,9 @@ class Song < ApplicationRecord
           title: os.original.title,
             short_title: os.original.short_title
         },
-        "categories.lvl0": first_category(os.original),
-        "categories.lvl1": second_category(os.original),
-        "categories.lvl2": third_category(os)
+        'categories.lvl0': first_category(os.original),
+        'categories.lvl1': second_category(os.original),
+        'categories.lvl2': third_category(os)
       }
     end
   end
