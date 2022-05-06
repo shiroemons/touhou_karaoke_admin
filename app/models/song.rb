@@ -19,12 +19,12 @@ class Song < ApplicationRecord
   scope :youtube, -> { where.not(youtube_url: "") }
   scope :apple_music, -> { where.not(apple_music_url: "") }
 
-  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに)
+  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに).freeze
   ALLOWLIST = [
     "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
     "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
     "https://www.joysound.com/web/search/song/225456" # Crazy speed Hight 作曲:龍5150
-  ]
+  ].freeze
   ORIGINAL_TYPE = {
     windows: "01. Windows作品",
     pc98: "02. PC-98作品",
@@ -32,7 +32,7 @@ class Song < ApplicationRecord
     akyus_untouched_score: "04. 幺樂団の歴史　～ Akyu's Untouched Score",
     commercial_books: "05. 商業書籍",
     other: "06. その他"
-  }
+  }.freeze
 
   algoliasearch index_name: ENV.fetch('ALGOLIA_INDEX_NAME', nil), unless: :deleted? do
     attribute :title

@@ -8,7 +8,7 @@ ORIGINAL_TYPE = {
   akyus_untouched_score: "04. 幺樂団の歴史　～ Akyu's Untouched Score",
   commercial_books: "05. 商業書籍",
   other: "06. その他"
-}
+}.freeze
 
 def first_category(original)
   ORIGINAL_TYPE[original.original_type.to_sym]
