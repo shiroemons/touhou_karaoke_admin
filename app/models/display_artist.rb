@@ -77,6 +77,6 @@ class DisplayArtist < ApplicationRecord
         end
       end
     end
-    logger.debug("未登録アーティスト：" + error_artist) if error_artist.present?
+    logger.debug("未登録アーティスト：#{error_artist}") if error_artist.present?
   end
 end
