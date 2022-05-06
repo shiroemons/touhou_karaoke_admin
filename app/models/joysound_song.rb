@@ -12,17 +12,13 @@ class JoysoundSong < ApplicationRecord
       title = js.display_title.split("／").first
       url = js.url
       song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
-      if song.present? && !song.karaoke_delivery_models&.include?(smartphone_service)
-        song.karaoke_delivery_models << smartphone_service
-      end
+      song.karaoke_delivery_models << smartphone_service if song.present? && !song.karaoke_delivery_models&.include?(smartphone_service)
     end
     enabled_home_karaoke.each do |js|
       title = js.display_title.split("／").first
       url = js.url
       song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
-      if song.present? && !song.karaoke_delivery_models&.include?(home_karaoke)
-        song.karaoke_delivery_models << home_karaoke
-      end
+      song.karaoke_delivery_models << home_karaoke if song.present? && !song.karaoke_delivery_models&.include?(home_karaoke)
     end
   end
 
