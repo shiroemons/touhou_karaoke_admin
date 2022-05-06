@@ -7,6 +7,7 @@ karaoke_delivery_models = CSV.table('db/fixtures/karaoke_delivery_models.tsv', c
   order += 1
   exist = KaraokeDeliveryModel.exists?(name: kdm[:name], karaoke_type: kdm[:karaoke_type])
   next if exist
+
   insert_data << {
     name: kdm[:name],
     karaoke_type: kdm[:karaoke_type],

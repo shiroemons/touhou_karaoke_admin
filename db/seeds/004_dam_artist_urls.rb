@@ -5,6 +5,7 @@ now = Time.now
 CSV.table('db/fixtures/dam_artist_url.tsv', col_sep: "\t", converters: nil).each do |dau|
   exist = DamArtistUrl.exists?(url: dau[:url])
   next if exist
+
   insert_data << {
     url: dau[:url],
     created_at: now,
