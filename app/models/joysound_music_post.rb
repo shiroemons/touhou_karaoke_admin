@@ -93,5 +93,4 @@ class JoysoundMusicPost < ApplicationRecord
       end
     end
   end
-
 end
