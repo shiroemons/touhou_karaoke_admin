@@ -14,7 +14,7 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
     home_karaoke_enabled: Field::Boolean,
     url: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES

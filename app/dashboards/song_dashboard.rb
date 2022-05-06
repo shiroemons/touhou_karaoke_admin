@@ -34,7 +34,7 @@ class SongDashboard < Administrate::BaseDashboard
     songs_original_songs: Field::HasMany,
     songs_karaoke_delivery_models: Field::HasMany,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES

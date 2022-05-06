@@ -18,7 +18,7 @@ class DisplayArtistDashboard < Administrate::BaseDashboard
     circles: Field::HasMany,
     display_artists_circles: Field::HasMany,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES

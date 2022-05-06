@@ -11,7 +11,7 @@ class DamArtistUrlDashboard < Administrate::BaseDashboard
     id: Field::String.with_options(searchable: false),
     url: Field::String.with_options(truncate: 100),
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES

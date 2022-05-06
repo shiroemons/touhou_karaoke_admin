@@ -19,7 +19,7 @@ class SongsOriginalSongDashboard < Administrate::BaseDashboard
     ),
     original_song_code: Field::String,
     created_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
-    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T"),
+    updated_at: Field::DateTime.with_options(format: "%Y/%m/%d %T")
   }.freeze
 
   # COLLECTION_ATTRIBUTES
