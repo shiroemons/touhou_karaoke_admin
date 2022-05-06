@@ -120,7 +120,7 @@ class Song < ApplicationRecord
       v.push({ type: "YouTube", url: youtube_url, id: m[:id] })
     end
     if nicovideo_url.present?
-      m = %r{(?<=watch/)(?<id>(s|n)m\d+)(?!=&)}.match(nicovideo_url)
+      m = %r{(?<=watch/)(?<id>[s|n]m\d+)(?!=&)}.match(nicovideo_url)
       v.push({ type: "ニコニコ動画", url: nicovideo_url, id: m[:id] })
     end
     v

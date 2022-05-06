@@ -91,7 +91,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
     json[:videos].push({ type: "YouTube", url: song.youtube_url, id: m[:id] })
   end
   if song.nicovideo_url.present?
-    m = %r{(?<=watch/)(?<id>(s|n)m\d+)(?!=&)}.match(song.nicovideo_url)
+    m = %r{(?<=watch/)(?<id>[s|n]m\d+)(?!=&)}.match(song.nicovideo_url)
     json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url, id: m[:id] })
   end
   json[:touhou_music] = []
