@@ -39,9 +39,7 @@ class DamSong < ApplicationRecord
 
         description_selector = "div.result-item-inner > div.description"
         description = el.at_css(description_selector).inner_text
-        if display_artist.url.in?(EXCEPTION_URLS)
-          DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:) if description&.include?("東方")
-        elsif EXCEPTION_WORD.any? { |w| description.include?(w) }
+        if display_artist.url.in?(EXCEPTION_URLS) || EXCEPTION_WORD.any? { |w| description.include?(w) }
           DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:) if description&.include?("東方")
         else
           DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
