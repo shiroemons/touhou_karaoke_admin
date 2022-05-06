@@ -1,4 +1,4 @@
 AlgoliaSearch.configuration = {
-  application_id: ENV['ALGOLIA_APPLICATION_ID'],
-  api_key: ENV['ALGOLIA_API_KEY']
+  application_id: ENV.fetch('ALGOLIA_APPLICATION_ID', nil),
+  api_key: ENV.fetch('ALGOLIA_API_KEY', nil)
 }

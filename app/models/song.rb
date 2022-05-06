@@ -34,7 +34,7 @@ class Song < ApplicationRecord
     other: "06. その他"
   }
 
-  algoliasearch index_name: ENV['ALGOLIA_INDEX_NAME'], unless: :deleted? do
+  algoliasearch index_name: ENV.fetch('ALGOLIA_INDEX_NAME', nil), unless: :deleted? do
     attribute :title
     attribute :reading_title do
       title_reading || ''
