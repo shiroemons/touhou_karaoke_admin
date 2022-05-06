@@ -11,7 +11,7 @@ class JoysoundSong < ApplicationRecord
     enabled_smartphone_service.each do |js|
       title = js.display_title.split("／").first
       url = js.url
-      song = Song.find_by(title: title, url: url, karaoke_type: "JOYSOUND")
+      song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
       if song.present?
         unless song.karaoke_delivery_models&.include?(smartphone_service)
           song.karaoke_delivery_models << smartphone_service
@@ -21,7 +21,7 @@ class JoysoundSong < ApplicationRecord
     enabled_home_karaoke.each do |js|
       title = js.display_title.split("／").first
       url = js.url
-      song = Song.find_by(title: title, url: url, karaoke_type: "JOYSOUND")
+      song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
       if song.present?
         unless song.karaoke_delivery_models&.include?(home_karaoke)
           song.karaoke_delivery_models << home_karaoke
@@ -54,7 +54,7 @@ class JoysoundSong < ApplicationRecord
             home_karaoke = true
           end
         end
-        record = self.find_or_initialize_by(display_title: display_title, url: url)
+        record = self.find_or_initialize_by(display_title:, url:)
         record.smartphone_service_enabled = smartphone_service
         record.home_karaoke_enabled = home_karaoke
         if record.changed?

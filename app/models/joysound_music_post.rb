@@ -31,7 +31,7 @@ class JoysoundMusicPost < ApplicationRecord
           url = URI.join("https://www.joysound.com/", url_path).to_s
           display_title = el.at_css("div > a > h3").inner_text
           title = display_title.split("／").first
-          record = JoysoundMusicPost.find_by(artist: da.name, title: title)
+          record = JoysoundMusicPost.find_by(artist: da.name, title:)
           if record
             record.joysound_url = url
             record.save! if record.changed?
@@ -71,7 +71,7 @@ class JoysoundMusicPost < ApplicationRecord
         delivery_status_selector = "div > span.delivery_status"
         delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
         delivery_deadline_on = Time.parse(delivery_status).strftime("%F")
-        record = self.find_or_initialize_by(title: title, artist: artist, producer: producer, url: music_post_url)
+        record = self.find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
         record.delivery_deadline_on = delivery_deadline_on
         if record.new_record? || record.changed?
           record.save!

@@ -44,7 +44,7 @@ class DisplayArtist < ApplicationRecord
         browser.css(result_list_selector).each do |el|
           no_data = el.inner_text
           if no_data == "該当データがありません"
-            JoysoundMusicPost.where(artist: artist)&.destroy_all
+            JoysoundMusicPost.where(artist:)&.destroy_all
             DisplayArtist.find_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")&.destroy
           else
             next if DisplayArtist.exists?(name: artist, karaoke_type: "JOYSOUND(うたスキ)")
@@ -60,7 +60,7 @@ class DisplayArtist < ApplicationRecord
                 artist_el = browser.at_css(artist_selector)
                 name_reading = artist_el.inner_text.gsub(/[（）]/, "")
 
-                DisplayArtist.find_or_create_by!(name: display_artist, name_reading: name_reading, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
+                DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
               end
             end
           end

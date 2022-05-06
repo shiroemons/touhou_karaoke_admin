@@ -19,7 +19,7 @@ class DamArtistUrl < ApplicationRecord
       name_reading_selector = "#anchor-pagetop > main > div > div > div.main-content > div.artist-detail > div.artist-yomi"
       name_reading = @browser.at_css(name_reading_selector).inner_text.gsub(/[\[\] ]/, "")
       if name.present? && name_reading.present?
-        record = DisplayArtist.find_or_initialize_by(karaoke_type: "DAM", url: url)
+        record = DisplayArtist.find_or_initialize_by(karaoke_type: "DAM", url:)
         record.name = name
         record.name_reading = name_reading
         record.save! if record.changed?

@@ -42,15 +42,15 @@ class DamSong < ApplicationRecord
         description = el.at_css(description_selector).inner_text
         if display_artist.url.in?(EXCEPTION_URLS)
           if description&.include?("東方")
-            DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist: display_artist)
+            DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
           end
         else
           if EXCEPTION_WORD.any? { |w| description.include?(w) }
             if description&.include?("東方")
-              DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist: display_artist)
+              DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
             end
           else
-            DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist: display_artist)
+            DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
           end
         end
       end

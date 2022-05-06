@@ -153,7 +153,7 @@ class Song < ApplicationRecord
     JoysoundSong.all.find_each.with_index(1) do |js, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       title = js.display_title.split("／").first
-      unless Song.exists?(title: title, url: js.url, karaoke_type: "JOYSOUND")
+      unless Song.exists?(title:, url: js.url, karaoke_type: "JOYSOUND")
         logger.debug(title)
         joysound_song_page_parser(js.url)
       end
@@ -234,7 +234,7 @@ class Song < ApplicationRecord
           end
           kdm = delivery_models.map { |dm| @delivery_models[dm] }
 
-          song = Song.find_or_create_by!(title: title, display_artist: display_artist, song_number: song_number, karaoke_type: "JOYSOUND", url: @browser.current_url)
+          song = Song.find_or_create_by!(title:, display_artist:, song_number:, karaoke_type: "JOYSOUND", url: @browser.current_url)
           song.karaoke_delivery_model_ids = kdm
         end
       end
@@ -280,7 +280,7 @@ class Song < ApplicationRecord
           end
           kdm = delivery_models.map { |dm| @delivery_models[dm] }
 
-          song = Song.find_or_create_by!(title: title, display_artist: display_artist, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
+          song = Song.find_or_create_by!(title:, display_artist:, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
           song.karaoke_delivery_model_ids = kdm
           if song.song_with_joysound_utasuki.blank?
             song.create_song_with_joysound_utasuki(delivery_deadline_date: jmp.delivery_deadline_on, url: jmp.url)
@@ -316,7 +316,7 @@ class Song < ApplicationRecord
       song_number = @browser.at_css(song_number_selector).inner_text
 
       if title.present? && title_reading.present? && song_number.present?
-        record = Song.find_or_create_by!(title: title, title_reading: title_reading, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number: song_number, url: dam_song.url)
+        record = Song.find_or_create_by!(title:, title_reading:, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number:, url: dam_song.url)
 
         delivery_models = []
         delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"

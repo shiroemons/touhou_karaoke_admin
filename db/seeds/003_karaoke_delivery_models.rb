@@ -10,7 +10,7 @@ karaoke_delivery_models = CSV.table('db/fixtures/karaoke_delivery_models.tsv', c
     insert_data << {
       name: kdm[:name],
       karaoke_type: kdm[:karaoke_type],
-      order: order,
+      order:,
       created_at: now,
       updated_at: now
     }
