@@ -33,6 +33,7 @@ end
 gem 'ferrum'
 gem 'administrate'
 gem 'sidekiq'
+gem 'sidekiq-delay_extensions'
 gem 'sidekiq-limit_fetch'
 gem 'sinatra', require: false
 gem 'redis-namespace'

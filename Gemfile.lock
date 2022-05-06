@@ -275,6 +275,8 @@ GEM
       connection_pool (>= 2.2.2)
       rack (~> 2.0)
       redis (>= 4.2.0)
+    sidekiq-delay_extensions (6.4.1)
+      sidekiq (>= 6.4.1)
     sidekiq-limit_fetch (4.1.0)
       redis (>= 4.6.0)
       sidekiq (>= 4)
@@ -341,6 +343,7 @@ DEPENDENCIES
   sass-rails (>= 6)
   selenium-webdriver
   sidekiq
+  sidekiq-delay_extensions
   sidekiq-limit_fetch
   sinatra
   spring
