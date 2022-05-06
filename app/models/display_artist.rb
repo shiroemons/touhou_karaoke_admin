@@ -13,7 +13,7 @@ class DisplayArtist < ApplicationRecord
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = DisplayArtist.joysound.name_reading_empty.count
     DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       browser.goto(da.url)
 
       artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"

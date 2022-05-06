@@ -151,7 +151,7 @@ class Song < ApplicationRecord
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundSong.count
     JoysoundSong.all.each.with_index(1) do |js, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       title = js.display_title.split("／").first
       unless Song.exists?(title: title, url: js.url, karaoke_type: "JOYSOUND")
         logger.debug(title)
@@ -166,7 +166,7 @@ class Song < ApplicationRecord
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundMusicPost.count
     JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}% #{jmp.title}")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{jmp.title}")
       joysound_music_post_song_page_parser(jmp)
     end
     @browser.quit
@@ -176,7 +176,7 @@ class Song < ApplicationRecord
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = Song.music_post.count
     Song.music_post.each.with_index(1) do |song, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}% #{song.title}")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
       browser.goto(song.url)
       browser.network.wait_for_idle(duration: 1.0)
 
@@ -195,7 +195,7 @@ class Song < ApplicationRecord
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = DamSong.count
     DamSong.all.each.with_index(1) do |ds, i|
-      logger.debug("#{i}/#{total_count}: #{((i/total_count.to_f)*100).floor}%")
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
       next if song.song_with_dam_ouchikaraoke.present?
