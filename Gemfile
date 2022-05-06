@@ -21,7 +21,6 @@ group :development do
   gem 'web-console', '>= 3.3.0'
   gem 'listen', '~> 3.7'
   gem 'spring'
-  gem 'spring-watcher-listen', '~> 2.0.0'
 end
 
 group :test do
@@ -33,6 +32,7 @@ end
 gem 'ferrum'
 gem 'administrate'
 gem 'sidekiq'
+gem 'sidekiq-delay_extensions'
 gem 'sidekiq-limit_fetch'
 gem 'sinatra', require: false
 gem 'redis-namespace'

@@ -8,4 +8,4 @@ Sidekiq.configure_client do |config|
   config.redis = { url: url, namespace: 'touhou_karaoke_sidekiq' }
 end
 
-Sidekiq::Extensions.enable_delay!
+Sidekiq::DelayExtensions.enable_delay!
