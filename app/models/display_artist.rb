@@ -31,7 +31,7 @@ class DisplayArtist < ApplicationRecord
     base_url = "https://www.joysound.com/web/search/artist?match=1&keyword="
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000])
 
-    artists = JoysoundMusicPost.pluck(:artist).uniq.sort
+    artists = JoysoundMusicPost.distinct.pluck(:artist).sort
     error_artist = []
 
     artists.each do |artist|
