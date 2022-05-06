@@ -24,21 +24,21 @@ class JoysoundSongDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     display_title
-  smartphone_service_enabled
-  home_karaoke_enabled
-  url
+    smartphone_service_enabled
+    home_karaoke_enabled
+    url
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  display_title
-  smartphone_service_enabled
-  home_karaoke_enabled
-  url
-  created_at
-  updated_at
+    display_title
+    smartphone_service_enabled
+    home_karaoke_enabled
+    url
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

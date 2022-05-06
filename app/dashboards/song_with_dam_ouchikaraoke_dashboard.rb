@@ -25,17 +25,17 @@ class SongWithDamOuchikaraokeDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     song
-  url
+    url
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  song
-  url
-  created_at
-  updated_at
+    song
+    url
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

@@ -44,31 +44,31 @@ class SongDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     title
-  display_artist
-  karaoke_type
-  song_number
-  original_songs
+    display_artist
+    karaoke_type
+    song_number
+    original_songs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  title
-  title_reading
-  display_artist
-  karaoke_type
-  song_number
-  url
-  youtube_url
-  nicovideo_url
-  apple_music_url
-  original_songs
-  karaoke_delivery_models
-  song_with_joysound_utasuki
-  song_with_dam_ouchikaraoke
-  created_at
-  updated_at
+    title
+    title_reading
+    display_artist
+    karaoke_type
+    song_number
+    url
+    youtube_url
+    nicovideo_url
+    apple_music_url
+    original_songs
+    karaoke_delivery_models
+    song_with_joysound_utasuki
+    song_with_dam_ouchikaraoke
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -76,9 +76,9 @@ class SongDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     youtube_url
-  nicovideo_url
-  apple_music_url
-  original_songs
+    nicovideo_url
+    apple_music_url
+    original_songs
   ].freeze
 
   # COLLECTION_FILTERS

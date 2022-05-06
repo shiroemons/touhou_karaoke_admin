@@ -26,24 +26,24 @@ class JoysoundMusicPostDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     artist
-  title
-  producer
-  delivery_deadline_on
-  updated_at
+    title
+    producer
+    delivery_deadline_on
+    updated_at
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  title
-  artist
-  producer
-  delivery_deadline_on
-  url
-  joysound_url
-  created_at
-  updated_at
+    title
+    artist
+    producer
+    delivery_deadline_on
+    url
+    joysound_url
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

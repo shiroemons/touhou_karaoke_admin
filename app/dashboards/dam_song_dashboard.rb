@@ -26,19 +26,19 @@ class DamSongDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     title
-  display_artist
-  url
+    display_artist
+    url
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  title
-  display_artist
-  url
-  created_at
-  updated_at
+    title
+    display_artist
+    url
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

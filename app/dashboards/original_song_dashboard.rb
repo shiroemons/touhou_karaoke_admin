@@ -31,26 +31,26 @@ class OriginalSongDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     original
-  title
-  composer
-  track_number
-  is_duplicate
-  songs
+    title
+    composer
+    track_number
+    is_duplicate
+    songs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     code
-  original_code
-  original
-  title
-  composer
-  track_number
-  is_duplicate
-  songs
-  created_at
-  updated_at
+    original_code
+    original
+    title
+    composer
+    track_number
+    is_duplicate
+    songs
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

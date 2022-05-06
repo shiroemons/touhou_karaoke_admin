@@ -28,24 +28,24 @@ class DisplayArtistDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     name
-  name_reading
-  karaoke_type
-  circles
-  songs
+    name_reading
+    karaoke_type
+    circles
+    songs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  name
-  name_reading
-  karaoke_type
-  url
-  circles
-  songs
-  created_at
-  updated_at
+    name
+    name_reading
+    karaoke_type
+    url
+    circles
+    songs
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES

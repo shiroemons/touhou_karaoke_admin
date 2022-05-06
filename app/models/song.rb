@@ -22,8 +22,8 @@ class Song < ApplicationRecord
   PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに)
   ALLOWLIST = [
     "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
-      "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
-      "https://www.joysound.com/web/search/song/225456" # Crazy speed Hight 作曲:龍5150
+    "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
+    "https://www.joysound.com/web/search/song/225456" # Crazy speed Hight 作曲:龍5150
   ]
   ORIGINAL_TYPE = {
     windows: "01. Windows作品",

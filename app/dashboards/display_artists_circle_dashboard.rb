@@ -28,17 +28,17 @@ class DisplayArtistsCircleDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     display_artist
-  circle
+    circle
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-  display_artist
-  circle
-  created_at
-  updated_at
+    display_artist
+    circle
+    created_at
+    updated_at
   ].freeze
 
   # FORM_ATTRIBUTES
