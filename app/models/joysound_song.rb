@@ -40,9 +40,10 @@ class JoysoundSong < ApplicationRecord
         smartphone_service = false
         home_karaoke = false
         el.css("div > a > div > ul > li > span").each do |tag|
-          if tag.inner_text == "スマホサービス"
+          case tag.inner_text
+          when "スマホサービス"
             smartphone_service = true
-          elsif tag.inner_text == "家庭用カラオケ"
+          when "家庭用カラオケ"
             home_karaoke = true
           end
         end
