@@ -150,7 +150,7 @@ class Song < ApplicationRecord
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = JoysoundSong.count
-    JoysoundSong.all.each.with_index(1) do |js, i|
+    JoysoundSong.all.find_each.with_index(1) do |js, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       title = js.display_title.split("／").first
       unless Song.exists?(title: title, url: js.url, karaoke_type: "JOYSOUND")
@@ -194,7 +194,7 @@ class Song < ApplicationRecord
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
     total_count = DamSong.count
-    DamSong.all.each.with_index(1) do |ds, i|
+    DamSong.all.find_each.with_index(1) do |ds, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)

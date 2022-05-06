@@ -3,7 +3,7 @@ class DamArtistUrl < ApplicationRecord
 
   def self.fetch_dam_artist
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
-    DamArtistUrl.all.each do |dau|
+    DamArtistUrl.all.find_each do |dau|
       dam_artist_page_parser(dau.url)
     end
     @browser.quit
