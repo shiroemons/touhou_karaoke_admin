@@ -29,3 +29,7 @@ Rails/UnknownEnv:
 
 Rails/EnvironmentVariableAccess:
   AllowReads: true
+
+Rails/SkipsModelValidations:
+  Exclude:
+    - db/seeds/*
