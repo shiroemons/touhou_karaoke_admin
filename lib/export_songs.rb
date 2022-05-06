@@ -25,7 +25,7 @@ end
 
 def original_songs_json(original_songs)
   original_songs.map do |os|
-    { 
+    {
       title: os.title,
       original: {
         title: os.original.title,
