@@ -57,9 +57,9 @@ jobs:
       - name: Database setup
         run: |
           bundle exec rails db:create db:schema:load db:migrate
-      - name: Run Rubocop
-        run: |
-          bundle exec rubocop --parallel
+#      - name: Run Rubocop
+#        run: |
+#          bundle exec rubocop --parallel
       - name: Run test
         run: |
           bundle exec rails test
