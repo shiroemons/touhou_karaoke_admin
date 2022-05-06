@@ -53,7 +53,6 @@ class JoysoundMusicPost < ApplicationRecord
     browser.screenshot(path: "tmp/music_post.png")
   end
 
-
   def self.music_post_parser(browser, url)
     browser.goto(url)
     browser.network.wait_for_idle(duration: 1.0)

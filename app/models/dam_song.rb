@@ -23,7 +23,6 @@ class DamSong < ApplicationRecord
     @browser.quit
   end
 
-
   def self.dam_song_list_parser(display_artist)
     retry_count = 0
     url = display_artist.url + OPTION_PATH
