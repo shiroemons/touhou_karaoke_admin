@@ -6,12 +6,8 @@ CSV.table('db/fixtures/joysound_display_artist_with_circle.tsv', col_sep: "\t", 
   circle = da[:circle]
   display_artist = DisplayArtist.find_by(karaoke_type:, name: display_artist_name)
   if display_artist && circle.present?
-    if circle != @circle&.name
-      @circle = Circle.find_or_create_by(name: circle)
-    end
-    if @circle
-      display_artist.circles = [@circle]
-    end
+    @circle = Circle.find_or_create_by(name: circle) if circle != @circle&.name
+    display_artist.circles = [@circle] if @circle
   end
 end
 
@@ -21,12 +17,8 @@ CSV.table('db/fixtures/joysound_musicpost_display_artist_with_circle.tsv', col_s
   circle = da[:circle]
   display_artist = DisplayArtist.find_by(karaoke_type:, name: display_artist_name)
   if display_artist && circle.present?
-    if circle != @circle&.name
-      @circle = Circle.find_or_create_by(name: circle)
-    end
-    if @circle
-      display_artist.circles = [@circle]
-    end
+    @circle = Circle.find_or_create_by(name: circle) if circle != @circle&.name
+    display_artist.circles = [@circle] if @circle
   end
 end
 
@@ -36,12 +28,8 @@ CSV.table('db/fixtures/dam_display_artist_with_circle.tsv', col_sep: "\t", conve
   circle = da[:circle]
   display_artist = DisplayArtist.find_by(karaoke_type:, name: display_artist_name)
   if display_artist && circle.present?
-    if circle != @circle&.name
-      @circle = Circle.find_or_create_by(name: circle)
-    end
-    if @circle
-      display_artist.circles = [@circle]
-    end
+    @circle = Circle.find_or_create_by(name: circle) if circle != @circle&.name
+    display_artist.circles = [@circle] if @circle
   end
 end
 

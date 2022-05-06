@@ -95,9 +95,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
     json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url, id: m[:id] })
   end
   json[:touhou_music] = []
-  if song.apple_music_url.present?
-    json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url })
-  end
+  json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url }) if song.apple_music_url.present?
   jsons << json
 end
 

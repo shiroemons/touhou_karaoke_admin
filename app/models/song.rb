@@ -329,9 +329,7 @@ class Song < ApplicationRecord
         ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
         ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
 
-        if ouchikaraoke_url.present?
-          delivery_models.push("カラオケ@DAM")
-        end
+        delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
         kdm = delivery_models.map { |dm| @delivery_models[dm] }
         record.karaoke_delivery_model_ids = kdm
 

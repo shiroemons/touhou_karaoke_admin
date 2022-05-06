@@ -13,9 +13,7 @@ class JoysoundSong < ApplicationRecord
       url = js.url
       song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
       if song.present?
-        unless song.karaoke_delivery_models&.include?(smartphone_service)
-          song.karaoke_delivery_models << smartphone_service
-        end
+        song.karaoke_delivery_models << smartphone_service unless song.karaoke_delivery_models&.include?(smartphone_service)
       end
     end
     enabled_home_karaoke.each do |js|
@@ -23,9 +21,7 @@ class JoysoundSong < ApplicationRecord
       url = js.url
       song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
       if song.present?
-        unless song.karaoke_delivery_models&.include?(home_karaoke)
-          song.karaoke_delivery_models << home_karaoke
-        end
+        song.karaoke_delivery_models << home_karaoke unless song.karaoke_delivery_models&.include?(home_karaoke)
       end
     end
   end
@@ -57,9 +53,7 @@ class JoysoundSong < ApplicationRecord
         record = self.find_or_initialize_by(display_title:, url:)
         record.smartphone_service_enabled = smartphone_service
         record.home_karaoke_enabled = home_karaoke
-        if record.changed?
-          record.save!
-        end
+        record.save! if record.changed?
       end
 
       next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"

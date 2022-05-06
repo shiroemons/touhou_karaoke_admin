@@ -73,17 +73,13 @@ class JoysoundMusicPost < ApplicationRecord
         delivery_deadline_on = Time.parse(delivery_status).strftime("%F")
         record = self.find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
         record.delivery_deadline_on = delivery_deadline_on
-        if record.new_record? || record.changed?
-          record.save!
-        end
+        record.save! if record.new_record? || record.changed?
       end
       nav_selector = "#pager_bottom > div > a"
       next_link = nil
       browser.css(nav_selector).each do |el|
         next_box = el.at_css("span.next_page.page.box")&.inner_text
-        if next_box&.start_with?("次へ")
-          next_link = el
-        end
+        next_link = el if next_box&.start_with?("次へ")
       end
       if next_link.present?
         next_link.focus.click
