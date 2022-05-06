@@ -4,10 +4,10 @@ class DamSong < ApplicationRecord
   BASE_URL = "https://www.clubdam.com/karaokesearch/"
   OPTION_PATH = "&contentsCode=&serviceCode=&serialNo=AT00001&filterTitle=&sort=3"
 
-  EXCEPTION_URLS = %w(
+  EXCEPTION_URLS = %w[
     https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode=43477
-  )
-  EXCEPTION_WORD = %w(アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS)
+  ]
+  EXCEPTION_WORD = %w[アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS]
 
   def self.fetch_dam_songs
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
