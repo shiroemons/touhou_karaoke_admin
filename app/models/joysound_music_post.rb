@@ -40,12 +40,10 @@ class JoysoundMusicPost < ApplicationRecord
 
         next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"
         next_text = browser.at_css(next_selector)&.inner_text
-        if next_text == "次の20件"
-          browser.at_css(next_selector).at_css("a").focus.click
-          sleep(1.0)
-        else
-          break
-        end
+        break unless next_text == "次の20件"
+
+        browser.at_css(next_selector).at_css("a").focus.click
+        sleep(1.0)
       end
     end
   rescue StandardError => e
@@ -80,11 +78,10 @@ class JoysoundMusicPost < ApplicationRecord
         next_box = el.at_css("span.next_page.page.box")&.inner_text
         next_link = el if next_box&.start_with?("次へ")
       end
-      if next_link.present?
-        next_link.focus.click
-      else
-        break
-      end
+
+      break if next_link.blank?
+
+      next_link.focus.click
     end
   end
 end
