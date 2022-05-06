@@ -44,14 +44,12 @@ class DamSong < ApplicationRecord
           if description&.include?("東方")
             DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
           end
-        else
-          if EXCEPTION_WORD.any? { |w| description.include?(w) }
-            if description&.include?("東方")
+        elsif EXCEPTION_WORD.any? { |w| description.include?(w) }
+          if description&.include?("東方")
               DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
             end
           else
             DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
-          end
         end
       end
     rescue Ferrum::TimeoutError => e
