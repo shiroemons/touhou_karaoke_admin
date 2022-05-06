@@ -101,7 +101,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
   jsons << json
 end
 
-File.open("tmp/karaoke_songs.json","w") do |file|
+File.open("tmp/karaoke_songs.json", "w") do |file|
   file.puts(JSON.pretty_generate(jsons))
 end
 
