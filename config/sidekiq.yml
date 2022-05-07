@@ -4,5 +4,6 @@ production:
   :concurrency: 10
 :queues:
   - default
+  - fetch_dam_song
   - fetch_joysound_song
   - fetch_joysound_music_post

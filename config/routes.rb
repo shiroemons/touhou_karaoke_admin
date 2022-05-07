@@ -11,6 +11,9 @@ Rails.application.routes.draw do
     resources :karaoke_delivery_models
     resources :circles
     resources :display_artists
+    namespace :dam_songs do
+      resources :fetch_dam_songs, only: :index
+    end
     resources :dam_songs
     namespace :joysound_songs do
       resources :fetch_joysound_songs, only: :index
