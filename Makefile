@@ -60,5 +60,8 @@ export-for-algolia:
 export-karaoke-songs:
 	docker compose run --rm web bin/rails r lib/export_karaoke_songs.rb
 
+import-karaoke-songs:
+	docker compose run --rm web bin/rails r lib/import_karaoke_songs.rb
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
