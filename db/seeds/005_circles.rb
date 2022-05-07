@@ -6,10 +6,12 @@ return if circles.size == Circle.count
 insert_data = []
 now = Time.zone.now
 circles.each do |o|
+  next if Circle.exists?(name: o[:name])
+
   insert_data << {
     name: o[:name],
     created_at: now,
     updated_at: now
-  } unless Circle.exists?(name: o[:name])
+  }
 end
 Circle.insert_all(insert_data)
