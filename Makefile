@@ -63,5 +63,11 @@ export-karaoke-songs:
 import-karaoke-songs:
 	docker compose run --rm web bin/rails r lib/import_karaoke_songs.rb
 
+export-display-artists:
+	docker compose run --rm web bin/rails r lib/export_display_artists_with_circles.rb
+
+import-display-artists:
+	docker compose run --rm web bin/rails r lib/import_display_artists_with_circles.rb
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
