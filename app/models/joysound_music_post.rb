@@ -9,14 +9,14 @@ class JoysoundMusicPost < ApplicationRecord
     url_zun = "https://musicpost.joysound.com/musicList/page:1?target=5&method=1&keyword=ZUN&detail_show_flg=false&original=on&cover=on&sort=1"
     url_u2 = "https://musicpost.joysound.com/musicList/page:1?target=5&method=1&keyword=%E3%81%82%E3%81%8D%E3%82%84%E3%81%BE%E3%81%86%E3%81%AB&detail_show_flg=false&original=on&cover=on&sort=1"
 
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     music_post_parser(browser, url_zun)
     music_post_parser(browser, url_u2)
     browser.quit
   end
 
   def self.fetch_music_post_song_joysound_url
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000])
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
     search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songlist"
 
     display_artists = DisplayArtist.music_post
@@ -67,7 +67,7 @@ class JoysoundMusicPost < ApplicationRecord
         producer = el.at_css(producer_selector).inner_text.gsub("配信ユーザー:", "").squish
         delivery_status_selector = "div > span.delivery_status"
         delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
-        delivery_deadline_on = Time.zone.parse(delivery_status).strftime("%F")
+        delivery_deadline_on = Time.parse(delivery_status).in_time_zone.strftime("%F")
         record = find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
         record.delivery_deadline_on = delivery_deadline_on
         record.save! if record.new_record? || record.changed?

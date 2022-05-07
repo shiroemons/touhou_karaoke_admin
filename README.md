@@ -1,38 +1,101 @@
 # 東方カラオケ検索管理サイト
 
-## 初期設定
+## 使い方
 
-### DB作成
+### 初回の環境構築
 
-```sh
-bundle exec rails db:create
+Dockerイメージを作成して、 `bin/setup` を実行する。
+
+```shell
+make init
 ```
 
-### DBマイグレーション
+### bundle install
 
-```sh
-bundle exec rails db:migrate
+```shell
+make bundle
 ```
 
-### 初期データ登録
+### DB関連
 
-```sh
-bundle exec rails db:seed
+- DB init
+  ```shell
+  make dbinit
+  ```
+
+- DB console
+  ```shell
+  make dbconsole
+  ```
+
+- DB migrate
+  ```shell
+  make migrate
+  ```
+
+- DB rollback
+  ```shell
+  make rollback
+  ```
+
+- DB seed
+  ```shell
+  make dbseed
+  ```
+
+### サーバーの起動
+
+```shell
+make server
 ```
 
-## プロセスマネージャー `hivemind` をインストール
+実行すると http://localhost:3000 でアクセスできる。
 
-```sh
-brew install hivemind
+### コンソールの起動
+
+```shell
+make console
 ```
 
-### サーバー起動
+- sandbox
+  ```shell
+  make console-sandbox
+  ```
 
-```sh
-hivemind Procfile.dev
+### テストの実行
+
+````shell
+make minitest
+````
+
+### Rubocop
+
+- rubocop
+    ```shell
+    make rubocop
+    ```
+
+- rubocop-correct
+    ```shell
+    make rubocop-correct
+    ```
+
+- rubocop-correct-all
+    ```shell
+    make rubocop-correct-all
+    ```
+
+### Railsコマンド
+
+```shell
+docker-compose run --rm web bin/rails -T
 ```
 
-- http://localhost:3000/
+### 起動(docker compose up)
+
+```shell
+make start
+```
 
 ## 情報収集方法
 
@@ -72,5 +135,5 @@ JoysoundMusicPost.all.map { { title: _1.title } } - Song.music_post.map { { titl
 ## Algolia向けのJSONを生成
 
 ```shell
-bin/rails r lib/export_songs.rb
+docker-compose run --rm web bin/rails r lib/export_songs.rb
 ```

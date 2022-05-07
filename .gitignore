@@ -35,3 +35,10 @@ yarn-debug.log*
 *.rdb
 
 .env*
+
+# Ignore /bin
+/bin/*
+!/bin/bundle
+!/bin/rails
+!/bin/rake
+!/bin/spring

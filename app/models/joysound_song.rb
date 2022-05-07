@@ -25,7 +25,7 @@ class JoysoundSong < ApplicationRecord
   def self.fetch_joysound_song
     url = "https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=0#songlist"
 
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900])
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     browser.goto(url)
     browser.network.wait_for_idle(duration: 1.0)
 
