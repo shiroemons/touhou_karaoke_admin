@@ -69,5 +69,8 @@ export-display-artists:
 import-display-artists:
 	docker compose run --rm web bin/rails r lib/import_display_artists_with_circles.rb
 
+stats:
+	docker compose run --rm web bin/rails r lib/stats.rb
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
