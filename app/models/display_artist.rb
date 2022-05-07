@@ -15,15 +15,16 @@ class DisplayArtist < ApplicationRecord
     DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       browser.goto(da.url)
+      browser.network.wait_for_idle(duration: 1.0)
 
       artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
       artist_el = browser.at_css(artist_selector)
-      name_reading = artist_el.inner_text.gsub(/[（）]/, "")
-      if name_reading.present?
-        logger.debug(name_reading)
-        da.name_reading = name_reading
-        da.save!
-      end
+      name_reading = artist_el&.inner_text&.gsub(/[（）]/, "")
+      next if name_reading.blank?
+
+      logger.debug(name_reading)
+      da.name_reading = name_reading
+      da.save!
     end
   end
 
