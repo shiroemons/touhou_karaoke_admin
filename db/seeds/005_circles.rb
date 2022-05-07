@@ -10,6 +10,6 @@ circles.each do |o|
     name: o[:name],
     created_at: now,
     updated_at: now
-  }
+  } unless Circle.exists?(name: o[:name])
 end
 Circle.insert_all(insert_data)
