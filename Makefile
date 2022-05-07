@@ -54,5 +54,11 @@ rubocop-correct-all: ## Run rubocop (auto correct all)
 bash: ## Run bash in web container
 	docker compose run --rm web bash
 
+export-for-algolia:
+	docker compose run --rm web bin/rails r lib/export_songs.rb
+
+export-karaoke-songs:
+	docker compose run --rm web bin/rails r lib/export_karaoke_songs.rb
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'

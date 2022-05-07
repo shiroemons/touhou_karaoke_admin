@@ -135,5 +135,11 @@ JoysoundMusicPost.all.map { { title: _1.title } } - Song.music_post.map { { titl
 ## Algolia向けのJSONを生成
 
 ```shell
-docker-compose run --rm web bin/rails r lib/export_songs.rb
+make export-for-algolia
+```
+
+## カラオケ楽曲出力
+
+```shell
+make export-karaoke-songs
 ```
