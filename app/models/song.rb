@@ -336,13 +336,11 @@ class Song < ApplicationRecord
 
         if record.song_with_dam_ouchikaraoke.blank?
           record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url) if ouchikaraoke_url.blank?
+        elsif ouchikaraoke_url.present?
+          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
+          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
         else
-          if ouchikaraoke_url.present?
-            record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
-            record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
-          else
-            record.song_with_dam_ouchikaraoke.destroy!
-          end
+          record.song_with_dam_ouchikaraoke.destroy!
         end
       end
     rescue StandardError => e
