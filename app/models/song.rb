@@ -198,7 +198,7 @@ class Song < ApplicationRecord
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
-      next if song.song_with_dam_ouchikaraoke.present?
+      next if song&.song_with_dam_ouchikaraoke.present?
 
       dam_song_page_parser(ds)
     end
