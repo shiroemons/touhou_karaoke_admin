@@ -326,19 +326,23 @@ class Song < ApplicationRecord
 
         ouchikaraoke_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"
         ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
-        ouchikaraoke_url = ouchikaraoke_tag&.attribute('href')&.gsub(/^.*redirectUrl=/, "")
+        ouchikaraoke_url = ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
 
         delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
         kdm = delivery_models.map { |dm| @delivery_models[dm] }
         record.karaoke_delivery_model_ids = kdm
 
-        return if ouchikaraoke_url.blank?
+        return if ouchikaraoke_url.blank? && record.song_with_dam_ouchikaraoke.blank?
 
         if record.song_with_dam_ouchikaraoke.blank?
-          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
+          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url) if ouchikaraoke_url.blank?
         else
-          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
-          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
+          if ouchikaraoke_url.present?
+            record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
+            record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
+          else
+            record.song_with_dam_ouchikaraoke.destroy!
+          end
         end
       end
     rescue StandardError => e
