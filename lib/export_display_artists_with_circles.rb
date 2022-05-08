@@ -1,7 +1,8 @@
+total_count = DisplayArtist.count
 File.open('tmp/display_artists_with_circles.tsv', 'w') do |f|
   f.puts "karaoke_type\tname\tname_reading\turl\tcircles"
-  DisplayArtist.includes(:circles).order(:karaoke_type).each do |artist|
-    next if artist.url == 'https://www.joysound.com/web/search/artist/'
+  DisplayArtist.includes(:circles).order(:karaoke_type).each.with_index(1) do |artist, i|
+    print "\r#{i}/#{total_count}: Progress: #{(i * 100.0 / total_count).round(1)}%"
 
     karaoke_type = artist.karaoke_type
     name = artist.name

@@ -1,7 +1,13 @@
 require 'csv'
 
 karaoke_songs = CSV.table('tmp/karaoke_songs.tsv', col_sep: "\t", converters: nil, liberal_parsing: true)
-karaoke_songs.each do |karaoke_song|
+
+song_total = Song.count
+total_count = karaoke_songs.size
+
+karaoke_songs.each.with_index(1) do |karaoke_song, i|
+  print "\rSongTotal:#{song_total}\t#{i}/#{total_count}: Progress: #{(i * 100.0 / total_count).round(1)}%"
+
   karaoke_type = karaoke_song[:karaoke_type]
   url = karaoke_song[:url]
   original_songs = karaoke_song[:original_songs]

@@ -1,6 +1,10 @@
+total_count = Song.count
+
 File.open('tmp/karaoke_songs.tsv', 'w') do |f|
   f.puts "karaoke_type\tsong_number\ttitle\turl\toriginal_songs\tyoutube_url\tnicovideo_url\tapple_music_url"
-  Song.includes(:original_songs).order(:karaoke_type).each do |song|
+  Song.includes(:original_songs).order(:karaoke_type).each.with_index(1) do |song, i|
+    print "\r#{i}/#{total_count}: Progress: #{(i * 100.0 / total_count).round(1)}%"
+
     karaoke_type = song.karaoke_type
     song_number = song.song_number
     title = song.title
