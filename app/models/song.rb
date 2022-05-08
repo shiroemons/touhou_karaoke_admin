@@ -160,7 +160,8 @@ class Song < ApplicationRecord
     end
 
     ALLOWLIST.each do |url|
-      next if Song.exists?(url: url, karaoke_type: "JOYSOUND")
+      next if Song.exists?(url:, karaoke_type: "JOYSOUND")
+
       joysound_song_page_parser(url)
     end
     @browser.quit
