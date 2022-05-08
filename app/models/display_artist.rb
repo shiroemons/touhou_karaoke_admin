@@ -40,6 +40,7 @@ class DisplayArtist < ApplicationRecord
       begin
         url = base_url + CGI.escape(artist)
         browser.goto(url)
+        browser.network.wait_for_idle(duration: 1.0)
 
         result_list_selector = "#searchresult > ul > li"
         browser.css(result_list_selector).each do |el|
@@ -52,18 +53,18 @@ class DisplayArtist < ApplicationRecord
 
             option = el.at_css("div > div > div.jp-cmp-list-inline-003").inner_text
             option.gsub!("ウィキペディア", "")
-            if option.blank?
-              display_artist = el.at_css("h3.jp-cmp-music-title-001").inner_text
-              display_artist.gsub!(" 新曲あり", "")
-              if artist == display_artist
-                el.at_css("a").focus.click
-                artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
-                artist_el = browser.at_css(artist_selector)
-                name_reading = artist_el.inner_text.gsub(/[（）]/, "")
+            next if option.present?
 
-                DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
-              end
-            end
+            display_artist = el.at_css("h3.jp-cmp-music-title-001").inner_text
+            display_artist.gsub!(" 新曲あり", "")
+            next if artist != display_artist
+
+            el.at_css("a").focus.click
+            artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
+            artist_el = browser.at_css(artist_selector)
+            name_reading = artist_el.inner_text.gsub(/[（）]/, "")
+
+            DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
           end
         end
       rescue Ferrum::NodeNotFoundError => e
