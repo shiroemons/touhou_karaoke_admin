@@ -248,7 +248,10 @@ class Song < ApplicationRecord
   def self.joysound_music_post_song_page_parser(jmp)
     retry_count = 0
     begin
-      return if jmp.joysound_url.blank?
+      if jmp.joysound_url.blank?
+        logger.debug("joysound_url is blank: #{jmp.title}")
+        return
+      end
 
       @browser.network.clear(:traffic)
       @browser.goto(jmp.joysound_url)
