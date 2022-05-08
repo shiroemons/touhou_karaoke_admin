@@ -48,14 +48,14 @@ def karaoke_delivery_models_json(song)
 end
 
 jsons = []
-Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:original]).each do |song|
+Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original]).each do |song|
   display_artist = song.display_artist
   original_songs = song.original_songs
   original_song_titles = original_songs.map(&:title)
   next if original_song_titles.include?("オリジナル")
   next if original_song_titles.include?("その他")
 
-  circle = display_artist.circles.first
+  circle_name = display_artist.circles.map(&:name).join(' / ')
   json = {
     objectID: song.id,
     title: song.title,
@@ -71,7 +71,7 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
     karaoke_type: song.karaoke_type,
     karaoke_delivery_models: karaoke_delivery_models_json(song),
     circle: {
-      name: circle&.name || ''
+      name: circle_name || ''
     },
     url: song.url
   }
