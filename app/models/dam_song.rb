@@ -28,7 +28,7 @@ class DamSong < ApplicationRecord
     url = display_artist.url + OPTION_PATH
     begin
       @browser.goto(url)
-      sleep(1.0)
+      @browser.network.wait_for_idle(duration: 1.0)
       song_list_selector = "#anchor-pagetop > main > div > div > div.main-content > div.result-wrap > ul > li"
       @browser.css(song_list_selector).each do |el|
         song_element_selector = "div.result-item-inner > div.song-name"

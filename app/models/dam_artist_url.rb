@@ -4,6 +4,8 @@ class DamArtistUrl < ApplicationRecord
   def self.fetch_dam_artist
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     DamArtistUrl.all.find_each do |dau|
+      next if DisplayArtist.exists?(karaoke_type: "DAM", url: dau.url)
+
       dam_artist_page_parser(dau.url)
     end
     @browser.quit
@@ -13,7 +15,7 @@ class DamArtistUrl < ApplicationRecord
     retry_count = 0
     begin
       @browser.goto(url)
-      sleep(1.0)
+      @browser.network.wait_for_idle(duration: 1.0)
       name_selector = "#anchor-pagetop > main > div > div > div.main-content > div.artist-detail > h2.artist-name"
       name = @browser.at_css(name_selector).inner_text
       name_reading_selector = "#anchor-pagetop > main > div > div > div.main-content > div.artist-detail > div.artist-yomi"
