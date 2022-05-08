@@ -23,6 +23,7 @@ class JoysoundMusicPost < ApplicationRecord
     display_artists.each do |da|
       url = da.url + search_option
       browser.goto(url)
+      browser.network.wait_for_idle(duration: 1.0)
 
       loop do
         song_list_selector = "#songlist > div.jp-cmp-music-list-001.jp-cmp-music-list-song-002 > ul > li"
