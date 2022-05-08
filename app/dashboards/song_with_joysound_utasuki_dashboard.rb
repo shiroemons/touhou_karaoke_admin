@@ -61,7 +61,7 @@ class SongWithJoysoundUtasukiDashboard < Administrate::BaseDashboard
   # Overwrite this method to customize how song with joysound utasukis are displayed
   # across all pages of the admin dashboard.
   #
-  # def display_resource(song_with_joysound_utasuki)
-  #   "SongWithJoysoundUtasuki ##{song_with_joysound_utasuki.id}"
-  # end
+  def display_resource(song_with_joysound_utasuki)
+    song_with_joysound_utasuki.song.title
+  end
 end

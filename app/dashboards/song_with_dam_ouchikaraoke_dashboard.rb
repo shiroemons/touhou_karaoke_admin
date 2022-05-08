@@ -58,7 +58,7 @@ class SongWithDamOuchikaraokeDashboard < Administrate::BaseDashboard
   # Overwrite this method to customize how song with dam ouchikaraokes are displayed
   # across all pages of the admin dashboard.
   #
-  # def display_resource(song_with_dam_ouchikaraoke)
-  #   "SongWithDamOuchikaraoke ##{song_with_dam_ouchikaraoke.id}"
-  # end
+  def display_resource(song_with_dam_ouchikaraoke)
+    song_with_dam_ouchikaraoke.song.title
+  end
 end
