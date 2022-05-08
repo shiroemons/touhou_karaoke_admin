@@ -18,6 +18,9 @@ class Song < ApplicationRecord
   scope :touhou_arrange, -> { includes(:original_songs).where.not(original_songs: { original_code: "0699" }) }
   scope :youtube, -> { where.not(youtube_url: "") }
   scope :apple_music, -> { where.not(apple_music_url: "") }
+  scope :youtube_music, -> { where.not(youtube_music_url: "") }
+  scope :spotify, -> { where.not(spotify_url: "") }
+  scope :line_music, -> { where.not(line_music_url: "") }
 
   PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに).freeze
   ALLOWLIST = [
