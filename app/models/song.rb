@@ -158,6 +158,11 @@ class Song < ApplicationRecord
         joysound_song_page_parser(js.url)
       end
     end
+
+    ALLOWLIST.each do |url|
+      next if Song.exists?(url: url, karaoke_type: "JOYSOUND")
+      joysound_song_page_parser(url)
+    end
     @browser.quit
   end
 
