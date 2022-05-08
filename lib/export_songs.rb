@@ -96,6 +96,9 @@ Song.includes(:display_artist, :karaoke_delivery_models, original_songs: [:origi
   end
   json[:touhou_music] = []
   json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url }) if song.apple_music_url.present?
+  json[:touhou_music].push({ type: "YouTube Music", url: song.youtube_music_url }) if song.youtube_music_url.present?
+  json[:touhou_music].push({ type: "Spotify", url: song.spotify_url }) if song.spotify_url.present?
+  json[:touhou_music].push({ type: "LINE MUSIC", url: song.line_music_url }) if song.line_music_url.present?
   jsons << json
 end
 
