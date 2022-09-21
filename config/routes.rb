@@ -1,6 +1,7 @@
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
+  mount Avo::Engine, at: Avo.configuration.root_path
   mount Sidekiq::Web, at: "/admin/sidekiq"
 
   root to: "admin/songs#index"
