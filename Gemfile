@@ -32,7 +32,6 @@ group :test do
   gem 'webdrivers'
 end
 
-gem 'administrate'
 gem 'algoliasearch-rails'
 gem 'avo'
 gem 'ferrum'
