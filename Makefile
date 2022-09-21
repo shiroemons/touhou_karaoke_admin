@@ -46,10 +46,10 @@ rubocop: ## Run rubocop
 	docker compose run --rm web bundle exec rubocop --parallel
 
 rubocop-correct: ## Run rubocop (auto correct)
-	docker compose run --rm web bundle exec rubocop --auto-correct
+	docker compose run --rm web bundle exec rubocop --autocorrect
 
 rubocop-correct-all: ## Run rubocop (auto correct all)
-	docker compose run --rm web bundle exec rubocop --auto-correct-all
+	docker compose run --rm web bundle exec rubocop --autocorrect-all
 
 bash: ## Run bash in web container
 	docker compose run --rm web bash
