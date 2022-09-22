@@ -29,8 +29,8 @@ class DisplayArtist < ApplicationRecord
   end
 
   def self.fetch_joysound_music_post_artist
-    base_url = "https://www.joysound.com/web/search/artist?match=1&keyword="
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
+    url = "https://www.joysound.com/web/"
+    browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
 
     artists = JoysoundMusicPost.distinct.pluck(:artist).sort
     error_artist = []
@@ -38,9 +38,15 @@ class DisplayArtist < ApplicationRecord
     artists.each do |artist|
       rescue_count = 0
       begin
-        url = base_url + CGI.escape(artist)
         browser.goto(url)
-        browser.network.wait_for_idle(duration: 1.0)
+        # 検索対象を 歌手名 に変更
+        browser.at_xpath('//*[@id="jp-cmp-header-select-keywordtype"]').select(["artist"])
+        # 検索キーワードのinput
+        input = browser.at_xpath('//*[@id="jp-cmp-header-input-keyword"]')
+        # 検索キーワードに アーティスト名を入力し、Enterキーで検索
+        input.focus.type(artist, :Enter)
+        # 描画に少し時間がかかるため 1秒待つ
+        sleep(1.0)
 
         result_list_selector = "#searchresult > ul > li"
         browser.css(result_list_selector).each do |el|
