@@ -16,14 +16,15 @@ class JoysoundMusicPost < ApplicationRecord
   end
 
   def self.fetch_music_post_song_joysound_url
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
+    browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
     search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songlist"
 
     display_artists = DisplayArtist.music_post
     display_artists.each do |da|
       url = da.url + search_option
       browser.goto(url)
-      browser.network.wait_for_idle(duration: 1.0)
+      # 描画に少し時間がかかるため 1秒待つ
+      sleep(1.0)
 
       loop do
         song_list_selector = "#songlist > div.jp-cmp-music-list-001.jp-cmp-music-list-song-002 > ul > li"
