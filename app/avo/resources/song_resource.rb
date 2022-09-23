@@ -26,7 +26,7 @@ class SongResource < Avo::BaseResource
   field :line_music_url, as: :text, hide_on: [:index]
 
   field :karaoke_delivery_models, as: :has_many
-  field :original_songs, as: :has_many
+  field :original_songs, as: :has_many, searchable: true, attach_scope: -> { query.non_duplicated }
 
   field :song_with_dam_ouchikaraoke, as: :has_one, hide_on: [:index]
   field :song_with_joysound_utasuki, as: :has_one, hide_on: [:index]
