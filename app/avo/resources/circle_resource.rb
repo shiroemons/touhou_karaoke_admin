@@ -8,6 +8,10 @@ class CircleResource < Avo::BaseResource
   }
 
   field :id, as: :id, hide_on: [:index]
-  field :name, as: :text, required: true, sortable: true
+  field :name, as: :text, required: true, sortable: true, link_to_resource: true
+  field :display_artists_count, as: :number, only_on: [:index], index_text_align: :right
+  field :songs_count, as: :number, only_on: [:index], index_text_align: :right
+
   field :display_artists, as: :has_many
+  field :songs, as: :has_many
 end
