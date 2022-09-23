@@ -37,4 +37,5 @@ class SongResource < Avo::BaseResource
   action RefreshJoysoundMusicPostSong
 
   filter KaraokeTypeFilter
+  filter MissingOriginalSongsFilter
 end
