@@ -172,7 +172,7 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_music_post_song
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = JoysoundMusicPost.count
     JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{jmp.title}")
@@ -182,12 +182,13 @@ class Song < ApplicationRecord
   end
 
   def self.refresh_joysound_music_post_song
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = Song.music_post.count
     Song.music_post.each.with_index(1) do |song, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
       browser.goto(song.url)
-      browser.network.wait_for_idle(duration: 1.0)
+      # 描画に少し時間がかかるため 1秒待つ
+      sleep(1.0)
 
       error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
       error = browser.at_css(error_selector)&.inner_text
@@ -264,7 +265,9 @@ class Song < ApplicationRecord
 
       @browser.network.clear(:traffic)
       @browser.goto(jmp.joysound_url)
-      @browser.network.wait_for_idle(duration: 1.0)
+      # 描画に少し時間がかかるため 1秒待つ
+      sleep(1.0)
+
       error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
       error = @browser.at_css(error_selector)&.inner_text
       if error == "このページは存在しません。"
