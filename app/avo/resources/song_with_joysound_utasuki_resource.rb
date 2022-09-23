@@ -10,5 +10,5 @@ class SongWithJoysoundUtasukiResource < Avo::BaseResource
   field :id, as: :id, hide_on: [:index]
   field :song, as: :belongs_to
   field :delivery_deadline_date, as: :date, readonly: true, sortable: true
-  field :url, as: :text, readonly: true
+  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 end

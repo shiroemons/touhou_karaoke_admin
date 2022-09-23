@@ -16,14 +16,14 @@ class SongResource < Avo::BaseResource
   field :display_artist, as: :belongs_to, readonly: true, sortable: true
   field :title, as: :text, readonly: true, sortable: true
   field :title_reading, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true
+  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 
-  field :youtube_url, as: :text, hide_on: [:index]
-  field :nicovideo_url, as: :text, hide_on: [:index]
-  field :apple_music_url, as: :text, hide_on: [:index]
-  field :youtube_music_url, as: :text, hide_on: [:index]
-  field :spotify_url, as: :text, hide_on: [:index]
-  field :line_music_url, as: :text, hide_on: [:index]
+  field :youtube_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :nicovideo_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :apple_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :youtube_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :spotify_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :line_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 
   field :karaoke_delivery_models, as: :has_many
   field :original_songs, as: :has_many, searchable: true, attach_scope: -> { query.non_duplicated }
