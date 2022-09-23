@@ -55,8 +55,6 @@ class DisplayArtist < ApplicationRecord
             JoysoundMusicPost.where(artist:)&.destroy_all
             DisplayArtist.find_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")&.destroy
           else
-            next if DisplayArtist.exists?(name: artist, karaoke_type: "JOYSOUND(うたスキ)")
-
             option = el.at_css("div > div > div.jp-cmp-list-inline-003").inner_text
             option.gsub!("ウィキペディア", "")
             next if option.present?
@@ -65,12 +63,19 @@ class DisplayArtist < ApplicationRecord
             display_artist.gsub!(" 新曲あり", "")
             next if artist != display_artist
 
-            el.at_css("a").focus.click
+            artist_url = el.at_css("a").property("href")
+            next if DisplayArtist.exists?(name: artist, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
+
+            # 別ブラウザを起動する
+            sub_browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
+            sub_browser.goto(artist_url)
+            sleep(1.0)
             artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
-            artist_el = browser.at_css(artist_selector)
+            artist_el = sub_browser.at_css(artist_selector)
             name_reading = artist_el.inner_text.gsub(/[（）]/, "")
 
-            DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
+            DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: sub_browser.current_url)
+            sub_browser.quit
           end
         end
       rescue Ferrum::NodeNotFoundError => e
