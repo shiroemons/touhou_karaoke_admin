@@ -35,8 +35,3 @@ gem 'algoliasearch-rails'
 gem 'avo'
 gem 'ferrum'
 gem 'ransack'
-gem 'redis-namespace'
-gem 'sidekiq'
-gem 'sidekiq-delay_extensions'
-gem 'sidekiq-limit_fetch'
-gem 'sinatra', require: false

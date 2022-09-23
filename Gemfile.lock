@@ -202,8 +202,6 @@ GEM
     multi_json (1.15.0)
     multi_xml (0.6.0)
     multipart-post (2.2.3)
-    mustermann (2.0.2)
-      ruby2_keywords (~> 0.0.1)
     net-http-persistent (4.0.1)
       connection_pool (~> 2.2)
     net-imap (0.2.3)
@@ -237,8 +235,6 @@ GEM
       activesupport (>= 3.0.0)
     racc (1.6.0)
     rack (2.2.4)
-    rack-protection (2.2.2)
-      rack
     rack-proxy (0.7.2)
       rack
     rack-test (2.0.2)
@@ -278,9 +274,6 @@ GEM
     rb-fsevent (0.11.1)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
-    redis (4.8.0)
-    redis-namespace (1.9.0)
-      redis (>= 4)
     regexp_parser (2.5.0)
     rexml (3.2.5)
     rubocop (1.36.0)
@@ -323,20 +316,6 @@ GEM
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
     semantic_range (3.0.0)
-    sidekiq (6.5.6)
-      connection_pool (>= 2.2.5)
-      rack (~> 2.0)
-      redis (>= 4.5.0, < 5)
-    sidekiq-delay_extensions (6.4.1)
-      sidekiq (>= 6.4.1)
-    sidekiq-limit_fetch (4.3.2)
-      redis (>= 4.6.0)
-      sidekiq (>= 4)
-    sinatra (2.2.2)
-      mustermann (~> 2.0)
-      rack (~> 2.2)
-      rack-protection (= 2.2.2)
-      tilt (~> 2.0)
     sixarm_ruby_unaccent (1.2.0)
     sprockets (4.1.1)
       concurrent-ruby (~> 1.0)
@@ -401,16 +380,11 @@ DEPENDENCIES
   puma (~> 5.6)
   rails (~> 7.0.4)
   ransack
-  redis-namespace
   rubocop
   rubocop-performance
   rubocop-rails
   sass-rails (>= 6)
   selenium-webdriver
-  sidekiq
-  sidekiq-delay_extensions
-  sidekiq-limit_fetch
-  sinatra
   web-console (>= 3.3.0)
   webdrivers
   webpacker (~> 5.4)
