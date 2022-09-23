@@ -12,7 +12,7 @@ class DisplayArtistResource < Avo::BaseResource
   field :name_reading, as: :text, readonly: true, sortable: true
   field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 
-  field :circles, as: :has_many
+  field :circles, as: :has_many, searchable: true
   field :songs, as: :has_many
   field :dam_songs, as: :has_many
 
