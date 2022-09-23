@@ -12,11 +12,11 @@ class SongResource < Avo::BaseResource
 
   field :id, as: :id, hide_on: [:index]
   field :karaoke_type, as: :text, readonly: true, sortable: true
-  field :song_number, as: :text, readonly: true, sortable: true
+  field :song_number, as: :text, readonly: true, hide_on: [:index]
   field :display_artist, as: :belongs_to, readonly: true, sortable: true
   field :title, as: :text, readonly: true, sortable: true, link_to_resource: true
-  field :title_reading, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :title_reading, as: :text, readonly: true, hide_on: [:index]
+  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }, hide_on: [:index]
 
   field :touhou?, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
   field :youtube_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
