@@ -69,6 +69,9 @@ export-display-artists:
 import-display-artists:
 	docker compose run --rm web bin/rails r lib/import_display_artists_with_circles.rb
 
+import-touhou-music:
+	docker compose run --rm web bin/rails r lib/import_touhou_music.rb
+
 stats:
 	docker compose run --rm web bin/rails r lib/stats.rb
 
