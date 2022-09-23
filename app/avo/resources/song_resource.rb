@@ -14,7 +14,7 @@ class SongResource < Avo::BaseResource
   field :karaoke_type, as: :text, readonly: true, sortable: true
   field :song_number, as: :text, readonly: true, sortable: true
   field :display_artist, as: :belongs_to, readonly: true, sortable: true
-  field :title, as: :text, readonly: true, sortable: true
+  field :title, as: :text, readonly: true, sortable: true, link_to_resource: true
   field :title_reading, as: :text, readonly: true, sortable: true
   field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 
