@@ -37,10 +37,15 @@ class Dashboard < Avo::Dashboards::BaseDashboard
 
   divider label: "JOYSOUND MUSIC POST"
   card SongsCount,
-       label: 'JOYSOUND MUSIC POST楽曲数(Songs)',
+       label: '原曲紐付け済み楽曲数(Songs)',
        options: {
          touhou: true,
          music_post: true
        }
-  card JoysoundMusicPostCount, label: 'JOYSOUND MUSIC POST楽曲数'
+  card SongsCount,
+       label: '全楽曲数(Songs)',
+       options: {
+         music_post: true
+       }
+  card JoysoundMusicPostCount, label: '楽曲数(JOYSOUND MUSIC POST)'
 end
