@@ -84,6 +84,8 @@ Avo.configure do |config|
   #   add_breadcrumb "Home", '/avo'
   # end
 
+  config.resource_controls_placement = :left
+
   ## == Menus ==
   config.main_menu = lambda {
     section "Dashboards", icon: "dashboards" do
