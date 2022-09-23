@@ -45,7 +45,7 @@ Avo.configure do |config|
   # config.default_view_type = :table
   # config.per_page = 24
   # config.per_page_steps = [12, 24, 48, 72]
-  # config.via_per_page = 8
+  config.via_per_page = 100
   # config.id_links_to_resource = false
   # config.cache_resources_on_index_view = true
 
