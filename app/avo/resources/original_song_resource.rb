@@ -13,5 +13,9 @@ class OriginalSongResource < Avo::BaseResource
   field :track_number, as: :number, readonly: true, index_text_align: :right, sortable: true
   field :is_duplicate, as: :boolean, readonly: true
 
+  field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
+    "[#{model.original_short_title}] #{model.title}"
+  end
+
   field :songs, as: :has_many
 end

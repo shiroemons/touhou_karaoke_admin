@@ -8,4 +8,8 @@ class OriginalSong < ApplicationRecord
              foreign_key: :original_code,
              primary_key: :code,
              inverse_of: :original_songs
+
+  delegate :short_title, to: :original, allow_nil: true, prefix: true
+
+  scope :non_duplicated, -> { where(is_duplicate: false) }
 end
