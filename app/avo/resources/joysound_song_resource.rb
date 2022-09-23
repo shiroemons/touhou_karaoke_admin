@@ -8,7 +8,7 @@ class JoysoundSongResource < Avo::BaseResource
 
   field :id, as: :id, hide_on: [:index]
   field :display_title, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true
+  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
   field :smartphone_service_enabled, as: :boolean, readonly: true
   field :home_karaoke_enabled, as: :boolean, readonly: true
 

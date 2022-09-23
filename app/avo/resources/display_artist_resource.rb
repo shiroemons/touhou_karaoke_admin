@@ -10,7 +10,7 @@ class DisplayArtistResource < Avo::BaseResource
   field :karaoke_type, as: :text, readonly: true, sortable: true
   field :name, as: :text, readonly: true, sortable: true
   field :name_reading, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true
+  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 
   field :circles, as: :has_many
   field :songs, as: :has_many
