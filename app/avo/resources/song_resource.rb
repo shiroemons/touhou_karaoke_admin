@@ -18,6 +18,14 @@ class SongResource < Avo::BaseResource
   field :title_reading, as: :text, readonly: true, sortable: true
   field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
 
+  field :touhou?, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :youtube_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :nicovideo_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :apple_music_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :youtube_music_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :spotify_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :line_music_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+
   field :youtube_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
   field :nicovideo_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
   field :apple_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }

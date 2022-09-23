@@ -79,6 +79,12 @@ class Song < ApplicationRecord
     attribute :videos
   end
 
+  def touhou?
+    return false if original_songs.blank?
+
+    original_songs.all? { _1.title != 'オリジナル' } && !original_songs.all? { _1.title == 'その他' }
+  end
+
   def first_category(original)
     ORIGINAL_TYPE[original.original_type.to_sym]
   end
