@@ -34,4 +34,5 @@ end
 gem 'algoliasearch-rails'
 gem 'avo'
 gem 'ferrum'
+gem 'pundit'
 gem 'ransack'
