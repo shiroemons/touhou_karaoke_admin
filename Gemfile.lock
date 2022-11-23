@@ -79,12 +79,11 @@ GEM
       algolia (< 3.0.0)
       json (>= 1.5.1)
     ast (2.4.2)
-    avo (2.19.0)
+    avo (2.20.0)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
       addressable
-      breadcrumbs_on_rails
       docile
       dry-initializer
       httparty
@@ -97,8 +96,6 @@ GEM
     bindex (0.8.1)
     bootsnap (1.13.0)
       msgpack (~> 1.2)
-    breadcrumbs_on_rails (4.1.0)
-      railties (>= 5.0)
     builder (3.2.4)
     byebug (11.1.3)
     capybara (3.38.0)
@@ -310,7 +307,7 @@ GEM
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.3.0)
-    view_component (2.75.0)
+    view_component (2.77.0)
       activesupport (>= 5.0.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
