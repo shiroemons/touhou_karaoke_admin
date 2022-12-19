@@ -4,5 +4,7 @@ class FetchJoysoundMusicPostArtist < Avo::BaseAction
 
   def handle(_args)
     DisplayArtist.fetch_joysound_music_post_artist
+    succeed 'Done!'
+    reload
   end
 end

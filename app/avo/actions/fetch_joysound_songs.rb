@@ -4,5 +4,7 @@ class FetchJoysoundSongs < Avo::BaseAction
 
   def handle(_args)
     Song.fetch_joysound_songs
+    succeed 'Done!'
+    reload
   end
 end

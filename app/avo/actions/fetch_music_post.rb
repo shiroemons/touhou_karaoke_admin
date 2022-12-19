@@ -4,5 +4,7 @@ class FetchMusicPost < Avo::BaseAction
 
   def handle(_args)
     JoysoundMusicPost.fetch_music_post
+    succeed 'Done!'
+    reload
   end
 end
