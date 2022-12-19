@@ -255,7 +255,8 @@ class Song < ApplicationRecord
       end
     rescue Ferrum::TimeoutError => e
       logger.error("self.joysound_song_page_parser: #{e}")
-      @browser.network.clear(:traffic)
+      @browser.quit
+      @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count += 1
       retry unless retry_count > 3
     end
@@ -312,7 +313,8 @@ class Song < ApplicationRecord
       end
     rescue Ferrum::TimeoutError => e
       logger.error("self.joysound_music_post_song_page_parser: #{e}")
-      @browser.network.clear(:traffic)
+      @browser.quit
+      @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count += 1
       retry unless retry_count > 3
     end

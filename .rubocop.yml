@@ -33,3 +33,7 @@ Rails/EnvironmentVariableAccess:
 Rails/SkipsModelValidations:
   Exclude:
     - db/seeds/*
+
+Style/SignalException:
+  Exclude:
+    - app/avo/actions/*

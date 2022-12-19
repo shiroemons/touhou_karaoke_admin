@@ -64,5 +64,23 @@ class JoysoundSong < ApplicationRecord
         break
       end
     end
+    browser.quit
+  end
+
+  def self.fetch_joysound_song_direct(url: nil)
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    browser.goto(url)
+    browser.network.wait_for_idle(duration: 1.0)
+
+    display_title_selector = "#jp-cmp-main > section:nth-child(2) > header > h1"
+    display_title = browser.at_css(display_title_selector).text
+
+    record = find_or_initialize_by(display_title:, url:)
+    smartphone_service = false
+    home_karaoke = false
+    record.smartphone_service_enabled = smartphone_service
+    record.home_karaoke_enabled = home_karaoke
+    record.save! if record.changed?
+    browser.quit
   end
 end

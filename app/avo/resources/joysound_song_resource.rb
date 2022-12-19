@@ -13,4 +13,5 @@ class JoysoundSongResource < Avo::BaseResource
   field :home_karaoke_enabled, as: :boolean, readonly: true
 
   action FetchJoysoundSong
+  action FetchJoysoundDetail
 end
