@@ -7,6 +7,9 @@ class DisplayArtistResource < Avo::BaseResource
   }
 
   field :id, as: :id, hide_on: [:index]
+  field :circle, as: :text, only_on: [:index], index_text_align: :center do |model|
+    model.circles.present? ? '✅' : ''
+  end
   field :karaoke_type, as: :text, readonly: true, sortable: true
   field :name, as: :text, readonly: true, sortable: true
   field :name_reading, as: :text, readonly: true, sortable: true
