@@ -62,9 +62,9 @@ class JoysoundMusicPost < ApplicationRecord
         music_post_url = el.at_css("a").property("href")
 
         title_selector = "div > span.music_name"
-        title = el.at_css(title_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ")
+        title = el.at_css(title_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ").strip
         artist_selector = "div > span.artist_name"
-        artist = el.at_css(artist_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ")
+        artist = el.at_css(artist_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ").strip
         producer_selector = "div > span.producer_name"
         producer = el.at_css(producer_selector).inner_text.gsub("配信ユーザー:", "").squish
         delivery_status_selector = "div > span.delivery_status"
