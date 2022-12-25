@@ -7,5 +7,6 @@ class DamArtistUrlResource < Avo::BaseResource
   }
 
   field :id, as: :id, hide_on: [:index]
-  field :url, as: :text, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :url, as: :text, hide_on: [:index, :show]
+  field :url, as: :text, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }, hide_on: [:new, :edit]
 end
