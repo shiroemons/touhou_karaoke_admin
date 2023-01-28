@@ -10,11 +10,9 @@ class DamSong < ApplicationRecord
   EXCEPTION_WORD = %w[アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS].freeze
 
   def self.fetch_dam_songs
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    DisplayArtist.dam.each do |da|
+    DisplayArtist.dam.order(id: :desc).each do |da|
       dam_song_list_parser(da) if da.url.present?
     end
-    @browser.quit
   end
 
   def self.fetch_dam_song(display_artist)
@@ -24,6 +22,7 @@ class DamSong < ApplicationRecord
   end
 
   def self.dam_song_list_parser(display_artist)
+    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     retry_count = 0
     url = display_artist.url + OPTION_PATH
     begin
@@ -45,7 +44,8 @@ class DamSong < ApplicationRecord
           DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
         end
       end
-    rescue Ferrum::TimeoutError => e
+      @browser.quit
+    rescue => e
       logger.error(e)
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
