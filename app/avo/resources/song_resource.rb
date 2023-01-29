@@ -39,6 +39,12 @@ class SongResource < Avo::BaseResource
   field :song_with_dam_ouchikaraoke, as: :has_one, hide_on: [:index]
   field :song_with_joysound_utasuki, as: :has_one, hide_on: [:index]
 
+  field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
+    "[#{model.karaoke_type}] #{model.title}"
+  end
+
+  action ExportMissingOriginalSongs
+  action ImportSongsWithOriginalSongs
   action FetchDamSongs
   action FetchJoysoundSongs
   action FetchJoysoundMusicPostSong
