@@ -203,7 +203,7 @@ GEM
       ast (~> 2.4.1)
     pg (1.4.5)
     public_suffix (5.0.1)
-    puma (6.0.1)
+    puma (6.1.1)
       nio4r (~> 2.0)
     pundit (2.3.0)
       activesupport (>= 3.0.0)
@@ -345,7 +345,7 @@ DEPENDENCIES
   jbuilder (~> 2.11)
   listen (~> 3.7)
   pg (>= 0.18, < 2.0)
-  puma (~> 6.0)
+  puma (~> 6.1)
   pundit
   rails (~> 7.0.4)
   ransack
