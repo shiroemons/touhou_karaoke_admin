@@ -63,6 +63,10 @@ class SongPolicy < ApplicationPolicy
     false
   end
 
+  def upload_attachments?
+    true
+  end
+
   class Scope < Scope
     def resolve
       scope.all

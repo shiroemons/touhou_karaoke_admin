@@ -22,11 +22,12 @@ class Song < ApplicationRecord
   scope :spotify, -> { where.not(spotify_url: "") }
   scope :line_music, -> { where.not(line_music_url: "") }
 
-  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに).freeze
+  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに U2).freeze
   ALLOWLIST = [
     "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
     "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
-    "https://www.joysound.com/web/search/song/225456" # Crazy speed Hight 作曲:龍5150
+    "https://www.joysound.com/web/search/song/225456", # Crazy speed Hight 作曲:龍5150
+    "https://www.joysound.com/web/search/song/225449"  # 愛き夜道 feat. ランコ(豚乙女)、雨天決行／魂音泉 作曲:U2，Coro
   ].freeze
   ORIGINAL_TYPE = {
     windows: "01. Windows作品",
@@ -150,14 +151,11 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_song(url = nil)
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     joysound_song_page_parser(url) if url.present?
-    @browser.quit
   end
 
   def self.fetch_joysound_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = JoysoundSong.count
     JoysoundSong.all.find_each.with_index(1) do |js, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
@@ -173,18 +171,15 @@ class Song < ApplicationRecord
 
       joysound_song_page_parser(url)
     end
-    @browser.quit
   end
 
   def self.fetch_joysound_music_post_song
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = JoysoundMusicPost.count
     JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{jmp.title}")
       joysound_music_post_song_page_parser(jmp)
     end
-    @browser.quit
   end
 
   def self.refresh_joysound_music_post_song
@@ -208,20 +203,19 @@ class Song < ApplicationRecord
 
   def self.fetch_dam_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = DamSong.count
-    DamSong.all.find_each.with_index(1) do |ds, i|
+    DamSong.all.find_each(order: :desc).with_index(1) do |ds, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
-      next if song&.song_with_dam_ouchikaraoke.present?
+      next if song.present?
 
       dam_song_page_parser(ds)
     end
-    @browser.quit
   end
 
   def self.joysound_song_page_parser(url)
+    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     retry_count = 0
     begin
       @browser.network.clear(:traffic)
@@ -253,16 +247,18 @@ class Song < ApplicationRecord
           song.karaoke_delivery_model_ids = kdm
         end
       end
+      @browser.quit
     rescue Ferrum::TimeoutError => e
       logger.error("self.joysound_song_page_parser: #{e}")
       @browser.quit
-      @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+      @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count += 1
       retry unless retry_count > 3
     end
   end
 
   def self.joysound_music_post_song_page_parser(jmp)
+    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     retry_count = 0
     begin
       if jmp.joysound_url.blank?
@@ -311,19 +307,20 @@ class Song < ApplicationRecord
           end
         end
       end
+      @browser.quit
     rescue Ferrum::TimeoutError => e
       logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.quit
-      @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+      @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count += 1
       retry unless retry_count > 3
     end
   end
 
   def self.dam_song_page_parser(dam_song)
+    @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     retry_count = 0
     begin
-      @browser.network.clear(:traffic)
       @browser.goto(dam_song.url)
       @browser.network.wait_for_idle(duration: 1.0)
 
@@ -366,9 +363,11 @@ class Song < ApplicationRecord
           record.song_with_dam_ouchikaraoke.destroy!
         end
       end
-    rescue StandardError => e
+      @browser.quit
+    rescue => e
       logger.error("self.dam_song_page_parser: #{e}")
-      @browser.network.clear(:traffic)
+      @browser.quit
+      @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count += 1
       retry unless retry_count > 3
     end
