@@ -51,7 +51,11 @@ class DamSong < ApplicationRecord
           song_path = song_el.at_css("a").attribute("href")
           song_url = URI.join(BASE_URL, song_path).to_s
           # logger.debug("#{song_title} - #{song_url}")
-          DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
+          dam_song = DamSong.find_or_create_by!(url: song_url) do |dam_song|
+            dam_song.title = song_title
+            dam_song.display_artist = display_artist
+          end
+          dam_song.update(title: song_title, display_artist:)
         end
 
         if @browser.css(song_list_selector).size != 100
@@ -85,12 +89,16 @@ class DamSong < ApplicationRecord
         song_path = song_el.at_css("a").attribute("href")
         song_url = URI.join(BASE_URL, song_path).to_s
 
+        return if display_artist.name == "田原俊彦" && song_title != "サヨナラはどこか蒼い"
+
         description_selector = "div.result-item-inner > div.description"
         description = el.at_css(description_selector).inner_text
-        if display_artist.url.in?(EXCEPTION_URLS) || EXCEPTION_WORD.any? { |w| description.include?(w) }
-          DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:) if description&.include?("東方")
-        else
-          DamSong.find_or_create_by!(title: song_title, url: song_url, display_artist:)
+        if !(display_artist.url.in?(EXCEPTION_URLS) || EXCEPTION_WORD.any? { |w| description.include?(w) }) || description&.include?("東方")
+          dam_song = DamSong.find_or_create_by!(url: song_url) do |dam_song|
+            dam_song.title = song_title
+            dam_song.display_artist = display_artist
+          end
+          dam_song.update!(title: song_title, display_artist: display_artist)
         end
       end
       @browser.quit

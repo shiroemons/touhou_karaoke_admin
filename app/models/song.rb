@@ -335,7 +335,12 @@ class Song < ApplicationRecord
       song_number = @browser.at_css(song_number_selector).inner_text
 
       if title.present? && title_reading.present? && song_number.present?
-        record = Song.find_or_create_by!(title:, title_reading:, karaoke_type: "DAM", display_artist: dam_song.display_artist, song_number:, url: dam_song.url)
+        record = Song.find_or_create_by!(karaoke_type: "DAM", song_number:, url: dam_song.url) do |song|
+          song.title = title
+          song.title_reading = title_reading
+          song.display_artist = dam_song.display_artist
+        end
+        record.update!(title:, title_reading:, display_artist: dam_song.display_artist)
 
         delivery_models = []
         delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
