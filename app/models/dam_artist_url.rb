@@ -27,7 +27,7 @@ class DamArtistUrl < ApplicationRecord
         record.save! if record.changed?
       end
       @browser.quit
-    rescue => e
+    rescue StandardError => e
       logger.error(e)
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })

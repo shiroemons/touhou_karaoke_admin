@@ -364,7 +364,7 @@ class Song < ApplicationRecord
         end
       end
       @browser.quit
-    rescue => e
+    rescue StandardError => e
       logger.error("self.dam_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })

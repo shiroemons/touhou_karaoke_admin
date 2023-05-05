@@ -62,7 +62,7 @@ class DamSong < ApplicationRecord
         logger.debug("Next page: #{url}#{page}")
         @browser.quit
       end
-    rescue => e
+    rescue StandardError => e
       logger.error(e)
       @browser.quit
       retry_count += 1
@@ -94,7 +94,7 @@ class DamSong < ApplicationRecord
         end
       end
       @browser.quit
-    rescue => e
+    rescue StandardError => e
       logger.error(e)
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })

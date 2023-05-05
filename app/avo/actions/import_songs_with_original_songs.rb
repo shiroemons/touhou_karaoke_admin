@@ -23,17 +23,17 @@ class ImportSongsWithOriginalSongs < Avo::BaseAction
       spotify_url = s[:spotify_url]
       line_music_url = s[:line_music_url]
       song = Song.find_by(id:)
-      if song.present? && original_songs.present?
-        original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
-        song.original_songs = original_song_list
-        song.youtube_url = youtube_url
-        song.nicovideo_url = nicovideo_url
-        song.apple_music_url = apple_music_url
-        song.youtube_music_url = youtube_music_url
-        song.spotify_url = spotify_url
-        song.line_music_url = line_music_url
-        song.save
-      end
+      next unless song.present? && original_songs.present?
+
+      original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
+      song.original_songs = original_song_list
+      song.youtube_url = youtube_url
+      song.nicovideo_url = nicovideo_url
+      song.apple_music_url = apple_music_url
+      song.youtube_music_url = youtube_music_url
+      song.spotify_url = spotify_url
+      song.line_music_url = line_music_url
+      song.save
     end
     succeed('Completed!')
     reload
