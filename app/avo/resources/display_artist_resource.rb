@@ -1,7 +1,7 @@
 class DisplayArtistResource < Avo::BaseResource
   self.title = :name
   self.translation_key = 'avo.resource_translations.display_artist'
-  self.includes = []
+  self.includes = [:circles]
   self.search_query = lambda {
     scope.ransack(name_cont: params[:q], m: "or").result(distinct: false)
   }
