@@ -12,4 +12,8 @@ class OriginalSong < ApplicationRecord
   delegate :short_title, to: :original, allow_nil: true, prefix: true
 
   scope :non_duplicated, -> { where(is_duplicate: false) }
+
+  def self.ransackable_attributes(_auth_object = nil)
+    ["title"]
+  end
 end

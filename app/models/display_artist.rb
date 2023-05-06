@@ -9,6 +9,10 @@ class DisplayArtist < ApplicationRecord
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
   scope :name_reading_empty, -> { where(name_reading: "") }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    ["name"]
+  end
+
   def self.fetch_joysound_artist
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = DisplayArtist.joysound.name_reading_empty.count

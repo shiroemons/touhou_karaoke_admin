@@ -5,6 +5,10 @@ class JoysoundSong < ApplicationRecord
   scope :enabled_smartphone_service, -> { where(smartphone_service_enabled: true) }
   scope :enabled_home_karaoke, -> { where(home_karaoke_enabled: true) }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    ["display_title"]
+  end
+
   def self.add_delivery_model
     smartphone_service = KaraokeDeliveryModel.find_by(karaoke_type: "JOYSOUND", name: "スマホサービス")
     home_karaoke = KaraokeDeliveryModel.find_by(karaoke_type: "JOYSOUND", name: "家庭用カラオケ")
