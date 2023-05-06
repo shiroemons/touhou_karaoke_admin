@@ -1,6 +1,10 @@
 class DamArtistUrl < ApplicationRecord
   validates :url, presence: true
 
+  def self.ransackable_attributes(_auth_object = nil)
+    ["url"]
+  end
+
   def self.fetch_dam_artist
     DamArtistUrl.all.find_each do |dau|
       next unless DisplayArtist.exists?(karaoke_type: "DAM", url: dau.url, name_reading: "")

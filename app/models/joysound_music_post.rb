@@ -5,14 +5,16 @@ class JoysoundMusicPost < ApplicationRecord
   validates :delivery_deadline_on, presence: true
   validates :url, presence: true
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[artist title]
+  end
+
   def self.fetch_music_post
     url_zun = "https://musicpost.joysound.com/musicList/page:1?target=5&method=1&keyword=ZUN&detail_show_flg=false&original=on&cover=on&sort=1"
     url_u2 = "https://musicpost.joysound.com/musicList/page:1?target=5&method=1&keyword=%E3%81%82%E3%81%8D%E3%82%84%E3%81%BE%E3%81%86%E3%81%AB&detail_show_flg=false&original=on&cover=on&sort=1"
 
-    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    music_post_parser(browser, url_zun)
-    music_post_parser(browser, url_u2)
-    browser.quit
+    music_post_parser(url_zun)
+    music_post_parser(url_u2)
   end
 
   def self.fetch_music_post_song_joysound_url
@@ -53,37 +55,48 @@ class JoysoundMusicPost < ApplicationRecord
     browser.screenshot(path: "tmp/music_post.png")
   end
 
-  def self.music_post_parser(browser, url)
-    browser.goto(url)
-    browser.network.wait_for_idle(duration: 1.0)
-    loop do
-      music_block_selector = "#box_music_list_bottom > div.music_block"
-      browser.css(music_block_selector).each do |el|
-        music_post_url = el.at_css("a").property("href")
+  def self.music_post_parser(url)
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    retry_count = 0
+    begin
+      browser.goto(url)
+      browser.network.wait_for_idle(duration: 1.0)
+      loop do
+        music_block_selector = "#box_music_list_bottom > div.music_block"
+        browser.css(music_block_selector).each do |el|
+          music_post_url = el.at_css("a").property("href")
 
-        title_selector = "div > span.music_name"
-        title = el.at_css(title_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ").strip
-        artist_selector = "div > span.artist_name"
-        artist = el.at_css(artist_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ").strip
-        producer_selector = "div > span.producer_name"
-        producer = el.at_css(producer_selector).inner_text.gsub("配信ユーザー:", "").squish
-        delivery_status_selector = "div > span.delivery_status"
-        delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
-        delivery_deadline_on = Time.parse(delivery_status).in_time_zone.strftime("%F")
-        record = find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
-        record.delivery_deadline_on = delivery_deadline_on
-        record.save! if record.new_record? || record.changed?
+          title_selector = "div > span.music_name"
+          title = el.at_css(title_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ").strip
+          artist_selector = "div > span.artist_name"
+          artist = el.at_css(artist_selector).inner_text.gsub(/[[:space:]]/, " ").gsub("  ", " ").strip
+          producer_selector = "div > span.producer_name"
+          producer = el.at_css(producer_selector).inner_text.gsub("配信ユーザー:", "").squish
+          delivery_status_selector = "div > span.delivery_status"
+          delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
+          delivery_deadline_on = Time.parse(delivery_status).in_time_zone.strftime("%F")
+          record = find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
+          record.delivery_deadline_on = delivery_deadline_on
+          record.save! if record.new_record? || record.changed?
+        end
+        nav_selector = "#pager_bottom > div > a"
+        next_link = nil
+        browser.css(nav_selector).each do |el|
+          next_box = el.at_css("span.next_page.page.box")&.inner_text
+          next_link = el if next_box&.start_with?("次へ")
+        end
+
+        break if next_link.blank?
+
+        next_link.focus.click
       end
-      nav_selector = "#pager_bottom > div > a"
-      next_link = nil
-      browser.css(nav_selector).each do |el|
-        next_box = el.at_css("span.next_page.page.box")&.inner_text
-        next_link = el if next_box&.start_with?("次へ")
-      end
-
-      break if next_link.blank?
-
-      next_link.focus.click
     end
+    browser.quit
+  rescue Ferrum::TimeoutError => e
+    logger.error("self.music_post_parser: #{e}")
+    browser.quit
+    browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    retry_count += 1
+    retry unless retry_count > 3
   end
 end

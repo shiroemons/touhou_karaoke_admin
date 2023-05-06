@@ -6,4 +6,8 @@ class Circle < ApplicationRecord
 
   delegate :count, to: :display_artists, prefix: true
   delegate :count, to: :songs, prefix: true
+
+  def self.ransackable_attributes(_auth_object = nil)
+    ["name"]
+  end
 end

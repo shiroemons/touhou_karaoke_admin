@@ -13,4 +13,8 @@ class Original < ApplicationRecord
            primary_key: :code,
            inverse_of: :original,
            dependent: :destroy
+
+  def self.ransackable_attributes(_auth_object = nil)
+    ["title"]
+  end
 end

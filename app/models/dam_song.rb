@@ -9,6 +9,10 @@ class DamSong < ApplicationRecord
   ].freeze
   EXCEPTION_WORD = %w[アニメ ゲーム 映画 Windows PlayStation PS Xbox ニンテンドーDS].freeze
 
+  def self.ransackable_attributes(_auth_object = nil)
+    ["title"]
+  end
+
   def self.fetch_dam_songs
     DisplayArtist.dam.order(id: :desc).each do |da|
       dam_song_list_parser(da) if da.url.present?
@@ -51,9 +55,9 @@ class DamSong < ApplicationRecord
           song_path = song_el.at_css("a").attribute("href")
           song_url = URI.join(BASE_URL, song_path).to_s
           # logger.debug("#{song_title} - #{song_url}")
-          dam_song = DamSong.find_or_create_by!(url: song_url) do |dam_song|
-            dam_song.title = song_title
-            dam_song.display_artist = display_artist
+          dam_song = DamSong.find_or_create_by!(url: song_url) do |song|
+            song.title = song_title
+            song.display_artist = display_artist
           end
           dam_song.update(title: song_title, display_artist:)
         end
@@ -89,17 +93,17 @@ class DamSong < ApplicationRecord
         song_path = song_el.at_css("a").attribute("href")
         song_url = URI.join(BASE_URL, song_path).to_s
 
-        return if display_artist.name == "田原俊彦" && song_title != "サヨナラはどこか蒼い"
+        next if display_artist.name == "田原俊彦" && song_title != "サヨナラはどこか蒼い"
 
         description_selector = "div.result-item-inner > div.description"
         description = el.at_css(description_selector).inner_text
-        if !(display_artist.url.in?(EXCEPTION_URLS) || EXCEPTION_WORD.any? { |w| description.include?(w) }) || description&.include?("東方")
-          dam_song = DamSong.find_or_create_by!(url: song_url) do |dam_song|
-            dam_song.title = song_title
-            dam_song.display_artist = display_artist
-          end
-          dam_song.update!(title: song_title, display_artist: display_artist)
+        next unless !(display_artist.url.in?(EXCEPTION_URLS) || EXCEPTION_WORD.any? { |w| description.include?(w) }) || description&.include?("東方")
+
+        dam_song = DamSong.find_or_create_by!(url: song_url) do |song|
+          song.title = song_title
+          song.display_artist = display_artist
         end
+        dam_song.update!(title: song_title, display_artist:)
       end
       @browser.quit
     rescue StandardError => e

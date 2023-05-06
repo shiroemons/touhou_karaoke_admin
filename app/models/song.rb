@@ -38,6 +38,10 @@ class Song < ApplicationRecord
     other: "06. その他"
   }.freeze
 
+  def self.ransackable_attributes(_auth_object = nil)
+    ["title"]
+  end
+
   algoliasearch index_name: ENV.fetch('ALGOLIA_INDEX_NAME', nil), unless: :deleted? do
     attribute :title
     attribute :reading_title do
