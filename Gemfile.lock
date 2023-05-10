@@ -79,7 +79,7 @@ GEM
       algolia (< 3.0.0)
       json (>= 1.5.1)
     ast (2.4.2)
-    avo (2.31.0)
+    avo (2.32.2)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
