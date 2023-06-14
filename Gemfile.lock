@@ -75,7 +75,7 @@ GEM
       faraday (>= 0.15, < 2.0)
       multi_json (~> 1.0)
       net-http-persistent
-    algoliasearch-rails (2.2.1)
+    algoliasearch-rails (2.2.2)
       algolia (< 3.0.0)
       json (>= 1.5.1)
     ast (2.4.2)
@@ -118,7 +118,7 @@ GEM
       railties (>= 3.2)
     dry-initializer (3.1.1)
     erubi (1.12.0)
-    faraday (1.10.0)
+    faraday (1.10.3)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
       faraday-excon (~> 1.1)
@@ -184,7 +184,7 @@ GEM
     multi_json (1.15.0)
     multi_xml (0.6.0)
     multipart-post (2.2.3)
-    net-http-persistent (4.0.1)
+    net-http-persistent (4.0.2)
       connection_pool (~> 2.2)
     net-imap (0.3.4)
       date
