@@ -74,7 +74,7 @@ Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_
       name: circle_name || ''
     },
     url: song.url,
-    updated_at_i: song.updated_at.to_i,
+    updated_at_i: song.updated_at.to_i
   }
   json[:song_number] = song.song_number if song.song_number.present?
   if song.song_with_joysound_utasuki.present?
