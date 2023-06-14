@@ -63,7 +63,7 @@ class SongPolicy < ApplicationPolicy
     false
   end
 
-  def upload_attachments?
+  def upload_tsv_file?
     true
   end
 
