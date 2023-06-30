@@ -1,9 +1,9 @@
-FROM ruby:3.2.2
+FROM ruby:3.2.2-bullseye
 
 WORKDIR /app
 
-# Using Node.js v16.x(LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+# Using Node.js v18.x(LTS)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 
 # Postgresql 14
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
