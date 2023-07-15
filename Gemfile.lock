@@ -80,7 +80,7 @@ GEM
       algolia (< 3.0.0)
       json (>= 1.5.1)
     ast (2.4.2)
-    avo (2.35.0)
+    avo (2.36.2)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
@@ -181,7 +181,7 @@ GEM
     net-smtp (0.3.3)
       net-protocol
     nio4r (2.5.9)
-    nokogiri (1.15.2)
+    nokogiri (1.15.3)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     pagy (6.0.4)
@@ -190,7 +190,7 @@ GEM
       ast (~> 2.4.1)
       racc
     pg (1.5.3)
-    public_suffix (5.0.1)
+    public_suffix (5.0.3)
     puma (6.3.0)
       nio4r (~> 2.0)
     pundit (2.3.0)
@@ -215,8 +215,9 @@ GEM
       activesupport (= 7.0.6)
       bundler (>= 1.15.0)
       railties (= 7.0.6)
-    rails-dom-testing (2.0.3)
-      activesupport (>= 4.2.0)
+    rails-dom-testing (2.1.1)
+      activesupport (>= 5.0.0)
+      minitest
       nokogiri (>= 1.6)
     rails-html-sanitizer (1.6.0)
       loofah (~> 2.21)
@@ -294,7 +295,7 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.4.2)
-    view_component (3.2.0)
+    view_component (3.4.0)
       activesupport (>= 5.2.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
