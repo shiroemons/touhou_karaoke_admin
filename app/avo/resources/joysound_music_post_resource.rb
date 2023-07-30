@@ -11,8 +11,8 @@ class JoysoundMusicPostResource < Avo::BaseResource
   field :artist, as: :text, readonly: true, sortable: true
   field :producer, as: :text, readonly: true, sortable: true
   field :delivery_deadline_on, as: :date, readonly: true, sortable: true
-  field :url, as: :text, readonly: true, sortable: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
-  field :joysound_url, as: :text, readonly: true, sortable: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :url, as: :text, readonly: true, sortable: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :joysound_url, as: :text, readonly: true, sortable: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
 
   field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
     "[#{model.artist}] #{model.title}"

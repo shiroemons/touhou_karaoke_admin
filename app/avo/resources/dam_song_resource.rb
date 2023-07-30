@@ -9,7 +9,7 @@ class DamSongResource < Avo::BaseResource
   field :id, as: :id, hide_on: [:index]
   field :display_artist, as: :belongs_to
   field :title, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :url, as: :text, readonly: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
 
   field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
     "[#{model.display_artist.name}] #{model.title}"

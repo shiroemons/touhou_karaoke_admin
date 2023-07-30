@@ -16,22 +16,29 @@ class SongResource < Avo::BaseResource
   field :display_artist, as: :belongs_to, readonly: true, sortable: true
   field :title, as: :text, readonly: true, sortable: true, link_to_resource: true
   field :title_reading, as: :text, readonly: true, hide_on: [:index]
-  field :url, as: :text, readonly: true, format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }, hide_on: [:index]
+  field :url, as: :text, readonly: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }, hide_on: [:index, :new, :edit]
 
-  field :touhou?, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :youtube_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :nicovideo_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :apple_music_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :youtube_music_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :spotify_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :line_music_url, as: :text, only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :touhou?, as: :text, name: 'touhou', only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
+  field :youtube_url, as: :text, only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
+  field :nicovideo_url, as: :text, only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
+  field :apple_music_url, as: :text, only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
+  field :youtube_music_url, as: :text, only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
+  field :spotify_url, as: :text, only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
+  field :line_music_url, as: :text, only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
 
-  field :youtube_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
-  field :nicovideo_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
-  field :apple_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
-  field :youtube_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
-  field :spotify_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
-  field :line_music_url, as: :text, hide_on: [:index], format_using: ->(url) { link_to(url, url, target: "_blank", rel: "noopener") }
+  field :youtube_url, as: :text, only_on: [:new, :edit]
+  field :nicovideo_url, as: :text, only_on: [:new, :edit]
+  field :apple_music_url, as: :text, only_on: [:new, :edit]
+  field :youtube_music_url, as: :text, only_on: [:new, :edit]
+  field :spotify_url, as: :text, only_on: [:new, :edit]
+  field :line_music_url, as: :text, only_on: [:new, :edit]
+
+  field :youtube_url, as: :text, hide_on: [:index, :new, :edit], format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :nicovideo_url, as: :text, hide_on: [:index, :new, :edit], format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :apple_music_url, as: :text, hide_on: [:index, :new, :edit], format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :youtube_music_url, as: :text, hide_on: [:index, :new, :edit], format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :spotify_url, as: :text, hide_on: [:index, :new, :edit], format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :line_music_url, as: :text, hide_on: [:index, :new, :edit], format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
 
   field :karaoke_delivery_models, as: :has_many
   field :original_songs, as: :has_many, searchable: true, attach_scope: -> { query.non_duplicated }
