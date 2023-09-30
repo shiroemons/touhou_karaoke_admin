@@ -161,7 +161,7 @@ class Song < ApplicationRecord
   def self.fetch_joysound_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     total_count = JoysoundSong.count
-    JoysoundSong.all.find_each.with_index(1) do |js, i|
+    JoysoundSong.find_each.with_index(1) do |js, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       title = js.display_title.split("／").first
       unless Song.exists?(title:, url: js.url, karaoke_type: "JOYSOUND")
@@ -208,7 +208,7 @@ class Song < ApplicationRecord
   def self.fetch_dam_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
     total_count = DamSong.count
-    DamSong.all.find_each(order: :desc).with_index(1) do |ds, i|
+    DamSong.find_each(order: :desc).with_index(1) do |ds, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
       logger.debug(ds.title)
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)

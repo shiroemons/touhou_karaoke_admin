@@ -6,7 +6,7 @@ class DamArtistUrl < ApplicationRecord
   end
 
   def self.fetch_dam_artist
-    DamArtistUrl.all.find_each do |dau|
+    DamArtistUrl.find_each do |dau|
       next unless DisplayArtist.exists?(karaoke_type: "DAM", url: dau.url, name_reading: "")
 
       dam_artist_page_parser(dau.url)
