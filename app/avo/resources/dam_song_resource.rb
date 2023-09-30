@@ -15,6 +15,6 @@ class DamSongResource < Avo::BaseResource
     "[#{model.display_artist.name}] #{model.title}"
   end
 
-  action FetchDamSong
+  # action FetchDamSong
   action FetchDamTouhouSongs
 end
