@@ -21,6 +21,9 @@ Rails:
 Rails/FilePath:
   Enabled: false
 
+Rails/FindEach:
+  Enabled: false
+
 Rails/UnknownEnv:
   Environments:
     - development
