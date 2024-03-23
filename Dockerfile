@@ -5,7 +5,7 @@ WORKDIR /app
 # Using Node.js v20.x(LTS)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 
-# Postgresql 14
+# PostgreSQL
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 RUN apt install curl ca-certificates gnupg
 RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
@@ -13,7 +13,7 @@ RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 # Add packages
 RUN apt-get update && apt-get install -y \
       git \
-      postgresql-client-14 \
+      postgresql-client-16 \
       nodejs \
       vim
 
