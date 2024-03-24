@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.2'
+ruby file: '.ruby-version'
 
 gem 'jbuilder', '~> 2.11'
 gem 'pg', '>= 0.18', '< 2.0'
