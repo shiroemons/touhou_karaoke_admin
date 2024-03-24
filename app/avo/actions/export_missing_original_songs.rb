@@ -9,7 +9,7 @@ class ExportMissingOriginalSongs < Avo::BaseAction
   def handle(_args)
     tsv_data = CSV.generate(col_sep: "\t") do |csv|
       csv << %w[id karaoke_type display_artist_name title original_songs youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url]
-      Song.includes(:display_artist, :original_songs).missing_original_songs.order(created_at: :desc).each do |song|
+      Song.includes(:display_artist, :original_songs).missing_original_songs.order('display_artists.name asc').order(title: :asc).each do |song|
         column_values = [
           song.id,
           song.karaoke_type,
