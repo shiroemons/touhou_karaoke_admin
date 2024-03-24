@@ -252,7 +252,7 @@ class Song < ApplicationRecord
         end
       end
       @browser.quit
-    rescue Ferrum::TimeoutError => e
+    rescue Ferrum::TimeoutError, Ferrum::PendingConnectionsError => e
       logger.error("self.joysound_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
@@ -312,7 +312,7 @@ class Song < ApplicationRecord
         end
       end
       @browser.quit
-    rescue Ferrum::TimeoutError => e
+    rescue Ferrum::TimeoutError, Ferrum::PendingConnectionsError => e
       logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
