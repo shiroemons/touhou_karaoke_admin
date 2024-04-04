@@ -160,13 +160,22 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    total_count = JoysoundSong.count
-    JoysoundSong.find_each.with_index(1) do |js, i|
-      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
-      title = js.display_title.split("／").first
-      unless Song.exists?(title:, url: js.url, karaoke_type: "JOYSOUND")
-        logger.debug(title)
-        joysound_song_page_parser(js.url)
+    joysound_song_ids = JoysoundSong.pluck(:id)
+    total_count = joysound_song_ids.count
+    current_index = 0 # 全体のインデックスを追跡するためのカウンタ
+    batch_size = 1000
+    joysound_song_ids.each_slice(batch_size) do |ids|
+      JoysoundSong.where(id: ids).then do |records|
+        Parallel.each_with_index(records, in_processes: 7) do |r, i|
+          global_index = current_index + i # 現在のグローバルインデックスを計算
+          logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
+          title = r.display_title.split("／").first
+          unless Song.exists?(title:, url: r.url, karaoke_type: "JOYSOUND")
+            logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{title}")
+            joysound_song_page_parser(r.url)
+          end
+        end
+        current_index += records.size # バッチのサイズ分だけ全体のインデックスをインクリメント
       end
     end
 
@@ -255,7 +264,10 @@ class Song < ApplicationRecord
         end
       end
       @browser.quit
-    rescue Ferrum::TimeoutError, Ferrum::PendingConnectionsError => e
+    rescue Ferrum::TimeoutError,
+           Ferrum::PendingConnectionsError,
+           Ferrum::StatusError,
+           Ferrum::NodeNotFoundError => e
       logger.error("self.joysound_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
@@ -299,8 +311,10 @@ class Song < ApplicationRecord
           title = el.at_css("div.jp-cmp-karaoke-details > h4").inner_text
 
           delivery_models = []
-          el.css("div.jp-cmp-karaoke-platform > ul > li").each do |kp|
-            delivery_models.push(kp.at_css("img").attribute("alt"))
+          el.css("div > div.jp-cmp-karaoke-platform > ul").each do |ul|
+            ul.css("li").each do |kp|
+              delivery_models.push(kp.at_css("img").attribute("alt"))
+            end
           end
           kdm = delivery_models.map { |dm| @delivery_models[dm] }
 

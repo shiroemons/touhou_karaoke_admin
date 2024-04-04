@@ -371,6 +371,7 @@ DEPENDENCIES
   ferrum
   jbuilder (~> 2.11)
   listen (~> 3.8)
+  parallel
   pg (>= 0.18, < 2.0)
   puma (~> 6.4)
   pundit
