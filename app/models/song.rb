@@ -5,7 +5,7 @@ class Song < ApplicationRecord
   has_one :song_with_joysound_utasuki, dependent: :destroy
 
   has_many :songs_karaoke_delivery_models, dependent: :destroy
-  has_many :karaoke_delivery_models, through: :songs_karaoke_delivery_models
+  has_many :karaoke_delivery_models, -> { order(order: :desc) }, through: :songs_karaoke_delivery_models, inverse_of: :songs
   has_many :songs_original_songs, dependent: :destroy
   has_many :original_songs, through: :songs_original_songs, inverse_of: :songs
 
@@ -242,8 +242,11 @@ class Song < ApplicationRecord
           song_number = el.at_css("div > div.jp-cmp-karaoke-details > div > dl > dd:nth-child(2)").inner_text
 
           delivery_models = []
-          el.css("div > div.jp-cmp-karaoke-platform > ul > li").each do |kp|
-            delivery_models.push(kp.at_css("img").attribute("alt"))
+          # 表示されている機種と隠れている機種も取得する
+          el.css("div > div.jp-cmp-karaoke-platform > ul").each do |ul|
+            ul.css("li").each do |kp|
+              delivery_models.push(kp.at_css("img").attribute("alt"))
+            end
           end
           kdm = delivery_models.map { |dm| @delivery_models[dm] }
 
