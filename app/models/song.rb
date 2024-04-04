@@ -226,14 +226,23 @@ class Song < ApplicationRecord
 
   def self.fetch_dam_songs
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    total_count = DamSong.count
-    DamSong.find_each(order: :desc).with_index(1) do |ds, i|
-      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
-      logger.debug(ds.title)
-      song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: ds.url)
-      next if song.present?
+    dam_song_ids = DamSong.order(created_at: :desc).pluck(:id)
+    total_count = dam_song_ids.count
+    current_index = 0 # 全体のインデックスを追跡するためのカウンタ
+    batch_size = 1000
+    dam_song_ids.each_slice(batch_size) do |ids|
+      DamSong.where(id: ids).then do |records|
+        Parallel.each_with_index(records, in_processes: 7) do |r, i|
+          global_index = current_index + i # 現在のグローバルインデックスを計算
+          logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
+          logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{r.title}")
+          song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: r.url)
+          next if song.present?
 
-      dam_song_page_parser(ds)
+          dam_song_page_parser(r)
+        end
+        current_index += records.size # バッチのサイズ分だけ全体のインデックスをインクリメント
+      end
     end
   end
 
