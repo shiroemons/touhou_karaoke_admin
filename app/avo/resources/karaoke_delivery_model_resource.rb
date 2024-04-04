@@ -7,7 +7,7 @@ class KaraokeDeliveryModelResource < Avo::BaseResource
   }
 
   field :id, as: :id, hide_on: [:index]
-  field :name, as: :text, readonly: true, sortable: true
-  field :karaoke_type, as: :text, readonly: true, sortable: true
-  field :order, as: :number, readonly: true, index_text_align: :right
+  field :name, as: :text, required: true, sortable: true
+  field :karaoke_type, required: true, as: :select, options: { 'DAM': 'DAM', 'JOYSOUND': 'JOYSOUND' }, display_with_value: true, placeholder: 'カラオケメーカーを選択してください', sortable: true
+  field :order, as: :number, index_text_align: :right
 end
