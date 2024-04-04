@@ -15,6 +15,10 @@ class KaraokeDeliveryModelPolicy < ApplicationPolicy
     true
   end
 
+  def reorder?
+    true
+  end
+
   class Scope < Scope
     def resolve
       scope.all

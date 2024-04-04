@@ -1,5 +1,6 @@
 class KaraokeDeliveryModel < ApplicationRecord
   self.implicit_order_column = "order"
+  acts_as_list column: :order
 
   has_many :songs_karaoke_delivery_models, dependent: :destroy
   has_many :songs, through: :songs_karaoke_delivery_models
