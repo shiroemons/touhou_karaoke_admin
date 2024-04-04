@@ -188,10 +188,20 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_music_post_song
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    total_count = JoysoundMusicPost.count
-    JoysoundMusicPost.order(:delivery_deadline_on).each.with_index(1) do |jmp, i|
-      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{jmp.title}")
-      joysound_music_post_song_page_parser(jmp)
+    joysound_music_post_ids = JoysoundMusicPost.pluck(:id)
+    total_count = joysound_music_post_ids.count
+    current_index = 0 # 全体のインデックスを追跡するためのカウンタ
+    batch_size = 1000
+    joysound_music_post_ids.each_slice(batch_size) do |ids|
+      JoysoundMusicPost.where(id: ids).then do |records|
+        Parallel.each_with_index(records, in_processes: 7) do |r, i|
+          global_index = current_index + i # 現在のグローバルインデックスを計算
+          logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
+          logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{r.title}")
+          joysound_music_post_song_page_parser(r)
+        end
+        current_index += records.size # バッチのサイズ分だけ全体のインデックスをインクリメント
+      end
     end
   end
 
