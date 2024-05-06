@@ -188,7 +188,7 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_music_post_song
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    joysound_music_post_ids = JoysoundMusicPost.pluck(:id)
+    joysound_music_post_ids = JoysoundMusicPost.order(created_at: :desc).pluck(:id)
     total_count = joysound_music_post_ids.count
     current_index = 0 # 全体のインデックスを追跡するためのカウンタ
     batch_size = 1000
