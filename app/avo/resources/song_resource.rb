@@ -50,6 +50,7 @@ class SongResource < Avo::BaseResource
     "[#{model.karaoke_type}] #{model.title}"
   end
 
+  action ExportSongs
   action ExportMissingOriginalSongs
   action ImportSongsWithOriginalSongs
   action FetchDamSongs
