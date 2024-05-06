@@ -13,7 +13,7 @@ class SongResource < Avo::BaseResource
   field :id, as: :id, hide_on: [:index]
   field :karaoke_type, as: :text, readonly: true, sortable: true
   field :song_number, as: :text, readonly: true, hide_on: [:index]
-  field :display_artist, as: :belongs_to, readonly: true, sortable: true
+  field :display_artist, as: :belongs_to, readonly: true, sortable: ->(query, direction) { query.order("display_artists.name #{direction}") }
   field :title, as: :text, readonly: true, sortable: true, link_to_resource: true
   field :title_reading, as: :text, readonly: true, hide_on: [:index]
   field :url, as: :text, readonly: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }, hide_on: %i[index new edit]
