@@ -13,15 +13,30 @@ class DamSong < ApplicationRecord
     ["title"]
   end
 
-  def self.fetch_dam_songs
-    DisplayArtist.dam.order(id: :desc).each do |da|
-      dam_song_list_parser(da) if da.url.present?
-    end
-  end
+  def self.fetch_dam_song(song_url)
+    raise "Not DAM URL" unless song_url.start_with?("https://www.clubdam.com/karaokesearch/songleaf.html?requestNo=")
 
-  def self.fetch_dam_song(display_artist)
     @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    dam_song_list_parser(display_artist) if display_artist.url.present?
+    @browser.goto(song_url)
+    @browser.network.wait_for_idle(duration: 1.0)
+
+    title_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
+    song_title = @browser.at_css(title_selector).inner_text
+
+    artist_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.song-detail > div.artist-detail"
+    artist_el = @browser.at_css(artist_selector)
+    artist_name = artist_el.inner_text
+    artist_path = artist_el.at_css("a").attribute("href")
+    artist_url = URI.join(BASE_URL, artist_path).to_s
+
+    display_artist = DisplayArtist.find_or_initialize_by(karaoke_type: "DAM", url: artist_url) do |da|
+      da.name = artist_name
+    end
+    dam_song = DamSong.find_or_create_by!(url: song_url) do |song|
+      song.title = song_title
+      song.display_artist = display_artist
+    end
+    dam_song.update(title: song_title, display_artist:)
     @browser.quit
   end
 

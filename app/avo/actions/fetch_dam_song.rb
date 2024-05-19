@@ -1,9 +1,15 @@
 class FetchDamSong < Avo::BaseAction
   self.name = "Fetch dam song"
   self.standalone = true
+  self.visible = -> { view == :index }
 
-  def handle(_args)
-    DamSong.fetch_dam_songs
+  field :dam_song_url, as: :text, placeholder: "https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="
+
+  def handle(args)
+    field = args.values_at(:fields).first
+    fail('DAMの楽曲URLではありません。') unless field['dam_song_url'].start_with?("https://www.clubdam.com/karaokesearch/songleaf.html?requestNo=")
+
+    DamSong.fetch_dam_song(field['dam_song_url'])
     succeed 'Done!'
     reload
   end

@@ -17,4 +17,5 @@ class DamSongResource < Avo::BaseResource
 
   # action FetchDamSong
   action FetchDamTouhouSongs
+  action FetchDamSong
 end
