@@ -12,6 +12,6 @@ class JoysoundSongResource < Avo::BaseResource
   field :smartphone_service_enabled, as: :boolean, readonly: true
   field :home_karaoke_enabled, as: :boolean, readonly: true
 
-  action FetchJoysoundSong
+  action FetchJoysoundTouhouSongs
   action FetchJoysoundDetail
 end
