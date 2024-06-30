@@ -36,7 +36,9 @@ class DisplayArtist < ApplicationRecord
     url = "https://www.joysound.com/web/"
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
 
-    artists = JoysoundMusicPost.distinct.pluck(:artist).sort
+    music_port_artists = JoysoundMusicPost.distinct.pluck(:artist).sort
+    exist_artists = DisplayArtist.music_post.distinct.pluck(:name).sort
+    artists = music_port_artists - exist_artists
     error_artist = []
 
     artists.each do |artist|
