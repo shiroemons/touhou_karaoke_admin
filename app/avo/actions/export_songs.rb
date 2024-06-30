@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'csv'
 
 class ExportSongs < Avo::BaseAction
   self.name = 'Export songs'
@@ -8,7 +9,7 @@ class ExportSongs < Avo::BaseAction
   def handle(args)
     models = args.values_at(:models).first
 
-    tsv_data = CSV.generate(col_sep: "\t") do |csv|
+    tsv_data = ::CSV.generate(col_sep: "\t") do |csv|
       csv << %w[id karaoke_type display_artist_name title original_songs youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url]
       models.each do |song|
         column_values = [

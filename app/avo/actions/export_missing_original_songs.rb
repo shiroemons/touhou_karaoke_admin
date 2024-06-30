@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'csv'
 
 class ExportMissingOriginalSongs < Avo::BaseAction
   self.name = 'Export missing original songs'
@@ -7,7 +8,7 @@ class ExportMissingOriginalSongs < Avo::BaseAction
   self.may_download_file = true
 
   def handle(_args)
-    tsv_data = CSV.generate(col_sep: "\t") do |csv|
+    tsv_data = ::CSV.generate(col_sep: "\t") do |csv|
       csv << %w[id karaoke_type display_artist_name title original_songs youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url]
       Song.includes(:display_artist, :original_songs).missing_original_songs.order('display_artists.name asc').order(title: :asc).each do |song|
         column_values = [
