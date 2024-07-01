@@ -51,6 +51,8 @@ jsons = []
 Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original]).each do |song|
   display_artist = song.display_artist
   original_songs = song.original_songs
+  next if original_songs.blank?
+
   original_song_titles = original_songs.map(&:title)
   next if original_song_titles.include?("オリジナル")
   next if original_song_titles.include?("その他")
