@@ -296,7 +296,7 @@ class Song < ApplicationRecord
   end
 
   def self.joysound_music_post_song_page_parser(jmp)
-    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     retry_count = 0
     begin
       if jmp.joysound_url.blank?
@@ -348,7 +348,7 @@ class Song < ApplicationRecord
         end
       end
       @browser.quit
-    rescue Ferrum::TimeoutError, Ferrum::PendingConnectionsError => e
+    rescue NoMethodError, Ferrum::TimeoutError, Ferrum::PendingConnectionsError => e
       logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
