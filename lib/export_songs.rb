@@ -48,7 +48,9 @@ def karaoke_delivery_models_json(song)
 end
 
 jsons = []
-Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original]).each do |song|
+Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original])
+    .where('songs.updated_at >= ?', 1.month.ago)
+    .each do |song|
   display_artist = song.display_artist
   original_songs = song.original_songs
   next if original_songs.blank?
