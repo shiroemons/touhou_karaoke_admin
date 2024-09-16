@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'csv'
 
 class ExportMissingOriginalSongs < Avo::BaseAction
