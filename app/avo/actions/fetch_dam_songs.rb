@@ -1,5 +1,5 @@
 class FetchDamSongs < Avo::BaseAction
-  self.name = "Fetch dam songs"
+  self.name = "DAMの楽曲を取得"
   self.standalone = true
 
   def handle(_args)

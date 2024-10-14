@@ -1,5 +1,5 @@
 class RefreshJoysoundMusicPostSong < Avo::BaseAction
-  self.name = "Refresh joysound music post song"
+  self.name = "JOYSOUNDミュージックポスト楽曲の更新"
   self.standalone = true
 
   def handle(_args)

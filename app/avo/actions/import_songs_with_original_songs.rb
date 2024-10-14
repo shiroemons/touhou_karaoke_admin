@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ImportSongsWithOriginalSongs < Avo::BaseAction
-  self.name = 'Import songs with original songs'
+  self.name = '原曲を含む楽曲のインポート'
   self.standalone = true
   self.visible = -> { view == :index }
 

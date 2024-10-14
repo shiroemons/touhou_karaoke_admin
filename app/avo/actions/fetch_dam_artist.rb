@@ -1,5 +1,5 @@
 class FetchDamArtist < Avo::BaseAction
-  self.name = "Fetch dam artist"
+  self.name = "DAMのアーティストを取得"
   self.standalone = true
 
   def handle(_args)

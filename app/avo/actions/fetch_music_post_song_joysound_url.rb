@@ -1,5 +1,5 @@
 class FetchMusicPostSongJoysoundUrl < Avo::BaseAction
-  self.name = "Fetch music post song joysound url"
+  self.name = "JOYSOUNDミュージックポストの楽曲URLを取得"
   self.standalone = true
 
   def handle(_args)

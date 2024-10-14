@@ -1,5 +1,5 @@
 class FetchJoysoundDetail < Avo::BaseAction
-  self.name = "Fetch joysound detail"
+  self.name = "URLからJOYSOUNDの楽曲を取得"
   self.standalone = true
   self.visible = -> { view == :index }
 

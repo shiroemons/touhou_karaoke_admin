@@ -1,5 +1,5 @@
 class FetchDamSong < Avo::BaseAction
-  self.name = "Fetch dam song"
+  self.name = "URLからDAMの楽曲を取得"
   self.standalone = true
   self.visible = -> { view == :index }
 

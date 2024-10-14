@@ -3,7 +3,7 @@
 require 'csv'
 
 class ExportSongs < Avo::BaseAction
-  self.name = 'Export songs'
+  self.name = '選択した楽曲をエクスポート'
   self.visible = -> { view == :index }
   self.may_download_file = true
 
