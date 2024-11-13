@@ -188,11 +188,26 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_music_post_song
     @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    joysound_music_post_ids = JoysoundMusicPost.order(created_at: :desc).pluck(:id)
-    total_count = joysound_music_post_ids.count
+    # JoysoundMusicPost の joysound_url と Song の music_post の url を比較して、差分 URL を取得
+    unmatched_urls = JoysoundMusicPost.pluck(:joysound_url) - Song.music_post.pluck(:url)
+
+    # 差分 URL に対応する JoysoundMusicPost の ID を取得
+    unmatched_post_ids = JoysoundMusicPost.where(joysound_url: unmatched_urls).pluck(:id)
+
+    # 1ヶ月以内の delivery_deadline_on より前の JoysoundMusicPost の ID を取得（昇順にソート）
+    upcoming_post_ids = JoysoundMusicPost
+                          .where('delivery_deadline_on < ?', 1.month.from_now)
+                          .order(delivery_deadline_on: :asc)
+                          .pluck(:id)
+
+    # 差分 ID を優先してソートする
+    sorted_post_ids = (unmatched_post_ids + upcoming_post_ids).uniq.sort_by do |id|
+      unmatched_post_ids.include?(id) ? 0 : 1
+    end
+    total_count = sorted_post_ids.count
     current_index = 0 # 全体のインデックスを追跡するためのカウンタ
     batch_size = 1000
-    joysound_music_post_ids.each_slice(batch_size) do |ids|
+    sorted_post_ids.each_slice(batch_size) do |ids|
       JoysoundMusicPost.where(id: ids).then do |records|
         Parallel.each_with_index(records, in_processes: 7) do |r, i|
           global_index = current_index + i # 現在のグローバルインデックスを計算
@@ -259,9 +274,9 @@ class Song < ApplicationRecord
 
       if composer.in?(PERMITTED_COMPOSERS) || ALLOWLIST.include?(url)
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
-        atirst_el = @browser.at_css(artist_selector)
-        artist_name = atirst_el.inner_text
-        artist_url = atirst_el.property("href")
+        artist_el = @browser.at_css(artist_selector)
+        artist_name = artist_el.inner_text
+        artist_url = artist_el.property("href")
         display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND", url: artist_url)
 
         songs_selector = "#karaokeDeliver > div > ul > li"
@@ -320,9 +335,9 @@ class Song < ApplicationRecord
         end
       else
         artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
-        atirst_el = @browser.at_css(artist_selector)
-        artist_name = atirst_el.inner_text
-        artist_url = atirst_el.property("href")
+        artist_el = @browser.at_css(artist_selector)
+        artist_name = artist_el.inner_text
+        artist_url = artist_el.property("href")
         display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
 
         song_block_selector = "#jp-cmp-karaoke-kyokupro > div.jp-cmp-kyokupuro-block"
@@ -348,7 +363,10 @@ class Song < ApplicationRecord
         end
       end
       @browser.quit
-    rescue NoMethodError, Ferrum::TimeoutError, Ferrum::PendingConnectionsError => e
+    rescue Ferrum::TimeoutError,
+      Ferrum::PendingConnectionsError,
+      Ferrum::StatusError,
+      Ferrum::NodeNotFoundError => e
       logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
