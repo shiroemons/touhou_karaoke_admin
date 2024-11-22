@@ -8,12 +8,14 @@ require:
 AllCops:
   NewCops: enable
   DisplayCopNames: true
+  SuggestExtensions: false
   Exclude:
     - db/schema.rb
     - vendor/**/*
     - tmp/**/*
     - .git/**/*
     - bin/*
+    - 'node_modules/**/*'
 
 Rails:
   Enabled: true

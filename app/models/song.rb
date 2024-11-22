@@ -196,9 +196,9 @@ class Song < ApplicationRecord
 
     # 1ヶ月以内の delivery_deadline_on より前の JoysoundMusicPost の ID を取得（昇順にソート）
     upcoming_post_ids = JoysoundMusicPost
-                          .where('delivery_deadline_on < ?', 1.month.from_now)
-                          .order(delivery_deadline_on: :asc)
-                          .pluck(:id)
+                        .where('delivery_deadline_on < ?', 1.month.from_now)
+                        .order(delivery_deadline_on: :asc)
+                        .pluck(:id)
 
     # 差分 ID を優先してソートする
     sorted_post_ids = (unmatched_post_ids + upcoming_post_ids).uniq.sort_by do |id|
@@ -364,9 +364,9 @@ class Song < ApplicationRecord
       end
       @browser.quit
     rescue Ferrum::TimeoutError,
-      Ferrum::PendingConnectionsError,
-      Ferrum::StatusError,
-      Ferrum::NodeNotFoundError => e
+           Ferrum::PendingConnectionsError,
+           Ferrum::StatusError,
+           Ferrum::NodeNotFoundError => e
       logger.error("self.joysound_music_post_song_page_parser: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
