@@ -87,7 +87,7 @@ class DamSong < ApplicationRecord
       end
     rescue StandardError => e
       logger.error(e)
-      @browser.quit
+      @browser&.quit
       retry_count += 1
       retry unless retry_count > 3
     end
