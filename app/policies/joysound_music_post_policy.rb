@@ -7,6 +7,10 @@ class JoysoundMusicPostPolicy < ApplicationPolicy
     true
   end
 
+  def update?
+    true
+  end
+
   def act_on?
     true
   end

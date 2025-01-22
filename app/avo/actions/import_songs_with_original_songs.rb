@@ -15,13 +15,13 @@ class ImportSongsWithOriginalSongs < Avo::BaseAction
     songs = CSV.table(field['tsv_file'].path, col_sep: "\t", converters: nil, liberal_parsing: true)
     songs.each do |s|
       id = s[:id]
-      youtube_url = s[:youtube_url]
-      nicovideo_url = s[:nicovideo_url]
-      original_songs = s[:original_songs]
-      apple_music_url = s[:apple_music_url]
-      youtube_music_url = s[:youtube_music_url]
-      spotify_url = s[:spotify_url]
-      line_music_url = s[:line_music_url]
+      youtube_url = s[:youtube_url].to_s
+      nicovideo_url = s[:nicovideo_url].to_s
+      original_songs = s[:original_songs].to_s
+      apple_music_url = s[:apple_music_url].to_s
+      youtube_music_url = s[:youtube_music_url].to_s
+      spotify_url = s[:spotify_url].to_s
+      line_music_url = s[:line_music_url].to_s
       song = Song.find_by(id:)
       next unless song.present? && original_songs.present?
 
