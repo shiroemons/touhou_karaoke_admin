@@ -21,7 +21,8 @@ class JoysoundMusicPost < ApplicationRecord
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
     search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songlist"
 
-    display_artists = DisplayArtist.music_post
+    artist_names = JoysoundMusicPost.where(joysound_url: "").pluck(:artist)
+    display_artists = DisplayArtist.music_post.where(name: artist_names)
     display_artists.each do |da|
       url = da.url + search_option
       browser.goto(url)
