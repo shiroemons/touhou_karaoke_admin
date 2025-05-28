@@ -48,8 +48,12 @@ def karaoke_delivery_models_json(song)
 end
 
 jsons = []
+one_month_ago = 1.month.ago
+
 Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original])
-    .where('songs.updated_at >= ?', 1.month.ago)
+    .left_joins(:karaoke_delivery_models)
+    .where('songs.updated_at >= ? OR karaoke_delivery_models.updated_at >= ?', one_month_ago, one_month_ago)
+    .distinct
     .each do |song|
   display_artist = song.display_artist
   original_songs = song.original_songs
