@@ -57,6 +57,7 @@ class SongResource < Avo::BaseResource
   action ExportMissingOriginalSongs
   action ImportSongsWithOriginalSongs
   action FetchDamSongs
+  action UpdateDamDeliveryModels
   action FetchJoysoundSongs
   action FetchJoysoundMusicPostSong
   action RefreshJoysoundMusicPostSong

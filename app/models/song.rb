@@ -418,7 +418,7 @@ class Song < ApplicationRecord
         return if ouchikaraoke_url.blank? && record.song_with_dam_ouchikaraoke.blank?
 
         if record.song_with_dam_ouchikaraoke.blank?
-          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url) if ouchikaraoke_url.blank?
+          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url) if ouchikaraoke_url.present?
         elsif ouchikaraoke_url.present?
           record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
           record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
@@ -429,6 +429,73 @@ class Song < ApplicationRecord
       @browser.quit
     rescue StandardError => e
       logger.error("self.dam_song_page_parser: #{e}")
+      @browser.quit
+      @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+      retry_count += 1
+      retry unless retry_count > 3
+    end
+  end
+
+  def self.update_dam_delivery_models
+    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    dam_songs = Song.dam.includes(:karaoke_delivery_models)
+    total_count = dam_songs.count
+    current_index = 0
+    batch_size = 1000
+
+    dam_songs.find_in_batches(batch_size:) do |batch|
+      Parallel.each_with_index(batch, in_processes: 7) do |song, i|
+        global_index = current_index + i
+        logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
+        logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{song.title}")
+
+        update_dam_song_delivery_models(song)
+      end
+      current_index += batch.size
+    end
+  end
+
+  def self.update_dam_song_delivery_models(song)
+    @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    retry_count = 0
+
+    begin
+      @browser.goto(song.url)
+      @browser.network.wait_for_idle(duration: 1.0)
+
+      delivery_models = []
+      delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
+      latest_model_element = @browser.at_css(delivery_model_selector)
+      delivery_models << latest_model_element.inner_text if latest_model_element
+
+      delivery_models_selector = "#model-list > li > a"
+      delivery_models_tag = @browser.css(delivery_models_selector)
+      delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
+
+      ouchikaraoke_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"
+      ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
+      ouchikaraoke_url = ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
+
+      delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
+      kdm = delivery_models.compact.filter_map { |dm| @delivery_models[dm] }
+
+      # 機種情報を更新
+      song.karaoke_delivery_model_ids = kdm if kdm.present?
+
+      # おうちカラオケ情報を更新
+      if ouchikaraoke_url.present?
+        if song.song_with_dam_ouchikaraoke.blank?
+          song.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
+        elsif song.song_with_dam_ouchikaraoke.url != ouchikaraoke_url
+          song.song_with_dam_ouchikaraoke.update(url: ouchikaraoke_url)
+        end
+      elsif song.song_with_dam_ouchikaraoke.present?
+        song.song_with_dam_ouchikaraoke.destroy!
+      end
+
+      @browser.quit
+    rescue StandardError => e
+      logger.error("self.update_dam_song_delivery_models: #{e}")
       @browser.quit
       @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count += 1
