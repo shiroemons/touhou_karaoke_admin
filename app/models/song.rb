@@ -517,4 +517,28 @@ class Song < ApplicationRecord
       retry unless retry_count > 3
     end
   end
+
+  def self.update_joysound_music_post_delivery_deadline_dates
+    # JOYSOUND(うたスキ)の楽曲で、song_with_joysound_utasukiが存在するものを取得
+    music_post_songs = Song.music_post.includes(:song_with_joysound_utasuki)
+                           .where.not(song_with_joysound_utasukis: { id: nil })
+
+    total_count = music_post_songs.count
+    updated_count = 0
+
+    music_post_songs.each.with_index(1) do |song, i|
+      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
+
+      # song_with_joysound_utasukiのurlからJoysoundMusicPostを検索
+      jmp = JoysoundMusicPost.find_by(url: song.song_with_joysound_utasuki.url)
+
+      if jmp && song.song_with_joysound_utasuki.delivery_deadline_date != jmp.delivery_deadline_on
+        song.song_with_joysound_utasuki.update!(delivery_deadline_date: jmp.delivery_deadline_on)
+        updated_count += 1
+        logger.debug("Updated delivery_deadline_date for: #{song.title}")
+      end
+    end
+
+    logger.info("Updated #{updated_count} songs out of #{total_count} total music post songs")
+  end
 end

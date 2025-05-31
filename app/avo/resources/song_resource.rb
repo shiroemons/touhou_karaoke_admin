@@ -61,6 +61,7 @@ class SongResource < Avo::BaseResource
   action FetchJoysoundSongs
   action FetchJoysoundMusicPostSong
   action RefreshJoysoundMusicPostSong
+  action UpdateJoysoundMusicPostDeliveryDeadlineDates
 
   filter KaraokeTypeFilter
   filter MissingOriginalSongsFilter
