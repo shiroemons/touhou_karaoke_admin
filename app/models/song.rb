@@ -477,7 +477,22 @@ class Song < ApplicationRecord
       ouchikaraoke_url = ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
 
       delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
-      kdm = delivery_models.compact.filter_map { |dm| @delivery_models[dm] }
+
+      # DBに存在しない機種を新規作成
+      kdm = delivery_models.compact.filter_map do |dm|
+        if @delivery_models[dm]
+          @delivery_models[dm]
+        else
+          # 新しい機種を作成（orderは acts_as_list により自動設定）
+          new_model = KaraokeDeliveryModel.create!(
+            name: dm,
+            karaoke_type: "DAM"
+          )
+          @delivery_models[dm] = new_model.id
+          logger.info("Created new KaraokeDeliveryModel: #{dm}")
+          new_model.id
+        end
+      end
 
       # 機種情報を更新
       song.karaoke_delivery_model_ids = kdm if kdm.present?
