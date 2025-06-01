@@ -7,7 +7,7 @@ class KaraokeDeliveryModel < ApplicationRecord
 
   validates :name, presence: true
   validates :karaoke_type, presence: true
-  validates :name, uniqueness: { scope: :karaoke_type }
+  validates :name, uniqueness: { scope: :karaoke_type } # rubocop:disable Rails/UniqueValidationWithoutIndex
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name karaoke_type]

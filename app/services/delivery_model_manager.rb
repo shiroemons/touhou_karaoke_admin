@@ -16,7 +16,7 @@ class DeliveryModelManager
   # 配信機種名からIDを取得（キャッシュ利用）
   def get_id(name, karaoke_type = nil)
     ensure_cache_fresh
-    
+
     # karaoke_typeが指定されていない場合は名前のみで検索
     if karaoke_type.nil?
       @cache.find { |key, _| key.first == name }&.last
@@ -28,7 +28,7 @@ class DeliveryModelManager
   # 複数の配信機種名からIDの配列を取得
   def get_ids(names, karaoke_type = nil)
     ensure_cache_fresh
-    
+
     names.filter_map { |name| get_id(name, karaoke_type) }
   end
 
@@ -46,7 +46,7 @@ class DeliveryModelManager
 
       # データベースから検索
       model = KaraokeDeliveryModel.find_by(name:, karaoke_type:)
-      
+
       if model
         # 見つかったらキャッシュに追加
         @cache[[name, karaoke_type]] = model.id
@@ -93,21 +93,19 @@ class DeliveryModelManager
   # キャッシュが有効か確認し、必要なら再読み込み
   def ensure_cache_fresh
     @mutex.synchronize do
-      if @cache_expires_at.nil? || Time.current > @cache_expires_at
-        load_cache
-      end
+      load_cache if @cache_expires_at.nil? || Time.current > @cache_expires_at
     end
   end
 
   # データベースからキャッシュを読み込み
   def load_cache
     @cache = KaraokeDeliveryModel
-      .pluck(:name, :karaoke_type, :id)
-      .each_with_object({}) do |(name, karaoke_type, id), hash|
-        hash[[name, karaoke_type]] = id
-      end
+             .pluck(:name, :karaoke_type, :id)
+             .each_with_object({}) do |(name, karaoke_type, id), hash|
+      hash[[name, karaoke_type]] = id
+    end
     @cache_expires_at = Time.current + CACHE_TTL.minutes
-    
-    Rails.logger.debug("DeliveryModelManager: Loaded #{@cache.size} delivery models into cache")
+
+    Rails.logger.debug { "DeliveryModelManager: Loaded #{@cache.size} delivery models into cache" }
   end
 end

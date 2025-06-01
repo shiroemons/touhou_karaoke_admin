@@ -4,7 +4,7 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
   setup do
     @manager = DeliveryModelManager.instance
     @manager.clear_cache
-    
+
     # テストデータの準備
     @existing_model = KaraokeDeliveryModel.create!(
       name: "LIVE DAM STADIUM",
@@ -38,7 +38,7 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
       karaoke_type: "DAM",
       order: 2
     )
-    
+
     ids = @manager.get_ids(["LIVE DAM STADIUM", "LIVE DAM Ai"], "DAM")
     assert_equal 2, ids.size
     assert_includes ids, @existing_model.id
@@ -54,7 +54,7 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
   test "find_or_create_id returns existing model id" do
     id = @manager.find_or_create_id("LIVE DAM STADIUM", "DAM")
     assert_equal @existing_model.id, id
-    
+
     # モデルが増えていないことを確認
     assert_equal 1, KaraokeDeliveryModel.count
   end
@@ -63,7 +63,7 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
     assert_difference 'KaraokeDeliveryModel.count', 1 do
       id = @manager.find_or_create_id("New Model", "JOYSOUND")
       assert_not_nil id
-      
+
       new_model = KaraokeDeliveryModel.find(id)
       assert_equal "New Model", new_model.name
       assert_equal "JOYSOUND", new_model.karaoke_type
@@ -84,17 +84,17 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
   test "cache is refreshed after TTL expires" do
     # 最初のアクセスでキャッシュを作成
     @manager.get_id("LIVE DAM STADIUM", "DAM")
-    
+
     # 新しいモデルを直接データベースに追加
     new_model = KaraokeDeliveryModel.create!(
       name: "Direct DB Model",
       karaoke_type: "DAM",
       order: 3
     )
-    
+
     # TTLが切れる前はキャッシュから取得できない
     assert_nil @manager.get_id("Direct DB Model", "DAM")
-    
+
     # TTLを過ぎた時間に設定してキャッシュをリフレッシュ
     travel DeliveryModelManager::CACHE_TTL.minutes + 1.second do
       id = @manager.get_id("Direct DB Model", "DAM")
@@ -106,7 +106,7 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
     threads = []
     ids = []
     mutex = Mutex.new
-    
+
     # 複数スレッドから同じモデルを作成しようとする
     10.times do
       threads << Thread.new do
@@ -114,13 +114,13 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
         mutex.synchronize { ids << id }
       end
     end
-    
+
     threads.each(&:join)
-    
+
     # すべて同じIDが返されることを確認
     assert_equal 10, ids.size
     assert_equal 1, ids.uniq.size
-    
+
     # データベースには1つしか作成されていないことを確認
     assert_equal 1, KaraokeDeliveryModel.where(name: "Concurrent Model", karaoke_type: "DAM").count
   end
@@ -132,13 +132,13 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
       karaoke_type: "JOYSOUND",
       order: 4
     )
-    
+
     # リフレッシュ前はキャッシュにない
     assert_nil @manager.get_id("Refresh Test Model", "JOYSOUND")
-    
+
     # 手動でキャッシュをリフレッシュ
     @manager.refresh_cache
-    
+
     # リフレッシュ後は取得できる
     id = @manager.get_id("Refresh Test Model", "JOYSOUND")
     assert_equal new_model.id, id
@@ -147,10 +147,10 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
   test "clear_cache removes all cached data" do
     # キャッシュを作成
     @manager.get_id("LIVE DAM STADIUM", "DAM")
-    
+
     # キャッシュをクリア
     @manager.clear_cache
-    
+
     # 次のアクセスでキャッシュが再作成される
     id = @manager.get_id("LIVE DAM STADIUM", "DAM")
     assert_equal @existing_model.id, id
