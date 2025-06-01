@@ -27,7 +27,7 @@ class JoysoundSong < ApplicationRecord
   end
 
   def self.fetch_joysound_touhou_songs
-    url = "https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=0#songlist"
+    url = Constants::Karaoke::Joysound::TOUHOU_GENRE_URL
 
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     browser.goto(url)

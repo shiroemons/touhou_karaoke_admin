@@ -1,0 +1,10 @@
+# DAMのWebページから情報を取得するためのCSSセレクタ定義
+selectors:
+  # 楽曲詳細ページ
+  song_detail:
+    title: "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
+    title_reading: "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.song-yomi"
+    song_number: "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.request-no > span"
+    latest_model: "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
+    model_list: "#model-list > li > a"
+    ouchikaraoke: "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"

@@ -3,16 +3,6 @@
 module Scrapers
   # DAM楽曲情報のスクレイピングを行うクラス
   class DamScraper < BaseScraper
-    # セレクタ定義
-    SELECTORS = {
-      title: "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2",
-      title_reading: "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.song-yomi",
-      song_number: "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.request-no > span",
-      latest_model: "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a",
-      model_list: "#model-list > li > a",
-      ouchikaraoke: "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"
-    }.freeze
-
     # DAM楽曲ページをスクレイピング
     def scrape_song_page(dam_song)
       with_retry(on_retry: ->(_e, _count) { reset_browser_manager(timeout: 10, process_timeout: 10) }) do
@@ -48,11 +38,20 @@ module Scrapers
 
     private
 
+    def load_selectors
+      yaml_path = Rails.root.join('config/selectors/dam.yml')
+      @selectors = YAML.load_file(yaml_path)['selectors']
+    end
+
+    def karaoke_type
+      "DAM"
+    end
+
     def extract_song_info
       {
-        title: browser_manager.find(SELECTORS[:title])&.inner_text,
-        title_reading: clean_title_reading(browser_manager.find(SELECTORS[:title_reading])&.inner_text),
-        song_number: browser_manager.find(SELECTORS[:song_number])&.inner_text
+        title: browser_manager.find(@selectors['song_detail']['title'])&.inner_text,
+        title_reading: clean_title_reading(browser_manager.find(@selectors['song_detail']['title_reading'])&.inner_text),
+        song_number: browser_manager.find(@selectors['song_detail']['song_number'])&.inner_text
       }
     end
 
@@ -87,11 +86,11 @@ module Scrapers
       models = []
 
       # 最新機種
-      latest_model = browser_manager.find(SELECTORS[:latest_model])
+      latest_model = browser_manager.find(@selectors['song_detail']['latest_model'])
       models << latest_model.inner_text if latest_model
 
       # その他の機種
-      browser_manager.find_all(SELECTORS[:model_list]).each do |model|
+      browser_manager.find_all(@selectors['song_detail']['model_list']).each do |model|
         models << model.inner_text
       end
 
@@ -99,7 +98,7 @@ module Scrapers
     end
 
     def extract_ouchikaraoke_url
-      ouchikaraoke_tag = browser_manager.find(SELECTORS[:ouchikaraoke])
+      ouchikaraoke_tag = browser_manager.find(@selectors['song_detail']['ouchikaraoke'])
       ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
     end
 
