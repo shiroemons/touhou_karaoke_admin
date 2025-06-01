@@ -53,13 +53,14 @@
 ## 優先度: 中
 
 ### 4. Songモデルの責務分割
-**問題点**: ~~Songモデルが肥大化（545行）~~ → 235行に削減済み（234行 + 76行削減）
+**問題点**: ~~Songモデルが肥大化（545行）~~ → 175行に削減済み（234行 + 76行 + 60行削減）
 - [x] スクレイピング処理を Service クラスに移動
   - `Scrapers::DamScraper`
   - `Scrapers::JoysoundScraper`
 - [x] 並列処理ロジックを concern に移動
   - `ParallelProcessor`
-- [ ] Algolia検索関連を concern に切り出し
+- [x] Algolia検索関連を concern に切り出し
+  - `AlgoliaSearchable` (2025-06-01)
 - [ ] カテゴリ関連メソッドを concern に切り出し
 
 ### 5. 定数の整理と管理
