@@ -131,7 +131,7 @@ class DeliveryModelManagerTest < ActiveSupport::TestCase
   test "refresh_cache updates cache immediately" do
     # 最初にキャッシュを作成
     @manager.get_id("Test Model", "TEST")
-    
+
     # 新しいモデルを直接データベースに追加
     new_model = KaraokeDeliveryModel.create!(
       name: "Refresh Test Model",
