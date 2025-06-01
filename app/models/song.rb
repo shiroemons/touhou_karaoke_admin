@@ -154,40 +154,44 @@ class Song < ApplicationRecord
   end
 
   def self.fetch_joysound_song(url = nil)
-    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    joysound_song_page_parser(url) if url.present?
+    return if url.blank?
+
+    scraper = Scrapers::JoysoundScraper.new
+    scraper.scrape_song_page(url)
   end
 
   def self.fetch_joysound_songs
-    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    scraper = Scrapers::JoysoundScraper.new
     joysound_song_ids = JoysoundSong.pluck(:id)
     total_count = joysound_song_ids.count
-    current_index = 0 # 全体のインデックスを追跡するためのカウンタ
+    current_index = 0
     batch_size = 1000
+
     joysound_song_ids.each_slice(batch_size) do |ids|
       JoysoundSong.where(id: ids).then do |records|
         Parallel.each_with_index(records, in_processes: 7) do |r, i|
-          global_index = current_index + i # 現在のグローバルインデックスを計算
+          global_index = current_index + i
           logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
           title = r.display_title.split("／").first
           unless Song.exists?(title:, url: r.url, karaoke_type: "JOYSOUND")
             logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{title}")
-            joysound_song_page_parser(r.url)
+            scraper.scrape_song_page(r.url)
           end
         end
-        current_index += records.size # バッチのサイズ分だけ全体のインデックスをインクリメント
+        current_index += records.size
       end
     end
 
     ALLOWLIST.each do |url|
       next if Song.exists?(url:, karaoke_type: "JOYSOUND")
 
-      joysound_song_page_parser(url)
+      scraper.scrape_song_page(url)
     end
   end
 
   def self.fetch_joysound_music_post_song
-    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    scraper = Scrapers::JoysoundScraper.new
+
     # JoysoundMusicPost の joysound_url と Song の music_post の url を比較して、差分 URL を取得
     unmatched_urls = JoysoundMusicPost.pluck(:joysound_url) - Song.music_post.pluck(:url)
 
@@ -205,239 +209,67 @@ class Song < ApplicationRecord
       unmatched_post_ids.include?(id) ? 0 : 1
     end
     total_count = sorted_post_ids.count
-    current_index = 0 # 全体のインデックスを追跡するためのカウンタ
+    current_index = 0
     batch_size = 1000
+
     sorted_post_ids.each_slice(batch_size) do |ids|
       JoysoundMusicPost.where(id: ids).then do |records|
         Parallel.each_with_index(records, in_processes: 7) do |r, i|
-          global_index = current_index + i # 現在のグローバルインデックスを計算
+          global_index = current_index + i
           logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
           logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{r.title}")
-          joysound_music_post_song_page_parser(r)
+          scraper.scrape_music_post_page(r)
         end
-        current_index += records.size # バッチのサイズ分だけ全体のインデックスをインクリメント
+        current_index += records.size
       end
     end
   end
 
   def self.refresh_joysound_music_post_song
-    browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    browser_manager = BrowserManager.new
     total_count = Song.music_post.count
-    Song.music_post.each.with_index(1) do |song, i|
-      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
-      browser.goto(song.url)
-      # 描画に少し時間がかかるため 1秒待つ
-      sleep(1.0)
 
-      error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
-      error = browser.at_css(error_selector)&.inner_text
-      if error == "このページは存在しません。"
-        record = Song.find_by(karaoke_type: "JOYSOUND(うたスキ)", url: browser.current_url)
-        record&.destroy!
+    browser_manager.with_browser do |_browser|
+      Song.music_post.each.with_index(1) do |song, i|
+        logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}% #{song.title}")
+        browser_manager.visit(song.url)
+        sleep(1.0) # 描画待ち
+
+        error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
+        error = browser_manager.find(error_selector)&.inner_text
+        if error == "このページは存在しません。"
+          record = Song.find_by(karaoke_type: "JOYSOUND(うたスキ)", url: browser_manager.current_url)
+          record&.destroy!
+        end
       end
     end
-    browser.quit
   end
 
   def self.fetch_dam_songs
-    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    scraper = Scrapers::DamScraper.new
     dam_song_ids = DamSong.order(created_at: :desc).pluck(:id)
     total_count = dam_song_ids.count
-    current_index = 0 # 全体のインデックスを追跡するためのカウンタ
+    current_index = 0
     batch_size = 1000
+
     dam_song_ids.each_slice(batch_size) do |ids|
       DamSong.where(id: ids).then do |records|
         Parallel.each_with_index(records, in_processes: 7) do |r, i|
-          global_index = current_index + i # 現在のグローバルインデックスを計算
+          global_index = current_index + i
           logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
           logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{r.title}")
           song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: r.url)
           next if song.present?
 
-          dam_song_page_parser(r)
+          scraper.scrape_song_page(r)
         end
-        current_index += records.size # バッチのサイズ分だけ全体のインデックスをインクリメント
+        current_index += records.size
       end
-    end
-  end
-
-  def self.joysound_song_page_parser(url)
-    @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    retry_count = 0
-    begin
-      @browser.network.clear(:traffic)
-      @browser.goto(url)
-      @browser.network.wait_for_idle(duration: 1.0)
-
-      composer_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(3) > td > div > p"
-      composer = @browser.at_css(composer_selector).inner_text
-
-      if composer.in?(PERMITTED_COMPOSERS) || ALLOWLIST.include?(url)
-        artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
-        artist_el = @browser.at_css(artist_selector)
-        artist_name = artist_el.inner_text
-        artist_url = artist_el.property("href")
-        display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND", url: artist_url)
-
-        songs_selector = "#karaokeDeliver > div > ul > li"
-        @browser.css(songs_selector).each do |el|
-          title = el.at_css("div > div.jp-cmp-karaoke-details > h4").inner_text
-          song_number = el.at_css("div > div.jp-cmp-karaoke-details > div > dl > dd:nth-child(2)").inner_text
-
-          delivery_models = []
-          # 表示されている機種と隠れている機種も取得する
-          el.css("div > div.jp-cmp-karaoke-platform > ul").each do |ul|
-            ul.css("li").each do |kp|
-              delivery_models.push(kp.at_css("img").attribute("alt"))
-            end
-          end
-          kdm = delivery_models.map { |dm| @delivery_models[dm] }
-
-          song = Song.find_or_create_by!(title:, display_artist:, song_number:, karaoke_type: "JOYSOUND", url: @browser.current_url)
-          song.karaoke_delivery_model_ids = kdm
-        end
-      end
-      @browser.quit
-    rescue Ferrum::TimeoutError,
-           Ferrum::PendingConnectionsError,
-           Ferrum::StatusError,
-           Ferrum::NodeNotFoundError => e
-      logger.error("self.joysound_song_page_parser: #{e}")
-      @browser.quit
-      @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-      retry_count += 1
-      retry unless retry_count > 3
-    end
-  end
-
-  def self.joysound_music_post_song_page_parser(jmp)
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    retry_count = 0
-    begin
-      if jmp.joysound_url.blank?
-        logger.debug("joysound_url is blank: #{jmp.title}")
-        return
-      end
-
-      @browser.network.clear(:traffic)
-      @browser.goto(jmp.joysound_url)
-      # 描画に少し時間がかかるため 1秒待つ
-      sleep(1.0)
-
-      error_selector = "#jp-cmp-main > div > h1.jp-cmp-h1-error"
-      error = @browser.at_css(error_selector)&.inner_text
-      if error == "このページは存在しません。"
-        record = Song.find_by(karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
-        if record
-          record.destroy!
-          jmp.destroy!
-          nil
-        end
-      else
-        artist_selector = "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
-        artist_el = @browser.at_css(artist_selector)
-        artist_name = artist_el.inner_text
-        artist_url = artist_el.property("href")
-        display_artist = DisplayArtist.find_or_create_by!(name: artist_name, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
-
-        song_block_selector = "#jp-cmp-karaoke-kyokupro > div.jp-cmp-kyokupuro-block"
-        @browser.css(song_block_selector).each do |el|
-          title = el.at_css("div.jp-cmp-karaoke-details > h4").inner_text
-
-          delivery_models = []
-          el.css("div > div.jp-cmp-karaoke-platform > ul").each do |ul|
-            ul.css("li").each do |kp|
-              delivery_models.push(kp.at_css("img").attribute("alt"))
-            end
-          end
-          kdm = delivery_models.map { |dm| @delivery_models[dm] }
-
-          song = Song.find_or_create_by!(title:, display_artist:, karaoke_type: "JOYSOUND(うたスキ)", url: @browser.current_url)
-          song.karaoke_delivery_model_ids = kdm
-          if song.song_with_joysound_utasuki.blank?
-            song.create_song_with_joysound_utasuki(delivery_deadline_date: jmp.delivery_deadline_on, url: jmp.url)
-          else
-            song.song_with_joysound_utasuki.delivery_deadline_date = jmp.delivery_deadline_on
-            song.song_with_joysound_utasuki.save! if song.song_with_joysound_utasuki.changed?
-          end
-        end
-      end
-      @browser.quit
-    rescue Ferrum::TimeoutError,
-           Ferrum::PendingConnectionsError,
-           Ferrum::StatusError,
-           Ferrum::NodeNotFoundError => e
-      logger.error("self.joysound_music_post_song_page_parser: #{e}")
-      @browser.quit
-      @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-      retry_count += 1
-      retry unless retry_count > 3
-    end
-  end
-
-  def self.dam_song_page_parser(dam_song)
-    @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    retry_count = 0
-    begin
-      @browser.goto(dam_song.url)
-      @browser.network.wait_for_idle(duration: 1.0)
-
-      title_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
-      title = @browser.at_css(title_selector).inner_text
-
-      title_reading_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.song-yomi"
-      title_reading = @browser.at_css(title_reading_selector)&.inner_text
-      title_reading = title_reading&.gsub(/[\[\] ]/, "")
-
-      song_number_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > div.request-no > span"
-      song_number = @browser.at_css(song_number_selector).inner_text
-
-      if title.present? && title_reading.present? && song_number.present?
-        record = Song.find_or_create_by!(karaoke_type: "DAM", song_number:, url: dam_song.url) do |song|
-          song.title = title
-          song.title_reading = title_reading
-          song.display_artist = dam_song.display_artist
-        end
-        record.update!(title:, title_reading:, display_artist: dam_song.display_artist)
-
-        delivery_models = []
-        delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
-        delivery_models << @browser.at_css(delivery_model_selector).inner_text
-        delivery_models_selector = "#model-list > li > a"
-        delivery_models_tag = @browser.css(delivery_models_selector)
-        delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
-
-        ouchikaraoke_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"
-        ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
-        ouchikaraoke_url = ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
-
-        delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
-        kdm = delivery_models.map { |dm| @delivery_models[dm] }
-        record.karaoke_delivery_model_ids = kdm
-
-        return if ouchikaraoke_url.blank? && record.song_with_dam_ouchikaraoke.blank?
-
-        if record.song_with_dam_ouchikaraoke.blank?
-          record.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url) if ouchikaraoke_url.present?
-        elsif ouchikaraoke_url.present?
-          record.song_with_dam_ouchikaraoke.url = ouchikaraoke_url
-          record.song_with_dam_ouchikaraoke.save! if record.song_with_dam_ouchikaraoke.changed?
-        else
-          record.song_with_dam_ouchikaraoke.destroy!
-        end
-      end
-      @browser.quit
-    rescue StandardError => e
-      logger.error("self.dam_song_page_parser: #{e}")
-      @browser.quit
-      @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-      retry_count += 1
-      retry unless retry_count > 3
     end
   end
 
   def self.update_dam_delivery_models
-    @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
+    scraper = Scrapers::DamScraper.new
     dam_songs = Song.dam.includes(:karaoke_delivery_models)
     total_count = dam_songs.count
     current_index = 0
@@ -449,72 +281,9 @@ class Song < ApplicationRecord
         logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
         logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{song.title}")
 
-        update_dam_song_delivery_models(song)
+        scraper.update_delivery_models(song)
       end
       current_index += batch.size
-    end
-  end
-
-  def self.update_dam_song_delivery_models(song)
-    @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    retry_count = 0
-
-    begin
-      @browser.goto(song.url)
-      @browser.network.wait_for_idle(duration: 1.0)
-
-      delivery_models = []
-      delivery_model_selector = "#anchor-pagetop > main > div > div > div.main-content > div.model-section > div > ul.model-list.latest-model > li > a"
-      latest_model_element = @browser.at_css(delivery_model_selector)
-      delivery_models << latest_model_element.inner_text if latest_model_element
-
-      delivery_models_selector = "#model-list > li > a"
-      delivery_models_tag = @browser.css(delivery_models_selector)
-      delivery_models_tag.map(&:inner_text).each { |model| delivery_models.push(model) }
-
-      ouchikaraoke_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.service-store-section > div.service-section.is-show > div.is-pc > div > div:nth-child(1) > div.txt > a.btn-ouchikaraoke"
-      ouchikaraoke_tag = @browser.at_css(ouchikaraoke_selector)
-      ouchikaraoke_url = ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
-
-      delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
-
-      # DBに存在しない機種を新規作成
-      kdm = delivery_models.compact.filter_map do |dm|
-        if @delivery_models[dm]
-          @delivery_models[dm]
-        else
-          # 新しい機種を作成（orderは acts_as_list により自動設定）
-          new_model = KaraokeDeliveryModel.create!(
-            name: dm,
-            karaoke_type: "DAM"
-          )
-          @delivery_models[dm] = new_model.id
-          logger.info("Created new KaraokeDeliveryModel: #{dm}")
-          new_model.id
-        end
-      end
-
-      # 機種情報を更新
-      song.karaoke_delivery_model_ids = kdm if kdm.present?
-
-      # おうちカラオケ情報を更新
-      if ouchikaraoke_url.present?
-        if song.song_with_dam_ouchikaraoke.blank?
-          song.create_song_with_dam_ouchikaraoke(url: ouchikaraoke_url)
-        elsif song.song_with_dam_ouchikaraoke.url != ouchikaraoke_url
-          song.song_with_dam_ouchikaraoke.update(url: ouchikaraoke_url)
-        end
-      elsif song.song_with_dam_ouchikaraoke.present?
-        song.song_with_dam_ouchikaraoke.destroy!
-      end
-
-      @browser.quit
-    rescue StandardError => e
-      logger.error("self.update_dam_song_delivery_models: #{e}")
-      @browser.quit
-      @browser = Ferrum::Browser.new(timeout: 10, process_timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-      retry_count += 1
-      retry unless retry_count > 3
     end
   end
 
