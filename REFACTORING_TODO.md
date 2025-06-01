@@ -19,19 +19,21 @@
 
 **PR**: [#590](https://github.com/shiroemons/touhou_karaoke_admin/pull/590)
 
-## 優先度: 高
-
-### 2. 大量データ処理の最適化
+### ✅ 2. 大量データ処理の最適化 (2024-06-01)
 **問題点**: 並列処理のロジックが複数箇所で重複
-- [ ] `ParallelProcessor` concern を作成
-- [ ] バッチ処理とプログレス表示の共通化
-- [ ] メモリ効率の改善（`find_in_batches` の統一使用）
+- [x] `ParallelProcessor` concern を作成
+- [x] バッチ処理とプログレス表示の共通化
+- [x] メモリ効率の改善（`find_in_batches` の統一使用）
 
-**影響範囲**:
-- `Song.fetch_joysound_songs`
-- `Song.fetch_joysound_music_post_song`
-- `Song.fetch_dam_songs`
-- `Song.update_dam_delivery_models`
+**実装内容**:
+- `app/models/concerns/parallel_processor.rb` - 並列処理ロジックを統一化
+- バッチサイズとプロセス数を設定可能に
+- 進捗表示とロギングを標準化
+- Songモデルから76行削減
+
+**PR**: [#591](https://github.com/shiroemons/touhou_karaoke_admin/pull/591)
+
+## 優先度: 高
 
 ### 3. 配信機種管理の改善
 **問題点**: 配信機種の取得・更新ロジックが分散
@@ -42,10 +44,12 @@
 ## 優先度: 中
 
 ### 4. Songモデルの責務分割
-**問題点**: ~~Songモデルが肥大化（545行）~~ → 311行に削減済み
+**問題点**: ~~Songモデルが肥大化（545行）~~ → 235行に削減済み（234行 + 76行削減）
 - [x] スクレイピング処理を Service クラスに移動
   - `Scrapers::DamScraper`
   - `Scrapers::JoysoundScraper`
+- [x] 並列処理ロジックを concern に移動
+  - `ParallelProcessor`
 - [ ] Algolia検索関連を concern に切り出し
 - [ ] カテゴリ関連メソッドを concern に切り出し
 
