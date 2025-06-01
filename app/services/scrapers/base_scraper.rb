@@ -6,7 +6,7 @@ module Scrapers
 
     def initialize
       @browser_manager = BrowserManager.new
-      @delivery_model_manager = DeliveryModelManager.new
+      @delivery_model_manager = DeliveryModelManager.instance
       load_selectors
     end
 
@@ -62,10 +62,12 @@ module Scrapers
     def update_delivery_models(song, model_names)
       return if model_names.blank?
 
-      model_names.each do |model_name|
-        delivery_model = @delivery_model_manager.find_or_create(model_name, karaoke_type)
-        song.karaoke_delivery_models << delivery_model unless song.karaoke_delivery_models.include?(delivery_model)
-      end
+      delivery_model_ids = @delivery_model_manager.find_or_create_ids(model_names, karaoke_type)
+      song.karaoke_delivery_model_ids = (song.karaoke_delivery_model_ids + delivery_model_ids).uniq
+    end
+
+    def find_or_create_delivery_model_ids(model_names, karaoke_type)
+      @delivery_model_manager.find_or_create_ids(model_names, karaoke_type)
     end
 
     def create_sub_model(_song, _attrs)
