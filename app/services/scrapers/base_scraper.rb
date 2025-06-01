@@ -5,19 +5,14 @@ module Scrapers
   class BaseScraper
     include Retryable
 
-    attr_reader :browser_manager, :delivery_models
+    attr_reader :browser_manager
 
     def initialize
       @browser_manager = BrowserManager.new
-      load_delivery_models
+      @delivery_model_manager = DeliveryModelManager.instance
     end
 
     protected
-
-    # 配信機種のキャッシュを読み込み
-    def load_delivery_models
-      @delivery_models = KaraokeDeliveryModel.pluck(:name, :id).to_h
-    end
 
     # ブラウザマネージャーをリセット（エラー時の復旧用）
     def reset_browser_manager(custom_options = {})
@@ -25,16 +20,18 @@ module Scrapers
     end
 
     # 配信機種IDの配列を取得
-    def get_delivery_model_ids(model_names)
-      model_names.filter_map { |name| @delivery_models[name] }
+    def get_delivery_model_ids(model_names, karaoke_type = nil)
+      @delivery_model_manager.get_ids(model_names, karaoke_type)
     end
 
-    # 新しい配信機種を作成してIDを返す
-    def create_delivery_model(name, karaoke_type)
-      model = KaraokeDeliveryModel.create!(name:, karaoke_type:)
-      @delivery_models[name] = model.id
-      Rails.logger.info("Created new KaraokeDeliveryModel: #{name}")
-      model.id
+    # 配信機種を取得または作成してIDを返す
+    def find_or_create_delivery_model_id(name, karaoke_type)
+      @delivery_model_manager.find_or_create_id(name, karaoke_type)
+    end
+
+    # 複数の配信機種を一括で取得または作成
+    def find_or_create_delivery_model_ids(names, karaoke_type)
+      @delivery_model_manager.find_or_create_ids(names, karaoke_type)
     end
   end
 end

@@ -33,13 +33,22 @@
 
 **PR**: [#591](https://github.com/shiroemons/touhou_karaoke_admin/pull/591)
 
-## 優先度: 高
-
-### 3. 配信機種管理の改善
+### ✅ 3. 配信機種管理の改善 (2025-06-01)
 **問題点**: 配信機種の取得・更新ロジックが分散
-- [ ] `DeliveryModelManager` service クラスを作成
-- [ ] 機種名とIDのキャッシュ戦略の改善
-- [ ] 新規機種の自動作成ロジックの一元化
+- [x] `DeliveryModelManager` service クラスを作成
+- [x] 機種名とIDのキャッシュ戦略の改善
+- [x] 新規機種の自動作成ロジックの一元化
+
+**実装内容**:
+- `app/services/delivery_model_manager.rb` - 配信機種管理を一元化
+- スレッドセーフなキャッシング機構（TTL: 60分）
+- 重複作成を防ぐユニーク制約の追加
+- `BaseScraper` を更新してDeliveryModelManagerを使用
+- 並列処理時の競合状態を解決
+
+**PR**: [#592](https://github.com/shiroemons/touhou_karaoke_admin/issues/592)
+
+## 優先度: 高
 
 ## 優先度: 中
 
