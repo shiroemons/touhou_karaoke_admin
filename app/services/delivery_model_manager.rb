@@ -17,12 +17,7 @@ class DeliveryModelManager
   def get_id(name, karaoke_type = nil)
     ensure_cache_fresh
 
-    # karaoke_typeが指定されていない場合は名前のみで検索
-    if karaoke_type.nil?
-      @cache.find { |key, _| key.first == name }&.last
-    else
-      @cache[[name, karaoke_type]]
-    end
+    get_id_without_refresh(name, karaoke_type)
   end
 
   # 複数の配信機種名からIDの配列を取得
@@ -41,7 +36,7 @@ class DeliveryModelManager
     # キャッシュになければデータベースから再度検索（他プロセスが作成した可能性）
     @mutex.synchronize do
       # 再度キャッシュを確認（ダブルチェックロッキング）
-      id = get_id(name, karaoke_type)
+      id = get_id_without_refresh(name, karaoke_type)
       return id if id
 
       # データベースから検索
@@ -89,6 +84,15 @@ class DeliveryModelManager
   end
 
   private
+
+  # キャッシュリフレッシュなしでIDを取得
+  def get_id_without_refresh(name, karaoke_type)
+    if karaoke_type.nil?
+      @cache.find { |key, _| key.first == name }&.last
+    else
+      @cache[[name, karaoke_type]]
+    end
+  end
 
   # キャッシュが有効か確認し、必要なら再読み込み
   def ensure_cache_fresh
