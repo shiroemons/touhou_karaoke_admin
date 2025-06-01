@@ -3,19 +3,6 @@
 module Scrapers
   # JOYSOUND楽曲情報のスクレイピングを行うクラス
   class JoysoundScraper < BaseScraper
-    # セレクタ定義
-    SELECTORS = {
-      composer: "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(3) > td > div > p",
-      artist: "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a",
-      songs: "#karaokeDeliver > div > ul > li",
-      song_title: "div > div.jp-cmp-karaoke-details > h4",
-      song_number: "div > div.jp-cmp-karaoke-details > div > dl > dd:nth-child(2)",
-      karaoke_platform: "div > div.jp-cmp-karaoke-platform > ul",
-      platform_item: "li",
-      platform_image: "img",
-      error: "#jp-cmp-main > div > h1.jp-cmp-h1-error"
-    }.freeze
-
     # JOYSOUNDの楽曲ページをスクレイピング
     def scrape_song_page(url)
       with_retry do
@@ -23,7 +10,7 @@ module Scrapers
           browser_manager.clear_network_traffic
           browser_manager.visit(url)
 
-          composer = browser_manager.find(SELECTORS[:composer])&.inner_text
+          composer = browser_manager.find(@selectors['song_detail']['composer'])&.inner_text
 
           scrape_artist_and_songs(url) if should_scrape?(composer, url)
         end
@@ -43,7 +30,7 @@ module Scrapers
           browser_manager.visit(joysound_music_post.joysound_url)
           sleep(1.0) # 描画待ち
 
-          error_text = browser_manager.find(SELECTORS[:error])&.inner_text
+          error_text = browser_manager.find(@selectors['song_detail']['error'])&.inner_text
           if error_text == "このページは存在しません。"
             handle_missing_page(browser_manager.current_url, joysound_music_post)
           else
@@ -58,12 +45,21 @@ module Scrapers
 
     private
 
+    def load_selectors
+      yaml_path = Rails.root.join('config/selectors/joysound.yml')
+      @selectors = YAML.load_file(yaml_path)['selectors']
+    end
+
+    def karaoke_type
+      "JOYSOUND"
+    end
+
     def should_scrape?(composer, url)
-      composer.in?(Song::PERMITTED_COMPOSERS) || Song::ALLOWLIST.include?(url)
+      composer.in?(Constants::Karaoke::PERMITTED_COMPOSERS) || Constants::Karaoke::JOYSOUND_ALLOWLIST.include?(url)
     end
 
     def scrape_artist_and_songs(url)
-      artist_el = browser_manager.find(SELECTORS[:artist])
+      artist_el = browser_manager.find(@selectors['song_detail']['artist'])
       artist_name = artist_el.inner_text
       artist_url = artist_el.property("href")
 
@@ -73,14 +69,14 @@ module Scrapers
         url: artist_url
       )
 
-      browser_manager.find_all(SELECTORS[:songs]).each do |song_el|
+      browser_manager.find_all(@selectors['song_detail']['songs']).each do |song_el|
         create_song_from_element(song_el, display_artist, url)
       end
     end
 
     def create_song_from_element(element, display_artist, page_url)
-      title = element.at_css(SELECTORS[:song_title]).inner_text
-      song_number = element.at_css(SELECTORS[:song_number]).inner_text
+      title = element.at_css(@selectors['song_detail']['song_title']).inner_text
+      song_number = element.at_css(@selectors['song_detail']['song_number']).inner_text
 
       delivery_models = extract_delivery_models(element)
       kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND")
@@ -97,9 +93,9 @@ module Scrapers
 
     def extract_delivery_models(element)
       models = []
-      element.css(SELECTORS[:karaoke_platform]).each do |ul|
-        ul.css(SELECTORS[:platform_item]).each do |li|
-          models.push(li.at_css(SELECTORS[:platform_image]).attribute("alt"))
+      element.css(@selectors['song_detail']['karaoke_platform']).each do |ul|
+        ul.css(@selectors['song_detail']['platform_item']).each do |li|
+          models.push(li.at_css(@selectors['song_detail']['platform_image']).attribute("alt"))
         end
       end
       models
@@ -114,7 +110,7 @@ module Scrapers
     end
 
     def scrape_music_post_content(joysound_music_post)
-      artist_el = browser_manager.find(SELECTORS[:artist])
+      artist_el = browser_manager.find(@selectors['song_detail']['artist'])
       artist_name = artist_el.inner_text
       artist_url = artist_el.property("href")
 

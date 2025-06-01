@@ -9,7 +9,7 @@ class FetchJoysoundDetail < Avo::BaseAction
     field = args.values_at(:fields).first
 
     url = field['joysound_url'].to_s
-    fail('not joysound url') unless url.start_with?("https://www.joysound.com/web/search/song/")
+    fail('not joysound url') unless url.start_with?("#{Constants::Karaoke::Joysound::SEARCH_URL}/")
 
     JoysoundSong.fetch_joysound_song_direct(url:)
     succeed 'Done!'

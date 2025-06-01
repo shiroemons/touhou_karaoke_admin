@@ -24,14 +24,6 @@ class Song < ApplicationRecord
   scope :spotify, -> { where.not(spotify_url: "") }
   scope :line_music, -> { where.not(line_music_url: "") }
 
-  PERMITTED_COMPOSERS = %w(ZUN ZUN(上海アリス幻樂団) ZUN[上海アリス幻樂団] ZUN，あきやまうに あきやまうに U2).freeze
-  ALLOWLIST = [
-    "https://www.joysound.com/web/search/song/115474", # ひれ伏せ愚民どもっ! 作曲:ARM
-    "https://www.joysound.com/web/search/song/225460", # Once in a blue moon feat. らっぷびと 作曲:Coro
-    "https://www.joysound.com/web/search/song/225456", # Crazy speed Hight 作曲:龍5150
-    "https://www.joysound.com/web/search/song/225449"  # 愛き夜道 feat. ランコ(豚乙女)、雨天決行／魂音泉 作曲:U2，Coro
-  ].freeze
-
   def self.ransackable_attributes(_auth_object = nil)
     ["title"]
   end
@@ -66,7 +58,7 @@ class Song < ApplicationRecord
     end
 
     # 許可リストの処理
-    ALLOWLIST.each do |url|
+    Constants::Karaoke::JOYSOUND_ALLOWLIST.each do |url|
       next if Song.exists?(url:, karaoke_type: "JOYSOUND")
 
       scraper.scrape_song_page(url)

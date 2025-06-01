@@ -33,7 +33,7 @@ class DisplayArtist < ApplicationRecord
   end
 
   def self.fetch_joysound_music_post_artist
-    url = "https://www.joysound.com/web/"
+    url = Constants::Karaoke::Joysound::BASE_URL
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
 
     music_port_artists = JoysoundMusicPost.distinct.pluck(:artist).sort

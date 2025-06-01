@@ -10,8 +10,8 @@ class JoysoundMusicPost < ApplicationRecord
   end
 
   def self.fetch_music_post
-    url_zun = "https://musicpost.joysound.com/musicList/page:1?target=5&method=1&keyword=ZUN&detail_show_flg=false&original=on&cover=on&sort=1"
-    url_u2 = "https://musicpost.joysound.com/musicList/page:1?target=5&method=1&keyword=%E3%81%82%E3%81%8D%E3%82%84%E3%81%BE%E3%81%86%E3%81%AB&detail_show_flg=false&original=on&cover=on&sort=1"
+    url_zun = Constants::Karaoke::Joysound::MUSIC_POST_ZUN_URL
+    url_u2 = Constants::Karaoke::Joysound::MUSIC_POST_AKIYAMA_URL
 
     music_post_parser(url_zun)
     music_post_parser(url_u2)
@@ -33,7 +33,7 @@ class JoysoundMusicPost < ApplicationRecord
         song_list_selector = "#songlist > div.jp-cmp-music-list-001.jp-cmp-music-list-song-002 > ul > li"
         browser.css(song_list_selector).each do |el|
           url_path = el.at_css("a").attribute("href")
-          url = URI.join("https://www.joysound.com/", url_path).to_s
+          url = URI.join(Constants::Karaoke::Joysound::BASE_URL, url_path).to_s
           display_title = el.at_css("div > a > h3").inner_text
           title = display_title.split("／").first
           record = JoysoundMusicPost.find_by(artist: da.name, title:)

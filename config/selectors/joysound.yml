@@ -1,0 +1,13 @@
+# JOYSOUNDのWebページから情報を取得するためのCSSセレクタ定義
+selectors:
+  # 楽曲詳細ページ
+  song_detail:
+    composer: "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(3) > td > div > p"
+    artist: "#jp-cmp-main > section:nth-child(2) > div.jp-cmp-song-block-001 > div.jp-cmp-song-visual > div.jp-cmp-song-table-001.jp-cmp-table-001 > table > tbody > tr:nth-child(1) > td > div > p > a"
+    songs: "#karaokeDeliver > div > ul > li"
+    song_title: "div > div.jp-cmp-karaoke-details > h4"
+    song_number: "div > div.jp-cmp-karaoke-details > div > dl > dd:nth-child(2)"
+    karaoke_platform: "div > div.jp-cmp-karaoke-platform > ul"
+    platform_item: "li"
+    platform_image: "img"
+    error: "#jp-cmp-main > div > h1.jp-cmp-h1-error"
