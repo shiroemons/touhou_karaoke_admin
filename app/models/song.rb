@@ -1,5 +1,6 @@
 class Song < ApplicationRecord
   include AlgoliaSearch
+  include ParallelProcessor
 
   has_one :song_with_dam_ouchikaraoke, dependent: :destroy
   has_one :song_with_joysound_utasuki, dependent: :destroy
@@ -162,26 +163,15 @@ class Song < ApplicationRecord
 
   def self.fetch_joysound_songs
     scraper = Scrapers::JoysoundScraper.new
-    joysound_song_ids = JoysoundSong.pluck(:id)
-    total_count = joysound_song_ids.count
-    current_index = 0
-    batch_size = 1000
+    joysound_songs = JoysoundSong.all
 
-    joysound_song_ids.each_slice(batch_size) do |ids|
-      JoysoundSong.where(id: ids).then do |records|
-        Parallel.each_with_index(records, in_processes: 7) do |r, i|
-          global_index = current_index + i
-          logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
-          title = r.display_title.split("／").first
-          unless Song.exists?(title:, url: r.url, karaoke_type: "JOYSOUND")
-            logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{title}")
-            scraper.scrape_song_page(r.url)
-          end
-        end
-        current_index += records.size
-      end
+    # ParallelProcessorを使用してバッチ処理
+    process_with_progress(joysound_songs, label: "JOYSOUND Songs") do |record|
+      title = record.display_title.split("／").first
+      scraper.scrape_song_page(record.url) unless Song.exists?(title:, url: record.url, karaoke_type: "JOYSOUND")
     end
 
+    # 許可リストの処理
     ALLOWLIST.each do |url|
       next if Song.exists?(url:, karaoke_type: "JOYSOUND")
 
@@ -192,37 +182,27 @@ class Song < ApplicationRecord
   def self.fetch_joysound_music_post_song
     scraper = Scrapers::JoysoundScraper.new
 
-    # JoysoundMusicPost の joysound_url と Song の music_post の url を比較して、差分 URL を取得
+    # 処理対象のJoysoundMusicPostを優先度順に取得
+    prioritized_posts = prioritized_joysound_music_posts
+
+    # ParallelProcessorを使用してバッチ処理
+    process_with_progress(prioritized_posts, label: "JOYSOUND Music Posts") do |record|
+      scraper.scrape_music_post_page(record)
+    end
+  end
+
+  def self.prioritized_joysound_music_posts
+    # 差分URLの取得
     unmatched_urls = JoysoundMusicPost.pluck(:joysound_url) - Song.music_post.pluck(:url)
+    unmatched_posts = JoysoundMusicPost.where(joysound_url: unmatched_urls)
 
-    # 差分 URL に対応する JoysoundMusicPost の ID を取得
-    unmatched_post_ids = JoysoundMusicPost.where(joysound_url: unmatched_urls).pluck(:id)
+    # 1ヶ月以内の配信期限のポスト
+    upcoming_posts = JoysoundMusicPost
+                     .where('delivery_deadline_on < ?', 1.month.from_now)
+                     .order(delivery_deadline_on: :asc)
 
-    # 1ヶ月以内の delivery_deadline_on より前の JoysoundMusicPost の ID を取得（昇順にソート）
-    upcoming_post_ids = JoysoundMusicPost
-                        .where('delivery_deadline_on < ?', 1.month.from_now)
-                        .order(delivery_deadline_on: :asc)
-                        .pluck(:id)
-
-    # 差分 ID を優先してソートする
-    sorted_post_ids = (unmatched_post_ids + upcoming_post_ids).uniq.sort_by do |id|
-      unmatched_post_ids.include?(id) ? 0 : 1
-    end
-    total_count = sorted_post_ids.count
-    current_index = 0
-    batch_size = 1000
-
-    sorted_post_ids.each_slice(batch_size) do |ids|
-      JoysoundMusicPost.where(id: ids).then do |records|
-        Parallel.each_with_index(records, in_processes: 7) do |r, i|
-          global_index = current_index + i
-          logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
-          logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{r.title}")
-          scraper.scrape_music_post_page(r)
-        end
-        current_index += records.size
-      end
-    end
+    # 優先度順に結合（差分を優先）
+    (unmatched_posts.to_a + upcoming_posts.to_a).uniq
   end
 
   def self.refresh_joysound_music_post_song
@@ -247,43 +227,24 @@ class Song < ApplicationRecord
 
   def self.fetch_dam_songs
     scraper = Scrapers::DamScraper.new
-    dam_song_ids = DamSong.order(created_at: :desc).pluck(:id)
-    total_count = dam_song_ids.count
-    current_index = 0
-    batch_size = 1000
+    dam_songs = DamSong.order(created_at: :desc)
 
-    dam_song_ids.each_slice(batch_size) do |ids|
-      DamSong.where(id: ids).then do |records|
-        Parallel.each_with_index(records, in_processes: 7) do |r, i|
-          global_index = current_index + i
-          logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
-          logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{r.title}")
-          song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: r.url)
-          next if song.present?
+    # ParallelProcessorを使用してバッチ処理
+    process_with_progress(dam_songs, label: "DAM Songs") do |record|
+      song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: record.url)
+      next if song.present?
 
-          scraper.scrape_song_page(r)
-        end
-        current_index += records.size
-      end
+      scraper.scrape_song_page(record)
     end
   end
 
   def self.update_dam_delivery_models
     scraper = Scrapers::DamScraper.new
     dam_songs = Song.dam.includes(:karaoke_delivery_models)
-    total_count = dam_songs.count
-    current_index = 0
-    batch_size = 1000
 
-    dam_songs.find_in_batches(batch_size:) do |batch|
-      Parallel.each_with_index(batch, in_processes: 7) do |song, i|
-        global_index = current_index + i
-        logger.debug("#{global_index + 1}/#{total_count}: #{(((global_index + 1) / total_count.to_f) * 100).floor}%")
-        logger.debug("#{global_index}: Worker: #{Parallel.worker_number}, #{song.title}")
-
-        scraper.update_delivery_models(song)
-      end
-      current_index += batch.size
+    # ParallelProcessorを使用してバッチ処理
+    process_with_progress(dam_songs, label: "Update DAM Delivery Models") do |song|
+      scraper.update_delivery_models(song)
     end
   end
 
