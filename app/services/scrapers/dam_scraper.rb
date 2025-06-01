@@ -108,9 +108,7 @@ module Scrapers
       delivery_models.push("カラオケ@DAM") if ouchikaraoke_url.present?
 
       # 配信機種IDの取得（存在しない機種は作成）
-      kdm = delivery_models.compact.filter_map do |dm|
-        @delivery_models[dm] || create_delivery_model(dm, "DAM")
-      end
+      kdm = find_or_create_delivery_model_ids(delivery_models.compact, "DAM")
 
       song.karaoke_delivery_model_ids = kdm if kdm.present?
 

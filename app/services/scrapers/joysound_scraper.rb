@@ -83,7 +83,7 @@ module Scrapers
       song_number = element.at_css(SELECTORS[:song_number]).inner_text
 
       delivery_models = extract_delivery_models(element)
-      kdm = get_delivery_model_ids(delivery_models)
+      kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND")
 
       song = Song.find_or_create_by!(
         title:,
@@ -134,7 +134,7 @@ module Scrapers
       title = block.at_css("div.jp-cmp-karaoke-details > h4").inner_text
 
       delivery_models = extract_delivery_models(block)
-      kdm = get_delivery_model_ids(delivery_models)
+      kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND(うたスキ)")
 
       song = Song.find_or_create_by!(
         title:,
