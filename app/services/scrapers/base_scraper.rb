@@ -14,7 +14,7 @@ module Scrapers
 
     attr_reader :browser_manager
 
-    def with_retry(retries: 3, retry_logger: Rails.logger, &)
+    def with_retry(max_retries: 3, errors: RETRYABLE_ERRORS, on_retry: nil, &)
       super
     end
 
