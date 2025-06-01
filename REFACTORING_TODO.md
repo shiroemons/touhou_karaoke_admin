@@ -48,11 +48,7 @@
 
 **PR**: [#592](https://github.com/shiroemons/touhou_karaoke_admin/issues/592)
 
-## 優先度: 高
-
-## 優先度: 中
-
-### 4. Songモデルの責務分割
+### ✅ 4. Songモデルの責務分割 (2025-06-01)
 **問題点**: ~~Songモデルが肥大化（545行）~~ → 165行に削減済み（234行 + 76行 + 70行削減）
 - [x] スクレイピング処理を Service クラスに移動
   - `Scrapers::DamScraper`
@@ -64,11 +60,27 @@
 - [x] カテゴリ関連メソッドを concern に切り出し
   - `Categorizable`
 
-### 5. 定数の整理と管理
+**PR**: [#595](https://github.com/shiroemons/touhou_karaoke_admin/pull/595)
+
+### ✅ 5. 定数の整理と管理 (2025-06-01)
 **問題点**: URL、セレクタ、定数が各所に散在
-- [ ] `Constants::Karaoke` モジュールを作成
-- [ ] CSSセレクタを YAML ファイルに外出し
-- [ ] 許可リスト（ALLOWLIST）の管理方法改善
+- [x] `Constants::Karaoke` モジュールを作成
+- [x] CSSセレクタを YAML ファイルに外出し
+- [x] 許可リスト（ALLOWLIST）の管理方法改善
+
+**実装内容**:
+- `lib/constants/karaoke.rb` - カラオケ関連の定数を一元管理
+  - DAMとJOYSOUND用のURL定数を整理
+  - 許可された作曲者リストと特別許可楽曲URLを管理
+- `config/selectors/dam.yml` - DAMのCSSセレクタ定義
+- `config/selectors/joysound.yml` - JOYSOUNDのCSSセレクタ定義
+- 全モデルとスクレイパーを新しい定数構造に移行
+
+**PR**: [#596](https://github.com/shiroemons/touhou_karaoke_admin/pull/596)
+
+## 優先度: 高
+
+## 優先度: 中
 
 ### 6. Avo アクションの共通化
 **問題点**: 似たような fetch 処理が複数存在
