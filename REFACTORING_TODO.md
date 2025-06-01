@@ -1,0 +1,103 @@
+# リファクタリング TODO リスト
+
+## 完了済み
+
+### ✅ 1. Webスクレイピング処理の共通化 (2024-06-01)
+**問題点**: `Song`, `DamSong`, `JoysoundSong` モデルに散在する Ferrum ブラウザ操作の重複コード
+- [x] ブラウザ管理用の共通クラス `BrowserManager` を作成
+- [x] リトライ処理の共通化 (`Retryable` concern)
+- [x] エラーハンドリングの統一化
+- [x] ブラウザオプションの一元管理
+
+**実装内容**:
+- `app/services/browser_manager.rb` - Ferrumブラウザ操作を統一管理
+- `app/models/concerns/retryable.rb` - リトライ処理を共通化
+- `app/services/scrapers/base_scraper.rb` - スクレイパー基底クラス
+- `app/services/scrapers/dam_scraper.rb` - DAM専用スクレイパー
+- `app/services/scrapers/joysound_scraper.rb` - JOYSOUND専用スクレイパー
+- Songモデルから234行削減（545行→311行）
+
+**PR**: [#590](https://github.com/shiroemons/touhou_karaoke_admin/pull/590)
+
+## 優先度: 高
+
+### 2. 大量データ処理の最適化
+**問題点**: 並列処理のロジックが複数箇所で重複
+- [ ] `ParallelProcessor` concern を作成
+- [ ] バッチ処理とプログレス表示の共通化
+- [ ] メモリ効率の改善（`find_in_batches` の統一使用）
+
+**影響範囲**:
+- `Song.fetch_joysound_songs`
+- `Song.fetch_joysound_music_post_song`
+- `Song.fetch_dam_songs`
+- `Song.update_dam_delivery_models`
+
+### 3. 配信機種管理の改善
+**問題点**: 配信機種の取得・更新ロジックが分散
+- [ ] `DeliveryModelManager` service クラスを作成
+- [ ] 機種名とIDのキャッシュ戦略の改善
+- [ ] 新規機種の自動作成ロジックの一元化
+
+## 優先度: 中
+
+### 4. Songモデルの責務分割
+**問題点**: ~~Songモデルが肥大化（545行）~~ → 311行に削減済み
+- [x] スクレイピング処理を Service クラスに移動
+  - `Scrapers::DamScraper`
+  - `Scrapers::JoysoundScraper`
+- [ ] Algolia検索関連を concern に切り出し
+- [ ] カテゴリ関連メソッドを concern に切り出し
+
+### 5. 定数の整理と管理
+**問題点**: URL、セレクタ、定数が各所に散在
+- [ ] `Constants::Karaoke` モジュールを作成
+- [ ] CSSセレクタを YAML ファイルに外出し
+- [ ] 許可リスト（ALLOWLIST）の管理方法改善
+
+### 6. Avo アクションの共通化
+**問題点**: 似たような fetch 処理が複数存在
+- [ ] 基底クラス `BaseFetchAction` を作成
+- [ ] エラーハンドリングの統一
+- [ ] 実行結果の通知方法の改善
+
+## 優先度: 低
+
+### 7. テストの追加と改善
+**問題点**: スクレイピング処理のテストが不足
+- [ ] VCR を使用したスクレイピングテストの追加
+- [ ] Service クラスの単体テスト作成
+- [ ] モデルの validation テストの充実
+
+### 8. ログ出力の改善
+**問題点**: logger.debug の使用が統一されていない
+- [ ] 構造化ログの導入
+- [ ] ログレベルの適切な使い分け
+- [ ] 進捗表示用の専用ロガー作成
+
+### 9. 非同期処理の検討
+**問題点**: 大量のWeb APIアクセスでパフォーマンスボトルネック
+- [ ] Sidekiq や ActiveJob での非同期化
+- [ ] バックグラウンドでの定期実行
+- [ ] 処理状況の可視化
+
+### 10. データベースクエリの最適化
+**問題点**: N+1 問題の可能性がある箇所
+- [ ] includes の適切な使用確認
+- [ ] 複雑なクエリの最適化
+- [ ] インデックスの見直し
+
+## 実装時の注意事項
+
+1. **段階的なリファクタリング**: 一度に大きな変更を行わず、小さな改善を積み重ねる
+2. **後方互換性の維持**: 既存の処理に影響を与えないよう注意
+3. **パフォーマンス測定**: リファクタリング前後でパフォーマンスを比較
+4. **ドキュメント化**: 新しいクラスやメソッドには適切なコメントを追加
+
+## 期待される効果
+
+- コードの重複削減により、保守性が向上
+- バグ修正が一箇所で済むようになる
+- 新機能追加時の開発速度向上
+- テストカバレッジの向上による品質改善
+- パフォーマンスの改善
