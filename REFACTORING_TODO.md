@@ -1,20 +1,25 @@
 # リファクタリング TODO リスト
 
-## 優先度: 高
+## 完了済み
 
-### 1. Webスクレイピング処理の共通化
+### ✅ 1. Webスクレイピング処理の共通化 (2024-06-01)
 **問題点**: `Song`, `DamSong`, `JoysoundSong` モデルに散在する Ferrum ブラウザ操作の重複コード
-- [ ] ブラウザ管理用の共通クラス `BrowserManager` を作成
-- [ ] リトライ処理の共通化
-- [ ] エラーハンドリングの統一化
-- [ ] ブラウザオプションの一元管理
+- [x] ブラウザ管理用の共通クラス `BrowserManager` を作成
+- [x] リトライ処理の共通化 (`Retryable` concern)
+- [x] エラーハンドリングの統一化
+- [x] ブラウザオプションの一元管理
 
-**影響範囲**: 
-- `Song.joysound_song_page_parser`
-- `Song.joysound_music_post_song_page_parser`
-- `Song.dam_song_page_parser`
-- `DamSong.fetch_dam_song`
-- `JoysoundSong.fetch_joysound_touhou_songs`
+**実装内容**:
+- `app/services/browser_manager.rb` - Ferrumブラウザ操作を統一管理
+- `app/models/concerns/retryable.rb` - リトライ処理を共通化
+- `app/services/scrapers/base_scraper.rb` - スクレイパー基底クラス
+- `app/services/scrapers/dam_scraper.rb` - DAM専用スクレイパー
+- `app/services/scrapers/joysound_scraper.rb` - JOYSOUND専用スクレイパー
+- Songモデルから234行削減（545行→311行）
+
+**PR**: [#590](https://github.com/shiroemons/touhou_karaoke_admin/pull/590)
+
+## 優先度: 高
 
 ### 2. 大量データ処理の最適化
 **問題点**: 並列処理のロジックが複数箇所で重複
@@ -37,10 +42,10 @@
 ## 優先度: 中
 
 ### 4. Songモデルの責務分割
-**問題点**: Songモデルが肥大化（545行）
-- [ ] スクレイピング処理を Service クラスに移動
-  - `DamScraperService`
-  - `JoysoundScraperService`
+**問題点**: ~~Songモデルが肥大化（545行）~~ → 311行に削減済み
+- [x] スクレイピング処理を Service クラスに移動
+  - `Scrapers::DamScraper`
+  - `Scrapers::JoysoundScraper`
 - [ ] Algolia検索関連を concern に切り出し
 - [ ] カテゴリ関連メソッドを concern に切り出し
 
