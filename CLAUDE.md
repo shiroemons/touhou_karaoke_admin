@@ -122,3 +122,27 @@ The admin interface is built with Avo and mounted at the root path (`/`). Resour
 - Configuration follows standard Rails conventions
 - Run `make rubocop` to check for issues
 - Use `make rubocop-correct` for auto-corrections
+
+## Development Workflow
+When making code modifications:
+1. Create a new branch before making changes (if on master branch)
+2. Make your modifications
+3. Commit your changes with a descriptive message in Japanese
+4. Push to remote repository
+5. Create a Pull Request for review in Japanese
+
+This workflow ensures code changes are properly reviewed and tracked through version control.
+
+### Git Commit and Pull Request Guidelines
+- **Commit messages**: Must be written in Japanese
+- **Pull Request titles and descriptions**: Must be written in Japanese
+- **Branch naming**: Use descriptive English branch names (e.g., `add-feature-name`, `fix-bug-description`)
+
+Example commit message format:
+```
+機能: ユーザー認証システムを追加
+
+- JWTトークンによる認証を実装
+- ログイン/ログアウトAPIを追加
+- セッション管理機能を追加
+```
