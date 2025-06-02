@@ -18,6 +18,10 @@ module Scrapers
       super
     end
 
+    def reset_browser_manager(timeout: 10, process_timeout: 10)
+      @browser_manager = BrowserManager.new(timeout:, process_timeout:)
+    end
+
     def save_song(song_attrs)
       display_artist = ensure_display_artist(song_attrs[:artist_name], song_attrs[:artist_url])
 
