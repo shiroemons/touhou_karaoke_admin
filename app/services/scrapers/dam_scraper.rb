@@ -5,7 +5,15 @@ module Scrapers
   class DamScraper < BaseScraper
     # DAM楽曲ページをスクレイピング
     def scrape_song_page(dam_song)
-      with_retry(on_retry: ->(_e, _count) { reset_browser_manager(timeout: 10, process_timeout: 10) }) do
+      # Ferrum::TimeoutErrorが発生したら即座にブラウザをリセット
+      with_retry(
+        max_retries: 3,
+        errors: [Ferrum::TimeoutError],
+        on_retry: lambda do |error, retry_count|
+          Rails.logger.warn("Resetting browser due to #{error.class} (retry #{retry_count}/3)")
+          reset_browser_manager(timeout: 10, process_timeout: 10)
+        end
+      ) do
         browser_manager.with_browser do |_browser|
           browser_manager.visit(dam_song.url)
 
@@ -21,19 +29,30 @@ module Scrapers
 
     # DAM楽曲の配信機種情報を更新
     def update_delivery_models(song)
-      with_retry(on_retry: ->(_e, _count) { reset_browser_manager(timeout: 10, process_timeout: 10) }) do
-        browser_manager.with_browser do |_browser|
-          browser_manager.visit(song.url)
+      # 並列処理での競合を避けるため、各ワーカーで新しいブラウザインスタンスを作成
+      local_browser_manager = BrowserManager.new
 
-          delivery_models = extract_delivery_models
-          ouchikaraoke_url = extract_ouchikaraoke_url
+      # Ferrum::TimeoutErrorが発生したら即座にブラウザをリセット
+      with_retry(
+        max_retries: 3,
+        errors: [Ferrum::TimeoutError],
+        on_retry: lambda do |error, retry_count|
+          Rails.logger.warn("Resetting browser due to #{error.class} (retry #{retry_count}/3)")
+          local_browser_manager = BrowserManager.new
+        end
+      ) do
+        local_browser_manager.with_browser do |_browser|
+          local_browser_manager.visit(song.url)
+
+          delivery_models = extract_delivery_models_with_browser(local_browser_manager)
+          ouchikaraoke_url = extract_ouchikaraoke_url_with_browser(local_browser_manager)
 
           update_song_delivery_info(song, delivery_models, ouchikaraoke_url)
         end
       end
     rescue StandardError => e
       Rails.logger.error("Error updating DAM delivery models for song #{song.id}: #{e.message}")
-      raise
+      # エラーが発生しても処理を継続（raiseしない）
     end
 
     private
@@ -97,8 +116,28 @@ module Scrapers
       models
     end
 
+    def extract_delivery_models_with_browser(local_browser_manager)
+      models = []
+
+      # 最新機種
+      latest_model = local_browser_manager.find(@selectors['song_detail']['latest_model'])
+      models << latest_model.inner_text if latest_model
+
+      # その他の機種
+      local_browser_manager.find_all(@selectors['song_detail']['model_list']).each do |model|
+        models << model.inner_text
+      end
+
+      models
+    end
+
     def extract_ouchikaraoke_url
       ouchikaraoke_tag = browser_manager.find(@selectors['song_detail']['ouchikaraoke'])
+      ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
+    end
+
+    def extract_ouchikaraoke_url_with_browser(local_browser_manager)
+      ouchikaraoke_tag = local_browser_manager.find(@selectors['song_detail']['ouchikaraoke'])
       ouchikaraoke_tag&.attribute('href').present? ? ouchikaraoke_tag.property('href') : nil
     end
 
