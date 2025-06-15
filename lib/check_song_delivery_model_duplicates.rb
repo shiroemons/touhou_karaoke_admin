@@ -23,7 +23,7 @@ puts "🔍 重複検出中..."
 
 duplicate_groups = SongsKaraokeDeliveryModel
                    .select('song_id, karaoke_delivery_model_id, COUNT(*) as count')
-                   .group('song_id, karaoke_delivery_model_id')
+                   .group(:song_id, :karaoke_delivery_model_id)
                    .having('COUNT(*) > 1')
 
 if duplicate_groups.empty?
