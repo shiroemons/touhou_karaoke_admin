@@ -107,8 +107,8 @@ make stats
 ## Architecture
 
 ### Technology Stack
-- Ruby 3.3.6
-- Rails 7.1.0
+- Ruby 3.4.4
+- Rails 8.0.2
 - PostgreSQL
 - Docker for containerization
 - Avo for admin interface
@@ -165,6 +165,7 @@ This workflow ensures code changes are properly reviewed and tracked through ver
 - **Commit messages**: Must be written in Japanese
 - **Pull Request titles and descriptions**: Must be written in Japanese
 - **Branch naming**: Use descriptive English branch names (e.g., `feature/add-feature-name`, `feature/fix-bug-description`)
+- **Do NOT include**: `🤖 Generated with [Claude Code]` or `Co-Authored-By: Claude` in commit messages
 
 Example commit message format:
 ```
