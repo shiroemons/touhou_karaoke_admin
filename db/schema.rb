@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_06_01_092300) do
+ActiveRecord::Schema[7.1].define(version: 2025_06_15_030553) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -154,6 +154,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_06_01_092300) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["karaoke_delivery_model_id"], name: "idx_songs_karaoke_delivery_models_on_karaoke_delivery_model_id"
+    t.index ["song_id", "karaoke_delivery_model_id"], name: "index_songs_delivery_models_on_song_and_delivery_model", unique: true
     t.index ["song_id"], name: "index_songs_karaoke_delivery_models_on_song_id"
   end
 

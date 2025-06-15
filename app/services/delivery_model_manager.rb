@@ -27,38 +27,35 @@ class DeliveryModelManager
     names.filter_map { |name| get_id(name, karaoke_type) }
   end
 
-  # 配信機種を取得または作成してIDを返す
+  # 配信機種を取得または作成してIDを返す（バリデーション強化版）
   def find_or_create_id(name, karaoke_type)
-    # まずキャッシュから検索
-    id = get_id(name, karaoke_type)
+    # 名前を正規化
+    validator = DeliveryModelValidator.new
+    normalized_name = validator.normalize_name(name)
+
+    return nil if normalized_name.blank?
+
+    # まずキャッシュから検索（正規化された名前で）
+    id = get_id(normalized_name, karaoke_type)
     return id if id
 
     # キャッシュになければデータベースから再度検索（他プロセスが作成した可能性）
     @mutex.synchronize do
       # 再度キャッシュを確認（ダブルチェックロッキング）
-      id = get_id_without_refresh(name, karaoke_type)
+      id = get_id_without_refresh(normalized_name, karaoke_type)
       return id if id
 
-      # データベースから検索
-      model = KaraokeDeliveryModel.find_by(name:, karaoke_type:)
+      # バリデーターを使用して安全に取得または作成
+      model = validator.find_or_create_safely(normalized_name, karaoke_type)
 
       if model
-        # 見つかったらキャッシュに追加
-        @cache[[name, karaoke_type]] = model.id
-        return model.id
-      end
-
-      # 見つからなければ作成
-      begin
-        model = KaraokeDeliveryModel.create!(name:, karaoke_type:)
-        Rails.logger.info("Created new KaraokeDeliveryModel: #{name} (#{karaoke_type})")
-        @cache[[name, karaoke_type]] = model.id
+        @cache[[normalized_name, karaoke_type]] = model.id
+        # 元の名前もキャッシュに追加（正規化前の名前での検索を高速化）
+        @cache[[name, karaoke_type]] = model.id if name != normalized_name
         model.id
-      rescue ActiveRecord::RecordNotUnique
-        # 他のプロセスが同時に作成した場合
-        model = KaraokeDeliveryModel.find_by!(name:, karaoke_type:)
-        @cache[[name, karaoke_type]] = model.id
-        model.id
+      else
+        Rails.logger.error("Failed to create KaraokeDeliveryModel: #{normalized_name} (#{karaoke_type})")
+        nil
       end
     end
   end
