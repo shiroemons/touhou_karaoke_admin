@@ -7,12 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
+**All development is done through Docker containers using the provided Makefile commands.**
+
 ### Environment Setup
 ```bash
 # Initial setup (builds Docker image and runs bin/setup)
 make init
 
-# Start Docker containers
+# Start Docker containers in background
 make start
 
 # Run development server (accessible at http://localhost:3000)
@@ -27,6 +29,9 @@ make dbinit
 # Run migrations
 make migrate
 
+# Redo last migration
+make migrate-redo
+
 # Rollback migrations
 make rollback
 
@@ -35,6 +40,10 @@ make dbseed
 
 # Database console
 make dbconsole
+
+# Database backup and restore
+make db-dump    # Creates backup in tmp/data/dev.bak
+make db-restore # Restores from tmp/dev.bak
 ```
 
 ### Development Tools
@@ -45,8 +54,14 @@ make console
 # Rails console in sandbox mode
 make console-sandbox
 
-# Run tests
+# Run tests (prepares test DB and runs all tests)
 make minitest
+
+# Run individual test file (Docker command)
+docker compose run --rm -e RAILS_ENV=test web bin/rails test test/models/song_test.rb
+
+# Run specific test method (Docker command)
+docker compose run --rm -e RAILS_ENV=test web bin/rails test test/models/song_test.rb -n test_method_name
 
 # Run Rubocop linter
 make rubocop
@@ -57,6 +72,9 @@ make rubocop-correct-all
 
 # Bundle install
 make bundle
+
+# Access container bash shell
+make bash
 ```
 
 ### Data Import/Export
@@ -70,10 +88,20 @@ make export-karaoke-songs
 # Import karaoke songs
 make import-karaoke-songs
 
+# Export/Import display artists with circles
+make export-display-artists
+make import-display-artists
+
+# Import Touhou music data
+make import-touhou-music
+
 # Update originals data
 make update-originals
 make update-original-songs
 make update-originals-all
+
+# Generate statistics
+make stats
 ```
 
 ## Architecture
@@ -136,11 +164,11 @@ This workflow ensures code changes are properly reviewed and tracked through ver
 ### Git Commit and Pull Request Guidelines
 - **Commit messages**: Must be written in Japanese
 - **Pull Request titles and descriptions**: Must be written in Japanese
-- **Branch naming**: Use descriptive English branch names (e.g., `add-feature-name`, `fix-bug-description`)
+- **Branch naming**: Use descriptive English branch names (e.g., `feature/add-feature-name`, `feature/fix-bug-description`)
 
 Example commit message format:
 ```
-機能: ユーザー認証システムを追加
+ユーザー認証システムを追加
 
 - JWTトークンによる認証を実装
 - ログイン/ログアウトAPIを追加
