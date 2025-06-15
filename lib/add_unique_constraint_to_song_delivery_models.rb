@@ -22,9 +22,9 @@ puts "楽曲-配信機種関連付けへのユニーク制約追加を開始し�
 puts "🔍 重複データをチェック中..."
 
 duplicate_groups = SongsKaraokeDeliveryModel
-                   .select('song_id, karaoke_delivery_model_id, COUNT(*) as count')
                    .group(:song_id, :karaoke_delivery_model_id)
                    .having('COUNT(*) > 1')
+                   .select(:song_id, :karaoke_delivery_model_id)
 
 if duplicate_groups.any?
   puts "❌ #{duplicate_groups.count}組の重複が見つかりました。"

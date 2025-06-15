@@ -22,9 +22,9 @@ puts ""
 
 # 事前チェック：重複があるかどうか確認
 duplicate_groups = SongsKaraokeDeliveryModel
-                   .select('song_id, karaoke_delivery_model_id, COUNT(*) as count')
                    .group(:song_id, :karaoke_delivery_model_id)
                    .having('COUNT(*) > 1')
+                   .select(:song_id, :karaoke_delivery_model_id)
 
 if duplicate_groups.empty?
   puts "✅ 重複は見つかりませんでした。修正の必要はありません。"
@@ -35,7 +35,11 @@ puts "📋 検出された重複:"
 puts "  重複組数: #{duplicate_groups.count}組"
 
 total_records_before = SongsKaraokeDeliveryModel.count
-redundant_records = duplicate_groups.sum { |group| group.count - 1 }
+redundant_records = 0
+duplicate_groups.each do |group|
+  count = SongsKaraokeDeliveryModel.where(song_id: group.song_id, karaoke_delivery_model_id: group.karaoke_delivery_model_id).count
+  redundant_records += (count - 1)
+end
 
 puts "  現在のレコード数: #{total_records_before}件"
 puts "  削除予定レコード数: #{redundant_records}件"
@@ -67,8 +71,8 @@ ActiveRecord::Base.transaction do
                         .includes(:song, :karaoke_delivery_model)
                         .order(:created_at)
 
-    song = duplicate_records.first.song
-    delivery_model = duplicate_records.first.karaoke_delivery_model
+    song = duplicate_records.first&.song
+    delivery_model = duplicate_records.first&.karaoke_delivery_model
 
     puts "  処理中: \"#{song.title}\" × \"#{delivery_model.name}\" (#{duplicate_records.count}件)"
 
@@ -104,7 +108,6 @@ ActiveRecord::Base.transaction do
 
   # 修正後の確認
   remaining_duplicates = SongsKaraokeDeliveryModel
-                         .select('song_id, karaoke_delivery_model_id, COUNT(*) as count')
                          .group(:song_id, :karaoke_delivery_model_id)
                          .having('COUNT(*) > 1')
                          .count

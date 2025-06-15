@@ -22,9 +22,10 @@ puts "楽曲-配信機種関連付けの重複チェックを開始します..."
 puts "🔍 重複検出中..."
 
 duplicate_groups = SongsKaraokeDeliveryModel
-                   .select('song_id, karaoke_delivery_model_id, COUNT(*) as count')
                    .group(:song_id, :karaoke_delivery_model_id)
                    .having('COUNT(*) > 1')
+                   .select(:song_id, :karaoke_delivery_model_id)
+                   .includes(:song, :karaoke_delivery_model)
 
 if duplicate_groups.empty?
   puts "✅ 重複は見つかりませんでした。"
@@ -41,8 +42,8 @@ else
                         .includes(:song, :karaoke_delivery_model)
                         .order(:created_at)
 
-    song = duplicate_records.first.song
-    delivery_model = duplicate_records.first.karaoke_delivery_model
+    song = group.song
+    delivery_model = group.karaoke_delivery_model
 
     puts "📋 楽曲: \"#{song.title}\" (#{song.karaoke_type})"
     puts "   配信機種: \"#{delivery_model.name}\""
