@@ -21,13 +21,15 @@ puts "楽曲-配信機種関連付けへのユニーク制約追加を開始し�
 # 1. 重複チェック
 puts "🔍 重複データをチェック中..."
 
-duplicate_groups = SongsKaraokeDeliveryModel
-                   .group(:song_id, :karaoke_delivery_model_id)
-                   .having('COUNT(*) > 1')
-                   .select(:song_id, :karaoke_delivery_model_id)
+duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL.squish)
+  SELECT song_id, karaoke_delivery_model_id, COUNT(*) as duplicate_count
+  FROM songs_karaoke_delivery_models
+  GROUP BY song_id, karaoke_delivery_model_id
+  HAVING COUNT(*) > 1
+SQL
 
-if duplicate_groups.any?
-  puts "❌ #{duplicate_groups.count}組の重複が見つかりました。"
+if duplicate_combinations.count.positive?
+  puts "❌ #{duplicate_combinations.count}組の重複が見つかりました。"
   puts "   ユニーク制約を追加する前に重複を解決する必要があります。"
   puts ""
   puts "🔧 重複解決手順:"
@@ -71,7 +73,13 @@ begin
 
     puts "\n📊 現在の統計:"
     total_associations = SongsKaraokeDeliveryModel.count
-    unique_associations = SongsKaraokeDeliveryModel.select('DISTINCT song_id, karaoke_delivery_model_id').count
+
+    # ユニークな関連付け数は生のSQLで取得
+    unique_result = ActiveRecord::Base.connection.execute(<<~SQL.squish)
+      SELECT COUNT(DISTINCT (song_id, karaoke_delivery_model_id)) as unique_count
+      FROM songs_karaoke_delivery_models
+    SQL
+    unique_associations = unique_result.first['unique_count'].to_i
 
     puts "  総関連付けレコード数: #{total_associations}件"
     puts "  ユニークな関連付け数: #{unique_associations}件"

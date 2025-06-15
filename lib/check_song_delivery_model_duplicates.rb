@@ -21,33 +21,39 @@ puts "楽曲-配信機種関連付けの重複チェックを開始します..."
 # song_id + karaoke_delivery_model_idでグループ化して重複を検出
 puts "🔍 重複検出中..."
 
-duplicate_groups = SongsKaraokeDeliveryModel
-                   .group(:song_id, :karaoke_delivery_model_id)
-                   .having('COUNT(*) > 1')
-                   .select(:song_id, :karaoke_delivery_model_id)
-                   .includes(:song, :karaoke_delivery_model)
+# 重複している組み合わせを直接取得
+duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL.squish)
+  SELECT song_id, karaoke_delivery_model_id, COUNT(*) as duplicate_count
+  FROM songs_karaoke_delivery_models
+  GROUP BY song_id, karaoke_delivery_model_id
+  HAVING COUNT(*) > 1
+SQL
 
-if duplicate_groups.empty?
+if duplicate_combinations.count.zero?
   puts "✅ 重複は見つかりませんでした。"
 else
-  puts "❌ #{duplicate_groups.count}組の重複が見つかりました:\n"
+  puts "❌ #{duplicate_combinations.count}組の重複が見つかりました:\n"
 
   total_duplicates = 0
   total_redundant_records = 0
 
-  duplicate_groups.each do |group|
+  duplicate_combinations.each do |combination|
+    song_id = combination['song_id']
+    karaoke_delivery_model_id = combination['karaoke_delivery_model_id']
+    duplicate_count = combination['duplicate_count'].to_i
+
     # 該当する全レコードを取得
     duplicate_records = SongsKaraokeDeliveryModel
-                        .where(song_id: group.song_id, karaoke_delivery_model_id: group.karaoke_delivery_model_id)
+                        .where(song_id:, karaoke_delivery_model_id:)
                         .includes(:song, :karaoke_delivery_model)
                         .order(:created_at)
 
-    song = group.song
-    delivery_model = group.karaoke_delivery_model
+    song = duplicate_records.first&.song
+    delivery_model = duplicate_records.first&.karaoke_delivery_model
 
-    puts "📋 楽曲: \"#{song.title}\" (#{song.karaoke_type})"
-    puts "   配信機種: \"#{delivery_model.name}\""
-    puts "   重複数: #{duplicate_records.count}件"
+    puts "📋 楽曲: \"#{song&.title}\" (#{song&.karaoke_type})"
+    puts "   配信機種: \"#{delivery_model&.name}\""
+    puts "   重複数: #{duplicate_count}件"
 
     duplicate_records.each_with_index do |record, index|
       marker = index.zero? ? "🟢 保持" : "🔴 削除候補"
@@ -56,7 +62,7 @@ else
 
     puts ""
     total_duplicates += 1
-    total_redundant_records += (duplicate_records.count - 1)
+    total_redundant_records += (duplicate_count - 1)
   end
 
   puts "📊 重複統計:"
@@ -71,7 +77,14 @@ end
 
 puts "\n📈 全体統計:"
 total_associations = SongsKaraokeDeliveryModel.count
-unique_associations = SongsKaraokeDeliveryModel.select('DISTINCT song_id, karaoke_delivery_model_id').count
+
+# ユニークな関連付け数は生のSQLで取得
+unique_result = ActiveRecord::Base.connection.execute(<<~SQL.squish)
+  SELECT COUNT(DISTINCT (song_id, karaoke_delivery_model_id)) as unique_count
+  FROM songs_karaoke_delivery_models
+SQL
+unique_associations = unique_result.first['unique_count'].to_i
+
 total_songs = Song.count
 total_delivery_models = KaraokeDeliveryModel.count
 

@@ -21,14 +21,14 @@ puts "⚠️  この操作は不可逆です。事前にデータベースのバ
 puts ""
 
 # 事前チェック：重複があるかどうか確認
-duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL)
+duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL.squish)
   SELECT song_id, karaoke_delivery_model_id, COUNT(*) as duplicate_count
   FROM songs_karaoke_delivery_models
   GROUP BY song_id, karaoke_delivery_model_id
   HAVING COUNT(*) > 1
 SQL
 
-if duplicate_combinations.count == 0
+if duplicate_combinations.count.zero?
   puts "✅ 重複は見つかりませんでした。修正の必要はありません。"
   exit
 end
@@ -64,10 +64,10 @@ ActiveRecord::Base.transaction do
   duplicate_combinations.each do |combination|
     song_id = combination['song_id']
     karaoke_delivery_model_id = combination['karaoke_delivery_model_id']
-    
+
     # 該当する全レコードを取得
     duplicate_records = SongsKaraokeDeliveryModel
-                        .where(song_id: song_id, karaoke_delivery_model_id: karaoke_delivery_model_id)
+                        .where(song_id:, karaoke_delivery_model_id:)
                         .includes(:song, :karaoke_delivery_model)
                         .order(:created_at)
 
@@ -107,7 +107,7 @@ ActiveRecord::Base.transaction do
   end
 
   # 修正後の確認
-  remaining_result = ActiveRecord::Base.connection.execute(<<~SQL)
+  remaining_result = ActiveRecord::Base.connection.execute(<<~SQL.squish)
     SELECT COUNT(*) as remaining_count
     FROM (
       SELECT song_id, karaoke_delivery_model_id
