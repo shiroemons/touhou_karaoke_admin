@@ -25,4 +25,6 @@ class JoysoundMusicPostResource < Avo::BaseResource
 
   action FetchMusicPost
   action FetchMusicPostSongJoysoundUrl
+  action CleanupExpiredJoysoundMusicPosts
+  action PerformFullJoysoundMusicPostMaintenance
 end
