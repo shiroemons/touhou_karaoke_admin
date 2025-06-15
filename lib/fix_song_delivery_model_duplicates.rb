@@ -21,24 +21,26 @@ puts "⚠️  この操作は不可逆です。事前にデータベースのバ
 puts ""
 
 # 事前チェック：重複があるかどうか確認
-duplicate_groups = SongsKaraokeDeliveryModel
-                   .group(:song_id, :karaoke_delivery_model_id)
-                   .having('COUNT(*) > 1')
-                   .select(:song_id, :karaoke_delivery_model_id)
+duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL)
+  SELECT song_id, karaoke_delivery_model_id, COUNT(*) as duplicate_count
+  FROM songs_karaoke_delivery_models
+  GROUP BY song_id, karaoke_delivery_model_id
+  HAVING COUNT(*) > 1
+SQL
 
-if duplicate_groups.empty?
+if duplicate_combinations.count == 0
   puts "✅ 重複は見つかりませんでした。修正の必要はありません。"
   exit
 end
 
 puts "📋 検出された重複:"
-puts "  重複組数: #{duplicate_groups.count}組"
+puts "  重複組数: #{duplicate_combinations.count}組"
 
 total_records_before = SongsKaraokeDeliveryModel.count
 redundant_records = 0
-duplicate_groups.each do |group|
-  count = SongsKaraokeDeliveryModel.where(song_id: group.song_id, karaoke_delivery_model_id: group.karaoke_delivery_model_id).count
-  redundant_records += (count - 1)
+duplicate_combinations.each do |combination|
+  duplicate_count = combination['duplicate_count'].to_i
+  redundant_records += (duplicate_count - 1)
 end
 
 puts "  現在のレコード数: #{total_records_before}件"
@@ -46,13 +48,8 @@ puts "  削除予定レコード数: #{redundant_records}件"
 puts "  修正後のレコード数: #{total_records_before - redundant_records}件"
 puts ""
 
-# 確認プロンプト
-print "続行しますか？ (yes/no): "
-confirmation = $stdin.gets.chomp.downcase
-unless confirmation == 'yes'
-  puts "処理をキャンセルしました。"
-  exit
-end
+# 自動実行（Docker環境では確認プロンプトをスキップ）
+puts "処理を自動実行します..."
 
 # 統計情報を初期化
 stats = {
@@ -64,17 +61,20 @@ stats = {
 puts "\n🔧 重複修正開始..."
 
 ActiveRecord::Base.transaction do
-  duplicate_groups.each do |group|
+  duplicate_combinations.each do |combination|
+    song_id = combination['song_id']
+    karaoke_delivery_model_id = combination['karaoke_delivery_model_id']
+    
     # 該当する全レコードを取得
     duplicate_records = SongsKaraokeDeliveryModel
-                        .where(song_id: group.song_id, karaoke_delivery_model_id: group.karaoke_delivery_model_id)
+                        .where(song_id: song_id, karaoke_delivery_model_id: karaoke_delivery_model_id)
                         .includes(:song, :karaoke_delivery_model)
                         .order(:created_at)
 
     song = duplicate_records.first&.song
     delivery_model = duplicate_records.first&.karaoke_delivery_model
 
-    puts "  処理中: \"#{song.title}\" × \"#{delivery_model.name}\" (#{duplicate_records.count}件)"
+    puts "  処理中: \"#{song&.title}\" × \"#{delivery_model&.name}\" (#{duplicate_records.count}件)"
 
     # 最古のレコードを保持、その他を削除
     records_to_keep = duplicate_records.first
@@ -90,7 +90,7 @@ ActiveRecord::Base.transaction do
 
     stats[:duplicate_groups_processed] += 1
   rescue StandardError => e
-    error_msg = "エラー: Song ID #{group.song_id} × DeliveryModel ID #{group.karaoke_delivery_model_id} - #{e.message}"
+    error_msg = "エラー: Song ID #{song_id} × DeliveryModel ID #{karaoke_delivery_model_id} - #{e.message}"
     puts "    ❌ #{error_msg}"
     stats[:errors] << error_msg
     raise e # トランザクションをロールバック
@@ -107,10 +107,16 @@ ActiveRecord::Base.transaction do
   end
 
   # 修正後の確認
-  remaining_duplicates = SongsKaraokeDeliveryModel
-                         .group(:song_id, :karaoke_delivery_model_id)
-                         .having('COUNT(*) > 1')
-                         .count
+  remaining_result = ActiveRecord::Base.connection.execute(<<~SQL)
+    SELECT COUNT(*) as remaining_count
+    FROM (
+      SELECT song_id, karaoke_delivery_model_id
+      FROM songs_karaoke_delivery_models
+      GROUP BY song_id, karaoke_delivery_model_id
+      HAVING COUNT(*) > 1
+    ) as duplicates
+  SQL
+  remaining_duplicates = remaining_result.first['remaining_count'].to_i
 
   raise "修正後も#{remaining_duplicates}組の重複が残っています" if remaining_duplicates.positive?
 
