@@ -84,7 +84,7 @@ class Song < ApplicationRecord
 
     # 1ヶ月以内の配信期限のポスト
     upcoming_posts = JoysoundMusicPost
-                     .where('delivery_deadline_on < ?', 1.month.from_now)
+                     .where(delivery_deadline_on: ...1.month.from_now)
                      .order(delivery_deadline_on: :asc)
 
     # 優先度順に結合（差分を優先）
