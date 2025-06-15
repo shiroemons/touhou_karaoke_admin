@@ -52,10 +52,10 @@ module ParallelProcessor
     # @param label [String] ログに表示するラベル
     # @param options [Hash] オプション（batch_size, process_count）
     # @yield [record] 各レコードに対する処理
-    def process_with_progress(collection, label: nil, **options)
+    def process_with_progress(collection, label: nil, **)
       progress_logger = create_progress_logger(label)
 
-      process_in_parallel(collection, progress_logger:, **options) do |record, _index|
+      process_in_parallel(collection, progress_logger:, **) do |record, _index|
         yield(record)
       end
     end

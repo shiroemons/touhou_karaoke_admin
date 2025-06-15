@@ -31,7 +31,7 @@ class Song < ApplicationRecord
   def touhou?
     return false if original_songs.blank?
 
-    original_songs.all? { _1.title != 'オリジナル' } && !original_songs.all? { _1.title == 'その他' }
+    original_songs.all? { it.title != 'オリジナル' } && !original_songs.all? { it.title == 'その他' }
   end
 
   def self.not_set_original_song
