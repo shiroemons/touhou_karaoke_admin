@@ -31,7 +31,7 @@ class JoysoundMusicPostCleaner
   end
 
   def cleanup_expired_records
-    expired_records = JoysoundMusicPost.where('delivery_deadline_on < ?', Date.current)
+    expired_records = JoysoundMusicPost.where(delivery_deadline_on: ...Date.current)
 
     expired_records.find_each do |record|
       @checked_count += 1
