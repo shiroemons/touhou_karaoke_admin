@@ -2,7 +2,7 @@
   "name": "touhou_karaoke_admin",
   "private": true,
   "dependencies": {
-    "@rails/ujs": "7.1.3",
+    "@rails/ujs": "7.1.501",
     "sass": "^1.89.2"
   },
   "version": "0.1.0",
