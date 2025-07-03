@@ -3,12 +3,13 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby file: '.ruby-version'
 
+gem 'cssbundling-rails'
 gem 'jbuilder', '~> 2.11'
+gem 'jsbundling-rails'
 gem 'pg', '>= 0.18', '< 2.0'
 gem 'puma', '~> 6.4'
 gem 'rails', '~> 8.0.0'
 gem 'sass-rails', '>= 6'
-gem 'webpacker', '~> 5.4'
 
 gem 'bootsnap', '>= 1.4.2', require: false
 
