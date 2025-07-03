@@ -28,7 +28,7 @@ duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL.squish)
   HAVING COUNT(*) > 1
 SQL
 
-if duplicate_combinations.count.positive?
+if duplicate_combinations.any?
   puts "❌ #{duplicate_combinations.count}組の重複が見つかりました。"
   puts "   ユニーク制約を追加する前に重複を解決する必要があります。"
   puts ""

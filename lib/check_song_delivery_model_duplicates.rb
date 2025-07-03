@@ -29,7 +29,7 @@ duplicate_combinations = ActiveRecord::Base.connection.execute(<<~SQL.squish)
   HAVING COUNT(*) > 1
 SQL
 
-if duplicate_combinations.count.zero?
+if duplicate_combinations.none?
   puts "✅ 重複は見つかりませんでした。"
 else
   puts "❌ #{duplicate_combinations.count}組の重複が見つかりました:\n"
