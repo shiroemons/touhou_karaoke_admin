@@ -97,7 +97,7 @@ class JoysoundMusicPostManager
 
       begin
         result = UrlChecker.check_url(song.url)
-        
+
         if result[:exists] == false && result[:status_code] == 404
           # 明確に404の場合のみ削除
           song.destroy!
@@ -251,22 +251,22 @@ class JoysoundMusicPostManager
 
   def generate_final_report
     report = @error_reporter.generate_report
-    
+
     Rails.logger.info("=== Final Report ===")
     Rails.logger.info("Statistics: #{@stats}")
     Rails.logger.info("Error Summary: #{report[:summary]}")
-    
+
     if report[:recommendations].any?
       Rails.logger.info("Recommendations:")
       report[:recommendations].each do |rec|
         Rails.logger.info("  - #{rec[:message]}")
       end
     end
-    
+
     # エラーが多い場合はCSVファイルに出力
-    if @stats[:errors].count > 20
-      csv_file = @error_reporter.export_to_csv(Rails.root.join("tmp/error_reports/#{@process_id}.csv"))
-      Rails.logger.info("Error details exported to: #{csv_file}")
-    end
+    return unless @stats[:errors].count > 20
+
+    csv_file = @error_reporter.export_to_csv(Rails.root.join("tmp/error_reports/#{@process_id}.csv"))
+    Rails.logger.info("Error details exported to: #{csv_file}")
   end
 end

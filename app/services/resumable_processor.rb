@@ -8,13 +8,13 @@
 #
 # 使用例:
 #   processor = ResumableProcessor.new("joysound_fetch_2024_01_04")
-#   
+#
 #   # 新規開始または再開
 #   processor.process(JoysoundMusicPost.all) do |record, index|
 #     # 処理内容
 #     scraper.scrape_music_post_page(record)
 #   end
-#   
+#
 #   # 進捗確認
 #   puts processor.progress
 #   # => { total: 1000, processed: 500, percentage: 50.0 }
@@ -25,7 +25,7 @@ class ResumableProcessor
     @process_id = process_id
     @state_dir = state_dir
     @state_file = File.join(@state_dir, "#{process_id}.json")
-    
+
     FileUtils.mkdir_p(@state_dir)
     load_state
   end
@@ -39,12 +39,12 @@ class ResumableProcessor
     begin
       # 処理済みのIDをスキップ
       remaining = if @state[:processed_ids].any?
-                   collection.where.not(id: @state[:processed_ids])
-                 else
-                   collection
-                 end
+                    collection.where.not(id: @state[:processed_ids])
+                  else
+                    collection
+                  end
 
-      remaining.find_in_batches(batch_size: batch_size).with_index do |batch, batch_index|
+      remaining.find_in_batches(batch_size: batch_size).with_index do |batch, _batch_index|
         batch.each_with_index do |record, index|
           global_index = @state[:processed_count] + index
 
@@ -58,7 +58,7 @@ class ResumableProcessor
           end
 
           # 定期的に状態を保存
-          save_state if (global_index + 1) % 10 == 0
+          save_state if ((global_index + 1) % 10).zero?
         end
 
         @state[:processed_count] += batch.size
@@ -97,7 +97,7 @@ class ResumableProcessor
 
   # 処理を再開可能か確認
   def resumable?
-    @state[:status] == 'interrupted' || @state[:status] == 'processing'
+    %w[interrupted processing].include?(@state[:status])
   end
 
   # エラーレポートを取得
@@ -127,9 +127,9 @@ class ResumableProcessor
   def load_state
     if File.exist?(@state_file)
       @state = JSON.parse(File.read(@state_file)).deep_symbolize_keys
-      @state[:started_at] = Time.parse(@state[:started_at]) if @state[:started_at]
-      @state[:updated_at] = Time.parse(@state[:updated_at]) if @state[:updated_at]
-      @state[:completed_at] = Time.parse(@state[:completed_at]) if @state[:completed_at]
+      @state[:started_at] = Time.zone.parse(@state[:started_at]) if @state[:started_at]
+      @state[:updated_at] = Time.zone.parse(@state[:updated_at]) if @state[:updated_at]
+      @state[:completed_at] = Time.zone.parse(@state[:completed_at]) if @state[:completed_at]
     else
       @state = initial_state
     end

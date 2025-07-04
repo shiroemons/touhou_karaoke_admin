@@ -10,7 +10,7 @@
 #   reporter = ErrorReportService.new
 #   reporter.add_error(type: :validation, record: song, message: "タイトルが空です")
 #   reporter.add_error(type: :network, url: "https://example.com", message: "タイムアウト")
-#   
+#
 #   report = reporter.generate_report
 #   puts report[:summary]
 #   puts report[:details]
@@ -55,7 +55,7 @@ class ErrorReportService
     total_errors = @errors.count
     error_types = @errors.group_by { |e| e[:type] }
                          .transform_values(&:count)
-    
+
     duration = Time.current - @start_time
 
     {
@@ -87,7 +87,7 @@ class ErrorReportService
     recommendations = []
 
     error_types = @errors.group_by { |e| e[:type] }
-    
+
     # ネットワークエラーが多い場合
     network_errors = error_types[:network] || []
     if network_errors.count > 10
@@ -121,12 +121,12 @@ class ErrorReportService
   # エラーをCSVファイルに出力
   def export_to_csv(filename = nil)
     require 'csv'
-    
+
     filename ||= "error_report_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv"
-    
+
     CSV.open(filename, 'w') do |csv|
       csv << %w[timestamp type message record_type record_id url exception_class]
-      
+
       @errors.each do |error|
         csv << [
           error[:timestamp].strftime("%Y-%m-%d %H:%M:%S"),
@@ -139,7 +139,7 @@ class ErrorReportService
         ]
       end
     end
-    
+
     filename
   end
 
@@ -149,19 +149,19 @@ class ErrorReportService
     lines << "Start Time: #{@start_time}"
     lines << "Total Errors: #{@errors.count}"
     lines << ""
-    
+
     summary = generate_summary
     lines << "Error Types:"
     summary[:error_types].each do |type, count|
       lines << "  #{type}: #{count}"
     end
-    
+
     lines << ""
     lines << "Recent Errors:"
     @errors.last(10).each do |error|
       lines << "  [#{error[:timestamp].strftime('%H:%M:%S')}] #{error[:type]}: #{error[:message]}"
     end
-    
+
     lines.join("\n")
   end
 end

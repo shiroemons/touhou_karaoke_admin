@@ -30,7 +30,7 @@ class UrlChecker
     result = check_url(url)
     # ネットワークエラーの場合はtrueを返して削除を防ぐ
     return true if result[:exists].nil? && result[:should_retry]
-    
+
     result[:exists]
   end
 
@@ -42,10 +42,10 @@ class UrlChecker
 
     while attempt <= retries
       result = perform_check(uri)
-      
+
       # 成功した場合、または明確な404の場合は結果を返す
       return result if result[:status_code] || !result[:should_retry]
-      
+
       # リトライが必要な場合
       attempt += 1
       if attempt <= retries
@@ -62,18 +62,16 @@ class UrlChecker
     { exists: nil, error: e.message, should_retry: true }
   end
 
-  private
-
   def self.perform_check(uri)
     request = Net::HTTP::Head.new(uri.request_uri)
-    
-    Net::HTTP.start(uri.host, uri.port, 
+
+    Net::HTTP.start(uri.host, uri.port,
                     use_ssl: uri.scheme == 'https',
                     open_timeout: TIMEOUT,
                     read_timeout: TIMEOUT) do |http|
       response = http.request(request)
       status_code = response.code.to_i
-      
+
       {
         exists: status_code < 400,
         status_code: status_code,

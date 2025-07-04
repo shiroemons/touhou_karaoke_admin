@@ -99,7 +99,7 @@ module Scrapers
         karaoke_type: "JOYSOUND",
         url: page_url
       )
-      
+
       # karaoke_delivery_model_idsの更新を安全に行う
       update_delivery_models(song, kdm)
     end
@@ -151,7 +151,7 @@ module Scrapers
         karaoke_type: "JOYSOUND(うたスキ)",
         url: browser_manager.current_url
       )
-      
+
       # karaoke_delivery_model_idsの更新を安全に行う
       update_delivery_models(song, kdm)
       update_song_with_joysound_utasuki(song, joysound_music_post)
@@ -174,23 +174,21 @@ module Scrapers
       ActiveRecord::Base.transaction do
         # 現在の関連を取得
         current_ids = song.karaoke_delivery_model_ids
-        
+
         # 追加すべきIDと削除すべきIDを計算
         ids_to_add = new_delivery_model_ids - current_ids
         ids_to_remove = current_ids - new_delivery_model_ids
-        
+
         # 削除処理
         if ids_to_remove.any?
           song.songs_karaoke_delivery_models
-               .where(karaoke_delivery_model_id: ids_to_remove)
-               .destroy_all
+              .where(karaoke_delivery_model_id: ids_to_remove)
+              .destroy_all
         end
-        
+
         # 追加処理（重複チェック付き）
         ids_to_add.each do |model_id|
-          unless song.songs_karaoke_delivery_models.exists?(karaoke_delivery_model_id: model_id)
-            song.songs_karaoke_delivery_models.create!(karaoke_delivery_model_id: model_id)
-          end
+          song.songs_karaoke_delivery_models.create!(karaoke_delivery_model_id: model_id) unless song.songs_karaoke_delivery_models.exists?(karaoke_delivery_model_id: model_id)
         end
       end
     rescue ActiveRecord::RecordInvalid => e

@@ -77,8 +77,6 @@ class DeliveryModelManager
     if cached_model
       # モデルオブジェクトを返すため、IDからモデルを取得
       KaraokeDeliveryModel.find(model_id)
-    else
-      nil
     end
   rescue ActiveRecord::RecordNotFound
     nil
