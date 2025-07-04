@@ -38,9 +38,9 @@
 class JoysoundMusicPostManager
   include ParallelProcessor
 
-  attr_reader :stats
+  attr_reader :stats, :error_reporter
 
-  def initialize
+  def initialize(process_id: nil)
     @stats = {
       fetched: 0,
       updated: 0,
@@ -48,25 +48,37 @@ class JoysoundMusicPostManager
       errors: [],
       skipped: 0
     }
+    @error_reporter = ErrorReportService.new
+    @process_id = process_id || "joysound_fetch_#{Time.current.strftime('%Y%m%d_%H%M%S')}"
   end
 
   # 楽曲の取得処理（改善版）
-  def fetch_songs_with_progress
+  def fetch_songs_with_progress(resumable: false)
     scraper = Scrapers::JoysoundScraper.new
     prioritized_posts = prioritized_joysound_music_posts
 
     Rails.logger.info("Starting JOYSOUND music post song fetch: #{prioritized_posts.count} posts")
 
-    # ParallelProcessorを使用してバッチ処理
-    process_with_progress(prioritized_posts, label: "JOYSOUND Music Posts") do |record|
-      process_music_post_record(scraper, record)
+    if resumable
+      processor = ResumableProcessor.new(@process_id)
+      processor.process(prioritized_posts) do |record|
+        process_music_post_record(scraper, record)
+      end
+      Rails.logger.info("Progress: #{processor.progress}")
+    else
+      # ParallelProcessorを使用してバッチ処理
+      process_with_progress(prioritized_posts, label: "JOYSOUND Music Posts") do |record|
+        process_music_post_record(scraper, record)
+      end
     end
 
-    Rails.logger.info("Fetch completed: #{@stats}")
+    generate_final_report
     @stats
   rescue StandardError => e
     @stats[:errors] << "Fatal error in fetch process: #{e.message}"
+    @error_reporter.add_error(type: :fatal, message: e.message, exception: e)
     Rails.logger.error("JoysoundMusicPostManager fetch error: #{e}")
+    generate_final_report
     @stats
   end
 
@@ -84,11 +96,20 @@ class JoysoundMusicPostManager
       Rails.logger.debug { "#{index}/#{total_count} (#{progress_percentage}%): #{song.title}" }
 
       begin
-        unless UrlChecker.url_exists?(song.url)
+        result = UrlChecker.check_url(song.url)
+        
+        if result[:exists] == false && result[:status_code] == 404
+          # 明確に404の場合のみ削除
           song.destroy!
           deleted_count += 1
           @stats[:deleted] += 1
-          Rails.logger.info("Deleted unavailable song: #{song.title}")
+          Rails.logger.info("Deleted unavailable song (404): #{song.title}")
+        elsif result[:exists].nil? && result[:should_retry]
+          # ネットワークエラーの場合はスキップ
+          @stats[:skipped] += 1
+          Rails.logger.warn("Skipped song due to network error: #{song.title} (#{result[:error]})")
+        elsif result[:exists] == true
+          Rails.logger.debug { "Song still available: #{song.title}" }
         end
       rescue StandardError => e
         error_count += 1
@@ -98,10 +119,11 @@ class JoysoundMusicPostManager
       end
     end
 
-    Rails.logger.info("Refresh completed: deleted #{deleted_count}, errors #{error_count}")
+    Rails.logger.info("Refresh completed: deleted #{deleted_count}, skipped #{@stats[:skipped]}, errors #{error_count}")
     {
       total_checked: total_count,
       deleted: deleted_count,
+      skipped: @stats[:skipped],
       errors: @stats[:errors]
     }
   end
@@ -196,10 +218,55 @@ class JoysoundMusicPostManager
     begin
       scraper.scrape_music_post_page(record)
       @stats[:fetched] += 1
+    rescue ActiveRecord::RecordInvalid => e
+      error_details = if e.record.respond_to?(:errors)
+                        e.record.errors.full_messages.join(", ")
+                      else
+                        e.message
+                      end
+      error_message = "Error processing record #{record.id}: #{error_details}"
+      @stats[:errors] << error_message
+      @error_reporter.add_error(
+        type: :validation,
+        message: error_details,
+        record: e.record,
+        exception: e
+      )
+      Rails.logger.error(error_message)
+      Rails.logger.error("Invalid record: #{e.record.inspect}")
+      Rails.logger.error("Errors: #{e.record.errors.details}") if e.record.respond_to?(:errors)
     rescue StandardError => e
       error_message = "Error processing record #{record.id}: #{e.message}"
       @stats[:errors] << error_message
+      @error_reporter.add_error(
+        type: :general,
+        message: e.message,
+        record: record,
+        exception: e
+      )
       Rails.logger.error(error_message)
+      Rails.logger.error(e.backtrace.first(5).join("\n"))
+    end
+  end
+
+  def generate_final_report
+    report = @error_reporter.generate_report
+    
+    Rails.logger.info("=== Final Report ===")
+    Rails.logger.info("Statistics: #{@stats}")
+    Rails.logger.info("Error Summary: #{report[:summary]}")
+    
+    if report[:recommendations].any?
+      Rails.logger.info("Recommendations:")
+      report[:recommendations].each do |rec|
+        Rails.logger.info("  - #{rec[:message]}")
+      end
+    end
+    
+    # エラーが多い場合はCSVファイルに出力
+    if @stats[:errors].count > 20
+      csv_file = @error_reporter.export_to_csv(Rails.root.join("tmp/error_reports/#{@process_id}.csv"))
+      Rails.logger.info("Error details exported to: #{csv_file}")
     end
   end
 end

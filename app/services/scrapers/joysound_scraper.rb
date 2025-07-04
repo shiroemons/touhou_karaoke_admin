@@ -38,8 +38,19 @@ module Scrapers
           end
         end
       end
+    rescue ActiveRecord::RecordInvalid => e
+      error_details = if e.record.respond_to?(:errors)
+                        e.record.errors.full_messages.join(", ")
+                      else
+                        e.message
+                      end
+      Rails.logger.error("Error scraping JOYSOUND music post #{joysound_music_post.id}: #{error_details}")
+      Rails.logger.error("Invalid record: #{e.record.inspect}")
+      Rails.logger.error("Errors: #{e.record.errors.details}") if e.record.respond_to?(:errors)
+      raise
     rescue StandardError => e
       Rails.logger.error("Error scraping JOYSOUND music post #{joysound_music_post.id}: #{e.message}")
+      Rails.logger.error(e.backtrace.first(5).join("\n"))
       raise
     end
 
@@ -88,7 +99,9 @@ module Scrapers
         karaoke_type: "JOYSOUND",
         url: page_url
       )
-      song.karaoke_delivery_model_ids = kdm
+      
+      # karaoke_delivery_model_idsの更新を安全に行う
+      update_delivery_models(song, kdm)
     end
 
     def extract_delivery_models(element)
@@ -138,8 +151,9 @@ module Scrapers
         karaoke_type: "JOYSOUND(うたスキ)",
         url: browser_manager.current_url
       )
-      song.karaoke_delivery_model_ids = kdm
-
+      
+      # karaoke_delivery_model_idsの更新を安全に行う
+      update_delivery_models(song, kdm)
       update_song_with_joysound_utasuki(song, joysound_music_post)
     end
 
@@ -154,6 +168,36 @@ module Scrapers
           delivery_deadline_date: joysound_music_post.delivery_deadline_on
         )
       end
+    end
+
+    def update_delivery_models(song, new_delivery_model_ids)
+      ActiveRecord::Base.transaction do
+        # 現在の関連を取得
+        current_ids = song.karaoke_delivery_model_ids
+        
+        # 追加すべきIDと削除すべきIDを計算
+        ids_to_add = new_delivery_model_ids - current_ids
+        ids_to_remove = current_ids - new_delivery_model_ids
+        
+        # 削除処理
+        if ids_to_remove.any?
+          song.songs_karaoke_delivery_models
+               .where(karaoke_delivery_model_id: ids_to_remove)
+               .destroy_all
+        end
+        
+        # 追加処理（重複チェック付き）
+        ids_to_add.each do |model_id|
+          unless song.songs_karaoke_delivery_models.exists?(karaoke_delivery_model_id: model_id)
+            song.songs_karaoke_delivery_models.create!(karaoke_delivery_model_id: model_id)
+          end
+        end
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.error("Failed to update delivery models for song #{song.id}: #{e.message}")
+      Rails.logger.error("Attempted to set IDs: #{new_delivery_model_ids}")
+      Rails.logger.error("Current IDs: #{song.karaoke_delivery_model_ids}")
+      # エラーが発生しても処理を継続（ROLLBACKを防ぐ）
     end
   end
 end

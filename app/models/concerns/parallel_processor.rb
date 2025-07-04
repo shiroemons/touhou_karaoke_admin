@@ -6,7 +6,7 @@ module ParallelProcessor
 
   # デフォルト設定
   DEFAULT_BATCH_SIZE = 1000
-  DEFAULT_PROCESS_COUNT = 7
+  DEFAULT_PROCESS_COUNT = ENV.fetch('PARALLEL_PROCESS_COUNT', 7).to_i
 
   class_methods do
     # バッチ処理で並列実行を行う

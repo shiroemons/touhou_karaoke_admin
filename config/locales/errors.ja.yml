@@ -1,0 +1,34 @@
+ja:
+  activerecord:
+    errors:
+      messages:
+        record_invalid: "バリデーションに失敗しました: %{errors}"
+        restrict_dependent_destroy:
+          has_one: "%{record}が存在しているため削除できません"
+          has_many: "%{record}が存在しているため削除できません"
+        taken: "はすでに存在します"
+      models:
+        song:
+          attributes:
+            title:
+              blank: "を入力してください"
+            display_artist:
+              required: "を指定してください"
+            karaoke_type:
+              blank: "を入力してください"
+              inclusion: "は有効な値ではありません"
+            url:
+              blank: "を入力してください"
+              invalid: "は有効なURLではありません"
+            song_number:
+              blank: "を入力してください"
+        display_artist:
+          attributes:
+            name:
+              blank: "を入力してください"
+            karaoke_type:
+              blank: "を入力してください"
+              inclusion: "は有効な値ではありません"
+            url:
+              blank: "を入力してください"
+              invalid: "は有効なURLではありません"

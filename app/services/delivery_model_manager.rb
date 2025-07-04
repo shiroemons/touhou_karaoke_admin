@@ -65,6 +65,25 @@ class DeliveryModelManager
     names.map { |name| find_or_create_id(name, karaoke_type) }
   end
 
+  # 配信機種を取得または作成（OptimizedJoysoundScraperで使用）
+  def find_or_create_by_name_and_type(name, karaoke_type)
+    return nil if name.blank? || karaoke_type.blank?
+
+    model_id = find_or_create_id(name, karaoke_type)
+    return nil if model_id.nil?
+
+    # キャッシュから検索
+    cached_model = @cache.find { |key, id| key == [name, karaoke_type] && id == model_id }
+    if cached_model
+      # モデルオブジェクトを返すため、IDからモデルを取得
+      KaraokeDeliveryModel.find(model_id)
+    else
+      nil
+    end
+  rescue ActiveRecord::RecordNotFound
+    nil
+  end
+
   # キャッシュをリフレッシュ
   def refresh_cache
     @mutex.synchronize do
