@@ -4,8 +4,11 @@ init: ## Initialize environment
 	docker compose build
 	docker compose run --rm web bin/setup
 
-start:
-	docker compose up
+up: ## Do docker compose up -d
+	docker compose up -d
+
+down: ## Do docker compose down
+	docker compose down
 
 server: ## Run server
 	docker compose run --rm --service-ports web
