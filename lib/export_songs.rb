@@ -48,6 +48,8 @@ def karaoke_delivery_models_json(song)
 end
 
 jsons = []
+large_objects = []
+large_object_threshold = 10 * 1024 # 10KB in bytes
 one_month_ago = 1.month.ago
 
 Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original])
@@ -109,14 +111,40 @@ Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_
   json[:touhou_music].push({ type: "YouTube Music", url: song.youtube_music_url }) if song.youtube_music_url.present?
   json[:touhou_music].push({ type: "Spotify", url: song.spotify_url }) if song.spotify_url.present?
   json[:touhou_music].push({ type: "LINE MUSIC", url: song.line_music_url }) if song.line_music_url.present?
-  jsons << json
+
+  # オブジェクトのサイズをチェック
+  json_size = JSON.generate(json).bytesize
+  if json_size > large_object_threshold
+    puts "警告: 「#{song.title}」(#{display_artist.name}) [ID: #{song.id}] のオブジェクトサイズが #{json_size} bytes (#{(json_size / 1024.0).round(2)}KB) で閾値を超えています"
+    large_objects << {
+      **json,
+      _object_size_bytes: json_size,
+      _object_size_kb: (json_size / 1024.0).round(2)
+    }
+  else
+    jsons << json
+  end
 end
 
+# 通常のオブジェクトをファイルに出力
 File.open("tmp/karaoke_songs.json", "w") do |file|
   file.puts(JSON.pretty_generate(jsons))
+end
+
+# 大きなオブジェクトを別ファイルに出力
+if large_objects.any?
+  File.open("tmp/karaoke_songs_large.json", "w") do |file|
+    file.puts(JSON.pretty_generate(large_objects))
+  end
+  puts "大きなオブジェクト #{large_objects.size} 件を tmp/karaoke_songs_large.json に出力しました"
 end
 
 puts "DAM: #{Song.dam.touhou_arrange.count}曲"
 puts "JOYSOUND: #{Song.joysound.touhou_arrange.count}曲"
 puts "JOYSOUND(うたスキ): #{Song.music_post.touhou_arrange.count}曲"
+puts ""
+puts "=== エクスポート統計 ==="
+puts "通常のオブジェクト: #{jsons.size} 件"
+puts "大きなオブジェクト (10KB超): #{large_objects.size} 件"
+puts "合計: #{jsons.size + large_objects.size} 件"
 puts ""
