@@ -54,7 +54,14 @@ one_month_ago = 1.month.ago
 
 Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki, display_artist: :circles, original_songs: [:original])
     .left_joins(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki)
-    .where('songs.karaoke_type = ? OR songs.updated_at >= ? OR karaoke_delivery_models.updated_at >= ? OR song_with_dam_ouchikaraokes.updated_at >= ? OR song_with_joysound_utasukis.updated_at >= ?', 'JOYSOUND(うたスキ)', one_month_ago, one_month_ago, one_month_ago, one_month_ago)
+    .where(
+      'songs.karaoke_type = ? OR ' \
+      'songs.updated_at >= ? OR ' \
+      'karaoke_delivery_models.id IS NOT NULL AND karaoke_delivery_models.updated_at >= ? OR ' \
+      'song_with_dam_ouchikaraokes.id IS NOT NULL AND song_with_dam_ouchikaraokes.updated_at >= ? OR ' \
+      'song_with_joysound_utasukis.id IS NOT NULL AND song_with_joysound_utasukis.updated_at >= ?',
+      'JOYSOUND(うたスキ)', one_month_ago, one_month_ago, one_month_ago, one_month_ago
+    )
     .distinct
     .each do |song|
   display_artist = song.display_artist
