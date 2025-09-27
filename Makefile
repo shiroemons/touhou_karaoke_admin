@@ -41,15 +41,17 @@ rollback: ## Run db:rollback
 dbseed: ## Run db:seed
 	docker compose run --rm web bin/rails db:seed
 
-update-originals: ## Update originals data
-	docker compose run --rm web bin/rails r db/seeds/001_originals.rb
+update-originals-all: ## Update both originals and original songs data (upsert)
+	docker compose run --rm web bin/rails db:seed:update_originals
 
-update-original-songs: ## Update original songs data
-	docker compose run --rm web bin/rails r db/seeds/002_original_songs.rb
+seed-originals: ## Import originals data only (truncate and reimport)
+	docker compose run --rm web bin/rails db:seed:originals
 
-update-originals-all: ## Update both originals and original songs data
-	docker compose run --rm web bin/rails r db/seeds/001_originals.rb
-	docker compose run --rm web bin/rails r db/seeds/002_original_songs.rb
+seed-original-songs: ## Import original songs data only (truncate and reimport)
+	docker compose run --rm web bin/rails db:seed:original_songs
+
+seed-originals-all: ## Import both originals and original songs data (truncate and reimport)
+	docker compose run --rm web bin/rails db:seed:originals_all
 
 minitest: ## Run test
 	docker compose run --rm -e RAILS_ENV=test web bin/rails db:test:prepare
