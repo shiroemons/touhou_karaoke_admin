@@ -171,10 +171,165 @@ FIELD_LABELS = {
 }.freeze
 
 # ============================================================
+# URL削除警告対象フィールド
+# ============================================================
+URL_DELETION_WARNING_FIELDS = %w[
+  url
+  ouchikaraoke_url
+  musicpost_url
+  display_artist.url
+].freeze
+
+# ============================================================
+# URL削除（値→nil変化）を検出
+# @param differences [Array<Hash>] 差分配列
+# @return [Array<Hash>] URL削除のある差分のみ
+# ============================================================
+def detect_url_deletions(differences)
+  differences.select do |diff|
+    URL_DELETION_WARNING_FIELDS.include?(diff[:path]) &&
+      !diff[:old].nil? &&
+      diff[:new].nil?
+  end
+end
+
+# ============================================================
+# URL追加（nil→値変化）を検出
+# @param differences [Array<Hash>] 差分配列
+# @return [Array<Hash>] URL追加のある差分のみ
+# ============================================================
+def detect_url_additions(differences)
+  differences.select do |diff|
+    URL_DELETION_WARNING_FIELDS.include?(diff[:path]) &&
+      diff[:old].nil? &&
+      !diff[:new].nil?
+  end
+end
+
+# ============================================================
+# URL更新（値→別の値変化）を検出
+# @param differences [Array<Hash>] 差分配列
+# @return [Array<Hash>] URL更新のある差分のみ
+# ============================================================
+def detect_url_updates(differences)
+  differences.select do |diff|
+    URL_DELETION_WARNING_FIELDS.include?(diff[:path]) &&
+      !diff[:old].nil? &&
+      !diff[:new].nil?
+  end
+end
+
+# ============================================================
+# 全レコードからURL削除を集計
+# @param updated_records [Array<Hash>] 更新レコード配列
+# @return [Array<Hash>] URL削除警告リスト
+# ============================================================
+def aggregate_url_deletions(updated_records)
+  updated_records.flat_map do |record|
+    (record[:url_deletions] || record["url_deletions"] || []).map do |deletion|
+      {
+        id: record[:id] || record["objectID"],
+        title: record[:title] || record["title"],
+        field: deletion[:path],
+        old_value: deletion[:old]
+      }
+    end
+  end
+end
+
+# ============================================================
+# 全レコードからURL追加を集計
+# @param updated_records [Array<Hash>] 更新レコード配列
+# @return [Array<Hash>] URL追加リスト
+# ============================================================
+def aggregate_url_additions(updated_records)
+  updated_records.flat_map do |record|
+    (record[:url_additions] || record["url_additions"] || []).map do |addition|
+      {
+        id: record[:id] || record["objectID"],
+        title: record[:title] || record["title"],
+        field: addition[:path],
+        new_value: addition[:new]
+      }
+    end
+  end
+end
+
+# ============================================================
+# URL削除をフィールド別に集計
+# @param url_deletions [Array<Hash>] URL削除リスト
+# @return [Hash<String, Integer>] フィールド => 件数
+# ============================================================
+def count_url_deletions_by_field(url_deletions)
+  url_deletions.group_by { |d| d[:field] }
+               .transform_values(&:count)
+end
+
+# ============================================================
+# URL追加をフィールド別に集計
+# @param url_additions [Array<Hash>] URL追加リスト
+# @return [Hash<String, Integer>] フィールド => 件数
+# ============================================================
+def count_url_additions_by_field(url_additions)
+  url_additions.group_by { |a| a[:field] }
+               .transform_values(&:count)
+end
+
+# ============================================================
+# 全レコードからURL更新を集計
+# @param updated_records [Array<Hash>] 更新レコード配列
+# @return [Array<Hash>] URL更新リスト
+# ============================================================
+def aggregate_url_updates(updated_records)
+  updated_records.flat_map do |record|
+    (record[:url_updates] || record["url_updates"] || []).map do |update|
+      {
+        id: record[:id] || record["objectID"],
+        title: record[:title] || record["title"],
+        field: update[:path],
+        old_value: update[:old],
+        new_value: update[:new]
+      }
+    end
+  end
+end
+
+# ============================================================
+# URL更新をフィールド別に集計
+# @param url_updates [Array<Hash>] URL更新リスト
+# @return [Hash<String, Integer>] フィールド => 件数
+# ============================================================
+def count_url_updates_by_field(url_updates)
+  url_updates.group_by { |u| u[:field] }
+             .transform_values(&:count)
+end
+
+# ============================================================
 # フィールド名を日本語ラベルに変換
 # ============================================================
 def field_to_label(field)
   FIELD_LABELS.fetch(field, field)
+end
+
+# ============================================================
+# 表示幅計算ヘルパー（全角=2, 半角=1）
+# ============================================================
+
+# 文字列の表示幅を計算
+def display_width(str)
+  str.each_char.sum do |char|
+    char.bytesize > 1 ? 2 : 1
+  end
+end
+
+# 表示幅を考慮した左寄せ
+def ljust_display(str, width)
+  str + (" " * [width - display_width(str), 0].max)
+end
+
+# 表示幅を考慮した右寄せ
+def rjust_display(str, width)
+  (" " * [width - display_width(str), 0].max) + str
 end
 
 # ============================================================
@@ -394,7 +549,10 @@ def compare_records(local_records, algolia_records)
     updated_records << {
       "objectID" => id,
       "title" => local_record["title"],
-      "differences" => differences
+      "differences" => differences,
+      "url_deletions" => detect_url_deletions(differences),
+      "url_additions" => detect_url_additions(differences),
+      "url_updates" => detect_url_updates(differences)
     }
   end
 
@@ -424,6 +582,64 @@ def aggregate_updated_fields(updated_records)
 end
 
 # ============================================================
+# 配列要素から比較用キーを抽出
+# @param arr [Array] 配列
+# @return [Set] キーのセット
+# ============================================================
+def extract_array_keys_for_comparison(arr)
+  Array(arr).to_set do |item|
+    if item.is_a?(Hash)
+      item["name"] || item[:name] || item["type"] || item[:type] || item.to_json
+    else
+      item.to_s
+    end
+  end
+end
+
+# ============================================================
+# 全フィールドの変更を集計
+# @param updated_records [Array<Hash>] 更新レコード配列
+# @return [Hash<String, Hash>] フィールド => { total:, additions:, updates:, deletions: }
+# ============================================================
+def aggregate_all_field_changes(updated_records)
+  result = Hash.new { |h, k| h[k] = { total: 0, additions: 0, updates: 0, deletions: 0 } }
+
+  updated_records.each do |record|
+    differences = record["differences"] || record[:differences] || []
+    differences.each do |diff|
+      field = diff[:path] || diff["path"]
+      old_val = diff[:old] || diff["old"]
+      new_val = diff[:new] || diff["new"]
+
+      # 配列フィールドの場合、要素単位でカウント
+      if old_val.is_a?(Array) || new_val.is_a?(Array)
+        old_set = extract_array_keys_for_comparison(old_val)
+        new_set = extract_array_keys_for_comparison(new_val)
+
+        added = new_set - old_set
+        removed = old_set - new_set
+
+        result[field][:additions] += added.size
+        result[field][:deletions] += removed.size
+        result[field][:total] += added.size + removed.size
+      else
+        # 非配列フィールドは従来通り
+        result[field][:total] += 1
+        if old_val.nil? && !new_val.nil?
+          result[field][:additions] += 1
+        elsif !old_val.nil? && new_val.nil?
+          result[field][:deletions] += 1
+        else
+          result[field][:updates] += 1
+        end
+      end
+    end
+  end
+
+  result
+end
+
+# ============================================================
 # テキスト形式出力
 # ============================================================
 def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged: false)
@@ -442,17 +658,71 @@ def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged
   puts "  変更なし: #{Colors.gray("#{unchanged_records.size} 件")}"
   puts ""
 
+  # URL削除を集計（警告用）
+  url_deletions = aggregate_url_deletions(updated_records)
+  url_deletion_count = url_deletions.count
+
   # 更新内容の内訳を表示
   if updated_records.any?
-    field_counts = aggregate_updated_fields(updated_records)
-    max_field_length = field_counts.map { |field, _| field.length }.max
-    column_width = [max_field_length, 30].max
+    field_changes = aggregate_all_field_changes(updated_records)
 
-    puts Colors.bold("--- 更新内容の内訳 ---")
-    puts format("  %-#{column_width}s | 件数", Colors.cyan("フィールド"))
-    puts "  #{'-' * column_width}-|------"
-    field_counts.each do |field, count|
-      puts format("  %-#{column_width}s | %d", Colors.cyan(field), count)
+    # 件数の多い順にソート
+    sorted_fields = field_changes.sort_by { |_, stats| -stats[:total] }
+
+    puts Colors.bold("=== 更新内容の内訳 ===")
+
+    # 表のカラム幅を計算（表示幅ベース）
+    header_label = "フィールド名"
+    field_labels = sorted_fields.map { |f, _| field_to_label(f) }
+    max_display_width = [
+      field_labels.map { |l| display_width(l) }.max || 0,
+      display_width(header_label),
+      display_width("合計")
+    ].max
+    separator = "  #{'-' * max_display_width}|------|------|------|------"
+
+    puts "  #{ljust_display(header_label, max_display_width)} | 件数 | 追加 | 更新 | 削除"
+    puts separator
+
+    total_all = 0
+    total_additions = 0
+    total_updates = 0
+    total_deletions = 0
+
+    sorted_fields.each do |field, stats|
+      label = field_to_label(field)
+      total_all += stats[:total]
+      total_additions += stats[:additions]
+      total_updates += stats[:updates]
+      total_deletions += stats[:deletions]
+
+      total_str = rjust_display(stats[:total].to_s, 4)
+      add_str = rjust_display(stats[:additions].to_s, 4)
+      upd_str = rjust_display(stats[:updates].to_s, 4)
+      del_str = if stats[:deletions].positive?
+                  Colors.red(rjust_display(stats[:deletions].to_s, 4))
+                else
+                  rjust_display(stats[:deletions].to_s, 4)
+                end
+
+      puts "  #{ljust_display(label, max_display_width)} | #{total_str} | #{add_str} | #{upd_str} | #{del_str}"
+    end
+
+    puts separator
+    total_all_str = rjust_display(total_all.to_s, 4)
+    total_add_str = rjust_display(total_additions.to_s, 4)
+    total_upd_str = rjust_display(total_updates.to_s, 4)
+    total_del_str = if total_deletions.positive?
+                      Colors.red(rjust_display(total_deletions.to_s, 4))
+                    else
+                      rjust_display(total_deletions.to_s, 4)
+                    end
+    puts "  #{ljust_display('合計', max_display_width)} | #{total_all_str} | #{total_add_str} | #{total_upd_str} | #{total_del_str}"
+
+    # URL削除がある場合は警告を表示
+    if url_deletion_count.positive?
+      puts ""
+      puts "  #{Colors.colorize('⚠ URL削除警告あり（詳細は下記参照）', Colors::RED, Colors::BOLD)}"
     end
     puts ""
   end
@@ -497,6 +767,23 @@ def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged
     puts ""
   end
 
+  # URL削除警告がある場合、詳細を出力
+  if url_deletion_count.positive?
+    puts ""
+    puts Colors.colorize("=== URL削除警告 詳細 (#{url_deletion_count}件) ===", Colors::RED, Colors::BOLD)
+    puts Colors.red("以下のURLフィールドが削除されます。DBレコード消失の可能性があります。")
+    puts ""
+
+    # 個別詳細
+    url_deletions.each do |deletion|
+      puts "    #{Colors.red('[DEL]')} #{deletion[:title]}"
+      puts "          ID: #{deletion[:id]}"
+      puts "          フィールド: #{field_to_label(deletion[:field])}"
+      puts "          旧値: #{deletion[:old_value].inspect}"
+      puts ""
+    end
+  end
+
   return unless new_records.empty? && updated_records.empty?
 
   puts "変更はありません。"
@@ -530,14 +817,35 @@ end
 # JSON形式出力
 # ============================================================
 def output_json(local_count:, algolia_count:, results:)
+  url_deletions = aggregate_url_deletions(results[:updated])
+  url_additions = aggregate_url_additions(results[:updated])
+  url_updates = aggregate_url_updates(results[:updated])
+
+  # 全フィールドの変更を集計
+  field_changes = aggregate_all_field_changes(results[:updated])
+  field_changes_output = field_changes.sort_by { |_, stats| -stats[:total] }.map do |field, stats|
+    {
+      field: field,
+      field_label: field_to_label(field),
+      total: stats[:total],
+      additions: stats[:additions],
+      updates: stats[:updates],
+      deletions: stats[:deletions]
+    }
+  end
+
   output = {
     summary: {
       local_count: local_count,
       algolia_count: algolia_count,
       new_count: results[:new].size,
       updated_count: results[:updated].size,
-      unchanged_count: results[:unchanged].size
+      unchanged_count: results[:unchanged].size,
+      url_addition_count: url_additions.count,
+      url_update_count: url_updates.count,
+      url_deletion_warning_count: url_deletions.count
     },
+    field_changes: field_changes_output,
     new: results[:new].map { |r| { objectID: r["objectID"], title: r["title"], url: r["url"], karaoke_type: r["karaoke_type"] } },
     updated: results[:updated].map do |r|
       {
@@ -546,7 +854,35 @@ def output_json(local_count:, algolia_count:, results:)
         differences: r["differences"].map { |d| { path: d[:path], old: d[:old], new: d[:new] } }
       }
     end,
-    unchanged: results[:unchanged].map { |r| { objectID: r["objectID"], title: r["title"] } }
+    unchanged: results[:unchanged].map { |r| { objectID: r["objectID"], title: r["title"] } },
+    url_additions: url_additions.map do |a|
+      {
+        id: a[:id],
+        title: a[:title],
+        field: a[:field],
+        field_label: field_to_label(a[:field]),
+        new_value: a[:new_value]
+      }
+    end,
+    url_updates: url_updates.map do |u|
+      {
+        id: u[:id],
+        title: u[:title],
+        field: u[:field],
+        field_label: field_to_label(u[:field]),
+        old_value: u[:old_value],
+        new_value: u[:new_value]
+      }
+    end,
+    url_deletion_warnings: url_deletions.map do |d|
+      {
+        id: d[:id],
+        title: d[:title],
+        field: d[:field],
+        field_label: field_to_label(d[:field]),
+        old_value: d[:old_value]
+      }
+    end
   }
 
   puts JSON.pretty_generate(output)
