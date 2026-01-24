@@ -87,6 +87,9 @@ import-display-artists:
 import-touhou-music:
 	docker compose run --rm web bin/rails r lib/import_touhou_music.rb
 
+import-touhou-music-slim: ## Import touhou music slim data
+	docker compose run --rm web bin/rails runner lib/import_touhou_music_slim.rb
+
 stats:
 	docker compose run --rm web bin/rails r lib/stats.rb
 
