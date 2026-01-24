@@ -7,6 +7,14 @@ class DisplayArtistPolicy < ApplicationPolicy
     true
   end
 
+  def update?
+    true
+  end
+
+  def destroy?
+    record.songs.empty?
+  end
+
   def act_on?
     true
   end

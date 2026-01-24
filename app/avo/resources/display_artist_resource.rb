@@ -15,8 +15,8 @@ class DisplayArtistResource < Avo::BaseResource
   end
   field :karaoke_type, as: :text, readonly: true, sortable: true
   field :name, as: :text, readonly: true, sortable: true
-  field :name_reading, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :name_reading, as: :text, sortable: true
+  field :url, as: :text, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
 
   field :circles, as: :has_many, searchable: true
   field :songs, as: :has_many
@@ -29,6 +29,9 @@ class DisplayArtistResource < Avo::BaseResource
   action FetchDamArtist
   action FetchJoysoundArtist
   action FetchJoysoundMusicPostArtist
+  action ValidateDisplayArtistUrls
+  action CleanupInvalidDisplayArtists
+  action CleanupOrphanDisplayArtists
 
   filter KaraokeTypeFilter
 end
