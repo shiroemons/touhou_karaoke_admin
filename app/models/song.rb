@@ -1,5 +1,4 @@
 class Song < ApplicationRecord
-  include AlgoliaSearchable
   include Categorizable
   include ParallelProcessor
 
