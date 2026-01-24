@@ -189,6 +189,47 @@ docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --outpu
 | `--output-changes FILE` | 変更ありレコードのみをFILEに出力 |
 | `--no-color` | カラー出力を無効化 |
 
+## JOYSOUND(うたスキ) 配信期限切れチェック・削除
+
+Algolia上のJOYSOUND(うたスキ)レコードから配信期限切れのものを検出・削除する。
+
+```shell
+# 配信期限切れレコードのチェック（表示のみ）
+make check-expired-joysound
+
+# 配信期限切れレコードの削除（確認プロンプトあり）
+make delete-expired-joysound
+```
+
+### 直接実行する場合
+
+```shell
+# 基本実行（表示のみ）
+docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb
+
+# 詳細表示（アーティスト・URL含む）
+docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --verbose
+
+# URLにアクセスして配信終了を確認
+docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --verify --verbose
+
+# JSON形式で出力
+docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --json
+
+# 削除実行（確認プロンプトあり）
+docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --delete
+```
+
+### オプション
+
+| オプション | 説明 |
+|------------|------|
+| `--delete` | 実際に削除を実行（デフォルトは表示のみ） |
+| `--verify` | URLにアクセスして配信終了を確認（404チェック） |
+| `--verbose` | 詳細表示（アーティスト・URL含む） |
+| `--json` | JSON形式で出力 |
+| `--no-color` | カラー出力を無効化 |
+
 ## カラオケ楽曲出力
 
 ```shell

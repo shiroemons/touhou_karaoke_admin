@@ -90,6 +90,12 @@ import-touhou-music:
 import-touhou-music-slim: ## Import touhou music slim data
 	docker compose run --rm web bin/rails runner lib/import_touhou_music_slim.rb
 
+check-expired-joysound: ## Check expired JOYSOUND(うたスキ) records in Algolia
+	docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --verbose
+
+delete-expired-joysound: ## Delete expired JOYSOUND(うたスキ) records from Algolia
+	docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --delete --verbose
+
 stats:
 	docker compose run --rm web bin/rails r lib/stats.rb
 
