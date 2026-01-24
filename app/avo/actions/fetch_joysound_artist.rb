@@ -1,5 +1,5 @@
 class FetchJoysoundArtist < Avo::BaseAction
-  self.name = "JOYSOUNDのアーティストを取得"
+  self.name = I18n.t('avo.action_translations.fetch_joysound_artist.name')
   self.standalone = true
 
   def handle(_args)

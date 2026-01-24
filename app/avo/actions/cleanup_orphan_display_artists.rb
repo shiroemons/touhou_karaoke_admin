@@ -12,10 +12,10 @@ require 'csv'
 # 注意事項:
 #   - この操作は取り消せません
 class CleanupOrphanDisplayArtists < Avo::BaseAction
-  self.name = "関連なしDisplayArtistを削除"
-  self.message = "songsが紐づいていないDisplayArtistを削除します。削除されたレコードはTSVファイルでダウンロードできます。"
-  self.confirm_button_label = "削除する"
-  self.cancel_button_label = "キャンセル"
+  self.name = I18n.t('avo.action_translations.cleanup_orphan_display_artists.name')
+  self.message = I18n.t('avo.action_translations.cleanup_orphan_display_artists.message')
+  self.confirm_button_label = I18n.t('avo.action_translations.cleanup_orphan_display_artists.confirm_button_label')
+  self.cancel_button_label = I18n.t('avo.action_translations.cleanup_orphan_display_artists.cancel_button_label')
 
   # 個別レコードではなく、全体に対するアクションとして実行
   self.standalone = true

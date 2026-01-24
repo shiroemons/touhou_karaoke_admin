@@ -9,12 +9,12 @@ class DamSongResource < Avo::BaseResource
     model_class.order(created_at: :desc)
   }
 
-  field :id, as: :id, hide_on: [:index]
-  field :display_artist, as: :belongs_to
-  field :title, as: :text, readonly: true, sortable: true
-  field :url, as: :text, readonly: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :id, as: :id, name: 'ID', hide_on: [:index]
+  field :display_artist, as: :belongs_to, name: 'アーティスト'
+  field :title, as: :text, name: 'タイトル', readonly: true, sortable: true
+  field :url, as: :text, name: 'URL', readonly: true, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
 
-  field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
+  field :complex_name, as: :text, name: '複合名', hide_on: :all, as_label: true do |model|
     "[#{model.display_artist.name}] #{model.title}"
   end
 

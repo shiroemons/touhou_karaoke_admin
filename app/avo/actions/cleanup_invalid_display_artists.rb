@@ -21,10 +21,10 @@ require 'csv'
 #   - URLが一時的にアクセスできない場合も削除される可能性があります
 #   - 関連するsongsがあるレコードは削除されません
 class CleanupInvalidDisplayArtists < Avo::BaseAction
-  self.name = "無効なDisplayArtistを削除"
-  self.message = "URLが無効なアーティストを検証し、削除します。※関連するsongsがあるレコードは削除されません。"
-  self.confirm_button_label = "検証して削除"
-  self.cancel_button_label = "キャンセル"
+  self.name = I18n.t('avo.action_translations.cleanup_invalid_display_artists.name')
+  self.message = I18n.t('avo.action_translations.cleanup_invalid_display_artists.message')
+  self.confirm_button_label = I18n.t('avo.action_translations.cleanup_invalid_display_artists.confirm_button_label')
+  self.cancel_button_label = I18n.t('avo.action_translations.cleanup_invalid_display_artists.cancel_button_label')
 
   # 個別レコードではなく、全体に対するアクションとして実行
   self.standalone = true

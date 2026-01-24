@@ -1,88 +1,128 @@
 ja:
   avo:
-    dashboard: 'Dashboard'
-    dashboards: 'Dashboards'
-    choose_a_country: 'Choose a country'
-    choose_an_option: 'Choose an option'
-    are_you_sure_you_want_to_run_this_option: 'Are you sure you want to run this action?'
-    are_you_sure_detach_item: 'Are you sure you want to detach this %{item}.'
-    run: 'Run'
-    cancel: 'Cancel'
-    action_ran_successfully: 'Action ran successfully!'
-    details: "details"
-    unauthorized: 'Unauthorized'
-    attachment_class_attached: '%{attachment_class} attached.'
-    attachment_class_detached: '%{attachment_class} detached.'
-    resource_updated: 'Record updated'
-    resource_created: 'Record created'
-    resource_destroyed: 'Record destroyed'
-    switch_to_view: "Switch to %{view_type} view"
-    click_to_reveal_filters: "Click to reveal filters"
-    attachment_destroyed: 'Attachment destroyed'
-    failed_to_find_attachment: 'Failed to find attachment'
-    you_missed_something_check_form: 'You might have missed something. Please check the form.'
-    remove_selection: 'Remove selection'
-    select_item: 'Select item'
-    select_all: 'Select all'
-    select_all_matching: 'Select all matching'
-    undo: 'undo'
-    delete_file: 'Delete file'
-    delete: 'delete'
-    delete_item: 'Delete %{item}'
-    download_item: 'Download %{item}'
-    download_file: 'Download file'
-    download: 'Download'
-    view: 'View'
-    view_item: 'view %{item}'
-    edit: 'edit'
-    edit_item: 'edit %{item}'
-    detach_item: 'detach %{item}'
+    menu:
+      dashboards: ダッシュボード
+      master_data: マスターデータ
+      resource: リソース
+      dam: DAM
+      joysound: JOYSOUND
+    dashboard: 'ダッシュボード'
+    dashboards: 'ダッシュボード'
+    choose_a_country: '国を選択'
+    choose_an_option: 'オプションを選択'
+    are_you_sure_you_want_to_run_this_option: '本当にこのアクションを実行しますか？'
+    are_you_sure_detach_item: '本当にこの%{item}を取り外しますか？'
+    run: '実行'
+    cancel: 'キャンセル'
+    action_ran_successfully: 'アクションが正常に実行されました！'
+    details: "詳細"
+    unauthorized: '非認証'
+    attachment_class_attached: '%{attachment_class}を添付しました。'
+    attachment_class_detached: '%{attachment_class}を取り外しました。'
+    resource_updated: 'レコードを更新しました'
+    resource_created: 'レコードを作成しました'
+    resource_destroyed: 'レコードを削除しました'
+    switch_to_view: "%{view_type}ビューに切り替え"
+    click_to_reveal_filters: "クリックしてフィルターを表示"
+    attachment_destroyed: '添付ファイルを削除しました'
+    failed_to_find_attachment: '添付ファイルが見つかりません'
+    you_missed_something_check_form: '入力漏れがある可能性があります。フォームを確認してください。'
+    remove_selection: '選択を解除'
+    select_item: '項目を選択'
+    select_all: 'すべて選択'
+    select_all_matching: '一致するものをすべて選択'
+    undo: '元に戻す'
+    delete_file: 'ファイルを削除'
+    delete: '削除'
+    delete_item: '%{item}を削除'
+    download_item: '%{item}をダウンロード'
+    download_file: 'ファイルをダウンロード'
+    download: 'ダウンロード'
+    view: '表示'
+    view_item: '%{item}を表示'
+    edit: '編集'
+    edit_item: '%{item}を編集'
+    detach_item: '%{item}を取り外す'
     number_of_items:
-      zero: 'no %{item}'
-      one: 'one %{item}'
-      other: '%{count} %{item}'
+      zero: '%{item}なし'
+      one: '%{item} 1件'
+      other: '%{item} %{count}件'
     x_items_more:
-      zero: 'no more items'
-      one: 'one more item'
-      other: '%{count} more items'
-    are_you_sure: 'Are you sure?'
-    filters: 'Filters'
-    per_page: 'Per page'
-    more: 'More'
-    attach: 'Attach'
-    save: 'Save'
-    attach_and_attach_another: 'Attach & Attach another'
-    hide_content: 'Hide content'
-    show_content: 'Show content'
-    no_related_item_found: 'No related %{item} found'
-    no_item_found: 'No %{item} found'
-    loading: 'Loading'
-    confirm: 'Confirm'
-    actions: 'Actions'
-    resources: 'Resources'
-    oops_nothing_found: 'Oops! Nothing found...'
-    type_to_search: 'Type to search.'
-    and_x_other_resources: 'and %{count} other resources'
-    go_back: 'Go back'
-    home: 'Home'
-    new: 'new'
-    attach_item: 'Attach %{item}'
-    choose_item: 'Choose %{item}'
-    create_new_item: 'Create new %{item}'
-    table_view: 'Table view'
-    grid_view: 'Grid view'
-    next_page: 'Next page'
-    prev_page: 'Previous page'
-    list_is_empty: 'List is empty'
+      zero: '他の項目なし'
+      one: '他1件'
+      other: '他%{count}件'
+    are_you_sure: '本当によろしいですか？'
+    filters: 'フィルター'
+    per_page: '表示件数'
+    more: 'もっと見る'
+    attach: '添付'
+    save: '保存'
+    attach_and_attach_another: '添付して続けて添付'
+    hide_content: 'コンテンツを非表示'
+    show_content: 'コンテンツを表示'
+    no_related_item_found: '関連する%{item}が見つかりません'
+    no_item_found: '%{item}が見つかりません'
+    loading: '読み込み中'
+    confirm: '確認'
+    actions: 'アクション'
+    resources: 'リソース'
+    oops_nothing_found: '該当するものが見つかりませんでした...'
+    type_to_search: '検索ワードを入力してください。'
+    and_x_other_resources: '他%{count}件のリソース'
+    go_back: '戻る'
+    home: 'ホーム'
+    new: '新規'
+    attach_item: '%{item}を添付'
+    choose_item: '%{item}を選択'
+    create_new_item: '新規%{item}を作成'
+    table_view: 'テーブルビュー'
+    grid_view: 'グリッドビュー'
+    next_page: '次のページ'
+    prev_page: '前のページ'
+    list_is_empty: 'リストは空です'
     field_translations:
-      file:
-        zero: 'files'
-        one: 'file'
-        other: 'files'
-      people:
-        zero: 'peeps'
-        one: 'peep'
-        other: 'peeps'
+      id: ID
+      karaoke_type: カラオケ種別
+      song_number: 曲番号
+      title: タイトル
+      title_reading: タイトル読み
+      url: URL
+      youtube_url: YouTube URL
+      nicovideo_url: ニコニコ動画 URL
+      apple_music_url: Apple Music URL
+      youtube_music_url: YouTube Music URL
+      spotify_url: Spotify URL
+      line_music_url: LINE MUSIC URL
+      code: コード
+      short_title: 短縮タイトル
+      original_type: 種別
+      series_order: シリーズ順
+      composer: 作曲者
+      track_number: トラック番号
+      is_duplicate: 重複フラグ
+      name: 名前
+      name_reading: 名前読み
+      order: 表示順
+      display_title: 表示タイトル
+      smartphone_service_enabled: スマートフォンサービス
+      home_karaoke_enabled: 家庭用カラオケ
+      artist: アーティスト
+      producer: プロデューサー
+      delivery_deadline_on: 配信期限
+      delivery_deadline_date: 配信期限
+      joysound_url: JOYSOUND URL
+      display_artist: アーティスト
+      original_songs: 原曲
+      karaoke_delivery_models: 配信機種
+      circles: サークル
+      songs: カラオケ配信曲
+      song: カラオケ配信曲
+      complex_name: 複合名
+      touhou?: 東方
+      created_at: 作成日時
+      updated_at: 更新日時
+      song_with_dam_ouchikaraoke: おうちカラオケ(DAM)
+      song_with_joysound_utasuki: うたスキ(JOYSOUND)
     resource_translations:
       user:
         zero: 'users'
@@ -136,31 +176,141 @@ ja:
         zero: 'JOYSOUND(うたすき)'
         one: 'JOYSOUND(うたすき)'
         other: 'JOYSOUND(うたすき)'
-    reset_filters: 'Reset filters'
-    not_authorized: 'You are not authorized to perform this action.'
+    action_translations:
+      # クリーンアップ系アクション
+      cleanup_expired_joysound_music_posts:
+        name: "期限切れのJOYSOUNDミュージックポストをクリーンアップ"
+        message: "配信期限が過ぎており、URLが存在しないレコードを削除します。この操作は元に戻せません。"
+        confirm_button_label: "実行する"
+        cancel_button_label: "キャンセル"
+        succeed: "クリーンアップが完了しました。確認件数: %{checked}件、削除件数: %{deleted}件"
+        failed: "処理中にエラーが発生しました。詳細はログを確認してください。"
+      cleanup_invalid_display_artists:
+        name: "無効なDisplayArtistを削除"
+        message: "URLが無効なアーティストを検証し、削除します。※関連するsongsがあるレコードは削除されません。"
+        confirm_button_label: "検証して削除"
+        cancel_button_label: "キャンセル"
+        succeed: "検証が完了しました。"
+        checked: "確認件数: %{count}件"
+        invalid: "無効URL: %{count}件"
+        deleted: "削除件数: %{count}件"
+        skipped: "※%{count}件は関連するsongsがあるため削除されませんでした。"
+        failed: "処理中にエラーが発生しました。詳細はログを確認してください。"
+      cleanup_orphan_display_artists:
+        name: "関連なしDisplayArtistを削除"
+        message: "songsが紐づいていないDisplayArtistを削除します。削除されたレコードはTSVファイルでダウンロードできます。"
+        confirm_button_label: "削除する"
+        cancel_button_label: "キャンセル"
+        succeed: "削除対象のレコードはありませんでした"
+      # エクスポート系アクション
+      export_missing_original_songs:
+        name: "原曲未登録の楽曲をエクスポート"
+      export_songs:
+        name: "選択した楽曲をエクスポート"
+      # DAM関連取得アクション
+      fetch_dam_artist:
+        name: "DAMのアーティストを取得"
+        succeed: "完了しました！"
+      fetch_dam_song:
+        name: "URLからDAMの楽曲を取得"
+        succeed: "完了しました！"
+        failed: "DAMの楽曲URLではありません。"
+      fetch_dam_songs:
+        name: "DAMの楽曲を取得"
+        succeed: "完了しました！"
+      fetch_dam_touhou_songs:
+        name: "DAMの東方楽曲を取得"
+        succeed: "完了しました！"
+      # JOYSOUND関連取得アクション
+      fetch_joysound_artist:
+        name: "JOYSOUNDのアーティストを取得"
+        succeed: "完了しました！"
+      fetch_joysound_detail:
+        name: "URLからJOYSOUNDの楽曲を取得"
+        succeed: "完了しました！"
+        failed: "JOYSOUNDのURLではありません。"
+      fetch_joysound_music_post_artist:
+        name: "JOYSOUNDミュージックポストのアーティストを取得"
+        succeed: "完了しました！"
+      fetch_joysound_music_post_song:
+        name: "JOYSOUNDミュージックポストの楽曲を取得（改善版）"
+        message: "JOYSOUNDミュージックポストから楽曲データを取得します。エラーハンドリングと進捗表示が改善されています。"
+        succeed: "取得処理が正常に完了しました。取得件数: %{fetched}件、スキップ件数: %{skipped}件"
+        failed: "取得処理が完了しましたが、%{errors}件のエラーが発生しました。取得件数: %{fetched}件"
+      fetch_joysound_songs:
+        name: "JOYSOUNDの楽曲を取得"
+        succeed: "完了しました！"
+      fetch_joysound_touhou_songs:
+        name: "JOYSOUNDの東方楽曲を取得"
+        succeed: "完了しました！"
+      fetch_music_post:
+        name: "JOYSOUNDミュージックポストの東方楽曲を取得"
+        succeed: "完了しました！"
+      fetch_music_post_song_joysound_url:
+        name: "JOYSOUNDミュージックポストの楽曲URLを取得"
+        succeed: "完了しました！"
+      # インポート系アクション
+      import_songs_with_original_songs:
+        name: "原曲を含む楽曲のインポート"
+        succeed: "完了しました！"
+        failed: "インポートエラー。"
+      # メンテナンス系アクション
+      perform_full_joysound_music_post_maintenance:
+        name: "JOYSOUNDミュージックポスト統合メンテナンス"
+        message: "期限切れレコードのクリーンアップ、楽曲取得、URL確認、配信期限更新を一括実行します。時間がかかる場合があります。"
+        confirm_button_label: "実行する"
+        cancel_button_label: "キャンセル"
+        succeed: "統合メンテナンスが完了しました:"
+        cleanup: "期限切れクリーンアップ: %{deleted}件削除"
+        fetch: "楽曲取得: %{fetched}件取得"
+        refresh: "URL確認: %{deleted}件削除"
+        update_deadlines: "配信期限更新: %{updated}件更新"
+        failed: "%{errors}件のエラーが発生しました。詳細はログを確認してください。"
+      refresh_joysound_music_post_song:
+        name: "JOYSOUNDミュージックポスト楽曲の更新（効率化版）"
+        message: "URLの存在確認により、無効な楽曲レコードを削除します。ブラウザを使わない高速処理です。"
+        succeed: "更新処理が正常に完了しました。確認件数: %{total_checked}件、削除件数: %{deleted}件"
+        failed: "更新処理が完了しましたが、%{errors}件のエラーが発生しました。削除件数: %{deleted}件"
+      update_dam_delivery_models:
+        name: "DAM楽曲の機種情報を更新"
+        succeed: "完了しました！"
+      update_joysound_music_post_delivery_deadline_dates:
+        name: "JOYSOUNDミュージックポスト楽曲の配信期限を更新（最適化版）"
+        message: "配信期限データを効率的に一括更新します。データベースクエリが最適化されています。"
+        succeed: "更新処理が正常に完了しました。処理件数: %{total_processed}件、更新件数: %{updated}件"
+        failed: "更新処理が完了しましたが、%{errors}件のエラーが発生しました。更新件数: %{updated}件"
+      validate_display_artist_urls:
+        name: "DisplayArtistのURL検証"
+        message: "アーティストURLが有効かどうかを確認します。無効なURLはTSVファイルでダウンロードされます。"
+        confirm_button_label: "検証する"
+        cancel_button_label: "キャンセル"
+        succeed: "URL検証が完了しました。確認件数: %{checked}件、無効なURLはありませんでした。"
+        failed: "処理中にエラーが発生しました。詳細はログを確認してください。"
+    reset_filters: 'フィルターをリセット'
+    not_authorized: 'この操作を実行する権限がありません。'
     search:
-      placeholder: 'Search'
-      cancel_button: 'Cancel'
-    sign_out: 'Sign out'
-    failed: 'Failed'
-    failed_to_load: 'Failed to load'
+      placeholder: '検索'
+      cancel_button: 'キャンセル'
+    sign_out: 'サインアウト'
+    failed: '失敗'
+    failed_to_load: '読み込みに失敗しました'
     key_value_field:
-      key: 'Key'
-      value: 'Value'
-      add_row: 'Add row'
-      delete_row: 'Delete row'
-    was_successfully_created: 'was successfully created'
-    was_successfully_updated: 'was successfully updated'
-    clear_value: 'Clear value'
-    tools: 'Tools'
+      key: 'キー'
+      value: '値'
+      add_row: '行を追加'
+      delete_row: '行を削除'
+    was_successfully_created: 'を作成しました'
+    was_successfully_updated: 'を更新しました'
+    clear_value: '値をクリア'
+    tools: 'ツール'
     order:
-      reorder_record: 'Reorder record'
-      higher: 'Move record higher'
-      lower: 'Move record lower'
-      to_top: 'Move record to top'
-      to_bottom: 'Move record to bottom'
-    empty_dashboard_message: 'Add cards to this dashboard'
-    no_cards_present: 'No cards present'
-    no_options_available: 'No options available'
-    x_records_selected_from_a_total_of_x_html: '<span class="font-bold text-gray-700">%{selected}</span> records selected on this page from a total of <span class="font-bold text-gray-700">%{count}</span>'
-    x_records_selected_from_all_pages_html: '<span class="font-bold text-gray-700">%{count}</span> records selected from all pages'
+      reorder_record: 'レコードを並べ替え'
+      higher: 'レコードを上に移動'
+      lower: 'レコードを下に移動'
+      to_top: 'レコードを先頭に移動'
+      to_bottom: 'レコードを末尾に移動'
+    empty_dashboard_message: 'このダッシュボードにカードを追加してください'
+    no_cards_present: 'カードがありません'
+    no_options_available: '選択肢がありません'
+    x_records_selected_from_a_total_of_x_html: '<span class="font-bold text-gray-700">%{selected}</span>件のレコードを選択中（全<span class="font-bold text-gray-700">%{count}</span>件中）'
+    x_records_selected_from_all_pages_html: '全ページから<span class="font-bold text-gray-700">%{count}</span>件のレコードを選択中'

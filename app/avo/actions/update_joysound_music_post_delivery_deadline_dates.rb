@@ -22,8 +22,8 @@
 # 使用サービス:
 #   - JoysoundMusicPostManager: 統合管理サービス
 class UpdateJoysoundMusicPostDeliveryDeadlineDates < Avo::BaseAction
-  self.name = "JOYSOUNDミュージックポスト楽曲の配信期限を更新（最適化版）"
-  self.message = "配信期限データを効率的に一括更新します。データベースクエリが最適化されています。"
+  self.name = I18n.t('avo.action_translations.update_joysound_music_post_delivery_deadline_dates.name')
+  self.message = I18n.t('avo.action_translations.update_joysound_music_post_delivery_deadline_dates.message')
   self.standalone = true
 
   def handle(**_args)

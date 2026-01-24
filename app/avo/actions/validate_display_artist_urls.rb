@@ -16,10 +16,10 @@ require 'csv'
 #   - このアクションは検証のみで、削除は行いません
 #   - 一時的なネットワーク障害でも無効と判定される場合があります
 class ValidateDisplayArtistUrls < Avo::BaseAction
-  self.name = "DisplayArtistのURL検証"
-  self.message = "アーティストURLが有効かどうかを確認します。無効なURLはTSVファイルでダウンロードされます。"
-  self.confirm_button_label = "検証する"
-  self.cancel_button_label = "キャンセル"
+  self.name = I18n.t('avo.action_translations.validate_display_artist_urls.name')
+  self.message = I18n.t('avo.action_translations.validate_display_artist_urls.message')
+  self.confirm_button_label = I18n.t('avo.action_translations.validate_display_artist_urls.confirm_button_label')
+  self.cancel_button_label = I18n.t('avo.action_translations.validate_display_artist_urls.cancel_button_label')
 
   # 個別レコードではなく、全体に対するアクションとして実行
   self.standalone = true

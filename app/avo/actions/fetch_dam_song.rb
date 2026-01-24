@@ -1,5 +1,5 @@
 class FetchDamSong < Avo::BaseAction
-  self.name = "URLからDAMの楽曲を取得"
+  self.name = I18n.t('avo.action_translations.fetch_dam_song.name')
   self.standalone = true
   self.visible = -> { view == :index }
 

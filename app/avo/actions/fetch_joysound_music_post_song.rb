@@ -19,8 +19,8 @@
 #   - JoysoundMusicPostManager: 統合管理サービス
 #   - Scrapers::JoysoundScraper: 実際のスクレイピング処理
 class FetchJoysoundMusicPostSong < Avo::BaseAction
-  self.name = "JOYSOUNDミュージックポストの楽曲を取得（改善版）"
-  self.message = "JOYSOUNDミュージックポストから楽曲データを取得します。エラーハンドリングと進捗表示が改善されています。"
+  self.name = I18n.t('avo.action_translations.fetch_joysound_music_post_song.name')
+  self.message = I18n.t('avo.action_translations.fetch_joysound_music_post_song.message')
   self.standalone = true
 
   def handle(**_args)

@@ -21,8 +21,8 @@
 # 注意事項:
 #   - ネットワーク障害時は誤削除を防ぐため処理をスキップ
 class RefreshJoysoundMusicPostSong < Avo::BaseAction
-  self.name = "JOYSOUNDミュージックポスト楽曲の更新（効率化版）"
-  self.message = "URLの存在確認により、無効な楽曲レコードを削除します。ブラウザを使わない高速処理です。"
+  self.name = I18n.t('avo.action_translations.refresh_joysound_music_post_song.name')
+  self.message = I18n.t('avo.action_translations.refresh_joysound_music_post_song.message')
   self.standalone = true
 
   def handle(**_args)

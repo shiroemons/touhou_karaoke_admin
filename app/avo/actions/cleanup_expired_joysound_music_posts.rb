@@ -16,10 +16,10 @@
 #   - この操作は取り消せません
 #   - URLが一時的にアクセスできない場合も削除される可能性があります
 class CleanupExpiredJoysoundMusicPosts < Avo::BaseAction
-  self.name = "期限切れのJOYSOUNDミュージックポストをクリーンアップ"
-  self.message = "配信期限が過ぎており、URLが存在しないレコードを削除します。この操作は元に戻せません。"
-  self.confirm_button_label = "実行する"
-  self.cancel_button_label = "キャンセル"
+  self.name = I18n.t('avo.action_translations.cleanup_expired_joysound_music_posts.name')
+  self.message = I18n.t('avo.action_translations.cleanup_expired_joysound_music_posts.message')
+  self.confirm_button_label = I18n.t('avo.action_translations.cleanup_expired_joysound_music_posts.confirm_button_label')
+  self.cancel_button_label = I18n.t('avo.action_translations.cleanup_expired_joysound_music_posts.cancel_button_label')
 
   # 個別レコードではなく、全体に対するアクションとして実行
   self.standalone = true

@@ -3,7 +3,7 @@
 require 'csv'
 
 class ExportMissingOriginalSongs < Avo::BaseAction
-  self.name = '原曲未登録の楽曲をエクスポート'
+  self.name = I18n.t('avo.action_translations.export_missing_original_songs.name')
   self.standalone = true
   self.visible = -> { view == :index }
   self.may_download_file = true

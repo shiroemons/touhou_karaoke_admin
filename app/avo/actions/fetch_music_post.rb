@@ -1,5 +1,5 @@
 class FetchMusicPost < Avo::BaseAction
-  self.name = "JOYSOUNDミュージックポストの東方楽曲を取得"
+  self.name = I18n.t('avo.action_translations.fetch_music_post.name')
   self.standalone = true
 
   def handle(_args)

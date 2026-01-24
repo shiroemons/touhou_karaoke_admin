@@ -9,20 +9,20 @@ class DisplayArtistResource < Avo::BaseResource
     model_class.order(created_at: :desc)
   }
 
-  field :id, as: :id, hide_on: [:index]
-  field :circle, as: :text, only_on: [:index], index_text_align: :center do |model|
+  field :id, as: :id, name: 'ID', hide_on: [:index]
+  field :circle, as: :text, name: 'サークル', only_on: [:index], index_text_align: :center do |model|
     model.circles.present? ? '✅' : ''
   end
-  field :karaoke_type, as: :text, readonly: true, sortable: true
-  field :name, as: :text, readonly: true, sortable: true
-  field :name_reading, as: :text, sortable: true
-  field :url, as: :text, format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
+  field :karaoke_type, as: :text, name: 'カラオケ種別', readonly: true, sortable: true
+  field :name, as: :text, name: 'アーティスト名', readonly: true, sortable: true
+  field :name_reading, as: :text, name: 'アーティスト名読み', sortable: true
+  field :url, as: :text, name: 'URL', format_using: -> { link_to(value, value, target: "_blank", rel: "noopener") }
 
-  field :circles, as: :has_many, searchable: true
-  field :songs, as: :has_many
-  field :dam_songs, as: :has_many
+  field :circles, as: :has_many, name: 'サークル', searchable: true
+  field :songs, as: :has_many, name: 'カラオケ配信曲'
+  field :dam_songs, as: :has_many, name: 'DAM楽曲'
 
-  field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
+  field :complex_name, as: :text, name: '複合名', hide_on: :all, as_label: true do |model|
     "[#{model.karaoke_type}] #{model.name}"
   end
 

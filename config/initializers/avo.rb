@@ -88,28 +88,28 @@ Avo.configure do |config|
 
   ## == Menus ==
   config.main_menu = lambda {
-    section "Dashboards", icon: "dashboards" do
+    section I18n.t('avo.menu.dashboards'), icon: "dashboards" do
       all_dashboards
     end
 
-    section('Master data', icon: 'resources') do
+    section I18n.t('avo.menu.master_data'), icon: 'resources' do
       resource(:original)
       resource(:original_song)
       resource(:karaoke_delivery_model)
       resource(:circle)
     end
 
-    section "Resource", icon: "resources" do
+    section I18n.t('avo.menu.resource'), icon: "resources" do
       resource(:song)
       resource(:display_artist)
     end
 
-    section "DAM", icon: "resources" do
+    section I18n.t('avo.menu.dam'), icon: "resources" do
       resource(:dam_song)
       resource(:dam_artist_url)
     end
 
-    section "JOYSOUND", icon: "resources" do
+    section I18n.t('avo.menu.joysound'), icon: "resources" do
       resource(:joysound_song)
       resource(:joysound_music_post)
     end

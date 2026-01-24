@@ -16,3 +16,60 @@ ja:
       display_artists_circle: アーティスト - サークル
       songs_original_song: カラオケ配信曲 - 原作
       songs_karaoke_delivery_model: カラオケ配信曲 - 配信機種
+    attributes:
+      song:
+        karaoke_type: カラオケ種別
+        song_number: 曲番号
+        title: タイトル
+        title_reading: タイトル読み
+        url: URL
+        youtube_url: YouTube URL
+        nicovideo_url: ニコニコ動画 URL
+        apple_music_url: Apple Music URL
+        youtube_music_url: YouTube Music URL
+        spotify_url: Spotify URL
+        line_music_url: LINE MUSIC URL
+      original:
+        code: コード
+        title: 作品名
+        short_title: 短縮タイトル
+        original_type: 種別
+        series_order: シリーズ順
+      original_song:
+        title: 原曲名
+        composer: 作曲者
+        track_number: トラック番号
+        is_duplicate: 重複フラグ
+      circle:
+        name: サークル名
+      display_artist:
+        karaoke_type: カラオケ種別
+        name: アーティスト名
+        name_reading: アーティスト名読み
+        url: URL
+      karaoke_delivery_model:
+        name: 機種名
+        karaoke_type: カラオケ種別
+        order: 表示順
+      dam_song:
+        title: タイトル
+        url: URL
+      joysound_song:
+        display_title: 表示タイトル
+        url: URL
+        smartphone_service_enabled: スマートフォンサービス
+        home_karaoke_enabled: 家庭用カラオケ
+      joysound_music_post:
+        title: タイトル
+        artist: アーティスト
+        producer: プロデューサー
+        delivery_deadline_on: 配信期限
+        url: URL
+        joysound_url: JOYSOUND URL
+      dam_artist_url:
+        url: URL
+      song_with_dam_ouchikaraoke:
+        url: URL
+      song_with_joysound_utasuki:
+        delivery_deadline_date: 配信期限
+        url: URL

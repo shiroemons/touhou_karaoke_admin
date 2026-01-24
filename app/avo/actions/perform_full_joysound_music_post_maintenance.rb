@@ -32,10 +32,10 @@
 #   - エラーが発生しても可能な限り処理を継続します
 #   - 詳細なログは Rails.logger に出力されます
 class PerformFullJoysoundMusicPostMaintenance < Avo::BaseAction
-  self.name = "JOYSOUNDミュージックポスト統合メンテナンス"
-  self.message = "期限切れレコードのクリーンアップ、楽曲取得、URL確認、配信期限更新を一括実行します。時間がかかる場合があります。"
-  self.confirm_button_label = "実行する"
-  self.cancel_button_label = "キャンセル"
+  self.name = I18n.t('avo.action_translations.perform_full_joysound_music_post_maintenance.name')
+  self.message = I18n.t('avo.action_translations.perform_full_joysound_music_post_maintenance.message')
+  self.confirm_button_label = I18n.t('avo.action_translations.perform_full_joysound_music_post_maintenance.confirm_button_label')
+  self.cancel_button_label = I18n.t('avo.action_translations.perform_full_joysound_music_post_maintenance.cancel_button_label')
   self.standalone = true
 
   def handle(**_args)
