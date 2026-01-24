@@ -161,6 +161,34 @@ JoysoundMusicPost.all.map { { title: _1.title } } - Song.music_post.map { { titl
 make export-for-algolia
 ```
 
+## Algolia アップロード差分確認（Dry-Run）
+
+ローカルの `tmp/karaoke_songs.json` と Algolia インデックスを比較し、差分を確認する。
+
+```shell
+# 基本実行
+docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb
+
+# 詳細表示（変更内容を詳しく表示）
+docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --verbose
+
+# JSON形式で出力
+docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --json
+
+# 変更があるレコードのみをファイルに出力
+docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --output-changes tmp/changes.json
+```
+
+### オプション
+
+| オプション | 説明 |
+|------------|------|
+| `--json` | JSON形式で出力 |
+| `--verbose` | 詳細表示 |
+| `--show-unchanged` | 変更なしレコードのIDを出力 |
+| `--output-changes FILE` | 変更ありレコードのみをFILEに出力 |
+| `--no-color` | カラー出力を無効化 |
+
 ## カラオケ楽曲出力
 
 ```shell
