@@ -19,5 +19,8 @@ karaoke_songs.each.with_index(1) do |karaoke_song, i|
   song.youtube_url = karaoke_song[:youtube_url] if karaoke_song[:youtube_url]
   song.nicovideo_url = karaoke_song[:nicovideo_url] if karaoke_song[:nicovideo_url]
   song.apple_music_url = karaoke_song[:apple_music_url] if karaoke_song[:apple_music_url]
+  song.youtube_music_url = karaoke_song[:youtube_music_url] if karaoke_song[:youtube_music_url]
+  song.spotify_url = karaoke_song[:spotify_url] if karaoke_song[:spotify_url]
+  song.line_music_url = karaoke_song[:line_music_url] if karaoke_song[:line_music_url]
   song.save!
 end

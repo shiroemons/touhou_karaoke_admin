@@ -1,7 +1,7 @@
 total_count = Song.count
 
 File.open('tmp/karaoke_songs.tsv', 'w') do |f|
-  f.puts "karaoke_type\tsong_number\ttitle\turl\toriginal_songs\tyoutube_url\tnicovideo_url\tapple_music_url"
+  f.puts "karaoke_type\tsong_number\ttitle\turl\toriginal_songs\tyoutube_url\tnicovideo_url\tapple_music_url\tyoutube_music_url\tspotify_url\tline_music_url"
   Song.includes(:original_songs).order(:karaoke_type).each.with_index(1) do |song, i|
     print "\r#{i}/#{total_count}: Progress: #{(i * 100.0 / total_count).round(1)}%"
 
@@ -13,8 +13,11 @@ File.open('tmp/karaoke_songs.tsv', 'w') do |f|
     youtube_url = song.youtube_url
     nicovideo_url = song.nicovideo_url
     apple_music_url = song.apple_music_url
+    youtube_music_url = song.youtube_music_url
+    spotify_url = song.spotify_url
+    line_music_url = song.line_music_url
     # next if original_songs.present?
 
-    f.puts "#{karaoke_type}\t#{song_number}\t#{title}\t#{url}\t#{original_songs}\t#{youtube_url}\t#{nicovideo_url}\t#{apple_music_url}"
+    f.puts "#{karaoke_type}\t#{song_number}\t#{title}\t#{url}\t#{original_songs}\t#{youtube_url}\t#{nicovideo_url}\t#{apple_music_url}\t#{youtube_music_url}\t#{spotify_url}\t#{line_music_url}"
   end
 end
