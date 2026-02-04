@@ -10,12 +10,14 @@ setup: ## Initialize devbox environment
 shell: ## Enter devbox shell
 	devbox shell
 
-up: ## Start devbox services and Rails server
-	devbox services start
-	devbox run server
+up: ## Start PostgreSQL and Rails server (background)
+	devbox services up -b
+
+tui: ## Start PostgreSQL and Rails server (TUI mode)
+	devbox services up
 
 down: ## Stop devbox services
-	devbox services stop
+	devbox services stop || true
 
 status: ## Show devbox services status
 	devbox services status

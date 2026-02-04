@@ -1,0 +1,10 @@
+version: "0.5"
+
+processes:
+  rails:
+    command: rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0
+    availability:
+      restart: on_failure
+    depends_on:
+      postgresql:
+        condition: process_healthy

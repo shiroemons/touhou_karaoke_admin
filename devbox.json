@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": {
     "ruby":         "3.4.4",
-    "postgresql":   "16",
+    "postgresql_16": "latest",
     "nodejs":       "20",
     "yarn":         "1.22",
     "libyaml":      "",
@@ -15,8 +15,7 @@
       "version":            "latest",
       "excluded_platforms": ["aarch64-darwin"]
     },
-    "libpq":         "latest",
-    "postgresql_16": "latest"
+    "libpq":         "latest"
   },
   "env": {
     "BUNDLE_PATH":        ".devbox/virtenv/bundle",
