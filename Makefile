@@ -16,6 +16,9 @@ up: ## Start PostgreSQL and Rails server (background)
 tui: ## Start PostgreSQL and Rails server (TUI mode)
 	devbox services up
 
+logs: ## Show Rails server logs
+	tail -f log/development.log
+
 down: ## Stop devbox services
 	devbox services stop || true
 
