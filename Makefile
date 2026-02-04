@@ -4,19 +4,19 @@ all: help
 # devbox環境コマンド (デフォルト)
 # ============================================================
 
-init: ## Initialize devbox environment
+setup: ## Initialize devbox environment
 	devbox run setup
 
 shell: ## Enter devbox shell
 	devbox shell
 
-services-start: ## Start devbox services (PostgreSQL)
+up: ## Start devbox services (PostgreSQL)
 	devbox services start
 
-services-stop: ## Stop devbox services
+down: ## Stop devbox services
 	devbox services stop
 
-services-status: ## Show devbox services status
+status: ## Show devbox services status
 	devbox services status
 
 server: ## Run Rails server

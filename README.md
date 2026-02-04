@@ -25,16 +25,11 @@
 
 ## 開発環境
 
-このプロジェクトは2つの開発環境をサポートしています：
+このプロジェクトは **devbox** を使用した開発を推奨しています。devboxはローカル実行で高速・軽量な開発体験を提供します。
 
-| 環境 | 特徴 | コマンドプレフィックス |
-|------|------|------------------------|
-| **devbox** (推奨) | ローカル実行、高速、軽量 | `make <command>` |
-| **Docker** | コンテナ隔離、既存環境との互換性 | `make docker-<command>` |
+> **Note**: Docker環境も利用可能です。詳細は[Docker環境（代替手段）](#docker環境代替手段)を参照してください。
 
----
-
-## devbox環境（推奨）
+## セットアップ
 
 ### devboxのインストール
 
@@ -53,13 +48,13 @@ devbox shell
 2. PostgreSQLサービスを起動
 
 ```shell
-make services-start
+make up
 ```
 
 3. セットアップを実行（bundle install, yarn install, DB準備）
 
 ```shell
-make init
+make setup
 ```
 
 ### 日常の開発コマンド
@@ -67,10 +62,10 @@ make init
 #### サービス管理
 
 ```shell
-make shell              # devboxシェルに入る
-make services-start     # PostgreSQLを起動
-make services-stop      # PostgreSQLを停止
-make services-status    # サービス状態を確認
+make shell    # devboxシェルに入る
+make up       # PostgreSQLを起動
+make down     # PostgreSQLを停止
+make status   # サービス状態を確認
 ```
 
 #### サーバーの起動
@@ -140,7 +135,46 @@ make check-expired-joysound  # 配信期限切れチェック
 make delete-expired-joysound # 配信期限切れ削除
 ```
 
-### Dockerからdevboxへの移行手順
+---
+
+<details>
+<summary><strong>Docker環境（代替手段）</strong></summary>
+
+Docker環境を使いたい場合は、コマンドに `docker-` プレフィックスを付けて実行します。
+
+### 初回の環境構築
+
+```shell
+make docker-init
+```
+
+### サーバーの起動
+
+```shell
+make docker-server
+```
+
+### Dockerコマンド一覧
+
+```shell
+make docker-up               # コンテナ起動
+make docker-down             # コンテナ停止
+make docker-console          # Railsコンソール
+make docker-console-sandbox  # サンドボックスモード
+make docker-bundle           # bundle install
+make docker-dbinit           # DB初期化
+make docker-dbconsole        # DBコンソール
+make docker-migrate          # マイグレーション
+make docker-rollback         # ロールバック
+make docker-dbseed           # シードデータ投入
+make docker-minitest         # テスト実行
+make docker-rubocop          # Rubocop実行
+make docker-bash             # bashシェル
+make docker-db-dump          # DBバックアップ
+make docker-db-restore       # DBリストア
+```
+
+### Dockerからdevboxへの移行
 
 既存のDocker環境からdevbox環境に移行する場合：
 
@@ -160,7 +194,7 @@ make docker-down
 
 ```shell
 devbox shell
-make services-start
+make up
 ```
 
 4. データベースを作成してリストア
@@ -177,53 +211,17 @@ make bundle
 make migrate
 ```
 
-### devboxでの問題発生時のロールバック
+### devboxで問題が発生した場合
 
 devbox環境で問題が発生した場合、Docker環境に戻すことができます：
 
 ```shell
-devbox services stop
+make down
 make docker-up
 make docker-server
 ```
 
----
-
-## Docker環境
-
-Docker環境を使用する場合は、コマンドに `docker-` プレフィックスを付けます。
-
-### 初回の環境構築
-
-```shell
-make docker-init
-```
-
-### サーバーの起動
-
-```shell
-make docker-server
-```
-
-### その他のDockerコマンド
-
-```shell
-make docker-up               # コンテナ起動
-make docker-down             # コンテナ停止
-make docker-console          # Railsコンソール
-make docker-console-sandbox  # サンドボックスモード
-make docker-bundle           # bundle install
-make docker-dbinit           # DB初期化
-make docker-dbconsole        # DBコンソール
-make docker-migrate          # マイグレーション
-make docker-rollback         # ロールバック
-make docker-dbseed           # シードデータ投入
-make docker-minitest         # テスト実行
-make docker-rubocop          # Rubocop実行
-make docker-bash             # bashシェル
-make docker-db-dump          # DBバックアップ
-make docker-db-restore       # DBリストア
-```
+</details>
 
 ---
 
@@ -276,77 +274,11 @@ JoysoundMusicPost.all.map { { title: _1.title } } - Song.music_post.map { { titl
 make export-for-algolia
 ```
 
-## Algolia アップロード差分確認（Dry-Run）
-
-ローカルの `tmp/karaoke_songs.json` と Algolia インデックスを比較し、差分を確認する。
-
-```shell
-# 基本実行
-docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb
-
-# 詳細表示（変更内容を詳しく表示）
-docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --verbose
-
-# JSON形式で出力
-docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --json
-
-# 変更があるレコードのみをファイルに出力
-docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --output-changes tmp/changes.json
-```
-
-### オプション
-
-| オプション | 説明 |
-|------------|------|
-| `--json` | JSON形式で出力 |
-| `--verbose` | 詳細表示 |
-| `--show-unchanged` | 変更なしレコードのIDを出力 |
-| `--output-changes FILE` | 変更ありレコードのみをFILEに出力 |
-| `--no-color` | カラー出力を無効化 |
-
 ## JOYSOUND(うたスキ) 配信期限切れチェック・削除
 
 Algolia上のJOYSOUND(うたスキ)レコードから配信期限切れのものを検出・削除する。
 
 ```shell
-# 配信期限切れレコードのチェック（表示のみ）
-make check-expired-joysound
-
-# 配信期限切れレコードの削除（確認プロンプトあり）
-make delete-expired-joysound
-```
-
-### 直接実行する場合
-
-```shell
-# 基本実行（表示のみ）
-docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb
-
-# 詳細表示（アーティスト・URL含む）
-docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --verbose
-
-# URLにアクセスして配信終了を確認
-docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --verify --verbose
-
-# JSON形式で出力
-docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --json
-
-# 削除実行（確認プロンプトあり）
-docker compose run --rm web bin/rails runner lib/check_expired_joysound_utasuki.rb --delete
-```
-
-### オプション
-
-| オプション | 説明 |
-|------------|------|
-| `--delete` | 実際に削除を実行（デフォルトは表示のみ） |
-| `--verify` | URLにアクセスして配信終了を確認（404チェック） |
-| `--verbose` | 詳細表示（アーティスト・URL含む） |
-| `--json` | JSON形式で出力 |
-| `--no-color` | カラー出力を無効化 |
-
-## カラオケ楽曲出力
-
-```shell
-make export-karaoke-songs
+make check-expired-joysound  # 配信期限切れチェック（表示のみ）
+make delete-expired-joysound # 配信期限切れ削除（確認プロンプトあり）
 ```
