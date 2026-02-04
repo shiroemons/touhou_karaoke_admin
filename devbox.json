@@ -9,7 +9,9 @@
     "openssl",
     "zlib",
     "readline",
-    "libffi"
+    "libffi",
+    "chromium",
+    "chromedriver"
   ],
   "env": {
     "BUNDLE_PATH": ".devbox/virtenv/bundle",
@@ -19,7 +21,8 @@
     "PGPORT": "5432",
     "PGUSER": "postgres",
     "PGPASSWORD": "postgres",
-    "RAILS_ENV": "development"
+    "RAILS_ENV": "development",
+    "CHROME_PATH": "chromium"
   },
   "env_from": ".env",
   "shell": {
