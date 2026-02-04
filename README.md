@@ -23,50 +23,57 @@
 - **一括操作**: 複数楽曲の一括更新・データ取得
 - **ダッシュボード**: 楽曲数や収集状況の可視化
 
-## 使い方
+## 開発環境
+
+このプロジェクトは2つの開発環境をサポートしています：
+
+| 環境 | 特徴 | コマンドプレフィックス |
+|------|------|------------------------|
+| **devbox** (推奨) | ローカル実行、高速、軽量 | `make <command>` |
+| **Docker** | コンテナ隔離、既存環境との互換性 | `make docker-<command>` |
+
+---
+
+## devbox環境（推奨）
+
+### devboxのインストール
+
+```shell
+curl -fsSL https://get.jetify.com/devbox | bash
+```
 
 ### 初回の環境構築
 
-Dockerイメージを作成して、 `bin/setup` を実行する。
+1. devbox環境を初期化
+
+```shell
+devbox shell
+```
+
+2. PostgreSQLサービスを起動
+
+```shell
+make services-start
+```
+
+3. セットアップを実行（bundle install, yarn install, DB準備）
 
 ```shell
 make init
 ```
 
-### bundle install
+### 日常の開発コマンド
+
+#### サービス管理
 
 ```shell
-make bundle
+make shell              # devboxシェルに入る
+make services-start     # PostgreSQLを起動
+make services-stop      # PostgreSQLを停止
+make services-status    # サービス状態を確認
 ```
 
-### DB関連
-
-- DB init
-  ```shell
-  make dbinit
-  ```
-
-- DB console
-  ```shell
-  make dbconsole
-  ```
-
-- DB migrate
-  ```shell
-  make migrate
-  ```
-
-- DB rollback
-  ```shell
-  make rollback
-  ```
-
-- DB seed
-  ```shell
-  make dbseed
-  ```
-
-### サーバーの起動
+#### サーバーの起動
 
 ```shell
 make server
@@ -74,51 +81,159 @@ make server
 
 実行すると http://localhost:3000 でアクセスできる。
 
-### コンソールの起動
+#### コンソールの起動
 
 ```shell
-make console
+make console            # Railsコンソール
+make console-sandbox    # サンドボックスモード
 ```
 
-- sandbox
-  ```shell
-  make console-sandbox
-  ```
+#### DB関連
 
-### テストの実行
+```shell
+make dbinit       # DBを初期化 (drop and setup)
+make dbconsole    # DBコンソール
+make migrate      # マイグレーション実行
+make migrate-redo # 最後のマイグレーションをやり直し
+make rollback     # ロールバック
+make dbseed       # シードデータ投入
+make db-dump      # DBバックアップ (tmp/data/dev.bak)
+make db-restore   # DBリストア
+```
 
-````shell
+#### bundle install
+
+```shell
+make bundle
+```
+
+#### テストの実行
+
+```shell
 make minitest
-````
-
-### Rubocop
-
-- rubocop
-    ```shell
-    make rubocop
-    ```
-
-- rubocop-correct
-    ```shell
-    make rubocop-correct
-    ```
-
-- rubocop-correct-all
-    ```shell
-    make rubocop-correct-all
-    ```
-
-### Railsコマンド
-
-```shell
-docker-compose run --rm web bin/rails -T
 ```
 
-### 起動(docker compose up)
+#### Rubocop
 
 ```shell
-make start
+make rubocop            # リント実行
+make rubocop-correct    # 自動修正
+make rubocop-correct-all # 全て自動修正
 ```
+
+#### データエクスポート/インポート
+
+```shell
+make export-for-algolia      # Algolia向けJSON出力
+make export-karaoke-songs    # カラオケ楽曲出力
+make import-karaoke-songs    # カラオケ楽曲インポート
+make export-display-artists  # アーティスト出力
+make import-display-artists  # アーティストインポート
+make import-touhou-music     # 東方楽曲データインポート
+make stats                   # 統計情報生成
+```
+
+#### JOYSOUND(うたスキ) 管理
+
+```shell
+make check-expired-joysound  # 配信期限切れチェック
+make delete-expired-joysound # 配信期限切れ削除
+```
+
+### Dockerからdevboxへの移行手順
+
+既存のDocker環境からdevbox環境に移行する場合：
+
+1. Dockerでデータベースをバックアップ
+
+```shell
+make docker-db-dump
+```
+
+2. Dockerを停止
+
+```shell
+make docker-down
+```
+
+3. devbox環境を準備
+
+```shell
+devbox shell
+make services-start
+```
+
+4. データベースを作成してリストア
+
+```shell
+createdb touhou_karaoke_admin_development
+make db-restore
+```
+
+5. セットアップを完了
+
+```shell
+make bundle
+make migrate
+```
+
+### devboxでの問題発生時のロールバック
+
+devbox環境で問題が発生した場合、Docker環境に戻すことができます：
+
+```shell
+devbox services stop
+make docker-up
+make docker-server
+```
+
+---
+
+## Docker環境
+
+Docker環境を使用する場合は、コマンドに `docker-` プレフィックスを付けます。
+
+### 初回の環境構築
+
+```shell
+make docker-init
+```
+
+### サーバーの起動
+
+```shell
+make docker-server
+```
+
+### その他のDockerコマンド
+
+```shell
+make docker-up               # コンテナ起動
+make docker-down             # コンテナ停止
+make docker-console          # Railsコンソール
+make docker-console-sandbox  # サンドボックスモード
+make docker-bundle           # bundle install
+make docker-dbinit           # DB初期化
+make docker-dbconsole        # DBコンソール
+make docker-migrate          # マイグレーション
+make docker-rollback         # ロールバック
+make docker-dbseed           # シードデータ投入
+make docker-minitest         # テスト実行
+make docker-rubocop          # Rubocop実行
+make docker-bash             # bashシェル
+make docker-db-dump          # DBバックアップ
+make docker-db-restore       # DBリストア
+```
+
+---
+
+## 利用可能なコマンド一覧
+
+```shell
+make help
+```
+
+---
 
 ## 情報収集方法
 
