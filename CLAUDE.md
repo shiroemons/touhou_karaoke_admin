@@ -5,103 +5,76 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Overview
 東方カラオケ検索管理サイト (Touhou Karaoke Search Admin Site) - A Rails application for managing and searching Touhou music available in Japanese karaoke systems (DAM and JOYSOUND).
 
+## Development Environment
+
+This project uses **devbox** (recommended) for local development. Docker is available as an alternative.
+
+### devbox (Recommended)
+
+devbox provides a reproducible development environment using Nix packages. It does NOT use Homebrew.
+
+```bash
+# Enter devbox shell
+devbox shell
+
+# Start PostgreSQL service
+make up
+
+# Initial setup (bundle install, yarn install, db:prepare)
+make setup
+
+# Run development server (http://localhost:3000)
+make server
+
+# Stop PostgreSQL service
+make down
+```
+
+### Docker (Alternative)
+
+Docker commands use `docker-` prefix:
+
+```bash
+make docker-up        # Start containers
+make docker-server    # Run server
+make docker-down      # Stop containers
+```
+
 ## Development Commands
 
-**All development is done through Docker containers using the provided Makefile commands.**
-
-### Environment Setup
-```bash
-# Initial setup (builds Docker image and runs bin/setup)
-make init
-
-# Start Docker containers in background
-make start
-
-# Run development server (accessible at http://localhost:3000)
-make server
-```
+All commands below work in devbox environment. For Docker, add `docker-` prefix.
 
 ### Database Operations
 ```bash
-# Initialize database (drop and setup)
-make dbinit
-
-# Run migrations
-make migrate
-
-# Redo last migration
-make migrate-redo
-
-# Rollback migrations
-make rollback
-
-# Seed database
-make dbseed
-
-# Database console
-make dbconsole
-
-# Database backup and restore
-make db-dump    # Creates backup in tmp/data/dev.bak
-make db-restore # Restores from tmp/dev.bak
+make dbinit       # Initialize database (drop and setup)
+make migrate      # Run migrations
+make migrate-redo # Redo last migration
+make rollback     # Rollback migrations
+make dbseed       # Seed database
+make dbconsole    # Database console
+make db-dump      # Backup to tmp/data/dev.bak
+make db-restore   # Restore from backup
 ```
 
 ### Development Tools
 ```bash
-# Rails console
-make console
-
-# Rails console in sandbox mode
-make console-sandbox
-
-# Run tests (prepares test DB and runs all tests)
-make minitest
-
-# Run individual test file (Docker command)
-docker compose run --rm -e RAILS_ENV=test web bin/rails test test/models/song_test.rb
-
-# Run specific test method (Docker command)
-docker compose run --rm -e RAILS_ENV=test web bin/rails test test/models/song_test.rb -n test_method_name
-
-# Run Rubocop linter
-make rubocop
-
-# Auto-correct Rubocop issues
-make rubocop-correct
-make rubocop-correct-all
-
-# Bundle install
-make bundle
-
-# Access container bash shell
-make bash
+make console          # Rails console
+make console-sandbox  # Rails console (sandbox mode)
+make minitest         # Run tests
+make rubocop          # Run Rubocop linter
+make rubocop-correct  # Auto-correct Rubocop issues
+make bundle           # Bundle install
 ```
 
 ### Data Import/Export
 ```bash
-# Export songs for Algolia search
-make export-for-algolia
-
-# Export karaoke songs
-make export-karaoke-songs
-
-# Import karaoke songs
-make import-karaoke-songs
-
-# Export/Import display artists with circles
-make export-display-artists
-make import-display-artists
-
-# Import Touhou music data
-make import-touhou-music
-
-# Update originals data
-make update-originals
-make update-original-songs
-make update-originals-all
-
-# Generate statistics
-make stats
+make export-for-algolia     # Export songs for Algolia
+make export-karaoke-songs   # Export karaoke songs
+make import-karaoke-songs   # Import karaoke songs
+make export-display-artists # Export display artists
+make import-display-artists # Import display artists
+make import-touhou-music    # Import Touhou music data
+make stats                  # Generate statistics
 ```
 
 ## Architecture
@@ -109,11 +82,12 @@ make stats
 ### Technology Stack
 - Ruby 3.4.4
 - Rails 8.0.2
-- PostgreSQL
-- Docker for containerization
+- PostgreSQL 16
+- devbox (Nix-based development environment)
+- Docker (alternative containerization)
 - Avo for admin interface
 - AlgoliaSearch for search functionality
-- Ferrum for web scraping
+- Ferrum for web scraping (requires Chromium)
 
 ### Key Models
 - **Song**: Central model representing karaoke songs

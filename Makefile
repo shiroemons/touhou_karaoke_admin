@@ -10,8 +10,9 @@ setup: ## Initialize devbox environment
 shell: ## Enter devbox shell
 	devbox shell
 
-up: ## Start devbox services (PostgreSQL)
+up: ## Start devbox services and Rails server
 	devbox services start
+	devbox run server
 
 down: ## Stop devbox services
 	devbox services stop
