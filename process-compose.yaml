@@ -20,7 +20,7 @@ processes:
       success_threshold: 1
       failure_threshold: 3
   js:
-    command: yarn build --watch
+    command: yarn build --watch=forever
     availability:
       restart: on_failure
   css:
