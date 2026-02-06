@@ -64,73 +64,73 @@ Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_
     )
     .distinct
     .each do |song|
-  display_artist = song.display_artist
-  original_songs = song.original_songs
-  next if original_songs.blank?
+      display_artist = song.display_artist
+      original_songs = song.original_songs
+      next if original_songs.blank?
 
-  original_song_titles = original_songs.map(&:title)
-  next if original_song_titles.include?("オリジナル")
-  next if original_song_titles.include?("その他")
+      original_song_titles = original_songs.map(&:title)
+      next if original_song_titles.include?("オリジナル")
+      next if original_song_titles.include?("その他")
 
-  circle_name = display_artist.circles.map(&:name).join(' / ')
-  json = {
-    objectID: song.id,
-    title: song.title,
-    reading_title: song&.title_reading || '',
-    display_artist: {
-      name: display_artist.name,
-      reading_name: display_artist.name_reading,
-      reading_name_hiragana: display_artist.name_reading.tr('ァ-ン', 'ぁ-ん'),
-      karaoke_type: display_artist.karaoke_type,
-      url: display_artist.url
-    },
-    original_songs: original_songs_json(original_songs),
-    karaoke_type: song.karaoke_type,
-    karaoke_delivery_models: karaoke_delivery_models_json(song),
-    circle: {
-      name: circle_name || ''
-    },
-    url: song.url,
-    updated_at_i: song.updated_at.to_i
-  }
-  json[:song_number] = song.song_number if song.song_number.present?
-  if song.song_with_joysound_utasuki.present?
-    musicpost = song.song_with_joysound_utasuki
-    json[:delivery_deadline_date] = musicpost.delivery_deadline_date.strftime("%Y/%m/%d")
-    json[:delivery_deadline_date_i] = musicpost.delivery_deadline_date.to_time.to_i
-    json[:musicpost_url] = musicpost.url
-  end
-  if song.song_with_dam_ouchikaraoke.present?
-    ouchikaraoke = song.song_with_dam_ouchikaraoke
-    json[:ouchikaraoke_url] = ouchikaraoke.url
-  end
-  json[:videos] = []
-  if song.youtube_url.present?
-    m = /(?<=\?v=)(?<id>[\w\-_]+)(?!=&)/.match(song.youtube_url)
-    json[:videos].push({ type: "YouTube", url: song.youtube_url, id: m[:id] })
-  end
-  if song.nicovideo_url.present?
-    m = %r{(?<=watch/)(?<id>[s|n]m\d+)(?!=&)}.match(song.nicovideo_url)
-    json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url, id: m[:id] })
-  end
-  json[:touhou_music] = []
-  json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url }) if song.apple_music_url.present?
-  json[:touhou_music].push({ type: "YouTube Music", url: song.youtube_music_url }) if song.youtube_music_url.present?
-  json[:touhou_music].push({ type: "Spotify", url: song.spotify_url }) if song.spotify_url.present?
-  json[:touhou_music].push({ type: "LINE MUSIC", url: song.line_music_url }) if song.line_music_url.present?
+      circle_name = display_artist.circles.map(&:name).join(' / ')
+      json = {
+        objectID: song.id,
+        title: song.title,
+        reading_title: song&.title_reading || '',
+        display_artist: {
+          name: display_artist.name,
+          reading_name: display_artist.name_reading,
+          reading_name_hiragana: display_artist.name_reading.tr('ァ-ン', 'ぁ-ん'),
+          karaoke_type: display_artist.karaoke_type,
+          url: display_artist.url
+        },
+        original_songs: original_songs_json(original_songs),
+        karaoke_type: song.karaoke_type,
+        karaoke_delivery_models: karaoke_delivery_models_json(song),
+        circle: {
+          name: circle_name || ''
+        },
+        url: song.url,
+        updated_at_i: song.updated_at.to_i
+      }
+      json[:song_number] = song.song_number if song.song_number.present?
+      if song.song_with_joysound_utasuki.present?
+        musicpost = song.song_with_joysound_utasuki
+        json[:delivery_deadline_date] = musicpost.delivery_deadline_date.strftime("%Y/%m/%d")
+        json[:delivery_deadline_date_i] = musicpost.delivery_deadline_date.to_time.to_i
+        json[:musicpost_url] = musicpost.url
+      end
+      if song.song_with_dam_ouchikaraoke.present?
+        ouchikaraoke = song.song_with_dam_ouchikaraoke
+        json[:ouchikaraoke_url] = ouchikaraoke.url
+      end
+      json[:videos] = []
+      if song.youtube_url.present?
+        m = /(?<=\?v=)(?<id>[\w\-_]+)(?!=&)/.match(song.youtube_url)
+        json[:videos].push({ type: "YouTube", url: song.youtube_url, id: m[:id] })
+      end
+      if song.nicovideo_url.present?
+        m = %r{(?<=watch/)(?<id>[s|n]m\d+)(?!=&)}.match(song.nicovideo_url)
+        json[:videos].push({ type: "ニコニコ動画", url: song.nicovideo_url, id: m[:id] })
+      end
+      json[:touhou_music] = []
+      json[:touhou_music].push({ type: "Apple Music", url: song.apple_music_url }) if song.apple_music_url.present?
+      json[:touhou_music].push({ type: "YouTube Music", url: song.youtube_music_url }) if song.youtube_music_url.present?
+      json[:touhou_music].push({ type: "Spotify", url: song.spotify_url }) if song.spotify_url.present?
+      json[:touhou_music].push({ type: "LINE MUSIC", url: song.line_music_url }) if song.line_music_url.present?
 
-  # オブジェクトのサイズをチェック
-  json_size = JSON.generate(json).bytesize
-  if json_size > large_object_threshold
-    puts "警告: 「#{song.title}」(#{display_artist.name}) [ID: #{song.id}] のオブジェクトサイズが #{json_size} bytes (#{(json_size / 1024.0).round(2)}KB) で閾値を超えています"
-    large_objects << {
-      **json,
-      _object_size_bytes: json_size,
-      _object_size_kb: (json_size / 1024.0).round(2)
-    }
-  else
-    jsons << json
-  end
+      # オブジェクトのサイズをチェック
+      json_size = JSON.generate(json).bytesize
+      if json_size > large_object_threshold
+        puts "警告: 「#{song.title}」(#{display_artist.name}) [ID: #{song.id}] のオブジェクトサイズが #{json_size} bytes (#{(json_size / 1024.0).round(2)}KB) で閾値を超えています"
+        large_objects << {
+          **json,
+          _object_size_bytes: json_size,
+          _object_size_kb: (json_size / 1024.0).round(2)
+        }
+      else
+        jsons << json
+      end
 end
 
 # 通常のオブジェクトをファイルに出力

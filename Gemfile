@@ -6,6 +6,7 @@ ruby file: '.ruby-version'
 gem 'cssbundling-rails'
 gem 'jbuilder', '~> 2.11'
 gem 'jsbundling-rails'
+gem 'minitest', '~> 5.0'
 gem 'pg', '>= 0.18', '< 2.0'
 gem 'puma', '~> 6.4'
 gem 'rails', '~> 8.0.0'
@@ -29,7 +30,6 @@ end
 group :test do
   gem 'capybara', '>= 2.15'
   gem 'selenium-webdriver'
-  gem 'webdrivers'
 end
 
 gem 'acts_as_list'
