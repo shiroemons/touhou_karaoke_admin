@@ -47,7 +47,7 @@ jobs:
         id: cache_gem
         with:
           path: vendor/bundle
-          key: v1-gem-${{ runner.os }}-${{ github.sha }}
+          key: v1-gem-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
             v1-gem-${{ runner.os }}-
       - name: Build and setup
