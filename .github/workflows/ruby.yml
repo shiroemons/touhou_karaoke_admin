@@ -55,9 +55,15 @@ jobs:
           gem install bundler --no-document -v $(grep "BUNDLED WITH" -1 Gemfile.lock | tail -n 1)
           bundle config set --local path 'vendor/bundle'
           bundle install --jobs 4 --retry 3
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build assets
+        run: |
+          yarn build
+          yarn build:css
       - name: Database setup
         run: |
-          bundle exec rails db:create db:schema:load db:migrate
+          bundle exec rails db:prepare
       - name: Run Rubocop
         run: |
           bundle exec rubocop --parallel

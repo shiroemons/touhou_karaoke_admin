@@ -19,3 +19,11 @@ processes:
       timeout_seconds: 5
       success_threshold: 1
       failure_threshold: 3
+  js:
+    command: yarn build --watch
+    availability:
+      restart: on_failure
+  css:
+    command: yarn build:css --watch
+    availability:
+      restart: on_failure
