@@ -8,3 +8,14 @@ processes:
     depends_on:
       postgresql:
         condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: localhost
+        scheme: http
+        path: "/up"
+        port: 3000
+      initial_delay_seconds: 5
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3

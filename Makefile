@@ -23,7 +23,7 @@ down: ## Stop devbox services
 	devbox services stop || true
 
 status: ## Show devbox services status
-	devbox services status
+	devbox services ls
 
 server: ## Run Rails server
 	devbox run server
