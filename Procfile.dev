@@ -1,5 +1,3 @@
-redis:  redis-server
-worker: bundle exec sidekiq
-rails:  PORT=3000 bundle exec rails server
+rails: rm -f tmp/pids/server.pid && bin/rails server
 js: yarn build --watch
 css: yarn build:css --watch

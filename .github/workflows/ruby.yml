@@ -33,9 +33,9 @@ jobs:
       image: cimg/ruby:3.4.4-node
       options: --user root
       env:
-        PG_HOST: postgres
-        PG_USER: postgres
-        PG_PASSWORD: password
+        PGHOST: postgres
+        PGUSER: postgres
+        PGPASSWORD: password
         RAILS_ENV: test
 
     steps:
@@ -47,16 +47,23 @@ jobs:
         id: cache_gem
         with:
           path: vendor/bundle
-          key: v1-gem-${{ runner.os }}-${{ github.sha }}
+          key: v1-gem-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
-            v1-gem-{{ runner.os }}-
+            v1-gem-${{ runner.os }}-
       - name: Build and setup
         run: |
           gem install bundler --no-document -v $(grep "BUNDLED WITH" -1 Gemfile.lock | tail -n 1)
+          bundle config set --local path 'vendor/bundle'
           bundle install --jobs 4 --retry 3
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build assets
+        run: |
+          yarn build
+          yarn build:css
       - name: Database setup
         run: |
-          bundle exec rails db:create db:schema:load db:migrate
+          bundle exec rails db:prepare
       - name: Run Rubocop
         run: |
           bundle exec rubocop --parallel

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
+  "packages": {
+    "ruby":         "3.4.4",
+    "postgresql_16": "latest",
+    "nodejs":       "20",
+    "yarn":         "1.22",
+    "libyaml":      "latest",
+    "openssl":      "latest",
+    "zlib":         "latest",
+    "readline":     "latest",
+    "libffi":       "latest",
+    "chromedriver": "latest",
+    "chromium": {
+      "version":            "latest",
+      "excluded_platforms": ["aarch64-darwin"]
+    },
+    "libpq":         "latest"
+  },
+  "env": {
+    "BUNDLE_PATH":        ".devbox/virtenv/bundle",
+    "GEM_HOME":           ".devbox/virtenv/gems",
+    "BOOTSNAP_CACHE_DIR": ".devbox/virtenv/bootsnap",
+    "PGHOST":             "/tmp",
+    "PGPORT":             "5432",
+    "PGUSER":             "postgres",
+    "PGPASSWORD":         "postgres",
+    "RAILS_ENV":          "development",
+    "CHROME_PATH":        "chromium"
+  },
+  "env_from": ".env",
+  "shell": {
+    "init_hook": [
+      "echo '東方カラオケ検索管理サイト - devbox環境'",
+      "mkdir -p .devbox/virtenv/bundle .devbox/virtenv/gems .devbox/virtenv/bootsnap",
+      "export PATH=\"$GEM_HOME/bin:$PATH\"",
+      "if ! command -v bundle &> /dev/null; then gem install bundler; fi"
+    ],
+    "scripts": {
+      "setup":               "bundle install --jobs=4 && yarn install && bin/rails db:prepare",
+      "server":              "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0",
+      "console":             "bin/rails console",
+      "console:sandbox":     "bin/rails console --sandbox",
+      "bundle":              "bundle config set clean true && bundle install --jobs=4",
+      "db:init":             "bin/rails db:drop db:setup",
+      "db:console":          "bin/rails dbconsole",
+      "db:migrate":          "bin/rails db:migrate",
+      "db:migrate:redo":     "bin/rails db:migrate:redo",
+      "db:rollback":         "bin/rails db:rollback",
+      "db:seed":             "bin/rails db:seed",
+      "db:backup":           "mkdir -p tmp/data && pg_dump -Fc --no-owner -d touhou_karaoke_admin_development -f tmp/data/dev.bak",
+      "db:restore":          "pg_restore --no-privileges --no-owner --clean -d touhou_karaoke_admin_development ./tmp/data/dev.bak",
+      "test":                "RAILS_ENV=test bin/rails db:test:prepare && RAILS_ENV=test bin/rails test",
+      "rubocop":             "bundle exec rubocop --parallel",
+      "rubocop:fix":         "bundle exec rubocop --autocorrect",
+      "rubocop:fix:all":     "bundle exec rubocop --autocorrect-all",
+      "export:algolia":      "bin/rails runner lib/export_songs.rb",
+      "export:karaoke":      "bin/rails runner lib/export_karaoke_songs.rb",
+      "import:karaoke":      "bin/rails runner lib/import_karaoke_songs.rb",
+      "export:artists":      "bin/rails runner lib/export_display_artists_with_circles.rb",
+      "import:artists":      "bin/rails runner lib/import_display_artists_with_circles.rb",
+      "import:touhou":       "bin/rails runner lib/import_touhou_music.rb",
+      "import:touhou:slim":  "bin/rails runner lib/import_touhou_music_slim.rb",
+      "check:joysound":      "bin/rails runner lib/check_expired_joysound_utasuki.rb --verbose",
+      "delete:joysound":     "bin/rails runner lib/check_expired_joysound_utasuki.rb --delete --verbose",
+      "stats":               "bin/rails runner lib/stats.rb",
+      "update:originals":    "bin/rails db:seed:update_originals",
+      "seed:originals":      "bin/rails db:seed:originals",
+      "seed:original_songs": "bin/rails db:seed:original_songs",
+      "seed:originals:all":  "bin/rails db:seed:originals_all"
+    }
+  }
+}
