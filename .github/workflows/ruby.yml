@@ -49,10 +49,11 @@ jobs:
           path: vendor/bundle
           key: v1-gem-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            v1-gem-{{ runner.os }}-
+            v1-gem-${{ runner.os }}-
       - name: Build and setup
         run: |
           gem install bundler --no-document -v $(grep "BUNDLED WITH" -1 Gemfile.lock | tail -n 1)
+          bundle config set --local path 'vendor/bundle'
           bundle install --jobs 4 --retry 3
       - name: Database setup
         run: |
