@@ -120,7 +120,7 @@ class DeliveryModelManager
     @cache = KaraokeDeliveryModel
              .pluck(:name, :karaoke_type, :id)
              .each_with_object({}) do |(name, karaoke_type, id), hash|
-      hash[[name, karaoke_type]] = id
+               hash[[name, karaoke_type]] = id
     end
     @cache_expires_at = Time.current + CACHE_TTL.minutes
 
