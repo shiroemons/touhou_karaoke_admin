@@ -33,9 +33,9 @@ jobs:
       image: cimg/ruby:3.4.4-node
       options: --user root
       env:
-        PG_HOST: postgres
-        PG_USER: postgres
-        PG_PASSWORD: password
+        PGHOST: postgres
+        PGUSER: postgres
+        PGPASSWORD: password
         RAILS_ENV: test
 
     steps:
