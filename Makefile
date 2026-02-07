@@ -1,3 +1,25 @@
+.PHONY: all setup shell versions up tui logs down status ps restart \
+	server console console-sandbox bundle \
+	dbinit dbconsole migrate migrate-redo rollback dbseed \
+	update-originals-all seed-originals seed-original-songs seed-originals-all \
+	minitest rubocop rubocop-correct rubocop-correct-all \
+	export-for-algolia export-karaoke-songs import-karaoke-songs \
+	export-display-artists import-display-artists \
+	import-touhou-music import-touhou-music-slim \
+	check-expired-joysound delete-expired-joysound \
+	stats db-dump db-restore \
+	docker-init docker-up docker-down docker-server \
+	docker-console docker-console-sandbox docker-bundle \
+	docker-dbinit docker-dbconsole docker-migrate docker-migrate-redo docker-rollback docker-dbseed \
+	docker-update-originals-all docker-seed-originals docker-seed-original-songs docker-seed-originals-all \
+	docker-minitest docker-rubocop docker-rubocop-correct docker-rubocop-correct-all docker-bash \
+	docker-export-for-algolia docker-export-karaoke-songs docker-import-karaoke-songs \
+	docker-export-display-artists docker-import-display-artists \
+	docker-import-touhou-music docker-import-touhou-music-slim \
+	docker-check-expired-joysound docker-delete-expired-joysound \
+	docker-stats docker-db-dump docker-db-restore \
+	help
+
 all: help
 
 # ============================================================
@@ -10,8 +32,17 @@ setup: ## Initialize devbox environment
 shell: ## Enter devbox shell
 	devbox shell
 
+versions: ## Show devbox environment tool versions
+	@devbox run -- bash -c 'echo "Ruby: $$(ruby --version)"; echo "Rails: $$(bin/rails --version 2>/dev/null || echo N/A)"; echo "Node: $$(node --version)"; echo "Yarn: $$(yarn --version)"; echo "PostgreSQL: $$(psql --version)"; echo "Bundler: $$(bundler --version 2>/dev/null)"' 2>&1 | grep -v '東方カラオケ' | grep -v 'warning:' | grep -v '/nix/store' | grep -v '^Info:' | grep -v '^$$' | sed -e 's/ruby //' -e 's/Rails //' -e 's/psql (PostgreSQL) //' -e 's/Bundler version //' -e 's/ (.*//'
+
 up: ## Start PostgreSQL and Rails server (background)
-	devbox services up -b
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		echo "サービスは既に起動しています"; \
+	else \
+		devbox services up -b; \
+	fi
+	@$(MAKE) --no-print-directory versions
+	@$(MAKE) --no-print-directory status
 
 tui: ## Start PostgreSQL and Rails server (TUI mode)
 	devbox services up
@@ -20,10 +51,24 @@ logs: ## Show Rails server logs
 	tail -f log/development.log
 
 down: ## Stop devbox services
-	devbox services stop || true
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services stop; \
+		echo "サービスを停止しました"; \
+	else \
+		echo "サービスは起動していません"; \
+	fi
 
 status: ## Show devbox services status
-	devbox services ls
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services ls; \
+	else \
+		echo "サービスは起動していません。make up で起動できます。"; \
+	fi
+
+ps: status ## Show devbox services status (alias)
+
+restart: ## Restart devbox services
+	devbox services restart
 
 server: ## Run Rails server
 	devbox run server
