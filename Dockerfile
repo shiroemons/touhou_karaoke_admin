@@ -13,7 +13,7 @@ RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 # Add packages
 RUN apt-get update && apt-get install -y \
       git \
-      postgresql-client-16 \
+      postgresql-client-18 \
       nodejs \
       vim
 

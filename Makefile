@@ -265,11 +265,11 @@ docker-stats: ## [Docker] Generate statistics
 
 docker-db-dump: ## [Docker] Database backup
 	mkdir -p tmp/data
-	docker compose exec postgres-16 pg_dump -Fc --no-owner -v -d postgres://postgres:@localhost/touhou_karaoke_admin_development -f /tmp/data/dev.bak
+	docker compose exec postgres-18 pg_dump -Fc --no-owner -v -d postgres://postgres:@localhost/touhou_karaoke_admin_development -f /tmp/data/dev.bak
 
 docker-db-restore: ## [Docker] Database restore
 	@if test -f ./tmp/dev.bak; then \
-		docker compose exec postgres-16 pg_restore --no-privileges --no-owner --clean -v -d postgres://postgres:@localhost/touhou_karaoke_admin_development /tmp/data/dev.bak; \
+		docker compose exec postgres-18 pg_restore --no-privileges --no-owner --clean -v -d postgres://postgres:@localhost/touhou_karaoke_admin_development /tmp/data/dev.bak; \
 	else \
 		echo "Error: ./tmp/dev.bak does not exist."; \
 		exit 1; \

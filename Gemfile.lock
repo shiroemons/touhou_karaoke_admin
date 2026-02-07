@@ -413,7 +413,7 @@ DEPENDENCIES
   minitest (~> 5.0)
   ostruct
   parallel
-  pg (>= 0.18, < 2.0)
+  pg (~> 1.6)
   puma (~> 6.4)
   pundit
   rails (~> 8.0.0)
