@@ -75,7 +75,7 @@ class JoysoundMusicPost < ApplicationRecord
           producer = el.at_css(producer_selector).inner_text.gsub("配信ユーザー:", "").squish
           delivery_status_selector = "div > span.delivery_status"
           delivery_status = el.at_css(delivery_status_selector).inner_text.gsub("配信期限:", "").squish
-          delivery_deadline_on = Time.parse(delivery_status).in_time_zone.strftime("%F")
+          delivery_deadline_on = Date.parse(delivery_status)
           record = find_or_initialize_by(title:, artist:, producer:, url: music_post_url)
           record.delivery_deadline_on = delivery_deadline_on
           record.save! if record.new_record? || record.changed?
