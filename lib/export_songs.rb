@@ -97,7 +97,7 @@ Song.includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_
       if song.song_with_joysound_utasuki.present?
         musicpost = song.song_with_joysound_utasuki
         json[:delivery_deadline_date] = musicpost.delivery_deadline_date.strftime("%Y/%m/%d")
-        json[:delivery_deadline_date_i] = musicpost.delivery_deadline_date.to_time.to_i
+        json[:delivery_deadline_date_i] = musicpost.delivery_deadline_date.end_of_day.to_i
         json[:musicpost_url] = musicpost.url
       end
       if song.song_with_dam_ouchikaraoke.present?
