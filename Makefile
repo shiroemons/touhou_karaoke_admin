@@ -1,9 +1,9 @@
-.PHONY: all setup shell versions up tui logs down status ps restart \
+.PHONY: all setup shell versions up tui logs down status ps restart fix-pg \
 	server console console-sandbox bundle \
 	dbinit dbconsole migrate migrate-redo rollback dbseed \
 	update-originals-all seed-originals seed-original-songs seed-originals-all \
 	minitest rubocop rubocop-correct rubocop-correct-all \
-	export-for-algolia export-karaoke-songs import-karaoke-songs \
+	export-for-algolia check-algolia export-karaoke-songs import-karaoke-songs \
 	export-display-artists import-display-artists \
 	import-touhou-music import-touhou-music-slim \
 	check-expired-joysound delete-expired-joysound \
@@ -13,7 +13,7 @@
 	docker-dbinit docker-dbconsole docker-migrate docker-migrate-redo docker-rollback docker-dbseed \
 	docker-update-originals-all docker-seed-originals docker-seed-original-songs docker-seed-originals-all \
 	docker-minitest docker-rubocop docker-rubocop-correct docker-rubocop-correct-all docker-bash \
-	docker-export-for-algolia docker-export-karaoke-songs docker-import-karaoke-songs \
+	docker-export-for-algolia docker-check-algolia docker-export-karaoke-songs docker-import-karaoke-songs \
 	docker-export-display-artists docker-import-display-artists \
 	docker-import-touhou-music docker-import-touhou-music-slim \
 	docker-check-expired-joysound docker-delete-expired-joysound \
@@ -39,6 +39,14 @@ up: ## Start PostgreSQL and Rails server (background)
 	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
 		echo "サービスは既に起動しています"; \
 	else \
+		PID_FILE=".devbox/virtenv/postgresql_18/data/postmaster.pid"; \
+		if [ -f "$$PID_FILE" ]; then \
+			PID=$$(head -1 "$$PID_FILE"); \
+			if ! kill -0 "$$PID" 2>/dev/null; then \
+				echo "古いpostmaster.pidを検出しました。削除します..."; \
+				rm -f "$$PID_FILE"; \
+			fi; \
+		fi; \
 		devbox services up -b; \
 	fi
 	@$(MAKE) --no-print-directory versions
@@ -69,6 +77,16 @@ ps: status ## Show devbox services status (alias)
 
 restart: ## Restart devbox services
 	devbox services restart
+
+fix-pg: ## Fix PostgreSQL by removing stale PID and restarting
+	@echo "PostgreSQLを修復します..."
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services stop; \
+	fi
+	@rm -f .devbox/virtenv/postgresql_18/data/postmaster.pid
+	@echo "postmaster.pidを削除しました。再起動します..."
+	@devbox services up -b
+	@$(MAKE) --no-print-directory status
 
 server: ## Run Rails server
 	devbox run server
@@ -126,6 +144,9 @@ rubocop-correct-all: ## Run rubocop (auto correct all)
 
 export-for-algolia: ## Export songs for Algolia
 	devbox run export:algolia
+
+check-algolia: ## Check Algolia changes and output only changed records
+	devbox run check:algolia
 
 export-karaoke-songs: ## Export karaoke songs
 	devbox run export:karaoke
@@ -235,6 +256,9 @@ docker-bash: ## [Docker] Run bash in web container
 
 docker-export-for-algolia: ## [Docker] Export songs for Algolia
 	docker compose run --rm web bin/rails r lib/export_songs.rb
+
+docker-check-algolia: ## [Docker] Check Algolia changes and output only changed records
+	docker compose run --rm web bin/rails runner lib/check_algolia_upload.rb --verbose --output-changes tmp/karaoke_songs.json
 
 docker-export-karaoke-songs: ## [Docker] Export karaoke songs
 	docker compose run --rm web bin/rails r lib/export_karaoke_songs.rb

@@ -55,6 +55,7 @@
       "rubocop:fix":         "bundle exec rubocop --autocorrect",
       "rubocop:fix:all":     "bundle exec rubocop --autocorrect-all",
       "export:algolia":      "bin/rails runner lib/export_songs.rb",
+      "check:algolia":       "bin/rails runner lib/check_algolia_upload.rb --verbose --output-changes tmp/karaoke_songs.json",
       "export:karaoke":      "bin/rails runner lib/export_karaoke_songs.rb",
       "import:karaoke":      "bin/rails runner lib/import_karaoke_songs.rb",
       "export:artists":      "bin/rails runner lib/export_display_artists_with_circles.rb",
