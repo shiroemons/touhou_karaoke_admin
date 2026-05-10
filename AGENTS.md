@@ -35,9 +35,9 @@ Run `make minitest` locally. For query-sensitive admin pages, include regression
 
 ## Commit & Pull Request Guidelines
 
-Use Conventional Commits: `feat: ...`, `fix: ...`, `docs: ...`, `chore: ...`, `refactor: ...`. Keep commits focused and describe the user-visible or operational impact.
+Use Conventional Commits with Japanese descriptions: `feat: ...`, `fix: ...`, `docs: ...`, `chore: ...`, `refactor: ...`. Keep commits focused and describe the user-visible or operational impact in Japanese.
 
-Before opening a PR, run `make minitest` and `make rubocop`. Include a concise summary, relevant issue links, migration notes, and screenshots for visible admin UI changes. Mention any required data backfill, environment variable, or deployment step.
+Before opening a PR, run `make minitest` and `make rubocop`. Write PR titles and descriptions in Japanese. Include a concise summary, relevant issue links, migration notes, and screenshots for visible admin UI changes. Mention any required data backfill, environment variable, or deployment step.
 
 ## Security & Configuration Tips
 
