@@ -1,21 +1,21 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": {
-    "ruby":         "3.4.8",
     "postgresql_18": "latest",
-    "nodejs":       "20",
-    "yarn":         "1.22",
-    "libyaml":      "latest",
-    "openssl":      "latest",
-    "zlib":         "latest",
-    "readline":     "latest",
-    "libffi":       "latest",
-    "chromedriver": "latest",
+    "nodejs":        "20",
+    "yarn":          "1.22",
+    "libyaml":       "latest",
+    "openssl":       "latest",
+    "zlib":          "latest",
+    "readline":      "latest",
+    "libffi":        "latest",
+    "chromedriver":  "latest",
     "chromium": {
       "version":            "latest",
       "excluded_platforms": ["aarch64-darwin"]
     },
-    "libpq":         "latest"
+    "libpq": "latest",
+    "ruby":  "4.0.3"
   },
   "env": {
     "BUNDLE_PATH":        ".devbox/virtenv/bundle",
