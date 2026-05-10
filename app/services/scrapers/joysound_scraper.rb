@@ -10,9 +10,9 @@ module Scrapers
           browser_manager.clear_network_traffic
           browser_manager.visit(url)
 
-          composer = browser_manager.find(@selectors['song_detail']['composer'])&.inner_text
+          composer = song_information["作曲"]
 
-          scrape_artist_and_songs(url) if should_scrape?(composer, url)
+          scrape_artist_and_songs if should_scrape?(composer, url)
         end
       end
     rescue StandardError => e
@@ -30,8 +30,7 @@ module Scrapers
           browser_manager.visit(joysound_music_post.joysound_url)
           sleep(1.0) # 描画待ち
 
-          error_text = browser_manager.find(@selectors['song_detail']['error'])&.inner_text
-          if error_text == "このページは存在しません。"
+          if missing_page?
             handle_missing_page(browser_manager.current_url, joysound_music_post)
           else
             scrape_music_post_content(joysound_music_post)
@@ -69,10 +68,11 @@ module Scrapers
       composer.in?(Constants::Karaoke::PERMITTED_COMPOSERS) || Constants::Karaoke::JOYSOUND_ALLOWLIST.include?(url)
     end
 
-    def scrape_artist_and_songs(url)
+    def scrape_artist_and_songs
+      info = song_information
       artist_el = browser_manager.find(@selectors['song_detail']['artist'])
-      artist_name = artist_el.inner_text
-      artist_url = artist_el.property("href")
+      artist_name = info.fetch("歌手名")
+      artist_url = absolute_joysound_url(artist_el&.attribute("href").to_s)
 
       display_artist = DisplayArtist.find_or_create_by!(
         name: artist_name,
@@ -81,13 +81,14 @@ module Scrapers
       )
 
       browser_manager.find_all(@selectors['song_detail']['songs']).each do |song_el|
-        create_song_from_element(song_el, display_artist, url)
+        create_song_from_element(song_el, display_artist, browser_manager.current_url)
       end
     end
 
     def create_song_from_element(element, display_artist, page_url)
-      title = element.at_css(@selectors['song_detail']['song_title']).inner_text
-      song_number = element.at_css(@selectors['song_detail']['song_number']).inner_text
+      title = element.at_css(@selectors['song_detail']['song_title'])&.inner_text&.strip
+      song_number = element.inner_text[/曲番号:\s*([0-9]+)/, 1].to_s
+      return if title.blank?
 
       delivery_models = extract_delivery_models(element)
       kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND")
@@ -105,13 +106,23 @@ module Scrapers
     end
 
     def extract_delivery_models(element)
-      models = []
-      element.css(@selectors['song_detail']['karaoke_platform']).each do |ul|
-        ul.css(@selectors['song_detail']['platform_item']).each do |li|
-          models.push(li.at_css(@selectors['song_detail']['platform_image']).attribute("alt"))
-        end
+      element.css(@selectors['song_detail']['platform_item'])
+             .filter_map { |li| li.inner_text.strip.presence }
+             .reject { |text| text == "採点ランキングを見る" }
+    end
+
+    def song_information
+      browser_manager.find_all(@selectors['song_detail']['information_rows']).each_with_object({}) do |row, result|
+        key = row.at_css("th")&.inner_text&.strip
+        value = row.at_css("td")&.inner_text&.strip
+        result[key] = value if key.present?
       end
-      models
+    end
+
+    def absolute_joysound_url(path)
+      return "" if path.blank?
+
+      URI.join(Constants::Karaoke::Joysound::BASE_URL, path).to_s
     end
 
     def handle_missing_page(url, joysound_music_post)
@@ -123,9 +134,10 @@ module Scrapers
     end
 
     def scrape_music_post_content(joysound_music_post)
+      info = song_information
       artist_el = browser_manager.find(@selectors['song_detail']['artist'])
-      artist_name = artist_el.inner_text
-      artist_url = artist_el.property("href")
+      artist_name = info.fetch("歌手名")
+      artist_url = absolute_joysound_url(artist_el&.attribute("href").to_s)
 
       display_artist = DisplayArtist.find_or_create_by!(
         name: artist_name,
@@ -133,14 +145,14 @@ module Scrapers
         url: artist_url
       )
 
-      song_blocks = "#jp-cmp-karaoke-kyokupro > div.jp-cmp-kyokupuro-block"
-      browser_manager.find_all(song_blocks).each do |block|
+      browser_manager.find_all(@selectors['song_detail']['songs']).each do |block|
         create_music_post_song(block, display_artist, joysound_music_post)
       end
     end
 
     def create_music_post_song(block, display_artist, joysound_music_post)
-      title = block.at_css("div.jp-cmp-karaoke-details > h4").inner_text
+      title = block.at_css(@selectors['song_detail']['song_title'])&.inner_text&.strip
+      return if title.blank?
 
       delivery_models = extract_delivery_models(block)
       kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND(うたスキ)")
@@ -155,6 +167,11 @@ module Scrapers
       # karaoke_delivery_model_idsの更新を安全に行う
       update_delivery_models(song, kdm)
       update_song_with_joysound_utasuki(song, joysound_music_post)
+    end
+
+    def missing_page?
+      text = browser_manager.find(@selectors['song_detail']['error'])&.inner_text.to_s
+      text.include?("このページは存在しません。") || text.include?("ページが見つかりません")
     end
 
     def update_song_with_joysound_utasuki(song, joysound_music_post)

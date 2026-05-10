@@ -30,61 +30,74 @@ class JoysoundSong < ApplicationRecord
     url = Constants::Karaoke::Joysound::TOUHOU_GENRE_URL
 
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    browser.goto(url)
-    browser.network.wait_for_idle(duration: 1.0)
+    begin
+      browser.goto(url)
+      browser.network.wait_for_idle(duration: 1.0)
 
-    song_selector = "#jp-cmp-main > section > jp-cmp-song-search-list > div.jp-cmp-music-list-001.jp-cmp-music-list-song-001 > ul > li"
+      song_selector = '[data-testid="card-information"]'
+      song_link_selector = 'a[href^="/web/search/song/"]'
 
-    page_counter = 1
-    loop do
-      logger.info("[INFO] page #{page_counter}.")
-      browser.css(song_selector).each do |el|
-        url = el.at_css("div > a").property("href")
-        display_title = el.at_css("div > a > h3").inner_text.gsub(" 新曲", "")
-        smartphone_service = false
-        home_karaoke = false
-        el.css("div > a > div > ul > li > span").each do |tag|
-          case tag.inner_text
-          when "スマホサービス"
-            smartphone_service = true
-          when "家庭用カラオケ"
-            home_karaoke = true
-          end
+      page_counter = 1
+      loop do
+        logger.info("[INFO] page #{page_counter}.")
+        browser.css(song_selector).each do |el|
+          link = el.at_css(song_link_selector)
+          next if link.blank?
+
+          url = URI.join(Constants::Karaoke::Joysound::BASE_URL, link.attribute("href")).to_s
+          display_title = joysound_display_title(link)
+          next if display_title.blank?
+
+          tags = el.css("span").map { |tag| tag.inner_text.strip }
+          smartphone_service = tags.include?("スマホサービス")
+          home_karaoke = tags.include?("家庭用カラオケ")
+
+          record = find_or_initialize_by(display_title:, url:)
+          record.smartphone_service_enabled = smartphone_service
+          record.home_karaoke_enabled = home_karaoke
+          record.save! if record.changed?
         end
-        record = find_or_initialize_by(display_title:, url:)
-        record.smartphone_service_enabled = smartphone_service
-        record.home_karaoke_enabled = home_karaoke
-        record.save! if record.changed?
-      end
 
-      next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"
-      next_text = browser.at_css(next_selector)&.inner_text
-      if next_text == "次の20件"
-        browser.at_css(next_selector).at_css("a").focus.click
+        next_button = browser.css("nav button").find { |button| button.inner_text.strip == (page_counter + 1).to_s }
+        if next_button.blank?
+          puts "最後のページ"
+          break
+        end
+
+        next_button.focus.click
         browser.network.wait_for_idle(duration: 1.0)
+        sleep(1.0)
         page_counter += 1
-      else
-        puts "最後のページ"
-        break
       end
+    ensure
+      browser.quit
     end
-    browser.quit
   end
 
   def self.fetch_joysound_song_direct(url: nil)
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    browser.goto(url)
-    browser.network.wait_for_idle(duration: 1.0)
+    begin
+      browser.goto(url)
+      browser.network.wait_for_idle(duration: 1.0)
 
-    display_title_selector = "#jp-cmp-main > section:nth-child(2) > header > h1"
-    display_title = browser.at_css(display_title_selector).text
+      display_title = browser.at_css('[data-testid="card-information"] p')&.text
+      return if display_title.blank?
 
-    record = find_or_initialize_by(display_title:, url:)
-    smartphone_service = false
-    home_karaoke = false
-    record.smartphone_service_enabled = smartphone_service
-    record.home_karaoke_enabled = home_karaoke
-    record.save! if record.changed?
-    browser.quit
+      record = find_or_initialize_by(display_title:, url:)
+      smartphone_service = false
+      home_karaoke = false
+      record.smartphone_service_enabled = smartphone_service
+      record.home_karaoke_enabled = home_karaoke
+      record.save! if record.changed?
+    ensure
+      browser.quit
+    end
+  end
+
+  def self.joysound_display_title(link)
+    title = link.at_css("p")&.inner_text&.strip
+    artist = link.at_css("div.font-medium")&.inner_text&.strip
+
+    [title, artist].compact_blank.join("／")
   end
 end

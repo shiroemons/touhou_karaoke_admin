@@ -242,6 +242,7 @@ ja:
         succeed: "完了しました！"
       fetch_joysound_touhou_songs:
         name: "JOYSOUNDの東方楽曲を取得"
+        message: "JOYSOUND.comの「東方系」ジャンル検索結果（https://www.joysound.com/web/search/song?searchType=3&genreCd=22800001&sortOrder=new&orderBy=asc&startIndex=0#songlist）を巡回し、楽曲一覧URL・表示タイトル・スマホサービス対応有無・家庭用カラオケ対応有無を登録・更新します。Songへの本登録や曲番号・配信機種などの詳細取得は「JOYSOUND楽曲を取得」で行います。"
         succeed: "完了しました！"
       fetch_music_post:
         name: "JOYSOUNDミュージックポストの東方楽曲を取得"

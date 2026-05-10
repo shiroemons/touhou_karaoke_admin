@@ -2305,6 +2305,18 @@ th.admin-actions-column {
   margin: 0;
 }
 
+.admin-operation-description a {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  overflow-wrap: anywhere;
+}
+
+.admin-operation-description a:hover {
+  color: #1d4ed8;
+}
+
 .admin-operation-progress {
   background: #f8fbff;
   border: 1px solid #dbeafe;

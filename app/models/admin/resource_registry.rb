@@ -60,6 +60,21 @@ module Admin
       外部サイトへアクセスし、削除・更新を伴います。実行後は結果メッセージとログを確認してください。
     TEXT
 
+    FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION = <<~TEXT.freeze
+      JOYSOUND.comの「東方系」ジャンル検索結果を巡回し、JOYSOUND楽曲一覧として登録・更新します。
+
+      取得元URL:
+      #{Constants::Karaoke::Joysound::TOUHOU_GENRE_URL}
+
+      保存する内容:
+      - 表示タイトル（曲名／歌手名）
+      - JOYSOUND楽曲URL
+      - スマホサービス対応有無
+      - 家庭用カラオケ対応有無
+
+      この操作は一覧データ（JoysoundSong）を更新する処理です。Songへの本登録、作曲者による東方判定、曲番号、配信機種などの詳細取得は、別操作の「JOYSOUND楽曲を取得」で行います。
+    TEXT
+
     NAVIGATION_GROUPS = {
       '作品マスタ' => %i[original original_song],
       '配信管理' => %i[circle display_artist song karaoke_delivery_model],
@@ -412,7 +427,7 @@ module Admin
             field(:home_karaoke_enabled, label: '家庭用カラオケ', type: :boolean, readonly: true, sortable: true)
           ],
           operations: [
-            operation('東方JOYSOUND楽曲を取得', method_name: :fetch_joysound_touhou_songs, group: '外部取得', confirmation: '外部サイトへアクセスして東方JOYSOUND楽曲を取得します。実行しますか？'),
+            operation('東方JOYSOUND楽曲を取得', method_name: :fetch_joysound_touhou_songs, group: '外部取得', description: FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION, confirmation: '外部サイトへアクセスして東方JOYSOUND楽曲一覧を取得・更新します。実行しますか？'),
             operation('JOYSOUND詳細を取得', handler: :fetch_joysound_detail, group: 'URL指定取得', confirmation: '指定URLからJOYSOUND詳細を取得します。実行しますか？', inputs: [{ name: :joysound_url, label: 'JOYSOUND URL', type: :text }])
           ]
         )
