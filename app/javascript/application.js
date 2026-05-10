@@ -268,6 +268,7 @@ const setupAdminOperationForms = () => {
     const confirmButton = dialog?.querySelector("[data-admin-operation-confirm]")
     const cancelButton = dialog?.querySelector("[data-admin-operation-cancel]")
     const inlineConfirmation = form.dataset.adminOperationInlineConfirmation === "true"
+    const asyncOperation = form.dataset.adminOperationAsync === "true"
     const operationModal = form.closest("[data-admin-operation-modal]")
     const operationPanel = form.closest("[data-admin-operation-panel]")
     const selectedIdsContainer = form.querySelector("[data-admin-operation-selected-ids]")
@@ -461,6 +462,45 @@ const setupAdminOperationForms = () => {
       window.addEventListener("pagehide", finishProgress, { once: true })
     }
 
+    const failProgress = (message) => {
+      progressPhase = "failed"
+      updateProgress(lastServerPercentage, "エラー", message || "処理の開始に失敗しました")
+      if (pollTimer) window.clearInterval(pollTimer)
+      if (elapsedTimer) window.clearInterval(elapsedTimer)
+      progressBar?.classList.remove("admin-operation-progress-bar-active")
+      if (modalCancelButton) modalCancelButton.disabled = false
+      delete form.dataset.adminOperationBusy
+      delete form.dataset.confirmed
+      updateAdminOperationSubmitStates()
+    }
+
+    const submitAsyncOperation = async () => {
+      syncSelectedIds()
+      startProgress()
+
+      try {
+        const csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content")
+        const response = await fetch(form.action, {
+          method: form.method.toUpperCase(),
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+          },
+          body: new FormData(form),
+          credentials: "same-origin",
+        })
+
+        const payload = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(payload.message || `Request failed: ${response.status}`)
+
+        applyServerProgress(payload.progress)
+      } catch (error) {
+        console.error(error)
+        failProgress(error.message)
+      }
+    }
+
     const syncSelectedIds = () => {
       if (!selectedIdsContainer) return
 
@@ -488,12 +528,22 @@ const setupAdminOperationForms = () => {
 
       if (form.dataset.confirmed === "true") {
         syncSelectedIds()
+        if (asyncOperation) {
+          event.preventDefault()
+          submitAsyncOperation()
+          return
+        }
         startProgress()
         return
       }
 
       if (inlineConfirmation) {
         syncSelectedIds()
+        if (asyncOperation) {
+          event.preventDefault()
+          submitAsyncOperation()
+          return
+        }
         startProgress()
         return
       }

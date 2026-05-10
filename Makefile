@@ -1,5 +1,5 @@
 .PHONY: all setup setup-git-hooks shell versions up tui logs down status ps restart fix-pg \
-	server console console-sandbox bundle \
+	server jobs console console-sandbox bundle \
 	dbinit dbconsole migrate migrate-redo rollback dbseed \
 	update-originals-all seed-originals seed-original-songs seed-originals-all \
 	minitest rubocop rubocop-correct rubocop-correct-all \
@@ -93,6 +93,9 @@ fix-pg: ## Fix PostgreSQL by removing stale PID and restarting
 
 server: ## Run Rails server
 	devbox run server
+
+jobs: ## Run Solid Queue worker
+	devbox run jobs
 
 console: ## Run Rails console
 	devbox run console

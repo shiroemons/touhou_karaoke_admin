@@ -42,6 +42,7 @@ bun.lock
 !/bin/bundle
 !/bin/rails
 !/bin/rake
+!/bin/jobs
 !/bin/spring
 
 /app/assets/builds/*

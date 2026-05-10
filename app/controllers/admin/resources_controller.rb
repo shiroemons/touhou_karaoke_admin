@@ -99,6 +99,31 @@ module Admin
         return
       end
 
+      if @operation.async
+        progress_id = operation_progress_id
+        message = "#{@operation.label}のバックグラウンド処理を開始しました。"
+        OperationProgress.enqueue!(progress_id, label: "#{@operation.label}を開始待ちです")
+        OperationJob.perform_later(
+          resource_key: @resource.key.to_s,
+          operation_key: @operation.key,
+          record_id: @record&.id,
+          params: operation_job_params(progress_id)
+        )
+
+        respond_to do |format|
+          format.json do
+            render json: {
+              message:,
+              progress: OperationProgress.read(progress_id)
+            }, status: :accepted
+          end
+          format.html do
+            redirect_back_or_to admin_resources_path(@resource), notice: message
+          end
+        end
+        return
+      end
+
       result = OperationRunner.new(resource: @resource, operation: @operation, record: @record, params:, scope: operation_scope).run
 
       if result.download_data.present?
@@ -340,6 +365,20 @@ module Admin
 
     def scalar_param(key)
       params.permit(key)[key]
+    end
+
+    def operation_progress_id
+      id = scalar_param(:operation_progress_id)
+      OperationProgress.valid_id?(id) ? id : SecureRandom.uuid
+    end
+
+    def operation_job_params(progress_id)
+      permitted = params.permit(:operation, selected_ids: [], operation_fields: operation_field_param_keys)
+      permitted.to_h.merge('operation_progress_id' => progress_id)
+    end
+
+    def operation_field_param_keys
+      @operation.inputs.reject { |input| input[:type] == :file }.pluck(:name)
     end
 
     def operation_scope

@@ -8,15 +8,27 @@ default: &default
   port: <%= ENV.fetch("PGPORT", "5432") %>
 
 development:
-  <<: *default
-  database: touhou_karaoke_admin_development
+  primary:
+    <<: *default
+    database: touhou_karaoke_admin_development
+  queue:
+    <<: *default
+    database: touhou_karaoke_admin_development_queue
+    migrations_paths: db/queue_migrate
 
 test:
   <<: *default
   database: touhou_karaoke_admin_test
 
 production:
-  <<: *default
-  database: touhou_karaoke_admin_production
-  username: touhou_karaoke_admin
-  password: <%= ENV['TOUHOU_KARAOKE_ADMIN_DATABASE_PASSWORD'] %>
+  primary:
+    <<: *default
+    database: touhou_karaoke_admin_production
+    username: touhou_karaoke_admin
+    password: <%= ENV['TOUHOU_KARAOKE_ADMIN_DATABASE_PASSWORD'] %>
+  queue:
+    <<: *default
+    database: touhou_karaoke_admin_production_queue
+    username: touhou_karaoke_admin
+    password: <%= ENV['TOUHOU_KARAOKE_ADMIN_DATABASE_PASSWORD'] %>
+    migrations_paths: db/queue_migrate

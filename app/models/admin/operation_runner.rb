@@ -23,7 +23,7 @@ module Admin
       OperationProgress.start!(progress_id, label: operation.label)
       result = operation.handler.blank? ? run_method_operation : run_handler_operation
 
-      OperationProgress.complete!(progress_id, label: '処理が完了しました')
+      OperationProgress.complete!(progress_id, label: result.message.presence || '処理が完了しました')
       result
     rescue StandardError => e
       OperationProgress.fail!(progress_id, message: e.message)

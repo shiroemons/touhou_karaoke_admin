@@ -19,6 +19,13 @@ processes:
       timeout_seconds: 5
       success_threshold: 1
       failure_threshold: 3
+  jobs:
+    command: bin/jobs start
+    availability:
+      restart: on_failure
+    depends_on:
+      rails:
+        condition: process_healthy
   js:
     command: yarn build --watch=forever
     availability:

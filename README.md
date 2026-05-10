@@ -63,8 +63,8 @@ make setup
 
 ```shell
 make shell    # devboxシェルに入る
-make up       # PostgreSQLを起動
-make down     # PostgreSQLを停止
+make up       # PostgreSQL / Rails / Solid Queue / asset watcher を起動
+make down     # devboxサービスを停止
 make status   # サービス状態を確認
 ```
 
@@ -75,6 +75,14 @@ make server
 ```
 
 実行すると http://localhost:3000 でアクセスできる。
+
+管理画面アクションの非同期処理を実行するには、別ターミナルで Solid Queue worker も起動する。
+
+```shell
+make jobs
+```
+
+`make up` を使う場合は Rails server と worker がまとめて起動する。
 
 #### コンソールの起動
 

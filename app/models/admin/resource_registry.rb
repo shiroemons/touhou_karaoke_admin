@@ -3,7 +3,7 @@
 module Admin
   Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :options, :link, :helper, :count_association)
   Filter = Data.define(:name, :label, :type, :options, :apply)
-  Operation = Data.define(:key, :action_key, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds, :selection)
+  Operation = Data.define(:key, :action_key, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds, :selection, :async)
 
   Resource = Data.define(
     :key,
@@ -254,7 +254,8 @@ module Admin
           inputs: attributes.fetch(:inputs, []),
           group: attributes.fetch(:group, '操作'),
           estimated_seconds: attributes.fetch(:estimated_seconds, nil),
-          selection: attributes.fetch(:selection, :none)
+          selection: attributes.fetch(:selection, :none),
+          async: attributes.fetch(:async, false)
         )
       end
 
@@ -463,12 +464,12 @@ module Admin
             operation('楽曲TSVをエクスポート', handler: :export_songs, group: 'TSV入出力', selection: :required),
             operation('原曲未設定TSVをエクスポート', handler: :export_missing_original_songs, group: 'TSV入出力'),
             operation('原曲付き楽曲TSVをインポート', handler: :import_songs_with_original_songs, group: 'TSV入出力', inputs: [{ name: :tsv_file, label: 'TSVファイル', type: :file, accept: 'text/tab-separated-values' }]),
-            operation('DAM楽曲を取得', method_name: :fetch_dam_songs, group: '外部取得', confirmation: '外部サイトへアクセスしてDAM楽曲を取得します。実行しますか？'),
-            operation('DAM配信機種を更新', method_name: :update_dam_delivery_models, group: '外部取得', confirmation: '外部サイトへアクセスしてDAM配信機種を更新します。実行しますか？'),
-            operation('JOYSOUND楽曲を取得', method_name: :fetch_joysound_songs, group: '外部取得', confirmation: '外部サイトへアクセスしてJOYSOUND楽曲を取得します。実行しますか？'),
-            operation('ミュージックポスト楽曲を取得', handler: :fetch_joysound_music_post_song, group: 'ミュージックポスト', confirmation: '外部サイトへアクセスしてミュージックポスト楽曲を取得します。実行しますか？'),
-            operation('ミュージックポスト楽曲を検証', handler: :refresh_joysound_music_post_song, group: 'ミュージックポスト', confirmation: '外部サイトへアクセスして無効な楽曲を削除します。実行しますか？'),
-            operation('ミュージックポスト配信期限を更新', handler: :update_joysound_music_post_delivery_deadline_dates, group: 'ミュージックポスト', confirmation: '配信期限を一括更新します。実行しますか？')
+            operation('DAM楽曲を取得', method_name: :fetch_dam_songs, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAM楽曲を取得します。実行しますか？'),
+            operation('DAM配信機種を更新', method_name: :update_dam_delivery_models, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAM配信機種を更新します。実行しますか？'),
+            operation('JOYSOUND楽曲を取得', method_name: :fetch_joysound_songs, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてJOYSOUND楽曲を取得します。実行しますか？'),
+            operation('ミュージックポスト楽曲を取得', handler: :fetch_joysound_music_post_song, group: 'ミュージックポスト', async: true, confirmation: '外部サイトへアクセスしてミュージックポスト楽曲を取得します。実行しますか？'),
+            operation('ミュージックポスト楽曲を検証', handler: :refresh_joysound_music_post_song, group: 'ミュージックポスト', async: true, confirmation: '外部サイトへアクセスして無効な楽曲を削除します。実行しますか？'),
+            operation('ミュージックポスト配信期限を更新', handler: :update_joysound_music_post_delivery_deadline_dates, group: 'ミュージックポスト', async: true, confirmation: '配信期限を一括更新します。実行しますか？')
           ],
           strong_parameters: %i[youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url]
         )
@@ -498,9 +499,9 @@ module Admin
           ],
           associations: %i[circles songs dam_songs],
           operations: [
-            operation('DAMアーティストを取得', method_name: :fetch_dam_artist, group: '外部取得', confirmation: '外部サイトへアクセスしてDAMアーティストを取得します。実行しますか？'),
-            operation('JOYSOUNDアーティストを取得', method_name: :fetch_joysound_artist, group: '外部取得', confirmation: '外部サイトへアクセスしてJOYSOUNDアーティストを取得します。実行しますか？'),
-            operation('ミュージックポストアーティストを取得', method_name: :fetch_joysound_music_post_artist, group: '外部取得', confirmation: '外部サイトへアクセスしてミュージックポストアーティストを取得します。実行しますか？'),
+            operation('DAMアーティストを取得', method_name: :fetch_dam_artist, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAMアーティストを取得します。実行しますか？'),
+            operation('JOYSOUNDアーティストを取得', method_name: :fetch_joysound_artist, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてJOYSOUNDアーティストを取得します。実行しますか？'),
+            operation('ミュージックポストアーティストを取得', method_name: :fetch_joysound_music_post_artist, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてミュージックポストアーティストを取得します。実行しますか？'),
             operation('URLを検証', handler: :validate_display_artist_urls, group: '検証・削除', confirmation: 'アーティストURLを検証します。実行しますか？'),
             operation('無効なアーティストを削除', handler: :cleanup_invalid_display_artists, group: '検証・削除', confirmation: 'URLが無効なアーティストを削除します。実行しますか？'),
             operation('孤立アーティストを削除', handler: :cleanup_orphan_display_artists, group: '検証・削除', confirmation: '楽曲が紐づいていないアーティストを削除します。実行しますか？')
@@ -528,8 +529,8 @@ module Admin
             field(:url, label: 'URL', type: :url, readonly: true, sortable: true)
           ],
           operations: [
-            operation('東方DAM楽曲を取得', method_name: :fetch_dam_touhou_songs, group: '外部取得', estimated_seconds: 40, confirmation: '外部サイトへアクセスして東方DAM楽曲を取得します。実行しますか？'),
-            operation('DAM楽曲を取得', handler: :fetch_dam_song, group: 'URL指定取得', confirmation: '指定URLからDAM楽曲を取得します。実行しますか？', inputs: [{ name: :dam_song_url, label: 'DAM楽曲URL', type: :text, placeholder: Constants::Karaoke::Dam::SONG_URL }])
+            operation('東方DAM楽曲を取得', method_name: :fetch_dam_touhou_songs, group: '外部取得', async: true, estimated_seconds: 40, confirmation: '外部サイトへアクセスして東方DAM楽曲を取得します。実行しますか？'),
+            operation('DAM楽曲を取得', handler: :fetch_dam_song, group: 'URL指定取得', async: true, confirmation: '指定URLからDAM楽曲を取得します。実行しますか？', inputs: [{ name: :dam_song_url, label: 'DAM楽曲URL', type: :text, placeholder: Constants::Karaoke::Dam::SONG_URL }])
           ]
         )
       end
@@ -568,8 +569,8 @@ module Admin
             field(:home_karaoke_enabled, label: '家庭用カラオケ', type: :boolean, readonly: true, sortable: true)
           ],
           operations: [
-            operation('東方JOYSOUND楽曲を取得', method_name: :fetch_joysound_touhou_songs, group: '外部取得', description: FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION, confirmation: '外部サイトへアクセスして東方JOYSOUND楽曲一覧を取得・更新します。実行しますか？'),
-            operation('JOYSOUND詳細を取得', handler: :fetch_joysound_detail, group: 'URL指定取得', confirmation: '指定URLからJOYSOUND詳細を取得します。実行しますか？', inputs: [{ name: :joysound_url, label: 'JOYSOUND URL', type: :text }])
+            operation('東方JOYSOUND楽曲を取得', method_name: :fetch_joysound_touhou_songs, group: '外部取得', async: true, description: FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION, confirmation: '外部サイトへアクセスして東方JOYSOUND楽曲一覧を取得・更新します。実行しますか？'),
+            operation('JOYSOUND詳細を取得', handler: :fetch_joysound_detail, group: 'URL指定取得', async: true, confirmation: '指定URLからJOYSOUND詳細を取得します。実行しますか？', inputs: [{ name: :joysound_url, label: 'JOYSOUND URL', type: :text }])
           ]
         )
       end
@@ -595,13 +596,14 @@ module Admin
             field(:joysound_url, label: 'JOYSOUND URL', type: :url, index: false, sortable: true)
           ],
           operations: [
-            operation('ミュージックポストを取得', method_name: :fetch_music_post, group: '外部取得', confirmation: '外部サイトへアクセスしてミュージックポストを取得します。実行しますか？'),
-            operation('JOYSOUND URLを取得', method_name: :fetch_music_post_song_joysound_url, group: '外部取得', confirmation: '外部サイトへアクセスしてJOYSOUND URLを取得します。実行しますか？'),
-            operation('期限切れを削除', handler: :cleanup_expired_joysound_music_posts, group: '検証・削除', confirmation: '期限切れのミュージックポストを検証し、無効なレコードを削除します。実行しますか？'),
+            operation('ミュージックポストを取得', method_name: :fetch_music_post, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてミュージックポストを取得します。実行しますか？'),
+            operation('JOYSOUND URLを取得', method_name: :fetch_music_post_song_joysound_url, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてJOYSOUND URLを取得します。実行しますか？'),
+            operation('期限切れを削除', handler: :cleanup_expired_joysound_music_posts, group: '検証・削除', async: true, confirmation: '期限切れのミュージックポストを検証し、無効なレコードを削除します。実行しますか？'),
             operation(
               'フルメンテナンス',
               handler: :perform_full_joysound_music_post_maintenance,
               group: 'メンテナンス',
+              async: true,
               description: FULL_JOYSOUND_MUSIC_POST_MAINTENANCE_DESCRIPTION,
               confirmation: 'JOYSOUNDミュージックポストの全メンテナンスを実行します。実行しますか？'
             )

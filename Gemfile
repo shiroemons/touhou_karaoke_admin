@@ -40,3 +40,5 @@ gem 'ostruct'
 gem 'parallel', '~> 2.1'
 gem 'pundit'
 gem 'ransack'
+
+gem "solid_queue", "~> 1.4"

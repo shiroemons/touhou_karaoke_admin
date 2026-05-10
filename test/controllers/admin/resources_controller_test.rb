@@ -601,6 +601,7 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '東方DAM楽曲を取得'
       assert_select 'form[data-admin-operation-form][data-admin-operation-estimated-seconds="40"]'
+      assert_select 'form[data-admin-operation-form][data-admin-operation-async="true"]'
     end
 
     test 'renders full joysound music post maintenance steps in operation description' do
@@ -649,7 +650,9 @@ module Admin
       original_fetch = DamSong.method(:fetch_dam_touhou_songs)
       DamSong.define_singleton_method(:fetch_dam_touhou_songs, &fetch)
       begin
-        post operation_admin_dam_songs_path, params: { operation: 'fetch_dam_touhou_songs', operation_progress_id: progress_id }
+        perform_enqueued_jobs do
+          post operation_admin_dam_songs_path, params: { operation: 'fetch_dam_touhou_songs', operation_progress_id: progress_id }
+        end
       ensure
         DamSong.define_singleton_method(:fetch_dam_touhou_songs, &original_fetch)
       end
@@ -658,6 +661,23 @@ module Admin
       progress = OperationProgress.read(progress_id)
       assert_equal 'completed', progress[:state]
       assert_equal 100, progress[:percentage]
+    end
+
+    test 'async operation json request enqueues operation job and returns queued progress' do
+      progress_id = SecureRandom.uuid
+
+      assert_enqueued_with(job: OperationJob, queue: 'admin_operations') do
+        post operation_admin_dam_songs_path(format: :json), params: {
+          operation: 'fetch_dam_touhou_songs',
+          operation_progress_id: progress_id
+        }
+      end
+
+      assert_response :accepted
+      payload = response.parsed_body
+      assert_equal '東方DAM楽曲を取得のバックグラウンド処理を開始しました。', payload['message']
+      assert_equal 'queued', payload.dig('progress', 'state')
+      assert_equal '待機中', payload.dig('progress', 'status')
     end
 
     test 'joysound touhou operation receives progress callback' do
@@ -669,7 +689,9 @@ module Admin
       original_fetch = JoysoundSong.method(:fetch_joysound_touhou_songs)
       JoysoundSong.define_singleton_method(:fetch_joysound_touhou_songs, &fetch)
       begin
-        post operation_admin_joysound_songs_path, params: { operation: 'fetch_joysound_touhou_songs', operation_progress_id: progress_id }
+        perform_enqueued_jobs do
+          post operation_admin_joysound_songs_path, params: { operation: 'fetch_joysound_touhou_songs', operation_progress_id: progress_id }
+        end
       ensure
         JoysoundSong.define_singleton_method(:fetch_joysound_touhou_songs, &original_fetch)
       end
@@ -764,10 +786,12 @@ module Admin
     test 'runs url input operation' do
       captured_url = nil
       with_stubbed_class_method(DamSong, :fetch_dam_song, ->(url) { captured_url = url }) do
-        post operation_admin_dam_songs_path, params: {
-          operation: operation_index(:dam_song, :fetch_dam_song),
-          operation_fields: { dam_song_url: Constants::Karaoke::Dam::SONG_URL }
-        }
+        perform_enqueued_jobs do
+          post operation_admin_dam_songs_path, params: {
+            operation: operation_index(:dam_song, :fetch_dam_song),
+            operation_fields: { dam_song_url: Constants::Karaoke::Dam::SONG_URL }
+          }
+        end
       end
 
       assert_redirected_to admin_dam_songs_path
@@ -829,25 +853,32 @@ module Admin
       end.new(maintenance_result)
 
       with_stubbed_class_method(JoysoundMusicPostManager, :new, -> { manager }) do
-        post operation_admin_joysound_music_posts_path, params: {
-          operation: operation_index(:joysound_music_post, :perform_full_joysound_music_post_maintenance)
-        }
+        perform_enqueued_jobs do
+          post operation_admin_joysound_music_posts_path, params: {
+            operation: operation_index(:joysound_music_post, :perform_full_joysound_music_post_maintenance)
+          }
+        end
       end
 
       assert_redirected_to admin_joysound_music_posts_path
       follow_redirect!
-      assert_select '.admin-flash-notice', text: /統合メンテナンスが完了しました/
+      assert_select '.admin-flash-notice', text: /フルメンテナンスのバックグラウンド処理を開始しました/
     end
 
     test 'rejects invalid url input operation' do
-      post operation_admin_dam_songs_path, params: {
-        operation: operation_index(:dam_song, :fetch_dam_song),
-        operation_fields: { dam_song_url: 'https://example.com/not-dam' }
-      }
+      progress_id = SecureRandom.uuid
+      perform_enqueued_jobs do
+        post operation_admin_dam_songs_path, params: {
+          operation: operation_index(:dam_song, :fetch_dam_song),
+          operation_progress_id: progress_id,
+          operation_fields: { dam_song_url: 'https://example.com/not-dam' }
+        }
+      end
 
       assert_redirected_to admin_dam_songs_path
-      follow_redirect!
-      assert_select '.admin-flash-alert', text: 'DAMの楽曲URLではありません。'
+      progress = OperationProgress.read(progress_id)
+      assert_equal 'failed', progress[:state]
+      assert_equal 'DAMの楽曲URLではありません。', progress[:detail]
     end
 
     private
