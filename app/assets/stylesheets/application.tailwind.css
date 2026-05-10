@@ -2384,8 +2384,12 @@ th.admin-actions-column {
   height: 100%;
   min-width: 8px;
   animation: admin-operation-progress-stripes 900ms linear infinite;
-  transition: width 180ms ease;
+  transition: width 700ms ease;
   width: 0%;
+}
+
+.admin-operation-progress-bar-active {
+  animation: admin-operation-progress-stripes 900ms linear infinite;
 }
 
 .admin-operation-progress-steps {

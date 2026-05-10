@@ -463,14 +463,70 @@ module Admin
       assert_select 'h1', text: 'DAM楽曲を取得'
       assert_select '.admin-operation-description', text: /指定URLからDAM楽曲を取得します/
       assert_select 'form[data-admin-operation-form][data-avo-action="FetchDamSong"]'
+      assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
       assert_select 'input[name="operation_fields[dam_song_url]"]'
+      assert_select 'input[name="operation_progress_id"]', 1
       assert_select 'dialog[data-admin-operation-dialog]'
       assert_select '[data-admin-operation-progress]'
+      assert_select '[data-admin-operation-progressbar][aria-valuemin="0"][aria-valuemax="100"][aria-valuenow="0"]'
+      assert_select '[data-admin-operation-progress-percent]', text: '0%'
       assert_select '[data-admin-operation-progress-elapsed]', text: '00:00'
+      assert_select '[data-admin-operation-progress-status]', text: '待機中'
       assert_select '.admin-operation-progress-kicker', text: '推定進捗'
       assert_select '.admin-operation-progress-step', text: '入力内容を確認'
-      assert_select '.admin-operation-progress-step', text: 'サーバーで処理'
+      assert_select '.admin-operation-progress-step', text: '外部サイト取得・保存'
       assert_select '.admin-operation-progress-step', text: '結果を反映'
+    end
+
+    test 'renders estimated progress metadata for external fetch action' do
+      get operation_admin_dam_songs_path(operation: 'fetch_dam_touhou_songs')
+
+      assert_response :success
+      assert_select 'h1', text: '東方DAM楽曲を取得'
+      assert_select 'form[data-admin-operation-form][data-admin-operation-estimated-seconds="40"]'
+    end
+
+    test 'operation progress endpoint returns current progress payload' do
+      progress_id = SecureRandom.uuid
+      OperationProgress.update!(
+        progress_id,
+        state: 'running',
+        percentage: 42,
+        status: '外部サイト取得中',
+        label: 'DAM検索結果 2/? ページ目を保存しています',
+        detail: '処理済み: 120件',
+        current: 120
+      )
+
+      get operation_progress_admin_dam_songs_path(operation: 'fetch_dam_touhou_songs', operation_progress_id: progress_id)
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_equal 'running', payload['state']
+      assert_equal 42, payload['percentage']
+      assert_equal '外部サイト取得中', payload['status']
+      assert_equal '処理済み: 120件', payload['detail']
+      assert_equal 120, payload['current']
+    end
+
+    test 'method operation receives progress callback and completes progress' do
+      progress_id = SecureRandom.uuid
+      fetch = lambda do |progress: nil|
+        progress.call(percentage: 55, status: '外部サイト取得中', label: 'DAM検索結果を保存しています')
+      end
+
+      original_fetch = DamSong.method(:fetch_dam_touhou_songs)
+      DamSong.define_singleton_method(:fetch_dam_touhou_songs, &fetch)
+      begin
+        post operation_admin_dam_songs_path, params: { operation: 'fetch_dam_touhou_songs', operation_progress_id: progress_id }
+      ensure
+        DamSong.define_singleton_method(:fetch_dam_touhou_songs, &original_fetch)
+      end
+
+      assert_redirected_to admin_dam_songs_path
+      progress = OperationProgress.read(progress_id)
+      assert_equal 'completed', progress[:state]
+      assert_equal 100, progress[:percentage]
     end
 
     test 'head request to action page does not execute operation' do

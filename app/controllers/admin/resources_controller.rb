@@ -6,7 +6,7 @@ module Admin
     helper_method :admin_recent_change_logs
 
     before_action :set_resource
-    before_action :set_record, only: %i[show edit update destroy operation]
+    before_action :set_record, only: %i[show edit update destroy operation operation_progress]
 
     def index
       authorize model
@@ -115,6 +115,13 @@ module Admin
     rescue StandardError => e
       Rails.logger.error(e)
       redirect_back_or_to admin_resources_path(@resource), alert: "処理中にエラーが発生しました。#{e.message}"
+    end
+
+    def operation_progress
+      @operation = find_operation
+      authorize_operation!
+
+      render json: OperationProgress.read(params[:operation_progress_id])
     end
 
     private

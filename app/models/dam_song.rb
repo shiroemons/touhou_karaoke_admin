@@ -32,10 +32,13 @@ class DamSong < ApplicationRecord
     @browser.quit
   end
 
-  def self.fetch_dam_touhou_songs
+  def self.fetch_dam_touhou_songs(progress: nil)
     retry_count = 0
     page = 1
+    processed_count = 0
+    total_pages = nil
     url = Constants::Karaoke::Dam::SEARCH_URL
+    progress&.call(percentage: 2, status: "取得準備中", label: "DAM検索ページへ接続しています...", detail: nil)
 
     begin
       loop do
@@ -44,7 +47,19 @@ class DamSong < ApplicationRecord
         @browser.network.wait_for_idle(duration: 1.0)
 
         song_list_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.result-wrap > ul > li"
-        @browser.css(song_list_selector).each do |el|
+        song_elements = @browser.css(song_list_selector)
+        total_pages ||= detect_dam_search_total_pages(@browser, song_elements.size)
+        progress&.call(
+          percentage: dam_touhou_progress_percentage(page:, item_index: 0, item_count: song_elements.size, total_pages:),
+          status: "外部サイト取得中",
+          label: "DAM検索結果 #{page}/#{total_pages || '?'} ページ目を処理しています",
+          detail: "処理済み: #{processed_count}件",
+          current: page,
+          total: total_pages
+        )
+        logger.info("DAM Touhou fetch progress: page=#{page}/#{total_pages || '?'} items=#{song_elements.size} processed=#{processed_count}")
+
+        song_elements.each_with_index do |el, index|
           artist_element_selector = "div.result-item-inner > div.artist-name"
           artist_el = el.at_css(artist_element_selector)
           artist_name = artist_el.inner_text
@@ -67,9 +82,21 @@ class DamSong < ApplicationRecord
             song.display_artist = display_artist
           end
           dam_song.update(title: song_title, display_artist:)
+          processed_count += 1
+
+          next unless ((index + 1) % 10).zero? || index + 1 == song_elements.size
+
+          progress&.call(
+            percentage: dam_touhou_progress_percentage(page:, item_index: index + 1, item_count: song_elements.size, total_pages:),
+            status: "外部サイト取得中",
+            label: "DAM検索結果 #{page}/#{total_pages || '?'} ページ目を保存しています",
+            detail: "処理済み: #{processed_count}件",
+            current: total_pages ? ((page - 1) * 100) + index + 1 : processed_count,
+            total: total_pages ? total_pages * 100 : nil
+          )
         end
 
-        if @browser.css(song_list_selector).size != 100
+        if song_elements.size != 100
           @browser.quit
           break
         end
@@ -83,6 +110,34 @@ class DamSong < ApplicationRecord
       retry_count += 1
       retry unless retry_count > 3
     end
+  end
+
+  def self.detect_dam_search_total_pages(browser, page_size)
+    pages_from_links = browser.css('a[href*="pageNo="]').filter_map do |link|
+      link.attribute('href').to_s[/pageNo=(\d+)/, 1]&.to_i
+    end.max
+    body_text = browser.at_css('body')&.inner_text.to_s
+    counts = body_text.scan(/([0-9,]+)\s*件/).filter_map do |match|
+      match.first.delete(',').to_i
+    end
+    result_count = counts.select { |count| count >= page_size }.max
+    pages_from_count = (result_count.to_f / 100).ceil if result_count
+
+    [pages_from_links, pages_from_count].compact.max
+  rescue StandardError => e
+    logger.debug("DAM Touhou fetch total page detection failed: #{e.message}")
+    nil
+  end
+
+  def self.dam_touhou_progress_percentage(page:, item_index:, item_count:, total_pages:)
+    item_fraction = item_count.positive? ? item_index.to_f / item_count : 0.0
+    ratio = if total_pages.to_i.positive?
+              ((page - 1) + item_fraction) / total_pages.to_f
+            else
+              ((page - 1) + item_fraction) / (page + 1).to_f
+            end
+
+    (8 + (88 * ratio)).floor.clamp(8, 96)
   end
 
   def self.dam_song_list_parser(display_artist)

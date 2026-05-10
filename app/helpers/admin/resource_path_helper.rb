@@ -31,5 +31,21 @@ module Admin
         admin_resource_collection_operation_path(resource, operation_identifier)
       end
     end
+
+    def admin_resource_operation_progress_path(resource, record, operation_identifier, progress_id)
+      public_send("operation_progress_admin_#{resource.key}_path", record, operation: operation_identifier, operation_progress_id: progress_id)
+    end
+
+    def admin_resource_collection_operation_progress_path(resource, operation_identifier, progress_id)
+      public_send("operation_progress_admin_#{resource.route_name}_path", operation: operation_identifier, operation_progress_id: progress_id)
+    end
+
+    def admin_operation_progress_path(resource, record, operation_identifier, progress_id)
+      if record.present?
+        admin_resource_operation_progress_path(resource, record, operation_identifier, progress_id)
+      else
+        admin_resource_collection_operation_progress_path(resource, operation_identifier, progress_id)
+      end
+    end
   end
 end

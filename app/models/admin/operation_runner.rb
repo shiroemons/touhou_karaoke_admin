@@ -15,12 +15,18 @@ module Admin
       @record = record
       @params = params
       @scope = scope
+      @progress_id = params[:operation_progress_id]
     end
 
     def run
-      return run_method_operation if operation.handler.blank?
+      OperationProgress.start!(progress_id, label: operation.label)
+      result = operation.handler.blank? ? run_method_operation : public_send(operation.handler)
 
-      public_send(operation.handler)
+      OperationProgress.complete!(progress_id, label: '処理が完了しました')
+      result
+    rescue StandardError => e
+      OperationProgress.fail!(progress_id, message: e.message)
+      raise
     end
 
     def export_songs
@@ -185,12 +191,23 @@ module Admin
 
     private
 
-    attr_reader :operation, :record, :params, :scope
+    attr_reader :operation, :record, :params, :scope, :progress_id
 
     def run_method_operation
       target = record || operation_target
-      target.public_send(operation.method_name)
+      operation_method = target.method(operation.method_name)
+      if operation_method.parameters.any? { |type, name| type == :key && name == :progress }
+        target.public_send(operation.method_name, progress: method_progress)
+      else
+        target.public_send(operation.method_name)
+      end
       message("#{operation.label}を実行しました。")
+    end
+
+    def method_progress
+      lambda do |**attributes|
+        OperationProgress.update!(progress_id, **attributes)
+      end
     end
 
     def operation_target

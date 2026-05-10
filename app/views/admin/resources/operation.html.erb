@@ -25,7 +25,9 @@
 
 <section class="admin-panel">
   <h2>実行</h2>
-  <%= form_with url: admin_operation_path(@resource, @record, @operation.key), method: :post, multipart: @operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: @operation.confirmation.presence || "#{@operation.label}を実行します。よろしいですか？", avo_action: @operation.avo_action } do |form| %>
+  <% operation_progress_id = SecureRandom.uuid %>
+  <%= form_with url: admin_operation_path(@resource, @record, @operation.key), method: :post, multipart: @operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: @operation.confirmation.presence || "#{@operation.label}を実行します。よろしいですか？", avo_action: @operation.avo_action, admin_operation_estimated_seconds: @operation.estimated_seconds, admin_operation_progress_url: admin_operation_progress_path(@resource, @record, @operation.key, operation_progress_id) } do |form| %>
+    <%= hidden_field_tag :operation_progress_id, operation_progress_id %>
     <% @operation.inputs.each do |input| %>
       <div class="admin-form-row">
         <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
@@ -51,19 +53,20 @@
           <strong data-admin-operation-progress-label>処理を開始しています...</strong>
         </div>
         <div class="admin-operation-progress-meta">
-          <span data-admin-operation-progress-elapsed>00:00</span>
           <span data-admin-operation-progress-percent>0%</span>
+          <span data-admin-operation-progress-elapsed>00:00</span>
+          <span data-admin-operation-progress-status>待機中</span>
         </div>
       </div>
-      <div class="admin-operation-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-admin-operation-progressbar>
+      <div class="admin-operation-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="待機中 0%" data-admin-operation-progressbar>
         <div class="admin-operation-progress-bar" data-admin-operation-progress-bar></div>
       </div>
       <ol class="admin-operation-progress-steps" aria-label="処理ステップ">
         <li data-admin-operation-step="prepare" class="admin-operation-progress-step admin-operation-progress-step-active">入力内容を確認</li>
-        <li data-admin-operation-step="execute" class="admin-operation-progress-step">サーバーで処理</li>
+        <li data-admin-operation-step="execute" class="admin-operation-progress-step">外部サイト取得・保存</li>
         <li data-admin-operation-step="finish" class="admin-operation-progress-step">結果を反映</li>
       </ol>
-      <p class="admin-operation-progress-note">処理が完了すると自動で画面が切り替わります。この画面を閉じずにお待ちください。</p>
+      <p class="admin-operation-progress-note">処理側の進捗ログを優先して表示します。総件数を取得できない処理では、ページ数と処理件数から進捗率を推測します。</p>
     </div>
   <% end %>
 </section>

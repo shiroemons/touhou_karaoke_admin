@@ -161,12 +161,22 @@ const setupAdminOperationForms = () => {
     const progress = form.querySelector("[data-admin-operation-progress]")
     const progressLabel = form.querySelector("[data-admin-operation-progress-label]")
     const progressPercent = form.querySelector("[data-admin-operation-progress-percent]")
+    const progressStatus = form.querySelector("[data-admin-operation-progress-status]")
     const progressElapsed = form.querySelector("[data-admin-operation-progress-elapsed]")
     const progressbar = form.querySelector("[data-admin-operation-progressbar]")
     const progressBar = form.querySelector("[data-admin-operation-progress-bar]")
     const progressSteps = form.querySelectorAll("[data-admin-operation-step]")
-    let progressTimer
+    const progressUrl = form.dataset.adminOperationProgressUrl
+    const parsedEstimatedSeconds = Number.parseInt(form.dataset.adminOperationEstimatedSeconds || "40", 10)
+    const estimatedSeconds = Number.isFinite(parsedEstimatedSeconds) && parsedEstimatedSeconds > 0 ? parsedEstimatedSeconds : 40
     let elapsedTimer
+    let pollTimer
+    let progressPhase = "waiting"
+    let executeStartedAt
+    let lastServerPercentage = 0
+    let hasServerProgress = false
+    let lastProgressStatus = "外部サイト取得中"
+    let lastProgressLabel = "外部サイトから取得・保存しています..."
 
     const elapsedTime = (startedAt) => {
       const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
@@ -185,32 +195,114 @@ const setupAdminOperationForms = () => {
       })
     }
 
-    const updateProgress = (value, label) => {
+    const estimatedExternalFetchProgress = () => {
+      if (!executeStartedAt) return 8
+
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - executeStartedAt) / 1000))
+      const progressRatio = Math.min(elapsedSeconds / estimatedSeconds, 1)
+      const estimated = 8 + (84 * Math.pow(progressRatio, 0.72))
+      return Math.min(92, Math.max(8, Math.floor(estimated)))
+    }
+
+    const updateProgress = (value, status, label) => {
+      const normalizedValue = Math.max(0, Math.min(100, value))
       if (progressLabel && label) progressLabel.textContent = label
-      if (progressPercent) progressPercent.textContent = `${value}%`
-      if (progressbar) progressbar.setAttribute("aria-valuenow", value)
-      if (progressBar) progressBar.style.width = `${value}%`
+      if (progressPercent) progressPercent.textContent = `${normalizedValue}%`
+      if (progressStatus) progressStatus.textContent = status
+      if (progressbar) {
+        progressbar.setAttribute("aria-valuenow", normalizedValue.toString())
+        progressbar.setAttribute("aria-valuetext", `${status} ${normalizedValue}%`)
+      }
+      if (progressBar) progressBar.style.width = `${normalizedValue}%`
+    }
+
+    const finishProgress = () => {
+      if (progress?.hidden || progressPhase === "finished") return
+
+      progressPhase = "finished"
+      activateProgressStep("finish")
+      updateProgress(100, "結果を反映中", "処理が完了しました。画面を切り替えています...")
+      if (elapsedTimer) window.clearInterval(elapsedTimer)
+      if (pollTimer) window.clearInterval(pollTimer)
+    }
+
+    const applyServerProgress = (payload) => {
+      if (!payload || progressPhase === "finished") return
+
+      const percentage = Number.parseInt(payload.percentage || "0", 10)
+      const status = payload.status || "外部サイト取得中"
+      const label = payload.label || "外部サイトから取得・保存しています..."
+      lastProgressStatus = status
+      lastProgressLabel = label
+
+      if (Number.isFinite(percentage)) {
+        hasServerProgress = payload.state !== "pending" || percentage > 0
+        lastServerPercentage = Math.max(lastServerPercentage, percentage)
+        updateProgress(lastServerPercentage, status, label)
+      } else {
+        updateProgress(lastServerPercentage, status, label)
+      }
+
+      if (payload.state === "running") activateProgressStep("execute")
+      if (payload.state === "completed") finishProgress()
+      if (payload.state === "failed") {
+        progressPhase = "failed"
+        updateProgress(lastServerPercentage, "エラー", payload.detail || label)
+        if (pollTimer) window.clearInterval(pollTimer)
+      }
+    }
+
+    const startProgressPolling = () => {
+      if (!progressUrl) return
+
+      const poll = async () => {
+        try {
+          const response = await fetch(progressUrl, {
+            headers: {
+              Accept: "application/json",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          })
+          if (!response.ok) return
+
+          applyServerProgress(await response.json())
+        } catch (error) {
+          console.debug(error)
+        }
+      }
+
+      poll()
+      pollTimer = window.setInterval(poll, 1200)
     }
 
     const startProgress = () => {
       if (progress) progress.hidden = false
       if (submitButton) submitButton.disabled = true
+      progressPhase = "prepare"
       activateProgressStep("prepare")
-      updateProgress(8, "入力内容を確認しています...")
+      updateProgress(4, "確認中", "入力内容を確認しています...")
 
       const startedAt = Date.now()
       if (progressElapsed) progressElapsed.textContent = elapsedTime(startedAt)
       elapsedTimer = window.setInterval(() => {
         if (progressElapsed) progressElapsed.textContent = elapsedTime(startedAt)
+        if (progressPhase === "execute") {
+          const fallbackProgress = estimatedExternalFetchProgress()
+          const nextProgress = hasServerProgress ? lastServerPercentage : fallbackProgress
+          updateProgress(nextProgress, lastProgressStatus, lastProgressLabel)
+        }
       }, 1000)
-      let current = 8
-      progressTimer = window.setInterval(() => {
-        if (current >= 24) activateProgressStep("execute")
-        current = Math.min(current + Math.ceil((92 - current) / 8), 92)
-        updateProgress(current, current >= 92 ? "結果を待っています..." : "サーバーで処理中です...")
-        if (current >= 92) activateProgressStep("finish")
-        if (current >= 92) window.clearInterval(progressTimer)
-      }, 450)
+
+      window.setTimeout(() => {
+        progressPhase = "execute"
+        executeStartedAt = Date.now()
+        activateProgressStep("execute")
+        progressBar?.classList.add("admin-operation-progress-bar-active")
+        updateProgress(8, "外部サイト取得中", "外部サイトから取得・保存しています...")
+      }, 250)
+
+      startProgressPolling()
+      window.addEventListener("pagehide", finishProgress, { once: true })
     }
 
     const submitConfirmed = () => {

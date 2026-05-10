@@ -49,3 +49,6 @@ bun.lock
 
 # devbox
 .devbox/
+
+# Local verification artifacts
+/output/

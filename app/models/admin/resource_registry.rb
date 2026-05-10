@@ -3,7 +3,7 @@
 module Admin
   Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :options, :link, :helper, :count_association)
   Filter = Data.define(:name, :label, :type, :options, :apply)
-  Operation = Data.define(:key, :avo_action, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group)
+  Operation = Data.define(:key, :avo_action, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds)
 
   Resource = Data.define(
     :key,
@@ -114,7 +114,8 @@ module Admin
           scope: attributes.fetch(:scope, :collection),
           handler: attributes.fetch(:handler, nil),
           inputs: attributes.fetch(:inputs, []),
-          group: attributes.fetch(:group, '操作')
+          group: attributes.fetch(:group, '操作'),
+          estimated_seconds: attributes.fetch(:estimated_seconds, nil)
         )
       end
 
@@ -361,7 +362,7 @@ module Admin
             field(:url, label: 'URL', type: :url, readonly: true, sortable: true)
           ],
           operations: [
-            operation('東方DAM楽曲を取得', method_name: :fetch_dam_touhou_songs, group: '外部取得', confirmation: '外部サイトへアクセスして東方DAM楽曲を取得します。実行しますか？'),
+            operation('東方DAM楽曲を取得', method_name: :fetch_dam_touhou_songs, group: '外部取得', estimated_seconds: 40, confirmation: '外部サイトへアクセスして東方DAM楽曲を取得します。実行しますか？'),
             operation('DAM楽曲を取得', handler: :fetch_dam_song, group: 'URL指定取得', confirmation: '指定URLからDAM楽曲を取得します。実行しますか？', inputs: [{ name: :dam_song_url, label: 'DAM楽曲URL', type: :text, placeholder: Constants::Karaoke::Dam::SONG_URL }])
           ]
         )
