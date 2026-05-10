@@ -8,7 +8,7 @@ Database migrations, schema, seeds, and TSV fixtures live in `db/`. Import/expor
 
 ## Build, Test, and Development Commands
 
-Use `devbox` as the default local environment.
+Use `devbox` as the default local environment. Run Rails, test, lint, migration, and job commands through `devbox` or the provided `make` targets.
 
 - `make setup`: install dependencies and prepare the database.
 - `make up`: start PostgreSQL, Rails, Solid Queue, and asset watchers.
@@ -32,6 +32,18 @@ RuboCop, `rubocop-rails`, and `rubocop-performance` define Ruby style. Run `make
 Tests use Minitest with Rails fixtures. Add or update tests for behavior changes, especially admin workflows, authorization policies, imports/exports, database queries, and external scraping failures. Name test files after the class or feature, for example `test/services/delivery_model_manager_test.rb`.
 
 Run `make minitest` locally. For query-sensitive admin pages, include regression coverage that detects repeated SQL patterns or N+1 behavior when practical.
+
+## UI Verification
+
+For visible admin UI changes, AI agents must verify behavior with browser automation against the local Rails server started via `make up` or `make server`. Use Playwright or the available browser automation tool to exercise the affected admin workflow, inspect DOM state, capture screenshots when the visual result matters, and check browser console errors when practical.
+
+For ad-hoc AI-driven UI verification, prefer the Codex Playwright CLI wrapper at `$CODEX_HOME/skills/playwright/scripts/playwright_cli.sh` when available. For repository scripts, CI, or documentation intended for all developers, use the project-local `@playwright/cli` through `yarn playwright-cli` or `npx playwright-cli` instead of user-local absolute paths.
+
+Cover the changed screen plus adjacent admin flows that could regress: dashboard navigation, resource index, search and clear actions, filters, sort links, pagination or infinite scroll, show/detail pages, edit forms, selection checkboxes, operation dropdowns, confirmation modals, and non-destructive operation forms. Do not submit destructive actions, external fetches, imports, exports, or data-changing forms unless the user explicitly approves that specific action.
+
+Verify responsive behavior at relevant viewport sizes. At minimum, check a mobile width around `375x812`, a normal desktop width around `1440x900`, and a wide desktop width around `1920x1080` for layout overlap, clipped text, unusable controls, horizontal scrolling, and table/action accessibility. Add tablet or intermediate widths when the changed layout has breakpoints.
+
+Report the UI verification result in Japanese, including the browser target URL, viewport sizes, checked workflows, screenshots or artifact paths when captured, console errors, and any remaining visual or interaction risks. If automated browser verification cannot be run, state the blocker and the manual verification still needed.
 
 ## Commit & Pull Request Guidelines
 
