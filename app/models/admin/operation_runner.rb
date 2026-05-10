@@ -8,6 +8,7 @@ module Admin
       id karaoke_type display_artist_name title original_songs youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url
     ].freeze
     DISPLAY_ARTIST_EXPORT_COLUMNS = %w[id name karaoke_type url].freeze
+    UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
     def initialize(resource:, operation:, record:, params:, scope:)
       @resource = resource
@@ -229,7 +230,7 @@ module Admin
       return [] if raw_ids.blank?
       return raw_ids unless uuid_primary_key?
 
-      raw_ids.select { |id| id.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i) }
+      raw_ids.grep(UUID_PATTERN)
     end
 
     def uuid_primary_key?

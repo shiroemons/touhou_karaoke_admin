@@ -135,7 +135,8 @@ module Admin
     end
 
     def set_record
-      @record = model.find(params[:id]) if params[:id].present?
+      id = scalar_param(:id)
+      @record = model.find(id) if id.present?
     end
 
     def resource_params
@@ -149,7 +150,7 @@ module Admin
     end
 
     def apply_search(scope)
-      query = params[:q].to_s.strip
+      query = scalar_param(:q).to_s.strip
       return scope if query.blank?
 
       pattern = "%#{model.sanitize_sql_like(query)}%"
@@ -246,7 +247,7 @@ module Admin
     end
 
     def apply_order(scope)
-      sort_field = @resource.fields.find { |field| field.sortable && field.name.to_s == params[:sort].to_s }
+      sort_field = @resource.fields.find { |field| field.sortable && field.name.to_s == scalar_param(:sort).to_s }
       direction = params[:direction] == 'asc' ? :asc : :desc
 
       if sort_field && model.column_names.include?(sort_field.name.to_s)
@@ -294,12 +295,12 @@ module Admin
     end
 
     def requested_page
-      page = params[:page].to_i
+      page = scalar_param(:page).to_i
       page.positive? ? page : 1
     end
 
     def requested_per_page
-      per_page = params[:per_page].to_i
+      per_page = scalar_param(:per_page).to_i
       PER_PAGE_OPTIONS.include?(per_page) ? per_page : PER_PAGE_OPTIONS.first
     end
 
@@ -330,11 +331,15 @@ module Admin
     end
 
     def find_operation
-      operation_identifier = params[:operation].to_s
+      operation_identifier = scalar_param(:operation).to_s
       return @resource.operations.fetch(operation_identifier.to_i) if operation_identifier.match?(/\A\d+\z/)
 
       @resource.operations.find { |operation| operation.key == operation_identifier || operation.action_key == operation_identifier } ||
         raise(ArgumentError, '指定されたアクションは見つかりません。')
+    end
+
+    def scalar_param(key)
+      params.permit(key)[key]
     end
 
     def operation_scope
