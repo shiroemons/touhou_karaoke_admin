@@ -12,6 +12,13 @@ on:
 
 env:
   CI: "true"
+  PGHOST: localhost
+  PGUSER: postgres
+  PGPASSWORD: password
+  RAILS_ENV: test
+
+permissions:
+  contents: read
 
 jobs:
   build_and_test:
@@ -25,48 +32,44 @@ jobs:
         env:
           POSTGRES_PASSWORD: password
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    container:
-      image: cimg/ruby:4.0.3-node
-      options: --user root
-      env:
-        PGHOST: postgres
-        PGUSER: postgres
-        PGPASSWORD: password
-        RAILS_ENV: test
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
 
-      - name: Cache vendor/bundle
-        uses: actions/cache@v5
-        id: cache_gem
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          path: vendor/bundle
-          key: v1-gem-${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}
-          restore-keys: |
-            v1-gem-${{ runner.os }}-
-      - name: Build and setup
-        run: |
-          gem install bundler --no-document -v $(grep "BUNDLED WITH" -1 Gemfile.lock | tail -n 1)
-          bundle config set --local path 'vendor/bundle'
-          bundle install --jobs 4 --retry 3
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
       - name: Install JS dependencies
         run: yarn install --frozen-lockfile
+
       - name: Build assets
         run: |
           yarn build
           yarn build:css
+
       - name: Database setup
         run: |
           bundle exec rails db:prepare
+
       - name: Run Rubocop
         run: |
           bundle exec rubocop --parallel
+
       - name: Run test
         run: |
           bundle exec rails test

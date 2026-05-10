@@ -1,4 +1,4 @@
-.PHONY: all setup shell versions up tui logs down status ps restart fix-pg \
+.PHONY: all setup setup-git-hooks shell versions up tui logs down status ps restart fix-pg \
 	server console console-sandbox bundle \
 	dbinit dbconsole migrate migrate-redo rollback dbseed \
 	update-originals-all seed-originals seed-original-songs seed-originals-all \
@@ -28,6 +28,9 @@ all: help
 
 setup: ## Initialize devbox environment
 	devbox run setup
+
+setup-git-hooks: ## Configure repository Git hooks
+	git config --local core.hooksPath .githooks
 
 shell: ## Enter devbox shell
 	devbox shell
