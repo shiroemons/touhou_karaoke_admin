@@ -13,6 +13,8 @@
   <% end %>
 </header>
 
+<%= render "operations", resource: @resource, record: nil %>
+
 <div class="admin-index-toolbar">
   <%= form_with url: admin_resources_path(@resource), method: :get, class: "admin-query-panel admin-control-panel", data: { admin_filter_form: true } do |form| %>
     <%= form.hidden_field :view_mode, value: @view_mode %>
@@ -56,10 +58,6 @@
       </details>
     <% end %>
   <% end %>
-
-  <div class="admin-toolbar-side">
-    <%= render "operations", resource: @resource, record: nil %>
-  </div>
 </div>
 
 <div class="admin-table-controls">

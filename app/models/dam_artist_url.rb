@@ -29,6 +29,10 @@ class DamArtistUrl < ApplicationRecord
     end
   end
 
+  def self.fill_dam_artist_readings(progress: nil)
+    fetch_dam_artist(progress:)
+  end
+
   def self.dam_artist_page_parser(url)
     retry_count = 0
     @browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })

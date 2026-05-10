@@ -1,6 +1,6 @@
 <% modal_operations = operations.select { |operation| operation.scope == :collection } %>
 <% if modal_operations.present? %>
-  <dialog class="modal admin-operation-modal" data-admin-operation-modal>
+  <dialog class="modal admin-operation-modal" data-admin-operation-modal data-admin-operation-resource="<%= resource.key %>">
     <div class="modal-box admin-operation-modal-box">
       <div class="admin-operation-modal-header">
         <div>
@@ -13,7 +13,7 @@
       <% modal_operations.each do |operation| %>
         <section class="admin-operation-modal-panel" data-admin-operation-panel="<%= operation.key %>" <%= "hidden" unless operation == modal_operations.first %>>
           <div class="admin-operation-description"><%= linked_operation_description(operation.description) %></div>
-          <%= render "operation_form", resource:, record: nil, operation:, modal: true %>
+          <%= render "admin/resources/operation_form", resource:, record: nil, operation:, modal: true %>
         </section>
       <% end %>
     </div>

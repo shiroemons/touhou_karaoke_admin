@@ -413,7 +413,10 @@ module Admin
     end
 
     def scalar_param(key)
-      params.permit(key)[key]
+      value = params[key]
+      return nil if value.is_a?(Array) || value.is_a?(Hash) || value.is_a?(ActionController::Parameters)
+
+      value
     end
 
     def operation_progress_id
@@ -422,7 +425,7 @@ module Admin
     end
 
     def operation_job_params(progress_id)
-      permitted = params.permit(:operation, selected_ids: [], operation_fields: operation_field_param_keys)
+      permitted = params.permit(:operation, :operation_progress_id, selected_ids: [], operation_fields: operation_field_param_keys)
       permitted.to_h.merge('operation_progress_id' => progress_id)
     end
 

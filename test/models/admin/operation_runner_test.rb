@@ -10,16 +10,18 @@ module Admin
       selected.original_songs << original_song
       resource = ResourceRegistry.fetch(:song)
       operation = resource.operations.find { |item| item.key == 'export_songs' }
+      progress_id = SecureRandom.uuid
 
       result = OperationRunner.new(
         resource:,
         operation:,
         record: nil,
-        params: { selected_ids: [selected.id], operation_progress_id: SecureRandom.uuid },
+        params: { selected_ids: [selected.id], operation_progress_id: progress_id },
         scope: Song.where(id: [selected.id, excluded.id])
       ).run
 
       assert_equal 'songs.tsvを生成しました。', result.message
+      assert_equal '変更なし（追加・更新・削除はありません）', OperationProgress.read(progress_id)[:detail]
       assert_equal 'songs.tsv', result.download_filename
       assert_includes result.download_data, selected.title
       assert_includes result.download_data, original_song.title
@@ -69,16 +71,18 @@ module Admin
       upload = Rack::Test::UploadedFile.new(path, 'text/tab-separated-values')
       resource = ResourceRegistry.fetch(:song)
       operation = resource.operations.find { |item| item.key == 'import_songs_with_original_songs' }
+      progress_id = SecureRandom.uuid
 
       result = OperationRunner.new(
         resource:,
         operation:,
         record: nil,
-        params: { operation_fields: { tsv_file: upload }, operation_progress_id: SecureRandom.uuid },
+        params: { operation_fields: { tsv_file: upload }, operation_progress_id: progress_id },
         scope: Song.all
       ).run
 
       assert_equal 'インポートが完了しました。更新件数: 1件、スキップ件数: 2件', result.message
+      assert_includes OperationProgress.read(progress_id)[:detail], 'カラオケ配信曲 更新1件'
       assert_equal [original_song], song.reload.original_songs.to_a
       assert_equal 'https://youtube.example/import', song.youtube_url
     ensure

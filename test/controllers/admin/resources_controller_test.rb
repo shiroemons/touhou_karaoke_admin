@@ -44,7 +44,9 @@ module Admin
       assert_select '.admin-dashboard-bar-row', text: /YouTube Music/
       assert_select '.admin-dashboard-bar-row', text: /Spotify/
       assert_select '.admin-dashboard-bar-row', text: /LINE MUSIC/
-      assert_select '.admin-dashboard-action-link', text: 'DAM楽曲を取得'
+      assert_select '.admin-dashboard-workflow', false
+      assert_select 'a.admin-nav-link', text: /運用フロー/
+      assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
       assert_select '.admin-dashboard-insight-group h3', text: 'データ状態'
       assert_select '.admin-dashboard-insight-group h3', text: 'マスタデータ'
       assert_select '.admin-dashboard-insight-group h3', text: 'ミュージックポスト'
@@ -54,6 +56,153 @@ module Admin
       assert_select '.admin-dashboard-management-primary', text: /まず見る/
       assert_select '.admin-dashboard-management-primary', text: /カラオケ配信曲/
       assert_select 'a.admin-dashboard-management-link', text: /原曲/
+    end
+
+    test 'workflow page groups actions by delivery type' do
+      get admin_workflow_path
+
+      assert_response :success
+      assert_select 'h1', text: '運用フロー'
+      assert_select '.admin-nav-link-active', text: /運用フロー/
+      assert_select '.admin-workflow-group h2', text: 'DAM'
+      assert_select '.admin-workflow-group h2', text: 'JOYSOUND'
+      assert_select '.admin-workflow-group h2', text: 'JOYSOUND(うたスキ)'
+      assert_select '.admin-workflow-group h2', text: '共通作業'
+      assert_select '.admin-workflow-action', text: /DAM候補一覧を取得/
+      assert_select '.admin-workflow-action', text: /DAM候補一覧とDAMアーティストURLを作る/
+      assert_select '.admin-workflow-action', text: /DAM楽曲URLから候補を追加/
+      assert_select '.admin-workflow-action', text: /JOYSOUND楽曲URLから候補を追加/
+      assert_select '.admin-workflow-action', text: /JOYSOUND候補をカラオケ楽曲へ登録/
+      assert_select '.admin-workflow-action', text: /ミュージックポスト一覧を取得/
+      assert_select '.admin-workflow-action', text: /原曲未設定TSVをエクスポート/
+      assert_select '.admin-workflow-action', { text: /楽曲TSVをエクスポート/, count: 0 }
+      assert_select 'a.admin-workflow-run-link', text: /ステップ実行/
+      assert_select 'a.admin-workflow-action', false
+      assert_select 'button.admin-workflow-action[data-admin-operation-trigger][data-admin-operation-resource="dam_song"][data-admin-operation-key="fetch_dam_touhou_songs"]'
+      assert_select '.admin-workflow-action-number', text: '1'
+      assert_select '.admin-workflow-metric', text: /期限切れ/
+      assert_select '.admin-workflow-question-list li', text: /JOYSOUND\(うたスキ\) → JOYSOUND → DAM/
+    end
+
+    test 'workflow step page renders auto run and individual actions' do
+      get admin_workflow_steps_path('full')
+
+      assert_response :success
+      assert_select 'h1', text: '全体更新'
+      assert_select 'form[action=?]', admin_run_workflow_path('full')
+      assert_select '.admin-workflow-parallel-note', text: /JOYSOUNDとDAMを並列実行/
+      assert_select '.admin-workflow-step', text: /ミュージックポスト一覧を取得/
+      assert_select '.admin-workflow-step', text: /JOYSOUND候補一覧を取得/
+      assert_select '.admin-workflow-step', text: /JOYSOUND楽曲URLから候補を追加/
+      assert_select '.admin-workflow-step', text: /DAM候補一覧を取得/
+      assert_select '.admin-workflow-step', text: /DAM楽曲URLから候補を追加/
+      assert_select '.admin-workflow-step-progress', text: '未実行'
+      assert_select 'button[data-admin-operation-trigger][data-admin-operation-key="fetch_dam_touhou_songs"]', text: /個別実行/
+    end
+
+    test 'workflow common page excludes selection required actions' do
+      get admin_workflow_steps_path('common')
+
+      assert_response :success
+      assert_select '.admin-workflow-step', text: /原曲未設定TSVをエクスポート/
+      assert_select '.admin-workflow-action-number', { text: '任意', minimum: 1 }
+      assert_select '.admin-workflow-action-number', { text: /\A\d+\z/, count: 0 }
+      assert_select '.admin-workflow-step', { text: /楽曲TSVをエクスポート/, count: 0 }
+      assert_select 'button[data-admin-operation-key="export_songs"]', 0
+    end
+
+    test 'resource action guide hides actions that are available in workflow' do
+      get admin_dam_songs_path
+
+      assert_response :success
+      assert_select '.admin-operation-guide', 0
+
+      get admin_songs_path
+
+      assert_response :success
+      assert_select '.admin-operation-guide-item', text: /楽曲TSVをエクスポート/
+      assert_select '.admin-operation-guide-item', { text: /原曲未設定TSVをエクスポート/, count: 0 }
+      assert_select '.admin-operation-guide-item', { text: /DAM候補をカラオケ楽曲へ登録/, count: 0 }
+    end
+
+    test 'cleanup orphan display artists operation renders tsv output checkbox' do
+      get operation_admin_display_artists_path(operation: 'cleanup_orphan_display_artists')
+
+      assert_response :success
+      assert_select 'h1', text: '孤立アーティストを削除'
+      assert_select 'input[type="checkbox"][name="operation_fields[export_tsv]"][checked="checked"]'
+      assert_select '.admin-checkbox-field', text: /削除したアーティストをTSVで出力する/
+    end
+
+    test 'workflow step page shows active run status' do
+      run_id = SecureRandom.uuid
+      WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('dam'))
+
+      get admin_workflow_steps_path('dam')
+
+      assert_response :success
+      assert_select '.admin-workflow-status', text: /実行状況/
+      assert_select '[data-admin-workflow-status-label]', text: 'DAMを開始待ちです'
+      assert_select '[data-admin-workflow-status-state]', text: 'ジョブ待機中'
+      assert_select '[data-admin-workflow-status-current]', text: 'DAM候補一覧を取得'
+      assert_select '[data-admin-workflow-status-count]', text: '0 / 3'
+      assert_select '[data-admin-workflow-current-step]', text: '現在: DAM候補一覧を取得'
+      assert_select '.admin-workflow-step-progress', text: '順番待ち'
+      assert_select 'button[disabled]', text: /自動実行中/
+      assert_select '[data-admin-workflow-runner][data-admin-workflow-run-id=?]', run_id
+    end
+
+    test 'workflow run enqueues background job' do
+      assert_enqueued_with(job: WorkflowRunJob, queue: 'admin_operations') do
+        post admin_run_workflow_path('dam')
+      end
+
+      assert_redirected_to %r{/admin/workflow/dam\?run_id=}
+      run_id = response.redirect_url[/run_id=([0-9a-f-]{36})/, 1]
+      payload = WorkflowRunProgress.read(run_id)
+      assert_equal 'queued', payload[:state]
+      assert_equal 'DAM', payload.dig(:workflow, :workflow_label)
+      assert_equal 3, payload.dig(:workflow, :total_steps)
+    end
+
+    test 'workflow run redirects to active overlapping run instead of starting duplicate' do
+      run_id = SecureRandom.uuid
+      WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('full'))
+      job_count = enqueued_jobs.size
+
+      post admin_run_workflow_path('dam')
+
+      assert_equal job_count, enqueued_jobs.size
+      assert_redirected_to admin_workflow_steps_path('full', run_id:)
+      assert_equal '全体更新を実行中のため、新しい自動実行は開始しませんでした。', flash[:alert]
+    end
+
+    test 'workflow progress keeps step detail after lifecycle updates' do
+      run_id = SecureRandom.uuid
+      workflow = WorkflowDefinition.fetch('music_post')
+      WorkflowRunProgress.create!(run_id, workflow:)
+      WorkflowRunProgress.start!(run_id, workflow:)
+      child_progress_id = SecureRandom.uuid
+      WorkflowRunProgress.mark_step!(
+        run_id,
+        'music_post:music_post:joysound_music_post:fetch_music_post',
+        status: 'running',
+        progress_id: child_progress_id
+      )
+      OperationProgress.update!(
+        child_progress_id,
+        state: 'running',
+        percentage: 42,
+        status: '取得中',
+        label: 'ミュージックポスト一覧を取得しています'
+      )
+
+      payload = WorkflowRunProgress.read(run_id)
+
+      assert_equal 'running', payload[:state]
+      assert_equal 7, payload.dig(:workflow, :steps).size
+      assert_equal 'ミュージックポスト一覧を取得', payload.dig(:workflow, :current_step, :label)
+      assert_equal 6, payload[:percentage]
     end
 
     test 'all resources render index and show pages' do
@@ -471,7 +620,15 @@ module Admin
 
       assert_response :success
       assert_select 'form.admin-inline-operation', false
-      assert_select '.admin-operation-dropdown-wrap'
+      assert_select '.admin-operation-guide'
+      assert_select '.admin-operation-guide-kicker', text: 'カラオケ配信曲'
+      assert_select '.admin-operation-guide h2', text: '運用アクション'
+      assert_select '.admin-operation-guide-group h3', text: 'TSV入出力'
+      assert_select '.admin-operation-guide-group h3', { text: '外部取得', count: 0 }
+      assert_select '.admin-operation-guide-item[data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', text: '楽曲TSVをエクスポート'
+      assert_select '.admin-operation-guide-cta', text: /対象を選択して実行/
+      assert_select '.admin-operation-guide-meta small', text: '選択必須'
+      assert_select '.admin-operation-guide-meta small', { text: 'バックグラウンド', count: 0 }
       assert_select 'th.admin-select-column'
       assert_select 'input[data-admin-resource-select]', 1
       assert_select 'dialog[data-admin-operation-modal]'
@@ -480,11 +637,9 @@ module Admin
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selected-ids]'
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selection-note]', text: '対象を選択してください。'
       assert_select '[data-admin-operation-panel="export_songs"] button[data-admin-operation-submit][disabled]'
-      assert_select '.admin-operation-dropdown-group h3', text: 'TSV入出力'
-      assert_select '.admin-operation-dropdown-group h3', text: '外部取得'
       assert_select '.admin-display-settings .admin-operation-dropdown-wrap', false
       assert_select '.admin-table-controls .admin-table-display-settings'
-      assert_select 'a.admin-operation-dropdown-item[href=?][data-admin-operation-trigger][data-admin-operation-key="export_songs"]', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
+      assert_select 'a.admin-operation-guide-item[href=?][data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
     end
 
     test 'all operations have explicit descriptions' do
@@ -614,7 +769,7 @@ module Admin
       get operation_admin_dam_songs_path(operation: 'fetch_dam_song')
 
       assert_response :success
-      assert_select 'h1', text: 'DAM楽曲を取得'
+      assert_select 'h1', text: 'DAM楽曲URLから候補を追加'
       assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
       assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
       assert_select 'form[data-admin-operation-form][data-admin-operation-action="FetchDamSong"]'
@@ -637,7 +792,7 @@ module Admin
       get operation_admin_dam_songs_path(operation: 'fetch_dam_touhou_songs')
 
       assert_response :success
-      assert_select 'h1', text: '東方DAM楽曲を取得'
+      assert_select 'h1', text: 'DAM候補一覧を取得'
       assert_select 'form[data-admin-operation-form][data-admin-operation-estimated-seconds="40"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-async="true"]'
     end
@@ -679,6 +834,20 @@ module Admin
       assert_equal 120, payload['current']
     end
 
+    test 'operation progress endpoint accepts polling params without unpermitted warnings' do
+      original_behavior = ActionController::Parameters.action_on_unpermitted_parameters
+      ActionController::Parameters.action_on_unpermitted_parameters = :raise
+      progress_id = SecureRandom.uuid
+      OperationProgress.enqueue!(progress_id, label: '確認中')
+
+      get operation_progress_admin_display_artists_path(operation: 'validate_display_artist_urls', operation_progress_id: progress_id)
+
+      assert_response :success
+      assert_equal 'queued', response.parsed_body['state']
+    ensure
+      ActionController::Parameters.action_on_unpermitted_parameters = original_behavior
+    end
+
     test 'method operation receives progress callback and completes progress' do
       progress_id = SecureRandom.uuid
       fetch = lambda do |progress: nil|
@@ -701,6 +870,31 @@ module Admin
       assert_equal 100, progress[:percentage]
     end
 
+    test 'dam artist reading operation delegates to dam artist url fetcher' do
+      progress_id = SecureRandom.uuid
+      called = false
+      fetch = lambda do |progress: nil|
+        called = true
+        progress.call(percentage: 55, status: '外部サイト取得中', label: 'DAMアーティスト読みを取得しています')
+      end
+
+      original_fetch = DamArtistUrl.method(:fill_dam_artist_readings)
+      DamArtistUrl.define_singleton_method(:fill_dam_artist_readings, &fetch)
+      begin
+        perform_enqueued_jobs do
+          post operation_admin_display_artists_path, params: { operation: 'fetch_dam_artist', operation_progress_id: progress_id }
+        end
+      ensure
+        DamArtistUrl.define_singleton_method(:fill_dam_artist_readings, &original_fetch)
+      end
+
+      assert called
+      assert_redirected_to admin_display_artists_path
+      progress = OperationProgress.read(progress_id)
+      assert_equal 'completed', progress[:state]
+      assert_equal 100, progress[:percentage]
+    end
+
     test 'async operation json request enqueues operation job and returns queued progress' do
       progress_id = SecureRandom.uuid
 
@@ -713,7 +907,7 @@ module Admin
 
       assert_response :accepted
       payload = response.parsed_body
-      assert_equal '東方DAM楽曲を取得のバックグラウンド処理を開始しました。', payload['message']
+      assert_equal 'DAM候補一覧を取得のバックグラウンド処理を開始しました。', payload['message']
       assert_equal 'queued', payload.dig('progress', 'state')
       assert_equal '待機中', payload.dig('progress', 'status')
     end
@@ -868,12 +1062,30 @@ module Admin
       orphan = DisplayArtist.create!(karaoke_type: 'DAM', name: 'Orphan', url: 'https://example.com/orphan')
 
       assert_difference -> { DisplayArtist.count }, -1 do
-        post operation_admin_display_artists_path, params: { operation: operation_index(:display_artist, :cleanup_orphan_display_artists) }
+        post operation_admin_display_artists_path, params: {
+          operation: operation_index(:display_artist, :cleanup_orphan_display_artists),
+          operation_fields: { export_tsv: '1' }
+        }
       end
 
       assert_response :success
       assert_includes response.headers['Content-Disposition'], 'deleted_orphan_display_artists.tsv'
       assert_includes response.body, orphan.id
+    end
+
+    test 'cleanup orphan display artists can skip tsv output' do
+      DisplayArtist.create!(karaoke_type: 'DAM', name: 'Orphan Without TSV', url: 'https://example.com/orphan-without-tsv')
+
+      assert_difference -> { DisplayArtist.count }, -1 do
+        post operation_admin_display_artists_path, params: {
+          operation: operation_index(:display_artist, :cleanup_orphan_display_artists),
+          operation_fields: { export_tsv: '0' }
+        }
+      end
+
+      assert_redirected_to admin_display_artists_path
+      follow_redirect!
+      assert_select '.admin-flash-notice', text: /TSVは出力していません/
     end
 
     test 'runs joysound music post maintenance operation through service' do

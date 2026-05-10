@@ -112,6 +112,10 @@ class DamSong < ApplicationRecord
     end
   end
 
+  def self.fetch_dam_candidate_songs(progress: nil)
+    fetch_dam_touhou_songs(progress:)
+  end
+
   def self.detect_dam_search_total_pages(browser, page_size)
     pages_from_links = browser.css('a[href*="pageNo="]').filter_map do |link|
       link.attribute('href').to_s[/pageNo=(\d+)/, 1]&.to_i

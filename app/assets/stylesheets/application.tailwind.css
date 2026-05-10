@@ -882,11 +882,403 @@
   white-space: nowrap;
 }
 
+.admin-workflow-note .admin-section-heading {
+  align-items: start;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-workflow-note .admin-section-heading p {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.admin-workflow-question-list {
+  color: color-mix(in oklab, var(--color-base-content) 66%, transparent);
+  display: grid;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.admin-workflow-route-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.admin-workflow-route-list li {
+  align-items: center;
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 34px;
+  padding: 5px 12px 5px 6px;
+}
+
+.admin-workflow-route-list span {
+  align-items: center;
+  background: #071019;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.admin-workflow-route-list strong {
+  font-size: 13px;
+}
+
+.admin-workflow-groups {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+}
+
+.admin-workflow-group {
+  background: var(--color-base-100);
+  border: 1px solid #e3edf7;
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgb(15 23 42 / 6%);
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.admin-workflow-group > header {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.admin-workflow-group-icon {
+  align-items: center;
+  background: color-mix(in oklab, var(--color-primary) 11%, #fff);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 20%, #dfeaf6);
+  border-radius: 12px;
+  color: var(--color-primary);
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.admin-workflow-group h2 {
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.admin-workflow-group header p {
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  margin: 2px 0 0;
+}
+
+.admin-workflow-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-workflow-action {
+  align-items: center;
+  appearance: none;
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 12px;
+  color: var(--color-base-content);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 10px;
+  grid-template-columns: 30px minmax(0, 1fr) 18px;
+  min-height: 74px;
+  padding: 10px;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.admin-workflow-action:hover {
+  background: #eef7ff;
+  border-color: #c6ddf5;
+}
+
+.admin-workflow-action-conditional,
+.admin-workflow-action-check,
+.admin-workflow-action-maintenance,
+.admin-workflow-action-optional,
+.admin-workflow-action-manual {
+  background: #fff;
+  border-style: dashed;
+}
+
+.admin-workflow-action-conditional .admin-workflow-action-number,
+.admin-workflow-action-check .admin-workflow-action-number,
+.admin-workflow-action-maintenance .admin-workflow-action-number,
+.admin-workflow-action-optional .admin-workflow-action-number,
+.admin-workflow-action-manual .admin-workflow-action-number,
+.admin-workflow-step-manual .admin-workflow-action-number {
+  background: #e8f1fb;
+  color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+  font-size: 10px;
+  width: 34px;
+}
+
+.admin-workflow-run-link {
+  align-items: center;
+  background: #071019;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 11px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-workflow-header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-workflow-header-actions form {
+  margin: 0;
+}
+
+.admin-workflow-runner {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-workflow-status {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-workflow-status-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-workflow-status-grid div {
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.admin-workflow-status-grid span {
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-workflow-status-grid strong {
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-workflow-parallel-note {
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 10px;
+  color: color-mix(in oklab, var(--color-base-content) 66%, transparent);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.admin-workflow-current {
+  background: color-mix(in oklab, var(--color-primary) 9%, #fff);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 18%, #dfeaf6);
+  border-radius: 10px;
+  color: color-mix(in oklab, var(--color-primary) 76%, #111827);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.admin-workflow-step-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-workflow-step {
+  align-items: center;
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 10px;
+}
+
+.admin-workflow-step-manual {
+  background: #fff;
+  border-style: dashed;
+}
+
+.admin-workflow-step[data-admin-workflow-status="running"] {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 12%);
+}
+
+.admin-workflow-step[data-admin-workflow-status="completed"] {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.admin-workflow-step[data-admin-workflow-status="failed"] {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.admin-workflow-step-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-workflow-step-body > span:first-child,
+.admin-workflow-step-body small,
+.admin-workflow-step-progress {
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-workflow-step-body strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.admin-workflow-step-progress {
+  color: color-mix(in oklab, var(--color-primary) 72%, #111827);
+}
+
+.admin-workflow-detail-group {
+  margin-top: 14px;
+}
+
+.admin-workflow-action-number {
+  align-items: center;
+  background: #071019;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.admin-workflow-action-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-workflow-action-body span:first-child,
+.admin-workflow-action-body small,
+.admin-workflow-action-tags {
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-workflow-action-body strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.admin-workflow-action-body strong,
+.admin-workflow-action-body small,
+.admin-workflow-action-body span:first-child,
+.admin-workflow-action-tags {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-workflow-action-tags {
+  color: color-mix(in oklab, var(--color-primary) 72%, #111827);
+}
+
+.admin-workflow-action > .admin-icon {
+  color: color-mix(in oklab, var(--color-primary) 70%, #111827);
+}
+
+.admin-workflow-metrics {
+  border-top: 1px solid #edf3f9;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: 12px;
+}
+
+.admin-workflow-metric {
+  color: var(--color-base-content);
+  display: grid;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.admin-workflow-metric span,
+.admin-workflow-metric small {
+  color: color-mix(in oklab, var(--color-base-content) 54%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-workflow-metric strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
 .admin-index-toolbar {
   align-items: stretch;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(0, 1fr);
   margin-bottom: 16px;
   width: 100%;
 }
@@ -948,6 +1340,19 @@
 
 .admin-input {
   min-width: 260px;
+}
+
+.admin-checkbox-field {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.admin-checkbox-field span {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .admin-search-field {
@@ -1242,6 +1647,208 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-operation-guide {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+}
+
+.admin-operation-guide.admin-control-panel {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.admin-operation-guide:not([open]) {
+  display: block;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 5%);
+  min-height: 42px;
+}
+
+.admin-operation-guide:not([open]) .admin-operation-guide-groups {
+  display: none;
+}
+
+.admin-operation-guide[open] {
+  display: block;
+  padding-bottom: 12px;
+}
+
+.admin-operation-guide-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.admin-operation-guide-summary > div {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-operation-guide-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-operation-guide .admin-operation-guide-summary h2 {
+  font-size: 13px;
+  line-height: 1.2;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-operation-guide-summary > span:last-child {
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 999px;
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.admin-operation-guide-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.admin-operation-guide-kicker {
+  color: color-mix(in oklab, var(--color-primary) 72%, #111827);
+  flex: 0 1 auto;
+  font-size: 11px;
+  font-weight: 800;
+  max-width: min(42vw, 220px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-operation-guide-groups {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0 12px;
+}
+
+.admin-operation-guide-group {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-operation-guide-group h3 {
+  color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.admin-operation-guide-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.admin-operation-guide-item {
+  align-items: stretch;
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 12px;
+  color: var(--color-base-content);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 112px;
+  padding: 12px;
+  text-decoration: none;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.admin-operation-guide-item:hover {
+  background: #eef7ff;
+  border-color: #c6ddf5;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 8%);
+  transform: translateY(-1px);
+}
+
+.admin-operation-guide-icon {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #dce7f3;
+  border-radius: 10px;
+  color: color-mix(in oklab, var(--color-primary) 78%, #111827);
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.admin-operation-guide-body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-operation-guide-body strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.admin-operation-guide-body > span:not(.admin-operation-guide-meta) {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  display: -webkit-box;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-operation-guide-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.admin-operation-guide-meta small {
+  background: #fff;
+  border: 1px solid #dce7f3;
+  border-radius: 999px;
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 4px 7px;
+}
+
+.admin-operation-guide-cta {
+  align-items: center;
+  align-self: end;
+  color: color-mix(in oklab, var(--color-primary) 78%, #111827);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 4px;
+  grid-column: 2;
+  justify-self: start;
 }
 
 .admin-select-column {
@@ -1967,6 +2574,27 @@ th.admin-actions-column {
   }
 
   .admin-dashboard-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-operation-guide-list,
+  .admin-workflow-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-workflow-action {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .admin-workflow-action > .admin-icon {
+    display: none;
+  }
+
+  .admin-workflow-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-workflow-status-grid {
     grid-template-columns: 1fr;
   }
 
