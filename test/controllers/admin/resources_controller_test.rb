@@ -120,14 +120,78 @@ module Admin
       assert_select 'td', text: 'JOYSOUND Artist'
     end
 
-    test 'filters songs missing original songs like avo filter' do
+    test 'searches songs by display artist name' do
+      other_artist = DisplayArtist.create!(
+        karaoke_type: 'DAM',
+        name: 'Search Target Artist',
+        url: 'https://example.com/search-target-artist'
+      )
+      target_song = Song.create!(
+        display_artist: other_artist,
+        karaoke_type: 'DAM',
+        title: 'Artist Search Song',
+        url: 'https://example.com/artist-search-song'
+      )
+
+      get admin_songs_path, params: { q: other_artist.name }
+
+      assert_response :success
+      assert_select 'td', text: target_song.title
+      assert_select 'td', { text: @song.title, count: 0 }
+    end
+
+    test 'filters songs by original link status' do
       missing_song = Song.create!(display_artist: @display_artist, karaoke_type: 'DAM', title: 'Missing Original Song', url: 'https://example.com/missing')
 
-      get admin_songs_path, params: { filters: { original_songs: 'missing_original_songs' } }
+      get admin_songs_path, params: { filters: { original_link: 'missing' } }
 
       assert_response :success
       assert_select 'td', text: missing_song.title
       assert_select 'td', { text: @song.title, count: 0 }
+
+      get admin_songs_path, params: { filters: { original_link: 'linked' } }
+
+      assert_response :success
+      assert_select 'td', text: @song.title
+      assert_select 'td', { text: missing_song.title, count: 0 }
+    end
+
+    test 'filters songs by original song category' do
+      original_song = OriginalSong.create!(code: '000198', original: @original, title: 'オリジナル', composer: 'ZUN', track_number: 98)
+      original_category_song = Song.create!(
+        display_artist: @display_artist,
+        karaoke_type: 'DAM',
+        title: 'Original Filter Song',
+        url: 'https://example.com/original-filter'
+      )
+      original_category_song.original_songs << original_song
+      missing_song = Song.create!(
+        display_artist: @display_artist,
+        karaoke_type: 'DAM',
+        title: 'Missing Filter Song',
+        url: 'https://example.com/missing-filter'
+      )
+
+      get admin_songs_path, params: { filters: { original_category: 'touhou_arrange' } }
+
+      assert_response :success
+      assert_select 'td', text: @song.title
+      assert_select 'td', { text: original_category_song.title, count: 0 }
+      assert_select 'td', { text: missing_song.title, count: 0 }
+
+      get admin_songs_path, params: { filters: { original_category: 'original_or_other' } }
+
+      assert_response :success
+      assert_select 'td', text: original_category_song.title
+      assert_select 'td', { text: @song.title, count: 0 }
+      assert_select 'td', { text: missing_song.title, count: 0 }
+
+      get admin_songs_path, params: { filters: { original_category: 'missing' } }
+
+      assert_response :success
+      assert_select 'td', text: missing_song.title
+      assert_select 'td', { text: @song.title, count: 0 }
+      assert_select 'td', { text: original_category_song.title, count: 0 }
     end
 
     test 'song index shows service status columns in information order' do
@@ -140,18 +204,48 @@ module Admin
       get admin_songs_path, params: { q: @song.title }
 
       assert_response :success
+      assert_select 'table.admin-table-resource-song'
       assert_select 'thead th:nth-child(1)', text: 'カラオケ種別'
+      assert_select 'thead th.admin-table-field-karaoke-type'
       assert_select 'thead th:nth-child(2)', text: 'タイトル'
+      assert_select 'thead th.admin-table-field-title'
       assert_select 'thead th:nth-child(3)', text: 'アーティスト'
-      assert_select 'thead th:nth-child(4)', text: '動画'
-      assert_select 'thead th:nth-child(5)', text: '音楽配信'
+      assert_select 'thead th.admin-table-field-display-artist'
+      assert_select 'thead th:nth-child(4)', text: '原曲紐付け'
+      assert_select 'thead th.admin-table-field-original-songs-link-status'
+      assert_select 'thead th:nth-child(5)', text: '原曲数'
+      assert_select 'thead th.admin-table-field-original-songs-count-label'
+      assert_select 'thead th:nth-child(6)', text: '分類'
+      assert_select 'thead th.admin-table-field-original-song-category-label'
+      assert_select 'thead th:nth-child(7)', text: '動画'
+      assert_select 'thead th:nth-child(8)', text: '音楽配信'
       assert_select 'thead th', text: '更新日時'
       formatted_updated_at = @song.updated_at.in_time_zone('Asia/Tokyo').strftime('%Y/%m/%d %H:%M')
       assert_select 'td', text: /#{Regexp.escape(formatted_updated_at)}/
+      assert_select '.admin-badge', text: 'あり'
+      assert_select 'td', text: '1曲'
+      assert_select '.admin-badge', text: '東方アレンジ'
       assert_select '.admin-service-badge-active', text: 'YouTube'
       assert_select '.admin-service-badge-active', text: 'Apple'
       assert_select '.admin-service-badge-active', text: 'Spotify'
       assert_select 'th', { text: 'touhou', count: 0 }
+    end
+
+    test 'song index shows original song status for missing and original other songs' do
+      original_song = OriginalSong.create!(code: '000199', original: @original, title: 'オリジナル', composer: 'ZUN', track_number: 99)
+      original_category_song = Song.create!(display_artist: @display_artist, karaoke_type: 'DAM', title: 'Original Category Song', url: 'https://example.com/original-category')
+      original_category_song.original_songs << original_song
+      missing_song = Song.create!(display_artist: @display_artist, karaoke_type: 'DAM', title: 'Missing Category Song', url: 'https://example.com/missing-category')
+
+      get admin_songs_path, params: { q: 'Category Song' }
+
+      assert_response :success
+      assert_select 'td', text: original_category_song.title
+      assert_select 'td', text: missing_song.title
+      assert_select '.admin-badge', text: 'オリジナル・その他'
+      assert_select '.admin-badge', text: '未紐付け'
+      assert_select '.admin-badge', text: 'なし'
+      assert_select 'td', text: '0曲'
     end
 
     test 'sorts index by updated at column' do
@@ -210,6 +304,11 @@ module Admin
 
       assert_response :success
       assert_select 'input[type="radio"][name="filters[karaoke_type]"]'
+      assert_select 'input[type="radio"][name="filters[original_link]"][value="linked"]'
+      assert_select 'input[type="radio"][name="filters[original_link]"][value="missing"]'
+      assert_select 'input[type="radio"][name="filters[original_category]"][value="touhou_arrange"]'
+      assert_select 'input[type="radio"][name="filters[original_category]"][value="original_or_other"]'
+      assert_select 'input[type="radio"][name="filters[original_category]"][value="missing"]'
       assert_select 'input[type="radio"][name="filters[video_service][youtube]"][value="present"]'
       assert_select 'input[type="radio"][name="filters[video_service][youtube]"][value="missing"]'
       assert_select 'input[type="radio"][name="filters[music_service][spotify]"][value="present"]'

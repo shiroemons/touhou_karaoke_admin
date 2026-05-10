@@ -1564,8 +1564,10 @@
   opacity: 1;
 }
 
-.admin-table tbody tr:hover {
-  background: #f4f9ff;
+.admin-table tbody tr {
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .admin-table.table-zebra tbody tr:nth-child(2n) {
@@ -1582,9 +1584,14 @@
   background: #fff8e6;
 }
 
+.admin-table tbody tr:hover,
+.admin-table.table-zebra tbody tr:nth-child(2n):hover,
 .admin-table tbody tr.admin-row-created:hover,
-.admin-table tbody tr.admin-row-updated:hover {
-  background: #eef7ff;
+.admin-table tbody tr.admin-row-updated:hover,
+.admin-table.table-zebra tbody tr.admin-row-created:nth-child(2n):hover,
+.admin-table.table-zebra tbody tr.admin-row-updated:nth-child(2n):hover {
+  background-color: #fff7ed;
+  box-shadow: inset 0 0 0 9999px rgb(249 115 22 / 9%);
 }
 
 .admin-table tbody tr.admin-row-created td:first-child {
@@ -1593,6 +1600,10 @@
 
 .admin-table tbody tr.admin-row-updated td:first-child {
   box-shadow: inset 4px 0 0 #f59e0b;
+}
+
+.admin-table tbody tr:hover td:first-child {
+  box-shadow: inset 4px 0 0 #f97316;
 }
 
 .admin-updated-at {
@@ -1656,6 +1667,57 @@
 
 .admin-table td a {
   max-width: 100%;
+}
+
+.admin-table-resource-song {
+  min-width: 1720px;
+}
+
+.admin-table-resource-song th,
+.admin-table-resource-song td {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.admin-table-resource-song .admin-table-field-karaoke-type {
+  width: 138px;
+}
+
+.admin-table-resource-song .admin-table-field-title {
+  width: 260px;
+}
+
+.admin-table-resource-song .admin-table-field-display-artist {
+  width: 260px;
+}
+
+.admin-table-resource-song .admin-table-field-original-songs-link-status {
+  width: 108px;
+}
+
+.admin-table-resource-song .admin-table-field-original-songs-count-label {
+  width: 86px;
+}
+
+.admin-table-resource-song .admin-table-field-original-song-category-label {
+  width: 154px;
+}
+
+.admin-table-resource-song .admin-table-field-video-services {
+  width: 150px;
+}
+
+.admin-table-resource-song .admin-table-field-music-services {
+  width: 180px;
+}
+
+.admin-table-resource-song .admin-table-field-updated-at {
+  width: 162px;
+}
+
+.admin-table-resource-song .admin-actions-column {
+  min-width: 136px;
+  width: 136px;
 }
 
 th.admin-actions-column {

@@ -403,11 +403,35 @@ module Admin
           title: ->(record) { "[#{record.karaoke_type}] #{record.title}" },
           includes: %i[display_artist karaoke_delivery_models original_songs song_with_dam_ouchikaraoke song_with_joysound_utasuki],
           order: { created_at: :desc },
-          search: { title_cont: :q },
+          search: { title_cont: :q, display_artist_name_cont: :q, m: 'or' },
           filters: [
             karaoke_type_filter,
-            filter(:original_songs, label: '原曲', type: :radio, options: { missing_original_songs: '原曲未紐付け' }) do |scope, value|
-              value == 'missing_original_songs' ? scope.missing_original_songs : scope
+            filter(:original_link, label: '原曲紐付け', type: :radio, options: { linked: 'あり', missing: 'なし' }) do |scope, value|
+              case value
+              when 'linked'
+                scope.with_original_songs
+              when 'missing'
+                scope.missing_original_songs
+              else
+                scope
+              end
+            end,
+            filter(
+              :original_category,
+              label: '分類',
+              type: :radio,
+              options: { touhou_arrange: '東方アレンジ', original_or_other: 'オリジナル・その他', missing: '未紐付け' }
+            ) do |scope, value|
+              case value
+              when 'touhou_arrange'
+                scope.touhou_arrange
+              when 'original_or_other'
+                scope.original_or_other
+              when 'missing'
+                scope.missing_original_songs
+              else
+                scope
+              end
             end,
             video_service_filter,
             music_service_filter
@@ -419,6 +443,9 @@ module Admin
             field(:title_reading, label: 'タイトル読み', index: false, readonly: true, sortable: true),
             field(:display_artist, label: 'アーティスト', type: :belongs_to, form: false, link: true, sortable: true),
             field(:display_artist_id, label: 'アーティスト', type: :belongs_to_select, index: false, show: false, readonly: true, options: -> { DisplayArtist.order(:name).limit(500).pluck(:name, :id) }),
+            field(:original_songs_link_status, label: '原曲紐付け', type: :badge, form: false),
+            field(:original_songs_count_label, label: '原曲数', form: false),
+            field(:original_song_category_label, label: '分類', type: :badge, form: false),
             field(:video_services, label: '動画', type: :service_status, show: false, form: false, options: { youtube_url: 'YouTube', nicovideo_url: 'ニコニコ' }),
             field(:music_services, label: '音楽配信', type: :service_status, show: false, form: false, options: { apple_music_url: 'Apple', youtube_music_url: 'YT Music', spotify_url: 'Spotify', line_music_url: 'LINE' }),
             field(:url, label: 'URL', type: :url, index: false, readonly: true),

@@ -12,11 +12,15 @@ class Song < ApplicationRecord
 
   belongs_to :display_artist
 
+  ORIGINAL_OR_OTHER_TITLES = %w[オリジナル その他].freeze
+
   scope :missing_original_songs, -> { where.missing(:songs_original_songs) }
+  scope :with_original_songs, -> { joins(:songs_original_songs).distinct }
   scope :dam, -> { where(karaoke_type: "DAM") }
   scope :joysound, -> { where(karaoke_type: "JOYSOUND") }
   scope :music_post, -> { where(karaoke_type: "JOYSOUND(うたスキ)") }
-  scope :touhou_arrange, -> { includes(:original_songs).where.not(original_songs: { original_code: "0699" }) }
+  scope :touhou_arrange, -> { joins(:original_songs).where.not(original_songs: { title: Song::ORIGINAL_OR_OTHER_TITLES }).distinct }
+  scope :original_or_other, -> { with_original_songs.where.not(id: touhou_arrange.select(:id)) }
   scope :youtube, -> { where.not(youtube_url: "") }
   scope :apple_music, -> { where.not(apple_music_url: "") }
   scope :youtube_music, -> { where.not(youtube_music_url: "") }
@@ -28,9 +32,21 @@ class Song < ApplicationRecord
   end
 
   def touhou?
-    return false if original_songs.blank?
+    original_song_category_label == "東方アレンジ"
+  end
 
-    original_songs.all? { it.title != 'オリジナル' } && !original_songs.all? { it.title == 'その他' }
+  def original_songs_link_status
+    original_songs.present? ? "あり" : "なし"
+  end
+
+  def original_songs_count_label
+    "#{original_songs.size}曲"
+  end
+
+  def original_song_category_label
+    return "未紐付け" if original_songs.blank?
+
+    original_songs.all? { |original_song| original_song.title.in?(ORIGINAL_OR_OTHER_TITLES) } ? "オリジナル・その他" : "東方アレンジ"
   end
 
   def self.not_set_original_song

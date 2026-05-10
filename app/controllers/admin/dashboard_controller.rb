@@ -134,8 +134,8 @@ module Admin
           description: '楽曲と原曲の紐付け状況',
           metrics: [
             metric('総楽曲数', Song.count, '曲', admin_songs_path),
-            metric('原曲紐付け済み', Song.touhou_arrange.count, '曲', admin_songs_path),
-            metric('原曲未紐付け', Song.missing_original_songs.count, '曲', admin_songs_path(filters: { original_songs: 'missing_original_songs' }))
+            metric('原曲紐付け済み', Song.with_original_songs.count, '曲', admin_songs_path(filters: { original_link: 'linked' })),
+            metric('原曲未紐付け', Song.missing_original_songs.count, '曲', admin_songs_path(filters: { original_link: 'missing' }))
           ]
         },
         {
@@ -154,7 +154,7 @@ module Admin
           description: '取得済みデータと配信期限',
           metrics: [
             metric('配信曲', Song.music_post.count, '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post' })),
-            metric('原曲紐付け済み', Song.music_post.touhou_arrange.count, '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post' })),
+            metric('原曲紐付け済み', Song.music_post.with_original_songs.count, '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post', original_link: 'linked' })),
             metric('取得済み', JoysoundMusicPost.count, '件', admin_joysound_music_posts_path),
             metric('期限内', JoysoundMusicPost.where(delivery_deadline_on: Date.current..).count, '件', admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'active' })),
             metric('期限切れ', JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count, '件', admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'expired' }))

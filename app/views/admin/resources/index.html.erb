@@ -69,11 +69,11 @@
 </div>
 
 <div class="admin-table-wrap">
-  <table class="admin-table table table-zebra">
+  <table class="admin-table admin-table-resource-<%= @resource.key.to_s.dasherize %> table table-zebra">
     <thead>
       <tr>
         <% @resource.index_fields.each do |field| %>
-          <th>
+          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>">
             <% if field.sortable %>
               <%= admin_sort_link(@resource, field) %>
             <% else %>
@@ -81,7 +81,7 @@
             <% end %>
           </th>
         <% end %>
-        <th class="admin-actions-column">操作</th>
+        <th class="admin-actions-column admin-table-field admin-table-field-actions">操作</th>
       </tr>
     </thead>
     <tbody id="admin-resource-rows">
