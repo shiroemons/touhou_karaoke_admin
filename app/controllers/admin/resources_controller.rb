@@ -3,7 +3,7 @@ module Admin
     PER_PAGE_OPTIONS = [24, 48, 72, 100].freeze
     class_attribute :resource_key
 
-    helper_method :admin_recent_change_logs
+    helper_method :admin_cached_association_count, :admin_recent_change_logs
 
     before_action :set_resource
     before_action :set_record, only: %i[show edit update destroy operation operation_progress]
@@ -22,6 +22,7 @@ module Admin
       scope = apply_order(scope)
       @total_pages = [(@total_count.to_f / @per_page).ceil, 1].max
       @records = scope.offset((@page - 1) * @per_page).limit(@per_page)
+      load_index_association_counts
       load_recent_change_logs
 
       if infinite_scroll_rows_request?
@@ -161,7 +162,13 @@ module Admin
 
     def set_record
       id = scalar_param(:id)
-      @record = model.find(id) if id.present?
+      @record = record_lookup_scope.find(id) if id.present?
+    end
+
+    def record_lookup_scope
+      return model unless action_name == 'show'
+
+      apply_includes(model)
     end
 
     def resource_params
@@ -337,8 +344,50 @@ module Admin
       @recent_admin_change_logs = ChangeLog.latest_for_records(@resource.key.to_s, @records)
     end
 
+    def load_index_association_counts
+      count_associations = @resource.index_fields.filter_map(&:count_association).uniq
+      return if count_associations.blank? || @records.blank?
+
+      @association_counts = count_associations.index_with do |association|
+        association_counts_for(association)
+      end
+    end
+
+    def association_counts_for(association)
+      record_ids = @records.map(&:id)
+      zero_counts = record_ids.index_with { 0 }
+
+      counts = case [model.name, association.to_sym]
+               when ['Circle', :display_artists]
+                 DisplayArtistsCircle.where(circle_id: record_ids).group(:circle_id).count
+               when ['Circle', :songs]
+                 circle_song_counts(record_ids)
+               else
+                 @records.index_with { |record| record.public_send(association).size }
+               end
+
+      zero_counts.merge(counts)
+    end
+
+    def circle_song_counts(circle_ids)
+      Song
+        .joins(display_artist: :display_artists_circles)
+        .where(display_artists_circles: { circle_id: circle_ids })
+        .group('display_artists_circles.circle_id')
+        .distinct
+        .count(:id)
+    end
+
     def admin_recent_change_logs
       @recent_admin_change_logs || {}
+    end
+
+    def admin_cached_association_count(record, association)
+      association_counts = (@association_counts ||= {})
+      counts = (association_counts[association.to_sym] ||= {})
+      return counts[record.id] if counts.key?(record.id)
+
+      counts[record.id] = record.public_send(association).size
     end
 
     def infinite_scroll_rows_request?

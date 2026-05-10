@@ -375,6 +375,44 @@ module Admin
       assert_select 'a.admin-sort-link-active .admin-sort-label', text: '曲数'
     end
 
+    test 'circle index loads displayed association counts in batch' do
+      Circle.create!(name: 'N+1 Count Circle Empty')
+
+      3.times do |index|
+        circle = Circle.create!(name: "N+1 Count Circle #{index}")
+        artist = DisplayArtist.create!(karaoke_type: 'DAM', name: "N+1 Count Artist #{index}", url: "https://example.com/n-plus-one-count-#{index}")
+        circle.display_artists << artist
+        Song.create!(display_artist: artist, karaoke_type: 'DAM', title: "N+1 Count Song #{index}", url: "https://example.com/n-plus-one-count-song-#{index}")
+      end
+
+      sql = capture_sql do
+        get admin_circles_path, params: { q: 'N+1 Count Circle' }
+      end
+
+      assert_response :success
+      assert_select 'tbody tr', 4
+      per_circle_count_queries = sql.count { |statement| statement.match?(/WHERE "display_artists_circles"."circle_id" = \$\d+/) }
+      assert_equal 0, per_circle_count_queries
+      assert(sql.any? { |statement| statement.include?('GROUP BY "display_artists_circles"."circle_id"') })
+    end
+
+    test 'display artist index preloads songs used by destroy policy' do
+      3.times do |index|
+        artist = DisplayArtist.create!(karaoke_type: 'DAM', name: "N+1 Policy Artist #{index}", url: "https://example.com/n-plus-one-policy-#{index}")
+        Song.create!(display_artist: artist, karaoke_type: 'DAM', title: "N+1 Policy Song #{index}", url: "https://example.com/n-plus-one-policy-song-#{index}")
+      end
+
+      sql = capture_sql do
+        get admin_display_artists_path, params: { q: 'N+1 Policy Artist' }
+      end
+
+      assert_response :success
+      assert_select 'tbody tr', 3
+      per_artist_policy_queries = sql.count { |statement| statement.match?(/SELECT 1 AS one FROM "songs" WHERE "songs"."display_artist_id" = \$\d+ LIMIT \$\d+/) }
+      assert_equal 0, per_artist_policy_queries
+      assert(sql.any? { |statement| statement.include?('FROM "songs"') && statement.include?('"songs"."display_artist_id" IN') })
+    end
+
     test 'filters delivery models by karaoke type' do
       joysound_model_name = "JOYSOUND MAX #{SecureRandom.hex(4)}"
       KaraokeDeliveryModel.create!(name: joysound_model_name, karaoke_type: 'JOYSOUND', order: 101)
@@ -904,6 +942,20 @@ module Admin
       klass.define_singleton_method(method_name) do |*args, **kwargs, &block|
         original.call(*args, **kwargs, &block)
       end
+    end
+
+    def capture_sql
+      statements = []
+      subscriber = ActiveSupport::Notifications.subscribe('sql.active_record') do |*args|
+        payload = args.last
+        next if payload[:name].in?(%w[SCHEMA TRANSACTION])
+
+        statements << payload[:sql].squish
+      end
+      yield
+      statements
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
     end
 
     def resource_records

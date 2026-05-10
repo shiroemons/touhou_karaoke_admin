@@ -4,6 +4,7 @@ module Admin
 
     def admin_field_value(record, field)
       return admin_service_status(record, field.options) if field.type == :service_status
+      return admin_cached_association_count(record, field.count_association) if field.count_association
 
       value = if field.helper
                 field.helper.call(record)
@@ -65,6 +66,9 @@ module Admin
     end
 
     def admin_association_count(record, association)
+      loaded_association = record.association(association) if record.class.reflect_on_association(association)
+      return Array(loaded_association.target).compact.size if loaded_association&.loaded?
+
       value = record.public_send(association)
       value.respond_to?(:count) ? value.count : Array(value).compact.size
     end
@@ -86,6 +90,8 @@ module Admin
     end
 
     def admin_field_raw_value(record, field)
+      return admin_cached_association_count(record, field.count_association) if field.count_association
+
       field.helper ? field.helper.call(record) : record.public_send(field.name)
     end
 

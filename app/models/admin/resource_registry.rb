@@ -403,7 +403,7 @@ module Admin
           model: Song,
           label: 'カラオケ配信曲',
           title: ->(record) { "[#{record.karaoke_type}] #{record.title}" },
-          includes: %i[display_artist karaoke_delivery_models original_songs song_with_dam_ouchikaraoke song_with_joysound_utasuki],
+          includes: [:display_artist, :karaoke_delivery_models, { original_songs: :original }, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki],
           order: { created_at: :desc },
           search: { title_cont: :q, display_artist_name_cont: :q, m: 'or' },
           filters: [
@@ -481,7 +481,7 @@ module Admin
           model: DisplayArtist,
           label: 'アーティスト',
           title: ->(record) { "[#{record.karaoke_type}] #{record.name}" },
-          includes: [:circles],
+          includes: %i[circles songs],
           order: { created_at: :desc },
           search: { name_cont: :q },
           filters: [

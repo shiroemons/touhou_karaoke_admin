@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_10_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -52,6 +52,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.index ["url"], name: "index_dam_artist_urls_on_url"
   end
 
   create_table "dam_songs", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -60,7 +61,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.index ["created_at"], name: "index_dam_songs_on_created_at"
     t.index ["display_artist_id"], name: "index_dam_songs_on_display_artist_id"
+    t.index ["url"], name: "index_dam_songs_on_url"
   end
 
   create_table "display_artists", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -70,6 +73,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.string "name_reading", default: "", null: false
     t.datetime "updated_at", null: false
     t.string "url", default: "", null: false
+    t.index ["created_at"], name: "index_display_artists_on_created_at"
+    t.index ["karaoke_type", "name"], name: "index_display_artists_on_karaoke_type_and_name"
+    t.index ["karaoke_type", "url", "name_reading"], name: "index_display_artists_on_karaoke_type_and_url_and_name_reading"
   end
 
   create_table "display_artists_circles", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -90,6 +96,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.index ["created_at"], name: "index_joysound_music_posts_on_created_at"
+    t.index ["delivery_deadline_on"], name: "index_joysound_music_posts_on_delivery_deadline_on"
+    t.index ["joysound_url"], name: "index_joysound_music_posts_on_joysound_url"
+    t.index ["url"], name: "index_joysound_music_posts_on_url"
   end
 
   create_table "joysound_songs", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -99,6 +109,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.boolean "smartphone_service_enabled", default: false, null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.index ["created_at"], name: "index_joysound_songs_on_created_at"
+    t.index ["url"], name: "index_joysound_songs_on_url"
   end
 
   create_table "karaoke_delivery_models", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -108,6 +120,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.integer "order", null: false
     t.datetime "updated_at", null: false
     t.index ["name", "karaoke_type"], name: "index_karaoke_delivery_models_on_name_and_karaoke_type", unique: true
+    t.index ["order"], name: "index_karaoke_delivery_models_on_order"
   end
 
   create_table "original_songs", primary_key: "code", id: :string, force: :cascade do |t|
@@ -172,7 +185,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_130000) do
     t.string "url", default: "", null: false
     t.string "youtube_music_url", default: "", null: false
     t.string "youtube_url", default: "", null: false
+    t.index ["created_at"], name: "index_songs_on_created_at"
     t.index ["display_artist_id"], name: "index_songs_on_display_artist_id"
+    t.index ["karaoke_type", "created_at"], name: "index_songs_on_karaoke_type_and_created_at"
+    t.index ["karaoke_type", "url", "title"], name: "index_songs_on_karaoke_type_and_url_and_title"
   end
 
   create_table "songs_karaoke_delivery_models", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
