@@ -3,7 +3,7 @@
 module Admin
   Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :options, :link, :helper, :count_association)
   Filter = Data.define(:name, :label, :type, :options, :apply)
-  Operation = Data.define(:key, :avo_action, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds)
+  Operation = Data.define(:key, :avo_action, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds, :selection)
 
   Resource = Data.define(
     :key,
@@ -253,7 +253,8 @@ module Admin
           handler: attributes.fetch(:handler, nil),
           inputs: attributes.fetch(:inputs, []),
           group: attributes.fetch(:group, '操作'),
-          estimated_seconds: attributes.fetch(:estimated_seconds, nil)
+          estimated_seconds: attributes.fetch(:estimated_seconds, nil),
+          selection: attributes.fetch(:selection, :none)
         )
       end
 
@@ -459,7 +460,7 @@ module Admin
           ],
           associations: %i[karaoke_delivery_models original_songs song_with_dam_ouchikaraoke song_with_joysound_utasuki],
           operations: [
-            operation('楽曲TSVをエクスポート', handler: :export_songs, group: 'TSV入出力'),
+            operation('楽曲TSVをエクスポート', handler: :export_songs, group: 'TSV入出力', selection: :required),
             operation('原曲未設定TSVをエクスポート', handler: :export_missing_original_songs, group: 'TSV入出力'),
             operation('原曲付き楽曲TSVをインポート', handler: :import_songs_with_original_songs, group: 'TSV入出力', inputs: [{ name: :tsv_file, label: 'TSVファイル', type: :file, accept: 'text/tab-separated-values' }]),
             operation('DAM楽曲を取得', method_name: :fetch_dam_songs, group: '外部取得', confirmation: '外部サイトへアクセスしてDAM楽曲を取得します。実行しますか？'),

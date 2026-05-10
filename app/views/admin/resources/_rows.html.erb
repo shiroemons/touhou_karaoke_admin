@@ -1,5 +1,11 @@
+<% selectable_collection_operations = @resource.operations.any? { |operation| operation.scope == :collection && operation.selection != :none } %>
 <% @records.each do |record| %>
   <tr class="<%= admin_record_row_class(record).join(" ") %>">
+    <% if selectable_collection_operations %>
+      <td class="admin-select-column">
+        <%= check_box_tag "selected_ids[]", record.id, false, class: "checkbox checkbox-sm", data: { admin_resource_select: true }, aria: { label: "#{@resource.label} #{record.id} を選択" } %>
+      </td>
+    <% end %>
     <% @resource.index_fields.each do |field| %>
       <td class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>">
         <% if field.link %>

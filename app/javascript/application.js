@@ -35,6 +35,7 @@ const setupAdminInfiniteScroll = () => {
       rows.insertAdjacentHTML("beforeend", payload.html)
       sentinel.dataset.nextUrl = payload.next_url || ""
       sentinel.hidden = !payload.next_url
+      updateAdminResourceSelectionState()
       const visibleCount = document.querySelector("[data-admin-visible-count]")
       if (visibleCount) visibleCount.textContent = rows.querySelectorAll("tr").length.toLocaleString()
       if (status) status.textContent = payload.next_url ? "さらに読み込みます" : "すべて読み込みました"
@@ -85,6 +86,9 @@ const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
   if (pushState) window.history.pushState({}, "", browserUrl(url))
   setupAdminFilterForms()
   setupAdminInfiniteScroll()
+  setupAdminResourceSelection()
+  setupAdminOperationModal()
+  setupAdminOperationForms()
 }
 
 const isAsyncAdminLink = (link) => {
@@ -148,15 +152,126 @@ const setupAdminFilterForms = () => {
 
 document.addEventListener("DOMContentLoaded", setupAdminFilterForms)
 
+const selectedAdminResourceIds = () =>
+  Array.from(document.querySelectorAll("[data-admin-resource-select]:checked")).map((input) => input.value)
+
+const adminOperationRequiredInputsReady = (form) =>
+  Array.from(form.querySelectorAll("[data-admin-operation-required-input]")).every((input) => {
+    if (input.type === "file") return input.files.length > 0
+
+    return input.value.trim().length > 0
+  })
+
+const adminOperationFormReady = (form) => {
+  const selectionRequired = form.dataset.adminOperationSelectionRequired === "true"
+  const selectionReady = !selectionRequired || selectedAdminResourceIds().length > 0
+
+  return selectionReady && adminOperationRequiredInputsReady(form)
+}
+
+const updateAdminOperationSubmitStates = () => {
+  document.querySelectorAll("[data-admin-operation-form]").forEach((form) => {
+    const submitButton = form.querySelector("[data-admin-operation-submit]")
+    if (!submitButton) return
+
+    submitButton.disabled = form.dataset.adminOperationBusy === "true" || !adminOperationFormReady(form)
+  })
+}
+
+const updateAdminResourceSelectionState = () => {
+  const rowCheckboxes = Array.from(document.querySelectorAll("[data-admin-resource-select]"))
+  const selectedCount = rowCheckboxes.filter((input) => input.checked).length
+
+  document.querySelectorAll("[data-admin-resource-select-all]").forEach((input) => {
+    input.checked = rowCheckboxes.length > 0 && selectedCount === rowCheckboxes.length
+    input.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length
+  })
+
+  document.querySelectorAll("[data-admin-operation-selection-count]").forEach((item) => {
+    item.textContent = selectedCount.toLocaleString()
+  })
+  updateAdminOperationSubmitStates()
+}
+
+const setupAdminResourceSelection = () => {
+  const content = document.querySelector("[data-admin-resource-content]")
+  if (!content || content.dataset.selectionInitialized === "true") return
+
+  content.dataset.selectionInitialized = "true"
+  content.addEventListener("change", (event) => {
+    const selectAll = event.target.closest("[data-admin-resource-select-all]")
+    if (selectAll) {
+      document.querySelectorAll("[data-admin-resource-select]").forEach((input) => {
+        input.checked = selectAll.checked
+      })
+      updateAdminResourceSelectionState()
+      return
+    }
+
+    if (event.target.closest("[data-admin-resource-select]")) updateAdminResourceSelectionState()
+  })
+
+  updateAdminResourceSelectionState()
+}
+
+document.addEventListener("DOMContentLoaded", setupAdminResourceSelection)
+
+const setupAdminOperationModal = () => {
+  const modal = document.querySelector("[data-admin-operation-modal]")
+  if (!modal || modal.dataset.initialized === "true") return
+
+  modal.dataset.initialized = "true"
+  const title = modal.querySelector("[data-admin-operation-modal-title]")
+  const panels = Array.from(modal.querySelectorAll("[data-admin-operation-panel]"))
+  const closeButton = modal.querySelector("[data-admin-operation-modal-close]")
+
+  const showPanel = (operationKey, label) => {
+    let activePanel
+    panels.forEach((panel) => {
+      const active = panel.dataset.adminOperationPanel === operationKey
+      panel.hidden = !active
+      if (active) activePanel = panel
+    })
+    if (title) title.textContent = label
+    updateAdminResourceSelectionState()
+    activePanel?.dispatchEvent(new Event("admin-operation-panel-open"))
+  }
+
+  document.querySelectorAll("[data-admin-operation-trigger]").forEach((trigger) => {
+    if (trigger.dataset.modalInitialized === "true") return
+
+    trigger.dataset.modalInitialized = "true"
+    trigger.addEventListener("click", (event) => {
+      const operationKey = trigger.dataset.adminOperationKey
+      const panel = panels.find((item) => item.dataset.adminOperationPanel === operationKey)
+      if (!panel || !modal.showModal) return
+
+      event.preventDefault()
+      trigger.closest("details")?.removeAttribute("open")
+      showPanel(operationKey, trigger.textContent.trim())
+      modal.showModal()
+    })
+  })
+
+  closeButton?.addEventListener("click", () => modal.close())
+}
+
+document.addEventListener("DOMContentLoaded", setupAdminOperationModal)
+
 const setupAdminOperationForms = () => {
   document.querySelectorAll("[data-admin-operation-form]").forEach((form) => {
     if (form.dataset.initialized === "true") return
 
     form.dataset.initialized = "true"
-    const dialog = document.querySelector("[data-admin-operation-dialog]")
+    const dialog = document.querySelector("[data-admin-operation-confirm-dialog]")
     const dialogMessage = dialog?.querySelector("[data-admin-operation-dialog-message]")
     const confirmButton = dialog?.querySelector("[data-admin-operation-confirm]")
     const cancelButton = dialog?.querySelector("[data-admin-operation-cancel]")
+    const inlineConfirmation = form.dataset.adminOperationInlineConfirmation === "true"
+    const operationModal = form.closest("[data-admin-operation-modal]")
+    const operationPanel = form.closest("[data-admin-operation-panel]")
+    const selectedIdsContainer = form.querySelector("[data-admin-operation-selected-ids]")
+    const modalCancelButton = form.querySelector("[data-admin-operation-modal-cancel]")
     const submitButton = form.querySelector("[data-admin-operation-submit]")
     const progress = form.querySelector("[data-admin-operation-progress]")
     const progressLabel = form.querySelector("[data-admin-operation-progress-label]")
@@ -177,6 +292,7 @@ const setupAdminOperationForms = () => {
     let hasServerProgress = false
     let lastProgressStatus = "外部サイト取得中"
     let lastProgressLabel = "外部サイトから取得・保存しています..."
+    let finishTimer
 
     const elapsedTime = (startedAt) => {
       const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
@@ -216,14 +332,46 @@ const setupAdminOperationForms = () => {
       if (progressBar) progressBar.style.width = `${normalizedValue}%`
     }
 
+    const resetProgress = () => {
+      if (elapsedTimer) window.clearInterval(elapsedTimer)
+      if (pollTimer) window.clearInterval(pollTimer)
+      if (finishTimer) window.clearTimeout(finishTimer)
+
+      elapsedTimer = undefined
+      pollTimer = undefined
+      finishTimer = undefined
+      executeStartedAt = undefined
+      progressPhase = "waiting"
+      lastServerPercentage = 0
+      hasServerProgress = false
+      lastProgressStatus = "外部サイト取得中"
+      lastProgressLabel = "外部サイトから取得・保存しています..."
+      delete form.dataset.confirmed
+
+      if (submitButton) submitButton.disabled = false
+      if (modalCancelButton) modalCancelButton.disabled = false
+      if (progress) progress.hidden = true
+      if (progressElapsed) progressElapsed.textContent = "00:00"
+      progressBar?.classList.remove("admin-operation-progress-bar-active")
+      activateProgressStep("prepare")
+      updateProgress(0, "待機中", "処理を開始しています...")
+      updateAdminOperationSubmitStates()
+    }
+
     const finishProgress = () => {
       if (progress?.hidden || progressPhase === "finished") return
 
       progressPhase = "finished"
       activateProgressStep("finish")
-      updateProgress(100, "結果を反映中", "処理が完了しました。画面を切り替えています...")
+      updateProgress(100, "完了", inlineConfirmation ? "処理が完了しました。ダイアログを閉じます..." : "処理が完了しました。画面を切り替えています...")
       if (elapsedTimer) window.clearInterval(elapsedTimer)
       if (pollTimer) window.clearInterval(pollTimer)
+      if (inlineConfirmation && operationModal?.open) {
+        finishTimer = window.setTimeout(() => {
+          operationModal.close()
+          resetProgress()
+        }, 1200)
+      }
     }
 
     const applyServerProgress = (payload) => {
@@ -249,6 +397,12 @@ const setupAdminOperationForms = () => {
         progressPhase = "failed"
         updateProgress(lastServerPercentage, "エラー", payload.detail || label)
         if (pollTimer) window.clearInterval(pollTimer)
+        if (elapsedTimer) window.clearInterval(elapsedTimer)
+        progressBar?.classList.remove("admin-operation-progress-bar-active")
+        if (modalCancelButton) modalCancelButton.disabled = false
+        delete form.dataset.adminOperationBusy
+        delete form.dataset.confirmed
+        updateAdminOperationSubmitStates()
       }
     }
 
@@ -277,7 +431,9 @@ const setupAdminOperationForms = () => {
 
     const startProgress = () => {
       if (progress) progress.hidden = false
+      form.dataset.adminOperationBusy = "true"
       if (submitButton) submitButton.disabled = true
+      if (modalCancelButton) modalCancelButton.disabled = true
       progressPhase = "prepare"
       activateProgressStep("prepare")
       updateProgress(4, "確認中", "入力内容を確認しています...")
@@ -305,13 +461,39 @@ const setupAdminOperationForms = () => {
       window.addEventListener("pagehide", finishProgress, { once: true })
     }
 
+    const syncSelectedIds = () => {
+      if (!selectedIdsContainer) return
+
+      selectedIdsContainer.replaceChildren()
+      selectedAdminResourceIds().forEach((id) => {
+        const input = document.createElement("input")
+        input.type = "hidden"
+        input.name = "selected_ids[]"
+        input.value = id
+        selectedIdsContainer.appendChild(input)
+      })
+    }
+
     const submitConfirmed = () => {
       form.dataset.confirmed = "true"
       form.requestSubmit(submitButton || undefined)
     }
 
     form.addEventListener("submit", (event) => {
+      if (!adminOperationFormReady(form)) {
+        event.preventDefault()
+        updateAdminOperationSubmitStates()
+        return
+      }
+
       if (form.dataset.confirmed === "true") {
+        syncSelectedIds()
+        startProgress()
+        return
+      }
+
+      if (inlineConfirmation) {
+        syncSelectedIds()
         startProgress()
         return
       }
@@ -336,6 +518,25 @@ const setupAdminOperationForms = () => {
     cancelButton?.addEventListener("click", () => {
       dialog?.close()
     })
+
+    modalCancelButton?.addEventListener("click", () => {
+      operationModal?.close()
+    })
+
+    form.querySelectorAll("[data-admin-operation-required-input]").forEach((input) => {
+      input.addEventListener("input", updateAdminOperationSubmitStates)
+      input.addEventListener("change", updateAdminOperationSubmitStates)
+    })
+
+    operationModal?.addEventListener("close", () => {
+      if (progressPhase !== "waiting") resetProgress()
+    })
+
+    operationPanel?.addEventListener("admin-operation-panel-open", () => {
+      resetProgress()
+    })
+
+    updateAdminOperationSubmitStates()
   })
 }
 

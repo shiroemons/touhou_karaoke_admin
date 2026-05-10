@@ -16,7 +16,7 @@
               <h3><%= group %></h3>
               <div class="admin-operation-dropdown-list">
                 <% operations.each do |operation, _index| %>
-                  <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-operation-dropdown-item" do %>
+                  <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-operation-dropdown-item", data: { admin_operation_trigger: true, admin_operation_key: operation.key } do %>
                     <%= admin_icon(:action) %>
                     <span><%= operation.label %></span>
                   <% end %>

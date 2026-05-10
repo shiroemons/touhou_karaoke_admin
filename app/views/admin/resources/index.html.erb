@@ -1,3 +1,4 @@
+<% selectable_collection_operations = @resource.operations.any? { |operation| operation.scope == :collection && operation.selection != :none } %>
 <div class="admin-index-content" data-admin-resource-content>
 <header class="admin-page-header">
   <div>
@@ -72,6 +73,14 @@
   <table class="admin-table admin-table-resource-<%= @resource.key.to_s.dasherize %> table table-zebra">
     <thead>
       <tr>
+        <% if selectable_collection_operations %>
+          <th class="admin-select-column admin-table-field">
+            <label class="admin-row-select-all">
+              <%= check_box_tag "select_all_#{@resource.key}", "1", false, class: "checkbox checkbox-sm", data: { admin_resource_select_all: true }, aria: { label: "表示中の#{@resource.label}を選択" } %>
+              <span>選択</span>
+            </label>
+          </th>
+        <% end %>
         <% @resource.index_fields.each do |field| %>
           <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>">
             <% if field.sortable %>
@@ -98,6 +107,8 @@
     </div>
   <% end %>
 </div>
+
+<%= render "operation_modal", resource: @resource, operations: @resource.operations %>
 
 <% if @view_mode == "paginated" %>
   <nav class="admin-pagination">

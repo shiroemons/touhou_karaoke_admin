@@ -205,20 +205,20 @@ module Admin
 
       assert_response :success
       assert_select 'table.admin-table-resource-song'
-      assert_select 'thead th:nth-child(1)', text: 'カラオケ種別'
+      assert_select 'thead th:nth-child(2)', text: 'カラオケ種別'
       assert_select 'thead th.admin-table-field-karaoke-type'
-      assert_select 'thead th:nth-child(2)', text: 'タイトル'
+      assert_select 'thead th:nth-child(3)', text: 'タイトル'
       assert_select 'thead th.admin-table-field-title'
-      assert_select 'thead th:nth-child(3)', text: 'アーティスト'
+      assert_select 'thead th:nth-child(4)', text: 'アーティスト'
       assert_select 'thead th.admin-table-field-display-artist'
-      assert_select 'thead th:nth-child(4)', text: '原曲紐付け'
+      assert_select 'thead th:nth-child(5)', text: '原曲紐付け'
       assert_select 'thead th.admin-table-field-original-songs-link-status'
-      assert_select 'thead th:nth-child(5)', text: '原曲数'
+      assert_select 'thead th:nth-child(6)', text: '原曲数'
       assert_select 'thead th.admin-table-field-original-songs-count-label'
-      assert_select 'thead th:nth-child(6)', text: '分類'
+      assert_select 'thead th:nth-child(7)', text: '分類'
       assert_select 'thead th.admin-table-field-original-song-category-label'
-      assert_select 'thead th:nth-child(7)', text: '動画'
-      assert_select 'thead th:nth-child(8)', text: '音楽配信'
+      assert_select 'thead th:nth-child(8)', text: '動画'
+      assert_select 'thead th:nth-child(9)', text: '音楽配信'
       assert_select 'thead th', text: '更新日時'
       formatted_updated_at = @song.updated_at.in_time_zone('Asia/Tokyo').strftime('%Y/%m/%d %H:%M')
       assert_select 'td', text: /#{Regexp.escape(formatted_updated_at)}/
@@ -434,11 +434,19 @@ module Admin
       assert_response :success
       assert_select 'form.admin-inline-operation', false
       assert_select '.admin-operation-dropdown-wrap'
+      assert_select 'th.admin-select-column'
+      assert_select 'input[data-admin-resource-select]', 1
+      assert_select 'dialog[data-admin-operation-modal]'
+      assert_select '[data-admin-operation-panel="export_songs"]'
+      assert_select '[data-admin-operation-panel="export_songs"] form[data-admin-operation-form][data-admin-operation-inline-confirmation="true"][data-admin-operation-selection-required="true"]'
+      assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selected-ids]'
+      assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selection-note]', text: '対象を選択してください。'
+      assert_select '[data-admin-operation-panel="export_songs"] button[data-admin-operation-submit][disabled]'
       assert_select '.admin-operation-dropdown-group h3', text: 'TSV入出力'
       assert_select '.admin-operation-dropdown-group h3', text: '外部取得'
       assert_select '.admin-display-settings .admin-operation-dropdown-wrap', false
       assert_select '.admin-table-controls .admin-table-display-settings'
-      assert_select 'a.admin-operation-dropdown-item[href=?]', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
+      assert_select 'a.admin-operation-dropdown-item[href=?][data-admin-operation-trigger][data-admin-operation-key="export_songs"]', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
     end
 
     test 'all operations have explicit descriptions' do
@@ -711,14 +719,31 @@ module Admin
       assert_select 'form[data-admin-operation-form][data-avo-action="MoveHigher"]'
     end
 
-    test 'exports songs tsv from operation' do
+    test 'requires selected songs for selection-only export operation' do
       post operation_admin_songs_path, params: { operation: 'export_songs' }
 
+      assert_redirected_to admin_songs_path
+      follow_redirect!
+      assert_select '.admin-flash-alert', text: '対象を選択してください。'
+    end
+
+    test 'exports selected songs tsv from operation' do
+      other_artist = DisplayArtist.create!(karaoke_type: 'JOYSOUND', name: 'Other Artist', url: 'https://example.com/other-artist')
+      other_song = Song.create!(display_artist: other_artist, karaoke_type: 'JOYSOUND', title: 'Other Song', url: 'https://example.com/other-song')
+
+      post operation_admin_songs_path, params: { operation: 'export_songs', selected_ids: [@song.id] }
+
       assert_response :success
-      assert_equal 'text/tab-separated-values', response.media_type
-      assert_includes response.headers['Content-Disposition'], 'songs.tsv'
-      assert_includes response.body, "id\tkaraoke_type\tdisplay_artist_name"
       assert_includes response.body, "DAM\tZUN\tKaraoke Song"
+      assert_not_includes response.body, other_song.title
+    end
+
+    test 'invalid selected song ids do not broaden export scope' do
+      post operation_admin_songs_path, params: { operation: 'export_songs', selected_ids: ['invalid-id'] }
+
+      assert_redirected_to admin_songs_path
+      follow_redirect!
+      assert_select '.admin-flash-alert', text: '対象を選択してください。'
     end
 
     test 'imports songs with original songs tsv from operation' do

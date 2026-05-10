@@ -1,0 +1,59 @@
+<% modal = local_assigns.fetch(:modal, false) %>
+<% supports_selection = record.blank? && operation.selection != :none %>
+<% selection_required = operation.selection == :required %>
+<% submit_disabled = selection_required || operation.inputs.present? %>
+<% operation_progress_id = SecureRandom.uuid %>
+<%= form_with url: admin_operation_path(resource, record, operation.key), method: :post, multipart: operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: operation.confirmation.presence || "#{operation.label}を実行します。よろしいですか？", avo_action: operation.avo_action, admin_operation_estimated_seconds: operation.estimated_seconds, admin_operation_progress_url: admin_operation_progress_path(resource, record, operation.key, operation_progress_id), admin_operation_inline_confirmation: modal, admin_operation_selection: supports_selection, admin_operation_selection_required: selection_required } do |form| %>
+  <%= hidden_field_tag :operation_progress_id, operation_progress_id %>
+  <% if supports_selection %>
+    <div class="admin-operation-selection-summary" data-admin-operation-selection-summary>
+      <strong><span data-admin-operation-selection-count>0</span>件選択中</strong>
+      <span data-admin-operation-selection-note><%= selection_required ? "対象を選択してください。" : "未選択の場合は現在の検索・絞り込み結果全体を対象にします。" %></span>
+    </div>
+    <div data-admin-operation-selected-ids></div>
+  <% end %>
+
+  <% operation.inputs.each do |input| %>
+    <div class="admin-form-row">
+      <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
+      <% if input[:type] == :file %>
+        <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: "operation_fields_#{input[:name]}", class: "file-input file-input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+      <% else %>
+        <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: "operation_fields_#{input[:name]}", placeholder: input[:placeholder], class: "admin-input input input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="admin-form-actions">
+    <% if modal %>
+      <button type="button" class="admin-button btn" data-admin-operation-modal-cancel>キャンセル</button>
+    <% end %>
+    <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", disabled: submit_disabled, data: { admin_operation_submit: true } do %>
+      <%= admin_icon(operation.inputs.any? { |input| input[:type] == :file } ? :upload : :action) %>
+      <span>実行</span>
+    <% end %>
+  </div>
+
+  <div class="admin-operation-progress" data-admin-operation-progress hidden>
+    <div class="admin-operation-progress-header">
+      <div>
+        <span class="admin-operation-progress-kicker">処理進捗</span>
+        <strong data-admin-operation-progress-label>処理を開始しています...</strong>
+      </div>
+      <div class="admin-operation-progress-meta">
+        <span data-admin-operation-progress-percent>0%</span>
+        <span data-admin-operation-progress-elapsed>00:00</span>
+        <span data-admin-operation-progress-status>待機中</span>
+      </div>
+    </div>
+    <div class="admin-operation-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="待機中 0%" data-admin-operation-progressbar>
+      <div class="admin-operation-progress-bar" data-admin-operation-progress-bar></div>
+    </div>
+    <ol class="admin-operation-progress-steps" aria-label="処理ステップ">
+      <li data-admin-operation-step="prepare" class="admin-operation-progress-step admin-operation-progress-step-active">入力内容を確認</li>
+      <li data-admin-operation-step="execute" class="admin-operation-progress-step">外部サイト取得・保存</li>
+      <li data-admin-operation-step="finish" class="admin-operation-progress-step">結果を反映</li>
+    </ol>
+    <p class="admin-operation-progress-note">処理側から取得できる件数またはページ数を優先して表示します。総件数を取得できない処理では、ページ数と処理件数から進捗率を推測します。</p>
+  </div>
+<% end %>

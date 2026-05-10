@@ -30,7 +30,7 @@ module Admin
     end
 
     def export_songs
-      songs = scope.includes(:display_artist, :original_songs)
+      songs = operation_scope.includes(:display_artist, :original_songs)
       tsv = generate_songs_tsv(songs)
 
       download(tsv, 'songs.tsv')
@@ -210,6 +210,31 @@ module Admin
     private
 
     attr_reader :operation, :record, :params, :scope, :progress_id
+
+    def operation_scope
+      ids = selected_ids
+      raise ArgumentError, '対象を選択してください。' if operation.selection == :required && ids.blank?
+      return scope if ids.blank? && !selected_ids_submitted?
+      return scope.none if ids.blank?
+
+      scope.where(@resource.model.primary_key => ids)
+    end
+
+    def selected_ids_submitted?
+      params.key?(:selected_ids) || params.key?('selected_ids')
+    end
+
+    def selected_ids
+      raw_ids = Array(params[:selected_ids]).map(&:to_s).compact_blank.uniq
+      return [] if raw_ids.blank?
+      return raw_ids unless uuid_primary_key?
+
+      raw_ids.select { |id| id.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i) }
+    end
+
+    def uuid_primary_key?
+      @resource.model.columns_hash.fetch(@resource.model.primary_key).type == :uuid
+    end
 
     def run_method_operation
       target = record || operation_target

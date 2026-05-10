@@ -228,6 +228,10 @@
   gap: 8px;
 }
 
+.admin-form-actions {
+  justify-content: flex-end;
+}
+
 .admin-panel,
 .admin-table-wrap,
 .admin-card {
@@ -1240,6 +1244,87 @@
   white-space: nowrap;
 }
 
+.admin-select-column {
+  text-align: center;
+  width: 58px;
+}
+
+.admin-row-select-all {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.admin-row-select-all span {
+  color: color-mix(in oklab, var(--color-base-content) 68%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-operation-modal-box {
+  display: grid;
+  gap: 16px;
+  max-width: min(720px, calc(100vw - 32px));
+}
+
+.admin-operation-modal-header {
+  align-items: flex-start;
+  border-bottom: 1px solid #e5edf7;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding-bottom: 12px;
+}
+
+.admin-operation-modal-header h2 {
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 2px 0 0;
+}
+
+.admin-operation-modal-resource {
+  color: color-mix(in oklab, var(--color-base-content) 52%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-operation-modal-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-operation-modal-panel[hidden] {
+  display: none;
+}
+
+.admin-operation-selection-summary {
+  align-items: center;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+}
+
+.admin-operation-selection-summary strong {
+  color: #1d4ed8;
+  font-size: 14px;
+}
+
+.admin-operation-selection-note {
+  color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .admin-per-page-field > span {
   color: color-mix(in oklab, var(--color-base-content) 64%, transparent);
   font-size: 11px;
@@ -1415,6 +1500,14 @@
 .admin-button:hover {
   box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
   transform: translateY(-1px);
+}
+
+.admin-button:disabled,
+.admin-form input[type="submit"]:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
 }
 
 .admin-button-primary,
