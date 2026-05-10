@@ -1,13 +1,26 @@
 require 'test_helper'
 
 class OriginalSongPolicyTest < ActiveSupport::TestCase
-  def test_scope; end
+  test "permits read actions" do
+    assert_policy_permits OriginalSongPolicy.new(nil, Object.new), :index?, :show?
+  end
 
-  def test_show; end
+  test "inherits mutation denials" do
+    assert_policy_forbids OriginalSongPolicy.new(nil, Object.new), :create?, :update?, :destroy?
+  end
 
-  def test_create; end
+  test "forbids nested association actions" do
+    assert_policy_forbids(
+      OriginalSongPolicy.new(nil, Object.new),
+      :attach_songs?,
+      :detach_songs?,
+      :edit_songs?,
+      :create_songs?,
+      :destroy_songs?
+    )
+  end
 
-  def test_update; end
-
-  def test_destroy; end
+  test "scope resolves all records" do
+    assert_scope_resolves_all OriginalSongPolicy::Scope
+  end
 end

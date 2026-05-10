@@ -1,13 +1,15 @@
 require 'test_helper'
 
 class KaraokeDeliveryModelPolicyTest < ActiveSupport::TestCase
-  def test_scope; end
+  test "permits base actions" do
+    assert_policy_permits KaraokeDeliveryModelPolicy.new(nil, Object.new), :index?, :show?, :create?, :update?, :reorder?
+  end
 
-  def test_show; end
+  test "inherits destroy denial" do
+    assert_policy_forbids KaraokeDeliveryModelPolicy.new(nil, Object.new), :destroy?
+  end
 
-  def test_create; end
-
-  def test_update; end
-
-  def test_destroy; end
+  test "scope resolves all records" do
+    assert_scope_resolves_all KaraokeDeliveryModelPolicy::Scope
+  end
 end

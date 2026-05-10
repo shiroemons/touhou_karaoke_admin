@@ -1,13 +1,15 @@
 require 'test_helper'
 
 class JoysoundMusicPostPolicyTest < ActiveSupport::TestCase
-  def test_scope; end
+  test "permits read and operation actions" do
+    assert_policy_permits JoysoundMusicPostPolicy.new(nil, Object.new), :index?, :show?, :update?, :act_on?
+  end
 
-  def test_show; end
+  test "inherits mutation denials" do
+    assert_policy_forbids JoysoundMusicPostPolicy.new(nil, Object.new), :create?, :destroy?
+  end
 
-  def test_create; end
-
-  def test_update; end
-
-  def test_destroy; end
+  test "scope resolves all records" do
+    assert_scope_resolves_all JoysoundMusicPostPolicy::Scope
+  end
 end
