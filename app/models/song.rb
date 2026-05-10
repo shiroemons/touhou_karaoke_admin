@@ -46,20 +46,28 @@ class Song < ApplicationRecord
     scraper.scrape_song_page(url)
   end
 
-  def self.fetch_joysound_songs
+  def self.fetch_joysound_songs(progress: nil)
     scraper = Scrapers::JoysoundScraper.new
     joysound_songs = JoysoundSong.all
 
     # ParallelProcessorを使用してバッチ処理
-    process_with_progress(joysound_songs, label: "JOYSOUND Songs") do |record|
+    process_with_progress(joysound_songs, label: "JOYSOUND Songs", progress:, progress_options: { status: "JOYSOUND楽曲取得中", label: "JOYSOUND楽曲詳細を取得しています" }) do |record|
       title = record.display_title.split("／").first
       scraper.scrape_song_page(record.url) unless Song.exists?(title:, url: record.url, karaoke_type: "JOYSOUND")
     end
 
     # 許可リストの処理
-    Constants::Karaoke::JOYSOUND_ALLOWLIST.each do |url|
+    Constants::Karaoke::JOYSOUND_ALLOWLIST.each.with_index(1) do |url, index|
       next if Song.exists?(url:, karaoke_type: "JOYSOUND")
 
+      progress&.call(
+        percentage: 97,
+        status: "JOYSOUND楽曲取得中",
+        label: "JOYSOUND許可リストを確認しています",
+        detail: "許可リスト: #{index}/#{Constants::Karaoke::JOYSOUND_ALLOWLIST.count}件",
+        current: index,
+        total: Constants::Karaoke::JOYSOUND_ALLOWLIST.count
+      )
       scraper.scrape_song_page(url)
     end
   end
@@ -110,12 +118,12 @@ class Song < ApplicationRecord
     end
   end
 
-  def self.fetch_dam_songs
+  def self.fetch_dam_songs(progress: nil)
     scraper = Scrapers::DamScraper.new
     dam_songs = DamSong.order(created_at: :desc)
 
     # ParallelProcessorを使用してバッチ処理
-    process_with_progress(dam_songs, label: "DAM Songs") do |record|
+    process_with_progress(dam_songs, label: "DAM Songs", progress:, progress_options: { status: "DAM楽曲取得中", label: "DAM楽曲詳細を取得しています" }) do |record|
       song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: record.url)
       next if song.present?
 
@@ -123,12 +131,12 @@ class Song < ApplicationRecord
     end
   end
 
-  def self.update_dam_delivery_models
+  def self.update_dam_delivery_models(progress: nil)
     scraper = Scrapers::DamScraper.new
     dam_songs = Song.dam.includes(:karaoke_delivery_models)
 
     # ParallelProcessorを使用してバッチ処理
-    process_with_progress(dam_songs, label: "Update DAM Delivery Models") do |song|
+    process_with_progress(dam_songs, label: "Update DAM Delivery Models", progress:, progress_options: { status: "DAM配信機種更新中", label: "DAM配信機種を更新しています" }) do |song|
       scraper.update_delivery_models(song)
     end
   end

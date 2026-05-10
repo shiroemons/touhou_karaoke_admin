@@ -52,7 +52,12 @@ module ParallelProcessor
     # @param label [String] ログに表示するラベル
     # @param options [Hash] オプション（batch_size, process_count）
     # @yield [record] 各レコードに対する処理
-    def process_with_progress(collection, label: nil, **)
+    def process_with_progress(collection, label: nil, progress: nil, progress_options: {}, **, &)
+      if progress
+        process_with_server_progress(collection, progress:, label:, progress_options:, &)
+        return
+      end
+
       progress_logger = create_progress_logger(label)
 
       process_in_parallel(collection, progress_logger:, **) do |record, _index|
@@ -61,6 +66,36 @@ module ParallelProcessor
     end
 
     private
+
+    def process_with_server_progress(collection, progress:, label:, progress_options:)
+      total_count = collection_total_count(collection)
+      processed_count = 0
+      reporter = Admin::ProgressReporter.new(
+        progress:,
+        status: progress_options.fetch(:status, "処理中"),
+        label: progress_options.fetch(:label, label || "処理しています")
+      )
+      reporter.start(total: total_count)
+      return if total_count.zero?
+
+      each_collection_record(collection) do |record|
+        yield(record)
+        processed_count += 1
+        reporter.advance(current: processed_count, total: total_count)
+      end
+    end
+
+    def collection_total_count(collection)
+      collection.respond_to?(:count) ? collection.count : collection.size
+    end
+
+    def each_collection_record(collection, &)
+      if collection.respond_to?(:find_each)
+        collection.find_each(&)
+      else
+        collection.each(&)
+      end
+    end
 
     # バッチの並列処理
     def process_batch(batch, current_index, total_count, process_count, progress_logger)

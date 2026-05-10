@@ -20,7 +20,7 @@ module Admin
 
     def run
       OperationProgress.start!(progress_id, label: operation.label)
-      result = operation.handler.blank? ? run_method_operation : public_send(operation.handler)
+      result = operation.handler.blank? ? run_method_operation : run_handler_operation
 
       OperationProgress.complete!(progress_id, label: '処理が完了しました')
       result
@@ -80,24 +80,28 @@ module Admin
       message("インポートが完了しました。更新件数: #{imported_count}件、スキップ件数: #{skipped_count}件")
     end
 
-    def fetch_dam_song
+    def fetch_dam_song(progress: nil)
       url = params.dig(:operation_fields, :dam_song_url).to_s
       raise ArgumentError, 'DAMの楽曲URLではありません。' unless url.start_with?(Constants::Karaoke::Dam::SONG_URL)
 
+      progress&.call(percentage: 25, status: 'DAM楽曲取得中', label: '指定URLからDAM楽曲を取得しています', detail: nil)
       DamSong.fetch_dam_song(url)
+      progress&.call(percentage: 96, status: 'DAM楽曲取得中', label: 'DAM楽曲の保存が完了しました', detail: nil)
       message('DAM楽曲を取得しました。')
     end
 
-    def fetch_joysound_detail
+    def fetch_joysound_detail(progress: nil)
       url = params.dig(:operation_fields, :joysound_url).to_s
       raise ArgumentError, 'JOYSOUNDの楽曲URLではありません。' unless url.start_with?("#{Constants::Karaoke::Joysound::SEARCH_URL}/")
 
+      progress&.call(percentage: 25, status: 'JOYSOUND詳細取得中', label: '指定URLからJOYSOUND詳細を取得しています', detail: nil)
       JoysoundSong.fetch_joysound_song_direct(url:)
+      progress&.call(percentage: 96, status: 'JOYSOUND詳細取得中', label: 'JOYSOUND詳細の保存が完了しました', detail: nil)
       message('JOYSOUND詳細を取得しました。')
     end
 
-    def fetch_joysound_music_post_song
-      result = JoysoundMusicPostManager.new.fetch_songs_with_progress
+    def fetch_joysound_music_post_song(progress: nil)
+      result = JoysoundMusicPostManager.new.fetch_songs_with_progress(progress:)
       if result[:errors].any?
         message("取得処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。取得件数: #{result[:fetched]}件")
       else
@@ -105,8 +109,8 @@ module Admin
       end
     end
 
-    def refresh_joysound_music_post_song
-      result = JoysoundMusicPostManager.new.refresh_songs_efficiently
+    def refresh_joysound_music_post_song(progress: nil)
+      result = JoysoundMusicPostManager.new.refresh_songs_efficiently(progress:)
       if result[:errors].any?
         message("更新処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。削除件数: #{result[:deleted]}件")
       else
@@ -114,8 +118,8 @@ module Admin
       end
     end
 
-    def update_joysound_music_post_delivery_deadline_dates
-      result = JoysoundMusicPostManager.new.update_delivery_deadlines_optimized
+    def update_joysound_music_post_delivery_deadline_dates(progress: nil)
+      result = JoysoundMusicPostManager.new.update_delivery_deadlines_optimized(progress:)
       if result[:errors].any?
         message("更新処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。更新件数: #{result[:updated]}件")
       else
@@ -123,8 +127,8 @@ module Admin
       end
     end
 
-    def validate_display_artist_urls
-      result = DisplayArtistUrlValidator.new(delete_invalid: false).validate_all
+    def validate_display_artist_urls(progress: nil)
+      result = DisplayArtistUrlValidator.new(delete_invalid: false, progress:).validate_all
 
       raise StandardError, result[:errors].join("\n") if result[:errors].any?
 
@@ -135,8 +139,8 @@ module Admin
       end
     end
 
-    def cleanup_invalid_display_artists
-      result = DisplayArtistUrlValidator.new(delete_invalid: true).validate_all
+    def cleanup_invalid_display_artists(progress: nil)
+      result = DisplayArtistUrlValidator.new(delete_invalid: true, progress:).validate_all
 
       raise StandardError, result[:errors].join("\n") if result[:errors].any?
 
@@ -150,10 +154,12 @@ module Admin
       end
     end
 
-    def cleanup_orphan_display_artists
+    def cleanup_orphan_display_artists(progress: nil)
       records = DisplayArtist.where.missing(:songs)
       return message('削除対象のレコードはありませんでした。') if records.empty?
 
+      total_count = records.count
+      progress&.call(percentage: 8, status: '孤立アーティスト削除中', label: '楽曲が紐づいていないアーティストを削除しています', detail: "処理済み: 0/#{total_count}件", current: 0, total: total_count)
       deleted_records = records.map do |record|
         {
           id: record.id,
@@ -162,20 +168,32 @@ module Admin
           url: record.url
         }
       end
-      records.find_each(&:destroy)
+      records.find_each.with_index(1) do |record, index|
+        record.destroy!
+        next unless (index % 10).zero? || index == total_count
+
+        progress&.call(
+          percentage: (8 + (88 * (index.to_f / total_count))).floor.clamp(8, 96),
+          status: '孤立アーティスト削除中',
+          label: '楽曲が紐づいていないアーティストを削除しています',
+          detail: "処理済み: #{index}/#{total_count}件",
+          current: index,
+          total: total_count
+        )
+      end
 
       download(generate_display_artists_tsv(deleted_records), 'deleted_orphan_display_artists.tsv')
     end
 
-    def cleanup_expired_joysound_music_posts
-      result = JoysoundMusicPostCleaner.new.cleanup_expired_records
+    def cleanup_expired_joysound_music_posts(progress: nil)
+      result = JoysoundMusicPostCleaner.new(progress:).cleanup_expired_records
       raise StandardError, result[:errors].join("\n") if result[:errors].any?
 
       message("クリーンアップが完了しました。確認件数: #{result[:checked]}件、削除件数: #{result[:deleted]}件")
     end
 
-    def perform_full_joysound_music_post_maintenance
-      results = JoysoundMusicPostManager.new.perform_full_maintenance
+    def perform_full_joysound_music_post_maintenance(progress: nil)
+      results = JoysoundMusicPostManager.new.perform_full_maintenance(progress:)
       summary = [
         "統合メンテナンスが完了しました:",
         "期限切れクリーンアップ: #{results[:cleanup][:deleted]}件削除",
@@ -202,6 +220,15 @@ module Admin
         target.public_send(operation.method_name)
       end
       message("#{operation.label}を実行しました。")
+    end
+
+    def run_handler_operation
+      handler_method = method(operation.handler)
+      if handler_method.parameters.any? { |type, name| type == :key && name == :progress }
+        public_send(operation.handler, progress: method_progress)
+      else
+        public_send(operation.handler)
+      end
     end
 
     def method_progress

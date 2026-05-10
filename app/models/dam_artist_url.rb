@@ -5,11 +5,27 @@ class DamArtistUrl < ApplicationRecord
     ["url"]
   end
 
-  def self.fetch_dam_artist
-    DamArtistUrl.find_each do |dau|
-      next unless DisplayArtist.exists?(karaoke_type: "DAM", url: dau.url, name_reading: "")
-
-      dam_artist_page_parser(dau.url)
+  def self.fetch_dam_artist(progress: nil)
+    records = DamArtistUrl.all
+    total_count = records.count
+    records.find_each.with_index(1) do |dau, index|
+      progress&.call(
+        percentage: progress_percentage(index - 1, total_count),
+        status: "DAMアーティスト取得中",
+        label: "DAMアーティスト読みを取得しています",
+        detail: "処理済み: #{index - 1}/#{total_count}件",
+        current: index - 1,
+        total: total_count
+      )
+      dam_artist_page_parser(dau.url) if DisplayArtist.exists?(karaoke_type: "DAM", url: dau.url, name_reading: "")
+      progress&.call(
+        percentage: progress_percentage(index, total_count),
+        status: "DAMアーティスト取得中",
+        label: "DAMアーティスト読みを取得しています",
+        detail: "処理済み: #{index}/#{total_count}件",
+        current: index,
+        total: total_count
+      )
     end
   end
 
@@ -38,5 +54,11 @@ class DamArtistUrl < ApplicationRecord
       retry_count += 1
       retry unless retry_count > 3
     end
+  end
+
+  def self.progress_percentage(current, total)
+    return 96 if total.to_i.zero?
+
+    (8 + (88 * (current.to_f / total))).floor.clamp(8, 96)
   end
 end

@@ -13,26 +13,43 @@ class DisplayArtist < ApplicationRecord
     ["name"]
   end
 
-  def self.fetch_joysound_artist
+  def self.fetch_joysound_artist(progress: nil)
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     total_count = DisplayArtist.joysound.name_reading_empty.count
     DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
       logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
+      progress&.call(
+        percentage: progress_percentage(i - 1, total_count),
+        status: "JOYSOUNDアーティスト取得中",
+        label: "JOYSOUNDアーティスト読みを取得しています",
+        detail: "処理済み: #{i - 1}/#{total_count}件",
+        current: i - 1,
+        total: total_count
+      )
       browser.goto(da.url)
       browser.network.wait_for_idle(duration: 1.0)
 
       artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
       artist_el = browser.at_css(artist_selector)
       name_reading = artist_el&.inner_text&.gsub(/[（）]/, "")
-      next if name_reading.blank?
 
-      logger.debug(name_reading)
-      da.name_reading = name_reading
-      da.save!
+      if name_reading.present?
+        logger.debug(name_reading)
+        da.name_reading = name_reading
+        da.save!
+      end
+      progress&.call(
+        percentage: progress_percentage(i, total_count),
+        status: "JOYSOUNDアーティスト取得中",
+        label: "JOYSOUNDアーティスト読みを取得しています",
+        detail: "処理済み: #{i}/#{total_count}件",
+        current: i,
+        total: total_count
+      )
     end
   end
 
-  def self.fetch_joysound_music_post_artist
+  def self.fetch_joysound_music_post_artist(progress: nil)
     url = Constants::Karaoke::Joysound::BASE_URL
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
 
@@ -41,7 +58,15 @@ class DisplayArtist < ApplicationRecord
     artists = music_port_artists - exist_artists
     error_artist = []
 
-    artists.each do |artist|
+    artists.each.with_index(1) do |artist, index|
+      progress&.call(
+        percentage: progress_percentage(index - 1, artists.count),
+        status: "ミュージックポストアーティスト取得中",
+        label: "ミュージックポストアーティストを検索しています",
+        detail: "処理済み: #{index - 1}/#{artists.count}件",
+        current: index - 1,
+        total: artists.count
+      )
       rescue_count = 0
       begin
         browser.goto(url)
@@ -95,7 +120,21 @@ class DisplayArtist < ApplicationRecord
           retry
         end
       end
+      progress&.call(
+        percentage: progress_percentage(index, artists.count),
+        status: "ミュージックポストアーティスト取得中",
+        label: "ミュージックポストアーティストを検索しています",
+        detail: "処理済み: #{index}/#{artists.count}件",
+        current: index,
+        total: artists.count
+      )
     end
     logger.debug("未登録アーティスト：#{error_artist}") if error_artist.present?
+  end
+
+  def self.progress_percentage(current, total)
+    return 96 if total.to_i.zero?
+
+    (8 + (88 * (current.to_f / total))).floor.clamp(8, 96)
   end
 end

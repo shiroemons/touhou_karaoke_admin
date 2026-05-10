@@ -53,7 +53,7 @@ class JoysoundMusicPostManager
   end
 
   # 楽曲の取得処理（改善版）
-  def fetch_songs_with_progress(resumable: false)
+  def fetch_songs_with_progress(resumable: false, progress: nil)
     scraper = Scrapers::JoysoundScraper.new
     prioritized_posts = prioritized_joysound_music_posts
 
@@ -67,7 +67,12 @@ class JoysoundMusicPostManager
       Rails.logger.info("Progress: #{processor.progress}")
     else
       # ParallelProcessorを使用してバッチ処理
-      process_with_progress(prioritized_posts, label: "JOYSOUND Music Posts") do |record|
+      process_with_progress(
+        prioritized_posts,
+        label: "JOYSOUND Music Posts",
+        progress:,
+        progress_options: { status: "ミュージックポスト楽曲取得中", label: "ミュージックポスト楽曲を取得しています" }
+      ) do |record|
         process_music_post_record(scraper, record)
       end
     end
@@ -83,7 +88,7 @@ class JoysoundMusicPostManager
   end
 
   # URL存在確認による楽曲の更新処理（改善版）
-  def refresh_songs_efficiently
+  def refresh_songs_efficiently(progress: nil)
     music_post_songs = Song.music_post.includes(:song_with_joysound_utasuki)
     total_count = music_post_songs.count
     deleted_count = 0
@@ -94,6 +99,7 @@ class JoysoundMusicPostManager
     music_post_songs.find_each.with_index(1) do |song, index|
       progress_percentage = (index.to_f / total_count * 100).round(2)
       Rails.logger.debug { "#{index}/#{total_count} (#{progress_percentage}%): #{song.title}" }
+      report_progress(progress, index - 1, total_count, status: "ミュージックポスト楽曲検証中", label: "ミュージックポスト楽曲URLを検証しています")
 
       begin
         result = UrlChecker.check_url(song.url)
@@ -117,6 +123,7 @@ class JoysoundMusicPostManager
         @stats[:errors] << error_message
         Rails.logger.error(error_message)
       end
+      report_progress(progress, index, total_count, status: "ミュージックポスト楽曲検証中", label: "ミュージックポスト楽曲URLを検証しています")
     end
 
     Rails.logger.info("Refresh completed: deleted #{deleted_count}, skipped #{@stats[:skipped]}, errors #{error_count}")
@@ -129,7 +136,7 @@ class JoysoundMusicPostManager
   end
 
   # 配信期限の一括更新処理（改善版）
-  def update_delivery_deadlines_optimized
+  def update_delivery_deadlines_optimized(progress: nil)
     # バッチでデータを取得して効率化
     songs_with_utasuki = Song.music_post
                              .joins(:song_with_joysound_utasuki)
@@ -146,6 +153,7 @@ class JoysoundMusicPostManager
     songs_with_utasuki.find_each.with_index(1) do |song, index|
       progress_percentage = (index.to_f / total_count * 100).round(2)
       Rails.logger.debug { "#{index}/#{total_count} (#{progress_percentage}%): #{song.title}" }
+      report_progress(progress, index - 1, total_count, status: "配信期限更新中", label: "ミュージックポスト配信期限を更新しています")
 
       utasuki_record = song.song_with_joysound_utasuki
       new_deadline = jmp_lookup[utasuki_record.url]
@@ -160,6 +168,8 @@ class JoysoundMusicPostManager
       error_message = "Error updating song #{song.id}: #{e.message}"
       @stats[:errors] << error_message
       Rails.logger.error(error_message)
+    ensure
+      report_progress(progress, index, total_count, status: "配信期限更新中", label: "ミュージックポスト配信期限を更新しています")
     end
 
     Rails.logger.info("Delivery deadline update completed: #{updated_count} updated")
@@ -171,8 +181,8 @@ class JoysoundMusicPostManager
   end
 
   # 期限切れレコードのクリーンアップ
-  def cleanup_expired_records
-    cleaner = JoysoundMusicPostCleaner.new
+  def cleanup_expired_records(progress: nil)
+    cleaner = JoysoundMusicPostCleaner.new(progress:)
     result = cleaner.cleanup_expired_records
 
     @stats[:deleted] += result[:deleted]
@@ -182,14 +192,14 @@ class JoysoundMusicPostManager
   end
 
   # 統合的なメンテナンス処理
-  def perform_full_maintenance
+  def perform_full_maintenance(progress: nil)
     Rails.logger.info("Starting full JOYSOUND music post maintenance")
 
     results = {
-      cleanup: cleanup_expired_records,
-      fetch: fetch_songs_with_progress,
-      refresh: refresh_songs_efficiently,
-      update_deadlines: update_delivery_deadlines_optimized
+      cleanup: cleanup_expired_records(progress: maintenance_progress(progress, 0...20, "期限切れクリーンアップ")),
+      fetch: fetch_songs_with_progress(progress: maintenance_progress(progress, 20...60, "楽曲取得")),
+      refresh: refresh_songs_efficiently(progress: maintenance_progress(progress, 60...82, "URL確認")),
+      update_deadlines: update_delivery_deadlines_optimized(progress: maintenance_progress(progress, 82..96, "配信期限更新"))
     }
 
     Rails.logger.info("Full maintenance completed")
@@ -197,6 +207,29 @@ class JoysoundMusicPostManager
   end
 
   private
+
+  def report_progress(progress, current, total, status:, label:)
+    return unless progress
+    return unless current == total || (current % 10).zero?
+
+    Admin::ProgressReporter.new(progress:, status:, label:).advance(current:, total:, force: true)
+  end
+
+  def maintenance_progress(progress, range, phase_label)
+    return nil unless progress
+
+    lambda do |**attributes|
+      source_percentage = attributes[:percentage].to_i.clamp(0, 100)
+      phase_start = range.begin
+      phase_end = range.end
+      mapped_percentage = phase_start + ((phase_end - phase_start) * (source_percentage / 100.0))
+      progress.call(
+        **attributes,
+        percentage: mapped_percentage.floor.clamp(phase_start, phase_end),
+        label: "#{phase_label}: #{attributes[:label]}"
+      )
+    end
+  end
 
   def prioritized_joysound_music_posts
     # 差分URLの取得

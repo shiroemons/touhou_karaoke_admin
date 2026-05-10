@@ -342,6 +342,15 @@ module Admin
       assert_select 'a.admin-operation-dropdown-item[href=?]', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
     end
 
+    test 'all operations have explicit descriptions' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.each do |operation|
+          assert operation.description.present?, "#{resource.key} #{operation.key} should have a description"
+          assert_not_equal operation.confirmation, operation.description, "#{resource.key} #{operation.key} should not reuse confirmation as description" if operation.confirmation.present?
+        end
+      end
+    end
+
     test 'filters are collapsible and open when active' do
       get admin_songs_path
 
@@ -461,7 +470,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'DAM楽曲を取得'
-      assert_select '.admin-operation-description', text: /指定URLからDAM楽曲を取得します/
+      assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
+      assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
       assert_select 'form[data-admin-operation-form][data-avo-action="FetchDamSong"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
       assert_select 'input[name="operation_fields[dam_song_url]"]'
@@ -472,7 +482,7 @@ module Admin
       assert_select '[data-admin-operation-progress-percent]', text: '0%'
       assert_select '[data-admin-operation-progress-elapsed]', text: '00:00'
       assert_select '[data-admin-operation-progress-status]', text: '待機中'
-      assert_select '.admin-operation-progress-kicker', text: '推定進捗'
+      assert_select '.admin-operation-progress-kicker', text: '処理進捗'
       assert_select '.admin-operation-progress-step', text: '入力内容を確認'
       assert_select '.admin-operation-progress-step', text: '外部サイト取得・保存'
       assert_select '.admin-operation-progress-step', text: '結果を反映'
@@ -496,6 +506,8 @@ module Admin
       assert_select '.admin-operation-description', text: /URL確認/
       assert_select '.admin-operation-description', text: /配信期限更新/
       assert_select '.admin-operation-description', text: /削除・更新を伴います/
+      assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Joysound::SEARCH_URL
+      assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Joysound::MUSIC_POST_BASE_URL
     end
 
     test 'operation progress endpoint returns current progress payload' do
@@ -536,6 +548,47 @@ module Admin
       end
 
       assert_redirected_to admin_dam_songs_path
+      progress = OperationProgress.read(progress_id)
+      assert_equal 'completed', progress[:state]
+      assert_equal 100, progress[:percentage]
+    end
+
+    test 'joysound touhou operation receives progress callback' do
+      progress_id = SecureRandom.uuid
+      fetch = lambda do |progress: nil|
+        progress.call(percentage: 61, status: '外部サイト取得中', label: 'JOYSOUND東方系検索結果を保存しています')
+      end
+
+      original_fetch = JoysoundSong.method(:fetch_joysound_touhou_songs)
+      JoysoundSong.define_singleton_method(:fetch_joysound_touhou_songs, &fetch)
+      begin
+        post operation_admin_joysound_songs_path, params: { operation: 'fetch_joysound_touhou_songs', operation_progress_id: progress_id }
+      ensure
+        JoysoundSong.define_singleton_method(:fetch_joysound_touhou_songs, &original_fetch)
+      end
+
+      assert_redirected_to admin_joysound_songs_path
+      progress = OperationProgress.read(progress_id)
+      assert_equal 'completed', progress[:state]
+      assert_equal 100, progress[:percentage]
+    end
+
+    test 'handler operation receives progress callback and completes progress' do
+      progress_id = SecureRandom.uuid
+      runner = lambda do |progress: nil|
+        progress.call(percentage: 48, status: 'URL検証中', label: 'アーティストURLを検証しています')
+        Admin::OperationRunner::Result.new(message: 'ok', download_data: nil, download_filename: nil, download_content_type: nil)
+      end
+
+      original_handler = Admin::OperationRunner.instance_method(:validate_display_artist_urls)
+      Admin::OperationRunner.define_method(:validate_display_artist_urls, &runner)
+      begin
+        post operation_admin_display_artists_path, params: { operation: 'validate_display_artist_urls', operation_progress_id: progress_id }
+      ensure
+        Admin::OperationRunner.define_method(:validate_display_artist_urls, original_handler)
+      end
+
+      assert_redirected_to admin_display_artists_path
       progress = OperationProgress.read(progress_id)
       assert_equal 'completed', progress[:state]
       assert_equal 100, progress[:percentage]
@@ -610,8 +663,9 @@ module Admin
         def validate_all = result
       end.new(result)
 
-      with_stubbed_class_method(DisplayArtistUrlValidator, :new, lambda { |delete_invalid:|
+      with_stubbed_class_method(DisplayArtistUrlValidator, :new, lambda { |delete_invalid:, progress: nil|
         flunk('delete_invalid should be false') if delete_invalid
+        progress&.call(percentage: 25, status: 'URL検証中', label: '検証中')
 
         validator
       }) do
@@ -644,7 +698,10 @@ module Admin
         update_deadlines: { updated: 4, errors: [] }
       }
       manager = Struct.new(:result) do
-        def perform_full_maintenance = result
+        def perform_full_maintenance(progress: nil)
+          progress&.call(percentage: 50, status: 'メンテナンス中', label: '実行中')
+          result
+        end
       end.new(maintenance_result)
 
       with_stubbed_class_method(JoysoundMusicPostManager, :new, -> { manager }) do

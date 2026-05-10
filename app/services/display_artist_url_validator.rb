@@ -34,8 +34,9 @@
 class DisplayArtistUrlValidator
   attr_reader :checked_count, :invalid_count, :deleted_count, :invalid_records, :deleted_records, :errors
 
-  def initialize(delete_invalid: false)
+  def initialize(delete_invalid: false, progress: nil)
     @delete_invalid = delete_invalid
+    @progress = progress
     @checked_count = 0
     @invalid_count = 0
     @deleted_count = 0
@@ -51,9 +52,11 @@ class DisplayArtistUrlValidator
     Rails.logger.info("DisplayArtistUrlValidator: Starting validation of #{total_count} records")
 
     records_with_urls.find_each do |record|
+      report_progress(total_count)
       @checked_count += 1
       log_progress(total_count)
       process_record(record)
+      report_progress(total_count)
     end
 
     Rails.logger.info("DisplayArtistUrlValidator: Completed. Checked: #{@checked_count}, Invalid: #{@invalid_count}, Deleted: #{@deleted_count}")
@@ -69,6 +72,8 @@ class DisplayArtistUrlValidator
   end
 
   private
+
+  attr_reader :progress
 
   def process_record(record)
     result = UrlChecker.check_url(record.url)
@@ -124,5 +129,20 @@ class DisplayArtistUrlValidator
 
     percentage = ((Float(@checked_count) / total_count) * 100).floor
     Rails.logger.info("DisplayArtistUrlValidator: Progress #{@checked_count}/#{total_count} (#{percentage}%)")
+  end
+
+  def report_progress(total_count)
+    return unless progress
+    return progress.call(percentage: 96, status: "URL検証中", label: "アーティストURLを検証しています", detail: "処理対象はありません", current: 0, total: 0) if total_count.zero?
+    return unless @checked_count == total_count || (@checked_count % 10).zero?
+
+    progress.call(
+      percentage: (8 + (88 * (@checked_count.to_f / total_count))).floor.clamp(8, 96),
+      status: "URL検証中",
+      label: "アーティストURLを検証しています",
+      detail: "処理済み: #{@checked_count}/#{total_count}件",
+      current: @checked_count,
+      total: total_count
+    )
   end
 end
