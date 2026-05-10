@@ -805,6 +805,20 @@ module Admin
       assert_equal 120, payload['current']
     end
 
+    test 'operation progress endpoint accepts polling params without unpermitted warnings' do
+      original_behavior = ActionController::Parameters.action_on_unpermitted_parameters
+      ActionController::Parameters.action_on_unpermitted_parameters = :raise
+      progress_id = SecureRandom.uuid
+      OperationProgress.enqueue!(progress_id, label: '確認中')
+
+      get operation_progress_admin_display_artists_path(operation: 'validate_display_artist_urls', operation_progress_id: progress_id)
+
+      assert_response :success
+      assert_equal 'queued', response.parsed_body['state']
+    ensure
+      ActionController::Parameters.action_on_unpermitted_parameters = original_behavior
+    end
+
     test 'method operation receives progress callback and completes progress' do
       progress_id = SecureRandom.uuid
       fetch = lambda do |progress: nil|
