@@ -12,10 +12,13 @@ on:
 
 env:
   CI: "true"
-  PGHOST: localhost
+  PGHOST: 127.0.0.1
   PGUSER: postgres
   PGPASSWORD: password
   RAILS_ENV: test
+  SKIP_CSS_BUILD: "1"
+  SKIP_JS_BUILD: "1"
+  SKIP_YARN_INSTALL: "1"
 
 permissions:
   contents: read

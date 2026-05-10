@@ -2,7 +2,7 @@
 	server jobs console console-sandbox bundle \
 	dbinit dbconsole migrate migrate-redo rollback dbseed \
 	update-originals-all seed-originals seed-original-songs seed-originals-all \
-	minitest rubocop rubocop-correct rubocop-correct-all \
+	minitest minitest-assets rubocop rubocop-correct rubocop-correct-all \
 	export-for-algolia check-algolia export-karaoke-songs import-karaoke-songs \
 	export-display-artists import-display-artists \
 	import-touhou-music import-touhou-music-slim \
@@ -138,6 +138,10 @@ seed-originals-all: ## Import both originals and original songs data (truncate a
 
 minitest: ## Run tests
 	devbox run test
+
+minitest-assets: ## Run tests and rebuild JS/CSS assets
+	$(MAKE) --no-print-directory minitest
+	devbox run test:assets
 
 rubocop: ## Run rubocop
 	devbox run rubocop
