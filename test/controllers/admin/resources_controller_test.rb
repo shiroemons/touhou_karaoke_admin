@@ -486,6 +486,18 @@ module Admin
       assert_select 'form[data-admin-operation-form][data-admin-operation-estimated-seconds="40"]'
     end
 
+    test 'renders full joysound music post maintenance steps in operation description' do
+      get operation_admin_joysound_music_posts_path(operation: 'perform_full_joysound_music_post_maintenance')
+
+      assert_response :success
+      assert_select 'h1', text: 'フルメンテナンス'
+      assert_select '.admin-operation-description', text: /期限切れクリーンアップ/
+      assert_select '.admin-operation-description', text: /楽曲取得/
+      assert_select '.admin-operation-description', text: /URL確認/
+      assert_select '.admin-operation-description', text: /配信期限更新/
+      assert_select '.admin-operation-description', text: /削除・更新を伴います/
+    end
+
     test 'operation progress endpoint returns current progress payload' do
       progress_id = SecureRandom.uuid
       OperationProgress.update!(

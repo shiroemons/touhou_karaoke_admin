@@ -50,6 +50,16 @@ module Admin
   end
 
   class ResourceRegistry
+    FULL_JOYSOUND_MUSIC_POST_MAINTENANCE_DESCRIPTION = <<~TEXT
+      実行内容（順番）:
+      1. 期限切れクリーンアップ: 配信期限切れのミュージックポストを検証し、無効なレコードを削除します。
+      2. 楽曲取得: 未登録または期限間近のミュージックポストを優先して、JOYSOUND側の楽曲情報を取得します。
+      3. URL確認: 取得済みミュージックポスト楽曲のURLを確認し、404など無効な楽曲を削除します。
+      4. 配信期限更新: 残った楽曲の配信期限を外部サイトから取得して更新します。
+
+      外部サイトへアクセスし、削除・更新を伴います。実行後は結果メッセージとログを確認してください。
+    TEXT
+
     NAVIGATION_GROUPS = {
       '作品マスタ' => %i[original original_song],
       '配信管理' => %i[circle display_artist song karaoke_delivery_model],
@@ -432,7 +442,13 @@ module Admin
             operation('ミュージックポストを取得', method_name: :fetch_music_post, group: '外部取得', confirmation: '外部サイトへアクセスしてミュージックポストを取得します。実行しますか？'),
             operation('JOYSOUND URLを取得', method_name: :fetch_music_post_song_joysound_url, group: '外部取得', confirmation: '外部サイトへアクセスしてJOYSOUND URLを取得します。実行しますか？'),
             operation('期限切れを削除', handler: :cleanup_expired_joysound_music_posts, group: '検証・削除', confirmation: '期限切れのミュージックポストを検証し、無効なレコードを削除します。実行しますか？'),
-            operation('フルメンテナンス', handler: :perform_full_joysound_music_post_maintenance, group: 'メンテナンス', confirmation: 'JOYSOUNDミュージックポストの全メンテナンスを実行します。実行しますか？')
+            operation(
+              'フルメンテナンス',
+              handler: :perform_full_joysound_music_post_maintenance,
+              group: 'メンテナンス',
+              description: FULL_JOYSOUND_MUSIC_POST_MAINTENANCE_DESCRIPTION,
+              confirmation: 'JOYSOUNDミュージックポストの全メンテナンスを実行します。実行しますか？'
+            )
           ],
           strong_parameters: %i[joysound_url]
         )
