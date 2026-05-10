@@ -145,10 +145,39 @@ module Admin
       assert_select 'thead th:nth-child(3)', text: 'アーティスト'
       assert_select 'thead th:nth-child(4)', text: '動画'
       assert_select 'thead th:nth-child(5)', text: '音楽配信'
+      assert_select 'thead th', text: '更新日時'
+      formatted_updated_at = @song.updated_at.in_time_zone('Asia/Tokyo').strftime('%Y/%m/%d %H:%M')
+      assert_select 'td', text: /#{Regexp.escape(formatted_updated_at)}/
       assert_select '.admin-service-badge-active', text: 'YouTube'
       assert_select '.admin-service-badge-active', text: 'Apple'
       assert_select '.admin-service-badge-active', text: 'Spotify'
       assert_select 'th', { text: 'touhou', count: 0 }
+    end
+
+    test 'sorts index by updated at column' do
+      older_circle = Circle.create!(name: 'Updated Sort Old')
+      newer_circle = Circle.create!(name: 'Updated Sort New')
+      older_circle.update!(updated_at: 2.days.ago)
+      newer_circle.update!(updated_at: 1.hour.ago)
+
+      get admin_circles_path, params: { q: 'Updated Sort', sort: 'updated_at', direction: 'desc' }
+
+      assert_response :success
+      assert_select 'thead th', text: '更新日時'
+      assert_select 'tbody tr:first-child td', text: newer_circle.name
+      assert_select 'tbody tr:first-child.admin-row-updated'
+      assert_select 'tbody tr:first-child .admin-update-badge-update', text: '更新'
+      assert_select 'a.admin-sort-link-active .admin-sort-label', text: '更新日時'
+    end
+
+    test 'marks recently created resources in index' do
+      Circle.create!(name: 'Recently Created Marker')
+
+      get admin_circles_path, params: { q: 'Recently Created Marker' }
+
+      assert_response :success
+      assert_select 'tbody tr.admin-row-created'
+      assert_select '.admin-update-badge-create', text: '追加'
     end
 
     test 'filters songs by video and music service presence' do
@@ -347,7 +376,7 @@ module Admin
       assert_response :success
       assert_equal 'application/json', response.media_type
       payload = response.parsed_body
-      assert_includes payload['html'], '<tr>'
+      assert_includes payload['html'], '<tr class='
       assert_nil payload['next_url']
     end
 
@@ -368,6 +397,8 @@ module Admin
       end
 
       assert_redirected_to admin_circle_path(Circle.order(:created_at).last)
+      assert_equal 'create', Admin::ChangeLog.last.event
+      assert_equal 'サークル', Admin::ChangeLog.last.resource_label
     end
 
     test 'returns to form on validation error' do
@@ -399,6 +430,12 @@ module Admin
       @song.reload
       assert_equal 'Karaoke Song', @song.title
       assert_equal 'https://youtube.com/watch?v=example', @song.youtube_url
+      assert_equal 'update', Admin::ChangeLog.last.event
+      assert_equal 'YouTube URL', Admin::ChangeLog.last.changed_fields.fetch('youtube_url').fetch('label')
+
+      follow_redirect!
+      assert_select '.admin-change-event-update', text: '更新'
+      assert_select '.admin-change-field dt', text: 'YouTube URL'
     end
 
     test 'destroys resource when policy allows it' do
@@ -429,6 +466,11 @@ module Admin
       assert_select 'input[name="operation_fields[dam_song_url]"]'
       assert_select 'dialog[data-admin-operation-dialog]'
       assert_select '[data-admin-operation-progress]'
+      assert_select '[data-admin-operation-progress-elapsed]', text: '00:00'
+      assert_select '.admin-operation-progress-kicker', text: '推定進捗'
+      assert_select '.admin-operation-progress-step', text: '入力内容を確認'
+      assert_select '.admin-operation-progress-step', text: 'サーバーで処理'
+      assert_select '.admin-operation-progress-step', text: '結果を反映'
     end
 
     test 'head request to action page does not execute operation' do

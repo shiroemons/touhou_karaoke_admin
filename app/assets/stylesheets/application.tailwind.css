@@ -1572,6 +1572,68 @@
   background: #fbfdff;
 }
 
+.admin-table tbody tr.admin-row-created,
+.admin-table.table-zebra tbody tr.admin-row-created:nth-child(2n) {
+  background: #ecfdf3;
+}
+
+.admin-table tbody tr.admin-row-updated,
+.admin-table.table-zebra tbody tr.admin-row-updated:nth-child(2n) {
+  background: #fff8e6;
+}
+
+.admin-table tbody tr.admin-row-created:hover,
+.admin-table tbody tr.admin-row-updated:hover {
+  background: #eef7ff;
+}
+
+.admin-table tbody tr.admin-row-created td:first-child {
+  box-shadow: inset 4px 0 0 #22c55e;
+}
+
+.admin-table tbody tr.admin-row-updated td:first-child {
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+
+.admin-updated-at {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.admin-update-badge {
+  align-items: center;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  color: #92400e;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  max-width: 180px;
+  min-height: 22px;
+  overflow: hidden;
+  padding: 4px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-update-badge-create {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.admin-update-badge-update {
+  background: #ffedd5;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
 .admin-actions {
   align-items: center;
   display: flex;
@@ -1804,6 +1866,20 @@ th.admin-actions-column {
     gap: 5px;
     grid-template-columns: 1fr;
   }
+
+  .admin-operation-progress-header,
+  .admin-operation-progress-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-operation-progress-header {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .admin-operation-progress-meta {
+    width: 100%;
+  }
 }
 
 .admin-badge {
@@ -2006,6 +2082,96 @@ th.admin-actions-column {
   font-weight: 700;
 }
 
+.admin-change-log-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-change-log-item {
+  background: #f8fbff;
+  border: 1px solid #e3edf7;
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.admin-change-log-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-change-log-header time,
+.admin-change-log-header span:last-child {
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-change-event {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.admin-change-event-create {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.admin-change-event-update {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.admin-change-event-destroy {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.admin-change-fields {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.admin-change-field {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 160px minmax(0, 1fr);
+}
+
+.admin-change-field dt {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-change-field dd {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  margin: 0;
+  min-width: 0;
+}
+
+.admin-change-field dd span {
+  overflow-wrap: anywhere;
+}
+
+.admin-change-field .admin-icon {
+  color: color-mix(in oklab, var(--color-base-content) 38%, transparent);
+}
+
 .admin-form {
   display: grid;
   gap: 14px;
@@ -2045,11 +2211,13 @@ th.admin-actions-column {
 .admin-flash-alert {
   background: color-mix(in oklab, var(--color-error) 12%, var(--color-base-100));
   border: 1px solid color-mix(in oklab, var(--color-error) 34%, var(--color-base-300));
+  color: #7f1d1d;
 }
 
 .admin-flash-notice {
   background: color-mix(in oklab, var(--color-success) 12%, var(--color-base-100));
   border: 1px solid color-mix(in oklab, var(--color-success) 34%, var(--color-base-300));
+  color: #14532d;
 }
 
 .admin-related-list {
@@ -2138,11 +2306,11 @@ th.admin-actions-column {
 }
 
 .admin-operation-progress {
-  background: var(--color-base-200);
-  border: 1px solid var(--color-base-300);
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
   border-radius: var(--radius-box);
   display: grid;
-  gap: 10px;
+  gap: 12px;
   margin-top: 8px;
   padding: 14px;
 }
@@ -2155,20 +2323,135 @@ th.admin-actions-column {
   align-items: center;
   display: flex;
   font-size: 14px;
+  gap: 12px;
   justify-content: space-between;
 }
 
-.admin-operation-progress-track {
-  background: var(--color-base-300);
+.admin-operation-progress-header > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.admin-operation-progress-kicker {
+  color: color-mix(in oklab, var(--color-base-content) 48%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-operation-progress-header strong {
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.admin-operation-progress-meta {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.admin-operation-progress-meta span {
+  background: #fff;
+  border: 1px solid #dbeafe;
   border-radius: 999px;
-  height: 10px;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 54px;
+  padding: 5px 9px;
+  text-align: center;
+}
+
+.admin-operation-progress-track {
+  background: #e5eefb;
+  border-radius: 999px;
+  height: 12px;
   overflow: hidden;
 }
 
 .admin-operation-progress-bar {
-  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgb(37 99 235 / 22%) 0,
+      rgb(37 99 235 / 22%) 8px,
+      transparent 8px,
+      transparent 16px
+    ),
+    linear-gradient(90deg, #2563eb, #14b8a6);
+  background-size: 28px 28px, auto;
   border-radius: inherit;
   height: 100%;
+  min-width: 8px;
+  animation: admin-operation-progress-stripes 900ms linear infinite;
   transition: width 180ms ease;
   width: 0%;
+}
+
+.admin-operation-progress-steps {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-operation-progress-step {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  min-height: 36px;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.admin-operation-progress-step::before {
+  background: #cbd5e1;
+  border-radius: 999px;
+  content: "";
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+
+.admin-operation-progress-step-active {
+  border-color: #60a5fa;
+  color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 12%);
+}
+
+.admin-operation-progress-step-active::before {
+  background: #2563eb;
+}
+
+.admin-operation-progress-step-complete {
+  color: #047857;
+}
+
+.admin-operation-progress-step-complete::before {
+  background: #10b981;
+}
+
+.admin-operation-progress-note {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+}
+
+@keyframes admin-operation-progress-stripes {
+  from {
+    background-position: 0 0, 0 0;
+  }
+
+  to {
+    background-position: 28px 0, 0 0;
+  }
 }

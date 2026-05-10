@@ -161,9 +161,29 @@ const setupAdminOperationForms = () => {
     const progress = form.querySelector("[data-admin-operation-progress]")
     const progressLabel = form.querySelector("[data-admin-operation-progress-label]")
     const progressPercent = form.querySelector("[data-admin-operation-progress-percent]")
+    const progressElapsed = form.querySelector("[data-admin-operation-progress-elapsed]")
     const progressbar = form.querySelector("[data-admin-operation-progressbar]")
     const progressBar = form.querySelector("[data-admin-operation-progress-bar]")
+    const progressSteps = form.querySelectorAll("[data-admin-operation-step]")
     let progressTimer
+    let elapsedTimer
+
+    const elapsedTime = (startedAt) => {
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+      const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, "0")
+      const seconds = (elapsedSeconds % 60).toString().padStart(2, "0")
+      return `${minutes}:${seconds}`
+    }
+
+    const activateProgressStep = (step) => {
+      const stepOrder = ["prepare", "execute", "finish"]
+      const activeIndex = stepOrder.indexOf(step)
+      progressSteps.forEach((item) => {
+        const itemIndex = stepOrder.indexOf(item.dataset.adminOperationStep)
+        item.classList.toggle("admin-operation-progress-step-active", itemIndex === activeIndex)
+        item.classList.toggle("admin-operation-progress-step-complete", itemIndex < activeIndex)
+      })
+    }
 
     const updateProgress = (value, label) => {
       if (progressLabel && label) progressLabel.textContent = label
@@ -175,12 +195,20 @@ const setupAdminOperationForms = () => {
     const startProgress = () => {
       if (progress) progress.hidden = false
       if (submitButton) submitButton.disabled = true
-      updateProgress(8, "処理を開始しています...")
+      activateProgressStep("prepare")
+      updateProgress(8, "入力内容を確認しています...")
 
+      const startedAt = Date.now()
+      if (progressElapsed) progressElapsed.textContent = elapsedTime(startedAt)
+      elapsedTimer = window.setInterval(() => {
+        if (progressElapsed) progressElapsed.textContent = elapsedTime(startedAt)
+      }, 1000)
       let current = 8
       progressTimer = window.setInterval(() => {
+        if (current >= 24) activateProgressStep("execute")
         current = Math.min(current + Math.ceil((92 - current) / 8), 92)
-        updateProgress(current, "サーバーで処理中です...")
+        updateProgress(current, current >= 92 ? "結果を待っています..." : "サーバーで処理中です...")
+        if (current >= 92) activateProgressStep("finish")
         if (current >= 92) window.clearInterval(progressTimer)
       }, 450)
     }

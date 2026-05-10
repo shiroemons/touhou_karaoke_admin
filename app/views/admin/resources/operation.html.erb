@@ -46,12 +46,24 @@
 
     <div class="admin-operation-progress" data-admin-operation-progress hidden>
       <div class="admin-operation-progress-header">
-        <span data-admin-operation-progress-label>処理を開始しています...</span>
-        <span data-admin-operation-progress-percent>0%</span>
+        <div>
+          <span class="admin-operation-progress-kicker">推定進捗</span>
+          <strong data-admin-operation-progress-label>処理を開始しています...</strong>
+        </div>
+        <div class="admin-operation-progress-meta">
+          <span data-admin-operation-progress-elapsed>00:00</span>
+          <span data-admin-operation-progress-percent>0%</span>
+        </div>
       </div>
       <div class="admin-operation-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-admin-operation-progressbar>
         <div class="admin-operation-progress-bar" data-admin-operation-progress-bar></div>
       </div>
+      <ol class="admin-operation-progress-steps" aria-label="処理ステップ">
+        <li data-admin-operation-step="prepare" class="admin-operation-progress-step admin-operation-progress-step-active">入力内容を確認</li>
+        <li data-admin-operation-step="execute" class="admin-operation-progress-step">サーバーで処理</li>
+        <li data-admin-operation-step="finish" class="admin-operation-progress-step">結果を反映</li>
+      </ol>
+      <p class="admin-operation-progress-note">処理が完了すると自動で画面が切り替わります。この画面を閉じずにお待ちください。</p>
     </div>
   <% end %>
 </section>

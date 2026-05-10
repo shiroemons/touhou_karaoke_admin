@@ -136,11 +136,12 @@ module Admin
       end
 
       def resource(**attributes)
-        fields = attributes.fetch(:fields)
+        model = attributes.fetch(:model)
+        fields = fields_with_timestamp(attributes.fetch(:fields), model)
 
         Resource.new(
           key: attributes.fetch(:key),
-          model: attributes.fetch(:model),
+          model:,
           label: attributes.fetch(:label),
           title: attributes.fetch(:title),
           navigation: attributes.fetch(:navigation, true),
@@ -153,6 +154,15 @@ module Admin
           operations: attributes.fetch(:operations, []),
           strong_parameters: attributes.fetch(:strong_parameters, nil) || fields.select(&:form).map(&:name)
         )
+      end
+
+      def fields_with_timestamp(fields, model)
+        return fields unless model.column_names.include?('updated_at')
+        return fields if fields.any? { |field| field.name.to_sym == :updated_at }
+
+        fields + [
+          field(:updated_at, label: '更新日時', type: :datetime, show: false, form: false, readonly: true, sortable: true)
+        ]
       end
 
       def original

@@ -1,5 +1,7 @@
 module Admin
   module ResourcesHelper
+    include TimestampsHelper
+
     def admin_field_value(record, field)
       return admin_service_status(record, field.options) if field.type == :service_status
 
@@ -20,6 +22,8 @@ module Admin
         value.present? ? admin_badge_value(value) : '-'
       when :date
         value&.to_fs(:db)
+      when :datetime
+        admin_datetime_value(record, value, field)
       else
         return admin_badge_value(value) if field.name.to_sym == :karaoke_type && value.present?
 

@@ -44,6 +44,46 @@
   </dl>
 </section>
 
+<% if @change_logs.present? %>
+  <section class="admin-detail-section" aria-labelledby="admin-detail-change-logs-heading">
+    <div class="admin-section-heading">
+      <h2 id="admin-detail-change-logs-heading">変更履歴</h2>
+      <p>管理画面で記録された作成・更新</p>
+    </div>
+    <ol class="admin-change-log-list">
+      <% @change_logs.each do |change_log| %>
+        <li class="admin-change-log-item">
+          <header class="admin-change-log-header">
+            <span class="<%= ["admin-change-event", admin_change_log_event_class(change_log)].compact.join(" ") %>">
+              <%= admin_change_log_event_label(change_log) %>
+            </span>
+            <time datetime="<%= change_log.created_at.iso8601 %>">
+              <%= l(change_log.created_at.in_time_zone("Asia/Tokyo"), format: :admin_datetime) %>
+            </time>
+            <span><%= change_log.actor_name %></span>
+          </header>
+          <% if change_log.changed_fields.present? %>
+            <dl class="admin-change-fields">
+              <% change_log.changed_fields.each_value do |change| %>
+                <div class="admin-change-field">
+                  <dt><%= change["label"] %></dt>
+                  <dd>
+                    <span><%= admin_change_log_value(change["before"]) %></span>
+                    <%= admin_icon(:next) %>
+                    <span><%= admin_change_log_value(change["after"]) %></span>
+                  </dd>
+                </div>
+              <% end %>
+            </dl>
+          <% else %>
+            <p class="admin-empty-state">フィールド差分はありません。</p>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+<% end %>
+
 <% if @resource.associations.present? %>
   <section class="admin-detail-section" aria-labelledby="admin-detail-associations-heading">
     <div class="admin-section-heading">

@@ -10,10 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_15_030553) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_10_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "admin_change_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "resource_key", null: false
+    t.string "resource_label", null: false
+    t.string "record_type", null: false
+    t.string "record_id", null: false
+    t.string "record_title", null: false
+    t.string "event", null: false
+    t.jsonb "changed_fields", default: {}, null: false
+    t.string "actor_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["resource_key", "event", "created_at"], name: "idx_on_resource_key_event_created_at_52ad5a2e22"
+    t.index ["resource_key", "record_id", "created_at"], name: "idx_on_resource_key_record_id_created_at_9dbc540c37"
+  end
 
   create_table "circles", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false

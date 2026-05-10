@@ -3,6 +3,8 @@ module Admin
     PER_PAGE_OPTIONS = [24, 48, 72, 100].freeze
     class_attribute :resource_key
 
+    helper_method :admin_recent_change_logs
+
     before_action :set_resource
     before_action :set_record, only: %i[show edit update destroy operation]
 
@@ -20,6 +22,7 @@ module Admin
       scope = apply_order(scope)
       @total_pages = [(@total_count.to_f / @per_page).ceil, 1].max
       @records = scope.offset((@page - 1) * @per_page).limit(@per_page)
+      load_recent_change_logs
 
       if infinite_scroll_rows_request?
         render json: {
@@ -42,6 +45,7 @@ module Admin
 
     def show
       authorize @record
+      @change_logs = ChangeLog.recent_for_record(@resource.key.to_s, @record)
       render 'admin/resources/show'
     end
 
@@ -61,6 +65,7 @@ module Admin
       authorize @record
 
       if @record.save
+        ChangeLog.record_create!(resource: @resource, record: @record, actor_name: current_user.name)
         redirect_to admin_resource_path(@resource, @record), notice: I18n.t('admin.created', resource: @resource.label)
       else
         render 'admin/resources/new', status: :unprocessable_content
@@ -71,6 +76,7 @@ module Admin
       authorize @record
 
       if @record.update(resource_params)
+        ChangeLog.record_update!(resource: @resource, record: @record, actor_name: current_user.name)
         redirect_to admin_resource_path(@resource, @record), notice: I18n.t('admin.updated', resource: @resource.label)
       else
         render 'admin/resources/edit', status: :unprocessable_content
@@ -80,6 +86,7 @@ module Admin
     def destroy
       authorize @record
       @record.destroy!
+      ChangeLog.record_destroy!(resource: @resource, record: @record, actor_name: current_user.name)
       redirect_to admin_resources_path(@resource), notice: I18n.t('admin.destroyed', resource: @resource.label)
     end
 
@@ -291,6 +298,14 @@ module Admin
 
     def requested_view_mode
       params[:view_mode] == 'paginated' ? 'paginated' : 'infinite'
+    end
+
+    def load_recent_change_logs
+      @recent_admin_change_logs = ChangeLog.latest_for_records(@resource.key.to_s, @records)
+    end
+
+    def admin_recent_change_logs
+      @recent_admin_change_logs || {}
     end
 
     def infinite_scroll_rows_request?

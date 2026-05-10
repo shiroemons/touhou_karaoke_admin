@@ -1,4 +1,7 @@
 ja:
+  time:
+    formats:
+      admin_datetime: "%Y/%m/%d %H:%M"
   admin:
     created: "%{resource}を作成しました。"
     updated: "%{resource}を更新しました。"
