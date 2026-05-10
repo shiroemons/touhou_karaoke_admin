@@ -88,6 +88,10 @@ class Song < ApplicationRecord
     end
   end
 
+  def self.register_joysound_songs_from_candidates(progress: nil)
+    fetch_joysound_songs(progress:)
+  end
+
   def self.fetch_joysound_music_post_song
     scraper = Scrapers::JoysoundScraper.new
 
@@ -98,6 +102,10 @@ class Song < ApplicationRecord
     process_with_progress(prioritized_posts, label: "JOYSOUND Music Posts") do |record|
       scraper.scrape_music_post_page(record)
     end
+  end
+
+  def self.register_joysound_music_post_songs
+    fetch_joysound_music_post_song
   end
 
   def self.prioritized_joysound_music_posts
@@ -134,6 +142,10 @@ class Song < ApplicationRecord
     end
   end
 
+  def self.verify_joysound_music_post_songs
+    refresh_joysound_music_post_song
+  end
+
   def self.fetch_dam_songs(progress: nil)
     scraper = Scrapers::DamScraper.new
     dam_songs = DamSong.order(created_at: :desc)
@@ -147,6 +159,10 @@ class Song < ApplicationRecord
     end
   end
 
+  def self.register_dam_songs_from_candidates(progress: nil)
+    fetch_dam_songs(progress:)
+  end
+
   def self.update_dam_delivery_models(progress: nil)
     scraper = Scrapers::DamScraper.new
     dam_songs = Song.dam.includes(:karaoke_delivery_models)
@@ -155,6 +171,10 @@ class Song < ApplicationRecord
     process_with_progress(dam_songs, label: "Update DAM Delivery Models", progress:, progress_options: { status: "DAM配信機種更新中", label: "DAM配信機種を更新しています" }) do |song|
       scraper.update_delivery_models(song)
     end
+  end
+
+  def self.sync_dam_delivery_models(progress: nil)
+    update_dam_delivery_models(progress:)
   end
 
   def self.update_joysound_music_post_delivery_deadline_dates
@@ -179,5 +199,9 @@ class Song < ApplicationRecord
     end
 
     logger.info("Updated #{updated_count} songs out of #{total_count} total music post songs")
+  end
+
+  def self.sync_joysound_music_post_delivery_deadlines
+    update_joysound_music_post_delivery_deadline_dates
   end
 end

@@ -16,6 +16,13 @@
         <span>東方カラオケ管理</span>
       <% end %>
       <nav class="admin-nav">
+        <section class="admin-nav-group" aria-label="運用">
+          <h2>運用</h2>
+          <%= link_to admin_workflow_path, class: ["admin-nav-link", ("admin-nav-link-active" if controller_path == "admin/workflow")] do %>
+            <span class="admin-nav-icon"><%= admin_icon(:workflow) %></span>
+            <span>運用フロー</span>
+          <% end %>
+        </section>
         <% admin_navigation_groups.each do |group_label, resources| %>
           <section class="admin-nav-group" aria-label="<%= group_label %>">
             <h2><%= group_label %></h2>

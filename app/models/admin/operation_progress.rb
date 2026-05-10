@@ -32,10 +32,10 @@ module Admin
         write(id, read(id).merge(normalize(attributes)).merge(updated_at: Time.current.iso8601))
       end
 
-      def complete!(id, label:)
+      def complete!(id, label:, detail: nil)
         return unless valid_id?(id)
 
-        update!(id, state: 'completed', percentage: 100, status: '完了', label:, detail: nil)
+        update!(id, state: 'completed', percentage: 100, status: '完了', label:, detail:)
       end
 
       def fail!(id, message:)

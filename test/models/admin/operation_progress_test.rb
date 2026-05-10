@@ -33,8 +33,10 @@ module Admin
       assert_equal 4, updated[:total]
       assert_equal '進行中', updated[:detail]
 
-      OperationProgress.complete!(id, label: '完了しました')
-      assert_equal 'completed', OperationProgress.read(id)[:state]
+      OperationProgress.complete!(id, label: '完了しました', detail: '変更なし')
+      completed = OperationProgress.read(id)
+      assert_equal 'completed', completed[:state]
+      assert_equal '変更なし', completed[:detail]
 
       OperationProgress.fail!(id, message: '失敗しました')
       failed = OperationProgress.read(id)

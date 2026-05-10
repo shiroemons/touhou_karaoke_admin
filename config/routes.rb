@@ -3,6 +3,10 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: "dashboard#show"
+    get :workflow, to: "workflow#index"
+    get "workflow/:workflow_key", to: "workflow#show", as: :workflow_steps
+    post "workflow/:workflow_key/run", to: "workflow#run", as: :run_workflow
+    get "workflow/:workflow_key/progress", to: "workflow#progress", as: :workflow_progress
 
     resources :originals
     resources :original_songs

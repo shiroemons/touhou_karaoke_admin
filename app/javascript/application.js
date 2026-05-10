@@ -190,6 +190,12 @@ const updateAdminResourceSelectionState = () => {
   document.querySelectorAll("[data-admin-operation-selection-count]").forEach((item) => {
     item.textContent = selectedCount.toLocaleString()
   })
+  document.querySelectorAll("[data-admin-operation-form]").forEach((form) => {
+    const note = form.querySelector("[data-admin-operation-selection-note]")
+    if (!note || form.dataset.adminOperationSelectionRequired !== "true") return
+
+    note.textContent = selectedCount > 0 ? "選択した対象で実行できます。" : "対象を選択してください。"
+  })
   updateAdminOperationSubmitStates()
 }
 
@@ -217,43 +223,46 @@ const setupAdminResourceSelection = () => {
 document.addEventListener("DOMContentLoaded", setupAdminResourceSelection)
 
 const setupAdminOperationModal = () => {
-  const modal = document.querySelector("[data-admin-operation-modal]")
-  if (!modal || modal.dataset.initialized === "true") return
+  document.querySelectorAll("[data-admin-operation-modal]").forEach((modal) => {
+    if (modal.dataset.initialized === "true") return
 
-  modal.dataset.initialized = "true"
-  const title = modal.querySelector("[data-admin-operation-modal-title]")
-  const panels = Array.from(modal.querySelectorAll("[data-admin-operation-panel]"))
-  const closeButton = modal.querySelector("[data-admin-operation-modal-close]")
+    modal.dataset.initialized = "true"
+    const title = modal.querySelector("[data-admin-operation-modal-title]")
+    const panels = Array.from(modal.querySelectorAll("[data-admin-operation-panel]"))
+    const closeButton = modal.querySelector("[data-admin-operation-modal-close]")
+    const resourceKey = modal.dataset.adminOperationResource
 
-  const showPanel = (operationKey, label) => {
-    let activePanel
-    panels.forEach((panel) => {
-      const active = panel.dataset.adminOperationPanel === operationKey
-      panel.hidden = !active
-      if (active) activePanel = panel
+    const showPanel = (operationKey, label) => {
+      let activePanel
+      panels.forEach((panel) => {
+        const active = panel.dataset.adminOperationPanel === operationKey
+        panel.hidden = !active
+        if (active) activePanel = panel
+      })
+      if (title) title.textContent = label
+      updateAdminResourceSelectionState()
+      activePanel?.dispatchEvent(new Event("admin-operation-panel-open"))
+    }
+
+    document.querySelectorAll("[data-admin-operation-trigger]").forEach((trigger) => {
+      if (trigger.dataset.modalInitialized === "true") return
+      if (resourceKey && trigger.dataset.adminOperationResource !== resourceKey) return
+
+      trigger.dataset.modalInitialized = "true"
+      trigger.addEventListener("click", (event) => {
+        const operationKey = trigger.dataset.adminOperationKey
+        const panel = panels.find((item) => item.dataset.adminOperationPanel === operationKey)
+        if (!panel || !modal.showModal) return
+
+        event.preventDefault()
+        trigger.closest("details")?.removeAttribute("open")
+        showPanel(operationKey, trigger.dataset.adminOperationLabel || trigger.textContent.trim())
+        modal.showModal()
+      })
     })
-    if (title) title.textContent = label
-    updateAdminResourceSelectionState()
-    activePanel?.dispatchEvent(new Event("admin-operation-panel-open"))
-  }
 
-  document.querySelectorAll("[data-admin-operation-trigger]").forEach((trigger) => {
-    if (trigger.dataset.modalInitialized === "true") return
-
-    trigger.dataset.modalInitialized = "true"
-    trigger.addEventListener("click", (event) => {
-      const operationKey = trigger.dataset.adminOperationKey
-      const panel = panels.find((item) => item.dataset.adminOperationPanel === operationKey)
-      if (!panel || !modal.showModal) return
-
-      event.preventDefault()
-      trigger.closest("details")?.removeAttribute("open")
-      showPanel(operationKey, trigger.textContent.trim())
-      modal.showModal()
-    })
+    closeButton?.addEventListener("click", () => modal.close())
   })
-
-  closeButton?.addEventListener("click", () => modal.close())
 }
 
 document.addEventListener("DOMContentLoaded", setupAdminOperationModal)
@@ -359,12 +368,13 @@ const setupAdminOperationForms = () => {
       updateAdminOperationSubmitStates()
     }
 
-    const finishProgress = () => {
+    const finishProgress = (payload = {}) => {
       if (progress?.hidden || progressPhase === "finished") return
 
       progressPhase = "finished"
       activateProgressStep("finish")
-      updateProgress(100, "完了", inlineConfirmation ? "処理が完了しました。ダイアログを閉じます..." : "処理が完了しました。画面を切り替えています...")
+      const completedLabel = payload.detail || payload.label || (inlineConfirmation ? "処理が完了しました。ダイアログを閉じます..." : "処理が完了しました。画面を切り替えています...")
+      updateProgress(100, "完了", completedLabel)
       if (elapsedTimer) window.clearInterval(elapsedTimer)
       if (pollTimer) window.clearInterval(pollTimer)
       if (inlineConfirmation && operationModal?.open) {
@@ -393,7 +403,7 @@ const setupAdminOperationForms = () => {
       }
 
       if (payload.state === "running") activateProgressStep("execute")
-      if (payload.state === "completed") finishProgress()
+      if (payload.state === "completed") finishProgress(payload)
       if (payload.state === "failed") {
         progressPhase = "failed"
         updateProgress(lastServerPercentage, "エラー", payload.detail || label)
@@ -591,3 +601,85 @@ const setupAdminOperationForms = () => {
 }
 
 document.addEventListener("DOMContentLoaded", setupAdminOperationForms)
+
+const setupAdminWorkflowRunner = () => {
+  document.querySelectorAll("[data-admin-workflow-runner]").forEach((runner) => {
+    if (runner.dataset.initialized === "true") return
+    if (!runner.dataset.adminWorkflowRunId || !runner.dataset.adminWorkflowProgressUrl) return
+
+    runner.dataset.initialized = "true"
+    const stepItems = Array.from(runner.querySelectorAll("[data-admin-workflow-step]"))
+    const statusPanel = document.querySelector("[data-admin-workflow-status]")
+    const statusLabel = statusPanel?.querySelector("[data-admin-workflow-status-label]")
+    const statusState = statusPanel?.querySelector("[data-admin-workflow-status-state]")
+    const statusPercent = statusPanel?.querySelector("[data-admin-workflow-status-percent]")
+    const statusCurrent = statusPanel?.querySelector("[data-admin-workflow-status-current]")
+    const statusCount = statusPanel?.querySelector("[data-admin-workflow-status-count]")
+    const currentStepLabel = runner.querySelector("[data-admin-workflow-current-step]")
+
+    const applyStatus = (payload) => {
+      const currentStep = payload.workflow?.current_step
+      const currentText = currentStep?.label || (payload.state === "completed" ? "完了" : "確認中")
+
+      if (statusPanel) {
+        if (statusLabel) statusLabel.textContent = payload.label || "実行状況を確認しています"
+        if (statusState) statusState.textContent = payload.status || payload.state || "確認中"
+        if (statusPercent) statusPercent.textContent = `${Number.parseInt(payload.percentage || "0", 10)}%`
+        if (statusCurrent) statusCurrent.textContent = currentText
+      }
+      if (currentStepLabel) currentStepLabel.textContent = `現在: ${currentText}`
+      if (statusPanel && statusCount) {
+        const workflow = payload.workflow || {}
+        statusCount.textContent = `${Number.parseInt(workflow.completed_steps || "0", 10)} / ${Number.parseInt(workflow.total_steps || "0", 10)}`
+      }
+    }
+
+    const applyStep = (step) => {
+      const item = stepItems.find((candidate) => candidate.dataset.adminWorkflowStep === step.key)
+      if (!item) return
+
+      item.dataset.adminWorkflowStatus = step.status
+      const progress = item.querySelector("[data-admin-workflow-step-progress]")
+      const childProgress = step.progress || {}
+      const labels = {
+        pending: "順番待ち",
+        running: childProgress.label || "実行中",
+        completed: childProgress.detail || "完了",
+        failed: step.error || childProgress.detail || "失敗",
+        manual: "個別実行のみ",
+      }
+      if (progress) {
+        progress.textContent = labels[step.status] || step.status
+        if (step.status === "running" && Number.isFinite(Number.parseInt(childProgress.percentage || "0", 10))) {
+          progress.textContent += ` ${Number.parseInt(childProgress.percentage || "0", 10)}%`
+        }
+      }
+    }
+
+    const poll = async () => {
+      try {
+        const response = await fetch(runner.dataset.adminWorkflowProgressUrl, {
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+        if (!response.ok) return
+
+        const payload = await response.json()
+        applyStatus(payload)
+        payload.workflow?.steps?.forEach(applyStep)
+        runner.dataset.adminWorkflowState = payload.state
+        if (payload.state === "completed" || payload.state === "failed") return
+        window.setTimeout(poll, 1500)
+      } catch (error) {
+        console.error(error)
+        window.setTimeout(poll, 3000)
+      }
+    }
+
+    poll()
+  })
+}
+
+document.addEventListener("DOMContentLoaded", setupAdminWorkflowRunner)

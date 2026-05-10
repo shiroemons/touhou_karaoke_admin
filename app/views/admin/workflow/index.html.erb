@@ -1,0 +1,93 @@
+<header class="admin-page-header">
+  <div>
+    <h1>運用フロー</h1>
+    <p>配信種別ごとに、操作内容から推定した実行順で整理しています</p>
+  </div>
+  <%= link_to admin_workflow_steps_path("full"), class: "admin-button admin-button-primary btn btn-primary" do %>
+    <%= admin_icon(:workflow) %>
+    <span>全体更新を開く</span>
+  <% end %>
+</header>
+
+<section class="admin-workflow-route admin-panel" aria-labelledby="admin-workflow-route">
+  <div class="admin-section-heading">
+    <h2 id="admin-workflow-route">推奨実行順</h2>
+    <p>全体更新時の基本順です。DAMのみ、JOYSOUND(うたスキ)のみの運用もできます。</p>
+  </div>
+  <ol class="admin-workflow-route-list">
+    <% @workflow_order.each_with_index do |label, index| %>
+      <li>
+        <span><%= index + 1 %></span>
+        <strong><%= label %></strong>
+      </li>
+    <% end %>
+  </ol>
+</section>
+
+<section class="admin-workflow-note admin-panel" aria-labelledby="admin-workflow-note">
+  <div class="admin-section-heading">
+    <h2 id="admin-workflow-note">運用メモ</h2>
+    <p>実装確認とヒアリング内容を反映した並びです。</p>
+  </div>
+  <ul class="admin-workflow-question-list">
+    <% @workflow_notes.each do |note| %>
+      <li><%= note %></li>
+    <% end %>
+  </ul>
+</section>
+
+<div class="admin-workflow-groups">
+  <% @workflow_groups.each do |group| %>
+    <section class="admin-workflow-group">
+      <header>
+        <span class="admin-workflow-group-icon"><%= admin_icon(group[:icon]) %></span>
+        <div>
+          <h2><%= group[:label] %></h2>
+          <p><%= group[:description] %></p>
+        </div>
+        <% unless group[:key] == "common" %>
+          <%= link_to admin_workflow_steps_path(group[:key]), class: "admin-workflow-run-link" do %>
+            <span>ステップ実行</span>
+            <%= admin_icon(:next) %>
+          <% end %>
+        <% end %>
+      </header>
+
+      <div class="admin-workflow-actions">
+        <% step_number = 0 %>
+        <% group[:actions].each do |action| %>
+          <% step_number += 1 if action[:numbered] %>
+          <% action_classes = ["admin-workflow-action", "admin-workflow-action-#{action[:kind]}"] %>
+          <%= button_tag type: :button, class: action_classes.join(" "), data: { admin_operation_trigger: true, admin_operation_resource: action[:resource].key, admin_operation_key: action[:operation].key, admin_operation_label: action[:operation].label } do %>
+            <span class="admin-workflow-action-number"><%= action[:numbered] ? step_number : "任意" %></span>
+            <span class="admin-workflow-action-body">
+              <span><%= action[:resource].label %></span>
+              <strong><%= action[:operation].label %></strong>
+              <small><%= action[:note] %></small>
+              <span class="admin-workflow-action-tags">
+                <%= action[:cadence] %>
+                <%= " / " %>
+                <%= admin_operation_status_labels(action[:operation]).join(" / ") %>
+              </span>
+            </span>
+            <%= admin_icon(:next) %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="admin-workflow-metrics">
+        <% group[:metrics].each do |metric| %>
+          <%= link_to metric[:path], class: "admin-workflow-metric" do %>
+            <span><%= metric[:label] %></span>
+            <strong><%= number_with_delimiter(metric[:value]) %></strong>
+            <small><%= metric[:unit] %></small>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>
+
+<% @workflow_operation_resources.each do |resource| %>
+  <%= render "admin/resources/operation_modal", resource:, operations: resource.operations %>
+<% end %>

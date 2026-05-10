@@ -3,6 +3,7 @@ module Admin
     ICONS_PATH = Rails.root.join('node_modules/lucide-static/icons')
     ICON_ALIASES = {
       dashboard: 'layout-dashboard',
+      workflow: 'list-checks',
       originals: 'book-open',
       original_songs: 'music',
       karaoke_delivery_models: 'radio',

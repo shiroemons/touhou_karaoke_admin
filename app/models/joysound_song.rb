@@ -100,6 +100,10 @@ class JoysoundSong < ApplicationRecord
     end
   end
 
+  def self.fetch_joysound_candidate_songs(progress: nil)
+    fetch_joysound_touhou_songs(progress:)
+  end
+
   def self.fetch_joysound_song_direct(url: nil)
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
     begin

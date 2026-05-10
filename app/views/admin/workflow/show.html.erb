@@ -1,0 +1,135 @@
+<header class="admin-page-header">
+  <div>
+    <h1><%= @workflow.label %></h1>
+    <p><%= @workflow.description %></p>
+  </div>
+  <div class="admin-workflow-header-actions">
+    <%= link_to admin_workflow_path, class: "admin-button btn btn-ghost" do %>
+      <%= admin_icon(:back) %>
+      <span>フロー一覧</span>
+    <% end %>
+    <% unless @workflow.key == "common" %>
+      <% run_blocked = @active_workflow_run.present? %>
+      <%= button_to admin_run_workflow_path(@workflow.key), method: :post, class: "admin-button admin-button-primary btn btn-primary", disabled: run_blocked, data: { turbo: false } do %>
+        <%= admin_icon(:action) %>
+        <span><%= run_blocked ? "自動実行中" : "自動実行を開始" %></span>
+      <% end %>
+    <% end %>
+  </div>
+</header>
+
+<% workflow_steps_by_key = (@workflow_run&.dig(:workflow, :steps) || []).index_by { |step| step[:key] } %>
+<% current_step = @workflow_run&.dig(:workflow, :current_step) %>
+
+<% if @active_workflow_run.present? && @active_workflow_run[:workflow_key] != @workflow.key %>
+  <section class="admin-workflow-status admin-panel">
+    <div class="admin-section-heading">
+      <h2>実行状況</h2>
+      <p><%= @active_workflow_run[:workflow_label] %>を実行中です。重複実行を避けるため、このフローの自動実行は開始できません。</p>
+    </div>
+    <%= link_to admin_workflow_steps_path(@active_workflow_run[:workflow_key], run_id: @active_workflow_run[:id]), class: "admin-button btn btn-outline" do %>
+      <%= admin_icon(:workflow) %>
+      <span>実行中の状況を見る</span>
+    <% end %>
+  </section>
+<% elsif @workflow_run.present? %>
+  <section class="admin-workflow-status admin-panel" data-admin-workflow-status>
+    <div class="admin-section-heading">
+      <h2>実行状況</h2>
+      <p data-admin-workflow-status-label><%= @workflow_run[:label] %></p>
+    </div>
+    <div class="admin-workflow-status-grid">
+      <div>
+        <span>状態</span>
+        <strong data-admin-workflow-status-state><%= @workflow_run[:status] %></strong>
+      </div>
+      <div>
+        <span>進捗</span>
+        <strong data-admin-workflow-status-percent><%= @workflow_run[:percentage] %>%</strong>
+      </div>
+      <div>
+        <span>現在のステップ</span>
+        <strong data-admin-workflow-status-current><%= current_step&.dig(:label) || "完了" %></strong>
+      </div>
+      <div>
+        <span>完了ステップ</span>
+        <strong data-admin-workflow-status-count><%= @workflow_run.dig(:workflow, :completed_steps).to_i %> / <%= @workflow_run.dig(:workflow, :total_steps).to_i %></strong>
+      </div>
+    </div>
+  </section>
+<% end %>
+
+<section class="admin-workflow-runner admin-panel" data-admin-workflow-runner data-admin-workflow-key="<%= @workflow.key %>" data-admin-workflow-run-id="<%= @workflow_run_id %>" data-admin-workflow-progress-url="<%= admin_workflow_progress_path(@workflow.key, run_id: @workflow_run_id) if @workflow_run_id.present? %>">
+  <div class="admin-section-heading">
+    <h2>ステップ実行</h2>
+    <p>個別実行も残しつつ、まとまった処理はバックグラウンドで順番に実行できます。</p>
+  </div>
+
+  <% if @workflow_run_id.present? %>
+    <p class="admin-workflow-current" data-admin-workflow-current-step>
+      現在: <%= current_step&.dig(:label) || "完了" %>
+    </p>
+  <% end %>
+
+  <% if @workflow.key == "full" %>
+    <p class="admin-workflow-parallel-note">全体更新では、JOYSOUND(うたスキ)完了後にJOYSOUNDとDAMを並列実行します。</p>
+  <% end %>
+
+  <ol class="admin-workflow-step-list" data-admin-workflow-step-list>
+    <% @workflow.stages.each do |stage| %>
+      <% stage.branches.each do |branch| %>
+        <% step_number = 0 %>
+        <% branch.steps.each do |step| %>
+          <% resource = Admin::ResourceRegistry.fetch(step.resource_key) %>
+          <% operation = resource.operations.find { |item| item.key == step.operation_key } %>
+          <% next unless operation %>
+          <% next if operation.selection == :required %>
+          <% step_number += 1 if step.numbered %>
+          <% step_key = "#{stage.key}:#{branch.key}:#{step.key}" %>
+          <% step_payload = workflow_steps_by_key[step_key] %>
+          <% step_status = @workflow_run_id.present? ? step_payload&.dig(:status) : nil %>
+          <li class="admin-workflow-step admin-workflow-step-<%= step.kind %>" data-admin-workflow-step="<%= step_key %>" data-admin-workflow-status="<%= step_status if step_status.present? %>">
+            <span class="admin-workflow-action-number"><%= step.numbered ? step_number : "任意" %></span>
+            <span class="admin-workflow-step-body">
+              <span><%= branch.label %> / <%= resource.label %></span>
+              <strong><%= operation.label %></strong>
+              <small><%= step.note %></small>
+              <span class="admin-workflow-action-tags"><%= step.cadence %> / <%= admin_operation_status_labels(operation).join(" / ") %></span>
+              <span class="admin-workflow-step-progress" data-admin-workflow-step-progress><%= admin_workflow_step_status_label(step_payload, running: @workflow_run_id.present?, numbered: step.numbered) %></span>
+            </span>
+            <%= button_tag type: :button, class: "admin-button btn btn-sm btn-outline", data: { admin_operation_trigger: true, admin_operation_resource: resource.key, admin_operation_key: operation.key, admin_operation_label: operation.label } do %>
+              <%= admin_icon(:action) %>
+              <span>個別実行</span>
+            <% end %>
+          </li>
+        <% end %>
+      <% end %>
+    <% end %>
+  </ol>
+</section>
+
+<% @workflow_groups.each do |group| %>
+  <section class="admin-workflow-group admin-workflow-detail-group">
+    <header>
+      <span class="admin-workflow-group-icon"><%= admin_icon(group[:icon]) %></span>
+      <div>
+        <h2><%= group[:label] %></h2>
+        <p><%= group[:description] %></p>
+      </div>
+    </header>
+
+    <div class="admin-workflow-metrics">
+      <% group[:metrics].each do |metric| %>
+        <%= link_to metric[:path], class: "admin-workflow-metric" do %>
+          <span><%= metric[:label] %></span>
+          <strong><%= number_with_delimiter(metric[:value]) %></strong>
+          <small><%= metric[:unit] %></small>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% @workflow_operation_resources.each do |resource| %>
+  <%= render "admin/resources/operation_modal", resource:, operations: resource.operations %>
+<% end %>

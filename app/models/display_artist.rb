@@ -49,6 +49,10 @@ class DisplayArtist < ApplicationRecord
     end
   end
 
+  def self.fill_joysound_artist_readings(progress: nil)
+    fetch_joysound_artist(progress:)
+  end
+
   def self.fetch_joysound_music_post_artist(progress: nil)
     url = Constants::Karaoke::Joysound::BASE_URL
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
@@ -130,6 +134,10 @@ class DisplayArtist < ApplicationRecord
       )
     end
     logger.debug("未登録アーティスト：#{error_artist}") if error_artist.present?
+  end
+
+  def self.register_joysound_music_post_artists(progress: nil)
+    fetch_joysound_music_post_artist(progress:)
   end
 
   def self.progress_percentage(current, total)

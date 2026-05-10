@@ -2,31 +2,43 @@
 <% available_operations = resource.operations.each_with_index.select { |operation, _index| operation.scope == operation_scope } %>
 <% if available_operations.present? %>
   <% if operation_scope == :collection %>
-    <div class="admin-operation-dropdown-wrap admin-control-panel">
-      <span class="admin-display-settings-title">操作</span>
-      <details class="admin-operation-dropdown dropdown dropdown-end">
-        <summary class="admin-button admin-operation-dropdown-button btn">
-          <%= admin_icon(:action) %>
-          <span>操作を選択</span>
-          <%= admin_icon(:disclosure, class: "admin-operation-dropdown-caret") %>
-        </summary>
-        <div class="admin-operation-dropdown-menu dropdown-content menu">
-          <% available_operations.group_by { |operation, _index| operation.group }.each do |group, operations| %>
-            <section class="admin-operation-dropdown-group">
-              <h3><%= group %></h3>
-              <div class="admin-operation-dropdown-list">
-                <% operations.each do |operation, _index| %>
-                  <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-operation-dropdown-item", data: { admin_operation_trigger: true, admin_operation_key: operation.key } do %>
-                    <%= admin_icon(:action) %>
-                    <span><%= operation.label %></span>
-                  <% end %>
-                <% end %>
-              </div>
-            </section>
-          <% end %>
+    <details class="admin-operation-guide admin-control-panel" aria-labelledby="admin-operation-guide-<%= resource.key %>">
+      <summary class="admin-operation-guide-summary">
+        <div>
+          <span class="admin-operation-guide-kicker"><%= resource.label %></span>
+          <h2 id="admin-operation-guide-<%= resource.key %>">運用アクション</h2>
         </div>
-      </details>
-    </div>
+        <span>開く</span>
+      </summary>
+
+      <div class="admin-operation-guide-groups">
+        <% available_operations.group_by { |operation, _index| operation.group }.each do |group, operations| %>
+          <section class="admin-operation-guide-group">
+            <h3><%= group %></h3>
+            <div class="admin-operation-guide-list">
+              <% operations.each do |operation, _index| %>
+                <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-operation-guide-item", data: { admin_operation_trigger: true, admin_operation_resource: resource.key, admin_operation_key: operation.key, admin_operation_label: operation.label } do %>
+                  <span class="admin-operation-guide-icon"><%= admin_icon(operation.inputs.any? { |input| input[:type] == :file } ? :upload : :action) %></span>
+                  <span class="admin-operation-guide-body">
+                    <strong><%= operation.label %></strong>
+                    <span><%= admin_operation_summary(operation) %></span>
+                    <span class="admin-operation-guide-meta">
+                      <% admin_operation_status_labels(operation).each do |label| %>
+                        <small><%= label %></small>
+                      <% end %>
+                    </span>
+                  </span>
+                  <span class="admin-operation-guide-cta">
+                    <%= admin_operation_cta(operation) %>
+                    <%= admin_icon(:next) %>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
+          </section>
+        <% end %>
+      </div>
+    </details>
   <% else %>
     <section class="admin-panel admin-operations">
       <div class="admin-operations-heading">

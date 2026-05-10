@@ -17,6 +17,10 @@ class JoysoundMusicPost < ApplicationRecord
     music_post_parser(url_u2, progress:, progress_range: 52..96, label: "あきやまうに楽曲のミュージックポストを取得しています")
   end
 
+  def self.fetch_music_post_entries(progress: nil)
+    fetch_music_post(progress:)
+  end
+
   def self.fetch_music_post_song_joysound_url(progress: nil)
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
     search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songlist"
@@ -71,6 +75,10 @@ class JoysoundMusicPost < ApplicationRecord
   rescue StandardError => e
     logger.error(e)
     browser.screenshot(path: "tmp/music_post.png")
+  end
+
+  def self.link_music_posts_to_joysound_urls(progress: nil)
+    fetch_music_post_song_joysound_url(progress:)
   end
 
   def self.music_post_parser(url, progress: nil, progress_range: 8..96, label: "ミュージックポストを取得しています")
