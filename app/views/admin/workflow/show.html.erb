@@ -88,7 +88,9 @@
           <% step_key = "#{stage.key}:#{branch.key}:#{step.key}" %>
           <% step_payload = workflow_steps_by_key[step_key] %>
           <% step_status = @workflow_run_id.present? ? step_payload&.dig(:status) : nil %>
-          <li class="admin-workflow-step admin-workflow-step-<%= step.kind %>" data-admin-workflow-step="<%= step_key %>" data-admin-workflow-status="<%= step_status if step_status.present? %>">
+          <% step_classes = ["admin-workflow-step", "admin-workflow-step-#{step.kind}"] %>
+          <% step_classes << "admin-workflow-step-manual" unless step.numbered %>
+          <li class="<%= step_classes.join(" ") %>" data-admin-workflow-step="<%= step_key %>" data-admin-workflow-status="<%= step_status if step_status.present? %>">
             <span class="admin-workflow-action-number"><%= step.numbered ? step_number : "任意" %></span>
             <span class="admin-workflow-step-body">
               <span><%= branch.label %> / <%= resource.label %></span>

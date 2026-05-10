@@ -19,6 +19,13 @@ module Admin
       '実行内容を確認'
     end
 
+    def admin_resource_operation_visible?(resource, operation, operation_scope)
+      return true unless operation_scope == :collection
+      return true if operation.selection != :none
+
+      !WorkflowDefinition.operation_pair?(resource.key, operation.key)
+    end
+
     def admin_workflow_step_status_label(step_payload, running: false, numbered: true)
       return '個別実行のみ' unless numbered
       return '未実行' unless running

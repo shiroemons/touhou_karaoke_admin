@@ -148,7 +148,7 @@ module Admin
         参照する外部URL:
         登録済みの各アーティストURL（DAMまたはJOYSOUNDのアーティストページ）
       TEXT
-      'cleanup_orphan_display_artists' => '楽曲が1件も紐づいていないアーティストを削除します。削除したアーティストはTSVで出力します。',
+      'cleanup_orphan_display_artists' => '楽曲が1件も紐づいていないアーティストを削除します。必要に応じて削除対象をTSVで出力できます。',
       'fetch_dam_touhou_songs' => <<~TEXT,
         DAMの東方系検索結果を巡回し、DAM楽曲一覧とDAMアーティストURLを登録・更新します。カラオケ楽曲への本登録は別操作の「DAM候補をカラオケ楽曲へ登録」で行います。
 
@@ -156,13 +156,13 @@ module Admin
         #{Constants::Karaoke::Dam::SEARCH_URL}1
       TEXT
       'fetch_dam_song' => <<~TEXT,
-        入力されたDAM楽曲URLから、曲名とアーティスト情報を取得し、DAM楽曲一覧へ登録・更新します。
+        入力されたDAM楽曲URLから、曲名とアーティスト情報を取得し、DAM候補一覧へ1件登録・更新します。カラオケ楽曲への本登録は別操作の「DAM候補をカラオケ楽曲へ登録」で行います。
 
         入力URLの形式:
         #{Constants::Karaoke::Dam::SONG_URL}
       TEXT
       'fetch_joysound_detail' => <<~TEXT,
-        入力されたJOYSOUND楽曲URLから、表示タイトルを取得してJOYSOUND楽曲一覧へ登録・更新します。詳細なカラオケ楽曲登録は「JOYSOUND候補をカラオケ楽曲へ登録」で行います。
+        入力されたJOYSOUND楽曲URLから、表示タイトルを取得してJOYSOUND候補一覧へ1件登録・更新します。詳細なカラオケ楽曲登録は「JOYSOUND候補をカラオケ楽曲へ登録」で行います。
 
         入力URLの形式:
         #{Constants::Karaoke::Joysound::SEARCH_URL}/
@@ -504,7 +504,7 @@ module Admin
             operation('うたスキアーティストを登録', key: :fetch_joysound_music_post_artist, method_name: :register_joysound_music_post_artists, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてうたスキアーティストを登録します。実行しますか？'),
             operation('URLを検証', handler: :validate_display_artist_urls, group: '検証・削除', confirmation: 'アーティストURLを検証します。実行しますか？'),
             operation('無効なアーティストを削除', handler: :cleanup_invalid_display_artists, group: '検証・削除', confirmation: 'URLが無効なアーティストを削除します。実行しますか？'),
-            operation('孤立アーティストを削除', handler: :cleanup_orphan_display_artists, group: '検証・削除', confirmation: '楽曲が紐づいていないアーティストを削除します。実行しますか？')
+            operation('孤立アーティストを削除', handler: :cleanup_orphan_display_artists, group: '検証・削除', confirmation: '楽曲が紐づいていないアーティストを削除します。実行しますか？', inputs: [{ name: :export_tsv, label: '削除結果TSV', description: '削除したアーティストをTSVで出力する', type: :checkbox, checked: true, required: false }])
           ],
           strong_parameters: %i[name_reading url]
         )
@@ -530,7 +530,7 @@ module Admin
           ],
           operations: [
             operation('DAM候補一覧を取得', key: :fetch_dam_touhou_songs, method_name: :fetch_dam_candidate_songs, group: '外部取得', async: true, estimated_seconds: 40, confirmation: '外部サイトへアクセスしてDAM候補一覧を取得します。実行しますか？'),
-            operation('DAM楽曲を取得', handler: :fetch_dam_song, group: 'URL指定取得', async: true, confirmation: '指定URLからDAM楽曲を取得します。実行しますか？', inputs: [{ name: :dam_song_url, label: 'DAM楽曲URL', type: :text, placeholder: Constants::Karaoke::Dam::SONG_URL }])
+            operation('DAM楽曲URLから候補を追加', handler: :fetch_dam_song, group: 'URL指定取得', async: true, confirmation: '指定URLからDAM候補を追加します。実行しますか？', inputs: [{ name: :dam_song_url, label: 'DAM楽曲URL', type: :text, placeholder: Constants::Karaoke::Dam::SONG_URL }])
           ]
         )
       end
@@ -570,7 +570,7 @@ module Admin
           ],
           operations: [
             operation('JOYSOUND候補一覧を取得', key: :fetch_joysound_touhou_songs, method_name: :fetch_joysound_candidate_songs, group: '外部取得', async: true, description: FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION, confirmation: '外部サイトへアクセスしてJOYSOUND候補一覧を取得・更新します。実行しますか？'),
-            operation('JOYSOUND詳細を取得', handler: :fetch_joysound_detail, group: 'URL指定取得', async: true, confirmation: '指定URLからJOYSOUND詳細を取得します。実行しますか？', inputs: [{ name: :joysound_url, label: 'JOYSOUND URL', type: :text }])
+            operation('JOYSOUND楽曲URLから候補を追加', handler: :fetch_joysound_detail, group: 'URL指定取得', async: true, confirmation: '指定URLからJOYSOUND候補を追加します。実行しますか？', inputs: [{ name: :joysound_url, label: 'JOYSOUND楽曲URL', type: :text }])
           ]
         )
       end

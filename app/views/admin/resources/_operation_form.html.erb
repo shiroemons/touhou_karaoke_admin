@@ -1,7 +1,8 @@
 <% modal = local_assigns.fetch(:modal, false) %>
 <% supports_selection = record.blank? && operation.selection != :none %>
 <% selection_required = operation.selection == :required %>
-<% submit_disabled = selection_required || operation.inputs.present? %>
+<% required_inputs = operation.inputs.select { |input| input.fetch(:required, true) } %>
+<% submit_disabled = selection_required || required_inputs.present? %>
 <% operation_progress_id = SecureRandom.uuid %>
 <%= form_with url: admin_operation_path(resource, record, operation.key), method: :post, multipart: operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: operation.confirmation.presence || "#{operation.label}を実行します。よろしいですか？", admin_operation_action: operation.action_key, admin_operation_async: operation.async, admin_operation_estimated_seconds: operation.estimated_seconds, admin_operation_progress_url: admin_operation_progress_path(resource, record, operation.key, operation_progress_id), admin_operation_inline_confirmation: modal, admin_operation_selection: supports_selection, admin_operation_selection_required: selection_required } do |form| %>
   <%= hidden_field_tag :operation_progress_id, operation_progress_id %>
@@ -18,6 +19,12 @@
       <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
       <% if input[:type] == :file %>
         <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: "operation_fields_#{input[:name]}", class: "file-input file-input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+      <% elsif input[:type] == :checkbox %>
+        <label class="admin-checkbox-field">
+          <%= hidden_field_tag "operation_fields[#{input[:name]}]", "0", id: nil %>
+          <%= check_box_tag "operation_fields[#{input[:name]}]", "1", input.fetch(:checked, false), id: "operation_fields_#{input[:name]}", class: "checkbox checkbox-sm" %>
+          <span><%= input[:description].presence || input[:label] %></span>
+        </label>
       <% else %>
         <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: "operation_fields_#{input[:name]}", placeholder: input[:placeholder], class: "admin-input input input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
       <% end %>

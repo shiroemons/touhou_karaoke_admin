@@ -1022,14 +1022,19 @@
 
 .admin-workflow-action-conditional,
 .admin-workflow-action-check,
-.admin-workflow-action-maintenance {
+.admin-workflow-action-maintenance,
+.admin-workflow-action-optional,
+.admin-workflow-action-manual {
   background: #fff;
   border-style: dashed;
 }
 
 .admin-workflow-action-conditional .admin-workflow-action-number,
 .admin-workflow-action-check .admin-workflow-action-number,
-.admin-workflow-action-maintenance .admin-workflow-action-number {
+.admin-workflow-action-maintenance .admin-workflow-action-number,
+.admin-workflow-action-optional .admin-workflow-action-number,
+.admin-workflow-action-manual .admin-workflow-action-number,
+.admin-workflow-step-manual .admin-workflow-action-number {
   background: #e8f1fb;
   color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
   font-size: 10px;
@@ -1141,6 +1146,11 @@
   grid-template-columns: 34px minmax(0, 1fr) auto;
   min-width: 0;
   padding: 10px;
+}
+
+.admin-workflow-step-manual {
+  background: #fff;
+  border-style: dashed;
 }
 
 .admin-workflow-step[data-admin-workflow-status="running"] {
@@ -1330,6 +1340,19 @@
 
 .admin-input {
   min-width: 260px;
+}
+
+.admin-checkbox-field {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.admin-checkbox-field span {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .admin-search-field {

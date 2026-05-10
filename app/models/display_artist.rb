@@ -53,6 +53,10 @@ class DisplayArtist < ApplicationRecord
     fetch_joysound_artist(progress:)
   end
 
+  def self.fill_dam_artist_readings(progress: nil)
+    DamArtistUrl.fill_dam_artist_readings(progress:)
+  end
+
   def self.fetch_joysound_music_post_artist(progress: nil)
     url = Constants::Karaoke::Joysound::BASE_URL
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })

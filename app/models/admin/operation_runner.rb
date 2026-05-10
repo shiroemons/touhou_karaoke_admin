@@ -92,20 +92,20 @@ module Admin
       url = params.dig(:operation_fields, :dam_song_url).to_s
       raise ArgumentError, 'DAMの楽曲URLではありません。' unless url.start_with?(Constants::Karaoke::Dam::SONG_URL)
 
-      progress&.call(percentage: 25, status: 'DAM楽曲取得中', label: '指定URLからDAM楽曲を取得しています', detail: nil)
+      progress&.call(percentage: 25, status: 'DAM候補追加中', label: '指定URLからDAM候補を取得しています', detail: nil)
       DamSong.fetch_dam_song(url)
-      progress&.call(percentage: 96, status: 'DAM楽曲取得中', label: 'DAM楽曲の保存が完了しました', detail: nil)
-      message('DAM楽曲を取得しました。')
+      progress&.call(percentage: 96, status: 'DAM候補追加中', label: 'DAM候補の保存が完了しました', detail: nil)
+      message('DAM候補を追加しました。')
     end
 
     def fetch_joysound_detail(progress: nil)
       url = params.dig(:operation_fields, :joysound_url).to_s
       raise ArgumentError, 'JOYSOUNDの楽曲URLではありません。' unless url.start_with?("#{Constants::Karaoke::Joysound::SEARCH_URL}/")
 
-      progress&.call(percentage: 25, status: 'JOYSOUND詳細取得中', label: '指定URLからJOYSOUND詳細を取得しています', detail: nil)
+      progress&.call(percentage: 25, status: 'JOYSOUND候補追加中', label: '指定URLからJOYSOUND候補を取得しています', detail: nil)
       JoysoundSong.fetch_joysound_song_direct(url:)
-      progress&.call(percentage: 96, status: 'JOYSOUND詳細取得中', label: 'JOYSOUND詳細の保存が完了しました', detail: nil)
-      message('JOYSOUND詳細を取得しました。')
+      progress&.call(percentage: 96, status: 'JOYSOUND候補追加中', label: 'JOYSOUND候補の保存が完了しました', detail: nil)
+      message('JOYSOUND候補を追加しました。')
     end
 
     def fetch_joysound_music_post_song(progress: nil)
@@ -172,6 +172,7 @@ module Admin
       records = DisplayArtist.where.missing(:songs)
       return message('削除対象のレコードはありませんでした。') if records.empty?
 
+      export_tsv = ActiveModel::Type::Boolean.new.cast(params.dig(:operation_fields, :export_tsv))
       total_count = records.count
       progress&.call(percentage: 8, status: '孤立アーティスト削除中', label: '楽曲が紐づいていないアーティストを削除しています', detail: "処理済み: 0/#{total_count}件", current: 0, total: total_count)
       deleted_records = records.map do |record|
@@ -196,7 +197,9 @@ module Admin
         )
       end
 
-      download(generate_display_artists_tsv(deleted_records), 'deleted_orphan_display_artists.tsv')
+      return download(generate_display_artists_tsv(deleted_records), 'deleted_orphan_display_artists.tsv') if export_tsv
+
+      message("孤立アーティストを削除しました。削除件数: #{deleted_records.size}件。TSVは出力していません。")
     end
 
     def cleanup_expired_joysound_music_posts(progress: nil)

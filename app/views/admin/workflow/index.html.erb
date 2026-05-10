@@ -58,6 +58,7 @@
         <% group[:actions].each do |action| %>
           <% step_number += 1 if action[:numbered] %>
           <% action_classes = ["admin-workflow-action", "admin-workflow-action-#{action[:kind]}"] %>
+          <% action_classes << "admin-workflow-action-manual" unless action[:numbered] %>
           <%= button_tag type: :button, class: action_classes.join(" "), data: { admin_operation_trigger: true, admin_operation_resource: action[:resource].key, admin_operation_key: action[:operation].key, admin_operation_label: action[:operation].label } do %>
             <span class="admin-workflow-action-number"><%= action[:numbered] ? step_number : "任意" %></span>
             <span class="admin-workflow-action-body">

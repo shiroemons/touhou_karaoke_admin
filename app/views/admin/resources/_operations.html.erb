@@ -1,5 +1,5 @@
 <% operation_scope = record.present? ? :member : :collection %>
-<% available_operations = resource.operations.each_with_index.select { |operation, _index| operation.scope == operation_scope } %>
+<% available_operations = resource.operations.each_with_index.select { |operation, _index| operation.scope == operation_scope && admin_resource_operation_visible?(resource, operation, operation_scope) } %>
 <% if available_operations.present? %>
   <% if operation_scope == :collection %>
     <details class="admin-operation-guide admin-control-panel" aria-labelledby="admin-operation-guide-<%= resource.key %>">
