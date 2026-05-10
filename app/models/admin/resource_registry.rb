@@ -3,7 +3,7 @@
 module Admin
   Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :options, :link, :helper, :count_association)
   Filter = Data.define(:name, :label, :type, :options, :apply)
-  Operation = Data.define(:key, :avo_action, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds, :selection)
+  Operation = Data.define(:key, :action_key, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds, :selection)
 
   Resource = Data.define(
     :key,
@@ -244,7 +244,7 @@ module Admin
         operation_key = attributes.fetch(:key, attributes.fetch(:handler, attributes.fetch(:method_name, label))).to_s
         Operation.new(
           key: operation_key,
-          avo_action: attributes.fetch(:avo_action, operation_key.camelize),
+          action_key: attributes.fetch(:action_key, operation_key.camelize),
           label:,
           description: attributes.fetch(:description, OPERATION_DESCRIPTIONS.fetch(operation_key, attributes.fetch(:confirmation, "#{label}を実行します。"))),
           method_name: attributes.fetch(:method_name, nil),

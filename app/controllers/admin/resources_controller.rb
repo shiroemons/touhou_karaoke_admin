@@ -333,7 +333,7 @@ module Admin
       operation_identifier = params[:operation].to_s
       return @resource.operations.fetch(operation_identifier.to_i) if operation_identifier.match?(/\A\d+\z/)
 
-      @resource.operations.find { |operation| operation.key == operation_identifier || operation.avo_action == operation_identifier } ||
+      @resource.operations.find { |operation| operation.key == operation_identifier || operation.action_key == operation_identifier } ||
         raise(ArgumentError, '指定されたアクションは見つかりません。')
     end
 

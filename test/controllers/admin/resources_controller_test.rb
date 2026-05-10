@@ -69,7 +69,7 @@ module Admin
       end
     end
 
-    test 'show page mirrors avo title labels identifiers and badge fields' do
+    test 'show page renders title labels identifiers and badge fields' do
       get admin_song_path(@song)
 
       assert_response :success
@@ -579,7 +579,7 @@ module Admin
       assert_select 'h1', text: 'DAM楽曲を取得'
       assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
       assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
-      assert_select 'form[data-admin-operation-form][data-avo-action="FetchDamSong"]'
+      assert_select 'form[data-admin-operation-form][data-admin-operation-action="FetchDamSong"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
       assert_select 'input[name="operation_fields[dam_song_url]"]'
       assert_select 'input[name="operation_progress_id"]', 1
@@ -711,12 +711,12 @@ module Admin
       assert_response :success
     end
 
-    test 'renders member action page with avo compatible key' do
+    test 'renders member action page with action key' do
       get operation_admin_karaoke_delivery_model_path(@delivery_model, operation: 'move_higher')
 
       assert_response :success
       assert_select 'h1', text: '上へ移動'
-      assert_select 'form[data-admin-operation-form][data-avo-action="MoveHigher"]'
+      assert_select 'form[data-admin-operation-form][data-admin-operation-action="MoveHigher"]'
     end
 
     test 'requires selected songs for selection-only export operation' do

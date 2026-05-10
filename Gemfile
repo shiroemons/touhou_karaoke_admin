@@ -34,7 +34,7 @@ end
 
 gem 'acts_as_list'
 gem 'algoliasearch-rails'
-gem 'avo'
+gem 'csv'
 gem 'ferrum'
 gem 'ostruct'
 gem 'parallel'
