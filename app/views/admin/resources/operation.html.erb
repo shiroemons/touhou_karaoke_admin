@@ -1,0 +1,68 @@
+<header class="admin-page-header">
+  <div>
+    <h1><%= @operation.label %></h1>
+    <p><%= @resource.label %></p>
+  </div>
+  <div class="admin-header-actions">
+    <% if @record.present? %>
+      <%= link_to admin_resource_path(@resource, @record), class: "admin-button btn" do %>
+        <%= admin_icon(:back) %>
+        <span>詳細へ戻る</span>
+      <% end %>
+    <% else %>
+      <%= link_to admin_resources_path(@resource), class: "admin-button btn" do %>
+        <%= admin_icon(:back) %>
+        <span>一覧へ戻る</span>
+      <% end %>
+    <% end %>
+  </div>
+</header>
+
+<section class="admin-panel">
+  <h2>説明</h2>
+  <div class="admin-operation-description"><%= simple_format(@operation.description) %></div>
+</section>
+
+<section class="admin-panel">
+  <h2>実行</h2>
+  <%= form_with url: admin_operation_path(@resource, @record, @operation.key), method: :post, multipart: @operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: @operation.confirmation.presence || "#{@operation.label}を実行します。よろしいですか？", avo_action: @operation.avo_action } do |form| %>
+    <% @operation.inputs.each do |input| %>
+      <div class="admin-form-row">
+        <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
+        <% if input[:type] == :file %>
+          <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: "operation_fields_#{input[:name]}", class: "file-input file-input-bordered w-full" %>
+        <% else %>
+          <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: "operation_fields_#{input[:name]}", placeholder: input[:placeholder], class: "admin-input input input-bordered w-full" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="admin-form-actions">
+      <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", data: { admin_operation_submit: true } do %>
+        <%= admin_icon(@operation.inputs.any? { |input| input[:type] == :file } ? :upload : :action) %>
+        <span>実行</span>
+      <% end %>
+    </div>
+
+    <div class="admin-operation-progress" data-admin-operation-progress hidden>
+      <div class="admin-operation-progress-header">
+        <span data-admin-operation-progress-label>処理を開始しています...</span>
+        <span data-admin-operation-progress-percent>0%</span>
+      </div>
+      <div class="admin-operation-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-admin-operation-progressbar>
+        <div class="admin-operation-progress-bar" data-admin-operation-progress-bar></div>
+      </div>
+    </div>
+  <% end %>
+</section>
+
+<dialog class="modal" data-admin-operation-dialog>
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">アクションを実行しますか？</h3>
+    <p class="py-4" data-admin-operation-dialog-message></p>
+    <div class="modal-action">
+      <button type="button" class="btn" data-admin-operation-cancel>キャンセル</button>
+      <button type="button" class="btn btn-primary" data-admin-operation-confirm>実行</button>
+    </div>
+  </div>
+</dialog>

@@ -1,0 +1,31 @@
+<% @records.each do |record| %>
+  <tr>
+    <% @resource.index_fields.each do |field| %>
+      <td>
+        <% if field.link %>
+          <%= link_to admin_field_value(record, field), admin_resource_path(@resource, record) %>
+        <% else %>
+          <%= admin_field_value(record, field) %>
+        <% end %>
+      </td>
+    <% end %>
+    <td class="admin-actions admin-actions-column">
+      <%= link_to admin_resource_path(@resource, record), class: "admin-icon-link", title: "詳細" do %>
+        <%= admin_icon(:show) %>
+        <span>詳細</span>
+      <% end %>
+      <% if policy(record).update? %>
+        <%= link_to edit_admin_resource_path(@resource, record), class: "admin-icon-link", title: "編集" do %>
+          <%= admin_icon(:edit) %>
+          <span>編集</span>
+        <% end %>
+      <% end %>
+      <% if policy(record).destroy? %>
+        <%= button_to admin_resource_path(@resource, record), method: :delete, form: { data: { turbo_confirm: "削除しますか？" } }, class: "admin-link-button admin-icon-link", title: "削除" do %>
+          <%= admin_icon(:delete) %>
+          <span>削除</span>
+        <% end %>
+      <% end %>
+    </td>
+  </tr>
+<% end %>

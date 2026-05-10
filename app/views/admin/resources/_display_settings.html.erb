@@ -1,0 +1,42 @@
+<div class="admin-table-display-settings">
+  <span class="admin-display-settings-title">表示方式</span>
+  <div class="admin-view-mode-group">
+    <div class="<%= ["admin-view-mode-option", "join", "admin-view-mode-option-docked", ("admin-view-mode-option-docked-active" if @view_mode == "paginated")].compact.join(" ") %>">
+      <%= link_to admin_resources_path(@resource, admin_index_params(view_mode: "paginated", page: 1)), class: ["admin-view-mode-button", "btn", "join-item", ("admin-view-mode-button-active" if @view_mode == "paginated")] do %>
+        <span class="admin-view-mode-button-main">
+          <%= admin_icon(:paginated) %>
+          <span>ページ送り</span>
+        </span>
+      <% end %>
+      <%= form_with url: admin_resources_path(@resource), method: :get, class: "admin-per-page-form join-item", data: { admin_filter_form: true } do |display_form| %>
+        <%= display_form.hidden_field :view_mode, value: "paginated" %>
+        <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
+        <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
+        <%= hidden_field_tag :direction, params[:direction] if params[:direction].present? %>
+        <% @active_filters.each do |name, value| %>
+          <% if value.is_a?(Hash) %>
+            <% value.each do |filter_key, filter_value| %>
+              <%= hidden_field_tag "filters[#{name}][#{filter_key}]", filter_value %>
+            <% end %>
+          <% else %>
+            <% Array(value).each do |filter_value| %>
+              <%= hidden_field_tag "filters[#{name}]#{value.is_a?(Array) ? "[]" : ""}", filter_value %>
+            <% end %>
+          <% end %>
+        <% end %>
+        <label class="admin-per-page-field">
+          <span>件数</span>
+          <%= display_form.select :per_page, Admin::ResourcesController::PER_PAGE_OPTIONS, { selected: @per_page }, class: "admin-select select select-bordered", data: { admin_auto_submit: true } %>
+        </label>
+      <% end %>
+    </div>
+    <div class="admin-view-mode-option">
+      <%= link_to admin_resources_path(@resource, admin_index_params(view_mode: "infinite", page: 1).except(:per_page)), class: ["admin-view-mode-button", "btn", ("admin-view-mode-button-active" if @view_mode == "infinite")] do %>
+        <span class="admin-view-mode-button-main">
+          <%= admin_icon(:infinite) %>
+          <span>無限スクロール</span>
+        </span>
+      <% end %>
+    </div>
+  </div>
+</div>

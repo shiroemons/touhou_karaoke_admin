@@ -1,0 +1,17 @@
+ja:
+  admin:
+    created: "%{resource}を作成しました。"
+    updated: "%{resource}を更新しました。"
+    destroyed: "%{resource}を削除しました。"
+    not_authorized: "この操作を実行する権限がありません。"
+    not_found: "対象のデータが見つかりません。"
+    operation_completed: "%{operation}を実行しました。"
+    associations:
+      original_songs: 原曲
+      songs: カラオケ配信曲
+      display_artists: アーティスト
+      karaoke_delivery_models: 配信機種
+      circles: サークル
+      dam_songs: DAM楽曲
+      song_with_dam_ouchikaraoke: DAMおうちカラオケ
+      song_with_joysound_utasuki: JOYSOUNDうたスキ

@@ -10,7 +10,7 @@ gem 'minitest', '~> 5.0'
 gem 'pg', '~> 1.6'
 gem 'puma', '~> 6.4'
 gem 'rails', '~> 8.0.0'
-gem 'sass-rails', '>= 6'
+gem 'sprockets-rails'
 
 gem 'bootsnap', '>= 1.4.2', require: false
 

@@ -1,0 +1,32 @@
+<section class="admin-panel">
+  <% if record.errors.any? %>
+    <div class="admin-errors">
+      <p><%= record.errors.count %> 件のエラーがあります。</p>
+      <ul>
+        <% record.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: [:admin, record], url: record.persisted? ? admin_resource_path(resource, record) : admin_resources_path(resource), class: "admin-form" do |form| %>
+    <% resource.form_fields.each do |field| %>
+      <div class="admin-form-row">
+        <%= form.label field.name, field.label %>
+        <%= admin_field_input(form, field) %>
+      </div>
+    <% end %>
+
+    <div class="admin-form-actions">
+      <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary" do %>
+        <%= admin_icon(record.persisted? ? :edit : :create) %>
+        <span><%= record.persisted? ? "更新" : "作成" %></span>
+      <% end %>
+      <%= link_to record.persisted? ? admin_resource_path(resource, record) : admin_resources_path(resource), class: "admin-button btn" do %>
+        <%= admin_icon(:clear) %>
+        <span>キャンセル</span>
+      <% end %>
+    </div>
+  <% end %>
+</section>

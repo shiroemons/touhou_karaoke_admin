@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="corporate">
+  <head>
+    <title>東方カラオケ管理画面</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+  </head>
+
+  <body class="admin-shell">
+    <aside class="admin-sidebar">
+      <%= link_to admin_root_path, class: "admin-brand" do %>
+        <%= admin_icon(:dashboard) %>
+        <span>東方カラオケ管理</span>
+      <% end %>
+      <nav class="admin-nav">
+        <% admin_navigation_groups.each do |group_label, resources| %>
+          <section class="admin-nav-group" aria-label="<%= group_label %>">
+            <h2><%= group_label %></h2>
+            <% resources.each do |resource| %>
+              <%= link_to admin_resources_path(resource), class: ["admin-nav-link", ("admin-nav-link-active" if defined?(@resource) && @resource&.key == resource.key)] do %>
+                <span class="admin-nav-icon"><%= admin_resource_icon(resource) %></span>
+                <span><%= resource.label %></span>
+              <% end %>
+            <% end %>
+          </section>
+        <% end %>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <% if notice.present? %>
+        <div class="admin-flash admin-flash-notice alert alert-success"><%= notice %></div>
+      <% end %>
+      <% if alert.present? %>
+        <div class="admin-flash admin-flash-alert alert alert-error"><%= alert %></div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+<% operation_scope = record.present? ? :member : :collection %>
+<% available_operations = resource.operations.each_with_index.select { |operation, _index| operation.scope == operation_scope } %>
+<% if available_operations.present? %>
+  <% if operation_scope == :collection %>
+    <div class="admin-operation-dropdown-wrap admin-control-panel">
+      <span class="admin-display-settings-title">操作</span>
+      <details class="admin-operation-dropdown dropdown dropdown-end">
+        <summary class="admin-button admin-operation-dropdown-button btn">
+          <%= admin_icon(:action) %>
+          <span>操作を選択</span>
+          <%= admin_icon(:disclosure, class: "admin-operation-dropdown-caret") %>
+        </summary>
+        <div class="admin-operation-dropdown-menu dropdown-content menu">
+          <% available_operations.group_by { |operation, _index| operation.group }.each do |group, operations| %>
+            <section class="admin-operation-dropdown-group">
+              <h3><%= group %></h3>
+              <div class="admin-operation-dropdown-list">
+                <% operations.each do |operation, _index| %>
+                  <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-operation-dropdown-item" do %>
+                    <%= admin_icon(:action) %>
+                    <span><%= operation.label %></span>
+                  <% end %>
+                <% end %>
+              </div>
+            </section>
+          <% end %>
+        </div>
+      </details>
+    </div>
+  <% else %>
+    <section class="admin-panel admin-operations">
+      <div class="admin-operations-heading">
+        <h2>操作</h2>
+        <p>目的別に選択できます</p>
+      </div>
+      <div class="admin-operation-groups">
+        <% available_operations.group_by { |operation, _index| operation.group }.each do |group, operations| %>
+          <section class="admin-operation-group">
+            <h3><%= group %></h3>
+            <div class="admin-operation-list">
+              <% operations.each do |operation, _index| %>
+                <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-button btn btn-sm btn-outline" do %>
+                  <%= admin_icon(:action) %>
+                  <span><%= operation.label %></span>
+                <% end %>
+              <% end %>
+            </div>
+          </section>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+<% end %>

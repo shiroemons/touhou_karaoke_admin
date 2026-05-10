@@ -2,15 +2,20 @@
   "name": "touhou_karaoke_admin",
   "private": true,
   "dependencies": {
-    "@rails/ujs": "7.1.501",
-    "sass": "^1.89.2"
+    "@rails/ujs": "7.1.501"
   },
   "version": "0.1.0",
   "devDependencies": {
-    "esbuild": "^0.25.5"
+    "@playwright/cli": "^0.1.13",
+    "@tailwindcss/cli": "^4",
+    "daisyui": "^5.5.19",
+    "esbuild": "^0.25.5",
+    "lucide-static": "^1.14.0",
+    "tailwindcss": "^4"
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets",
-    "build:css": "sass ./app/assets/stylesheets/application.sass.scss:./app/assets/builds/application.css --no-source-map --load-path=node_modules"
+    "build:css": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify",
+    "playwright-cli": "playwright-cli"
   }
 }

@@ -1,0 +1,119 @@
+<div class="admin-index-content" data-admin-resource-content>
+<header class="admin-page-header">
+  <div>
+    <h1><%= @resource.label %></h1>
+    <p class="admin-page-count">総件数 <strong><%= number_with_delimiter(@total_count) %></strong> 件</p>
+  </div>
+  <% if policy(@resource.model).create? %>
+    <%= link_to new_admin_resource_path(@resource), class: "admin-button admin-button-primary btn btn-primary" do %>
+      <%= admin_icon(:create) %>
+      <span>新規作成</span>
+    <% end %>
+  <% end %>
+</header>
+
+<div class="admin-index-toolbar">
+  <%= form_with url: admin_resources_path(@resource), method: :get, class: "admin-query-panel admin-control-panel", data: { admin_filter_form: true } do |form| %>
+    <%= form.hidden_field :view_mode, value: @view_mode %>
+    <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
+    <%= hidden_field_tag :direction, params[:direction] if params[:direction].present? %>
+    <%= hidden_field_tag :per_page, @per_page if @view_mode == "paginated" %>
+
+    <div class="admin-search-row">
+      <label class="admin-search-field input input-bordered">
+        <%= admin_icon(:search) %>
+        <%= form.search_field :q, value: params[:q], placeholder: "キーワード検索", class: "admin-input admin-input-plain" %>
+      </label>
+      <%= button_tag type: :submit, class: "admin-button btn" do %>
+        <%= admin_icon(:search) %>
+        <span>検索</span>
+      <% end %>
+      <%= link_to admin_resources_path(@resource), class: "admin-button btn btn-ghost" do %>
+        <%= admin_icon(:clear) %>
+        <span>クリア</span>
+      <% end %>
+    </div>
+
+    <% if @resource.filters.present? %>
+      <details class="admin-filter-disclosure" <%= "open" if @active_filters.present? %>>
+        <summary class="admin-filter-summary">
+          <%= admin_icon(:filter) %>
+          <span>絞り込み</span>
+          <% if @active_filters.present? %>
+            <span class="admin-filter-active-count"><%= @active_filters.size %>件指定中</span>
+          <% end %>
+          <%= admin_icon(:disclosure, class: "admin-filter-summary-icon") %>
+        </summary>
+        <div class="admin-filter-list">
+          <% @resource.filters.each do |filter| %>
+            <div class="<%= admin_filter_field_class(filter).compact.join(" ") %>">
+              <span><%= filter.label %></span>
+              <%= admin_filter_control(filter, @active_filters[filter.name.to_s]) %>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
+  <% end %>
+
+  <div class="admin-toolbar-side">
+    <%= render "operations", resource: @resource, record: nil %>
+  </div>
+</div>
+
+<div class="admin-table-controls">
+  <div class="admin-result-summary" data-admin-result-summary data-total-count="<%= @total_count %>">
+    <span>表示中 <strong data-admin-visible-count><%= number_with_delimiter(@records.size) %></strong> / <%= number_with_delimiter(@total_count) %> 件</span>
+  </div>
+  <%= render "display_settings" %>
+</div>
+
+<div class="admin-table-wrap">
+  <table class="admin-table table table-zebra">
+    <thead>
+      <tr>
+        <% @resource.index_fields.each do |field| %>
+          <th>
+            <% if field.sortable %>
+              <%= admin_sort_link(@resource, field) %>
+            <% else %>
+              <%= field.label %>
+            <% end %>
+          </th>
+        <% end %>
+        <th class="admin-actions-column">操作</th>
+      </tr>
+    </thead>
+    <tbody id="admin-resource-rows">
+      <%= render "rows" %>
+    </tbody>
+  </table>
+  <% unless @view_mode == "paginated" %>
+    <div
+      class="admin-infinite-scroll"
+      data-admin-infinite-scroll
+      data-next-url="<%= @next_infinite_scroll_url %>"
+      <%= "hidden" if @next_infinite_scroll_url.blank? %>>
+      <span class="admin-infinite-scroll-status" data-admin-infinite-scroll-status>さらに読み込みます</span>
+    </div>
+  <% end %>
+</div>
+
+<% if @view_mode == "paginated" %>
+  <nav class="admin-pagination">
+    <% if @page > 1 %>
+      <%= link_to admin_resources_path(@resource, admin_page_params(@page - 1)), class: "admin-button btn" do %>
+        <%= admin_icon(:back) %>
+        <span>前へ</span>
+      <% end %>
+    <% end %>
+    <span><%= @page %> / <%= @total_pages %></span>
+    <% if @page < @total_pages %>
+      <%= link_to admin_resources_path(@resource, admin_page_params(@page + 1)), class: "admin-button btn" do %>
+        <span>次へ</span>
+        <%= admin_icon(:next) %>
+      <% end %>
+    <% end %>
+  </nav>
+<% end %>
+</div>

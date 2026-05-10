@@ -1,0 +1,8 @@
+<header class="admin-page-header">
+  <div>
+    <h1><%= @resource.label %>を編集</h1>
+    <p><%= admin_record_title(@resource, @record) %></p>
+  </div>
+</header>
+
+<%= render "form", resource: @resource, record: @record %>

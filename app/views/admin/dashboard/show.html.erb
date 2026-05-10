@@ -1,0 +1,195 @@
+<header class="admin-dashboard-hero">
+  <div class="admin-dashboard-hero-main">
+    <span class="admin-dashboard-kicker">東方カラオケ管理</span>
+    <h1>管理画面</h1>
+    <div class="admin-dashboard-hero-actions">
+      <%= link_to admin_songs_path, class: "admin-button admin-button-primary btn btn-primary" do %>
+        <%= admin_icon(:songs) %>
+        <span>カラオケ配信曲</span>
+      <% end %>
+      <%= link_to admin_display_artists_path, class: "admin-button btn" do %>
+        <%= admin_icon(:display_artists) %>
+        <span>アーティスト</span>
+      <% end %>
+      <%= link_to admin_original_songs_path, class: "admin-button btn" do %>
+        <%= admin_icon(:original_songs) %>
+        <span>原曲</span>
+      <% end %>
+    </div>
+  </div>
+
+  <aside class="admin-dashboard-status-card">
+    <div class="admin-dashboard-ring" style="--value: <%= @dashboard_summary[:linked_rate] %>">
+      <strong><%= @dashboard_summary[:linked_rate] %>%</strong>
+      <span>紐付け</span>
+    </div>
+    <div class="admin-dashboard-status-list">
+      <div>
+        <span>総楽曲数</span>
+        <strong><%= number_with_delimiter(@dashboard_summary[:total_songs]) %> 曲</strong>
+      </div>
+      <div>
+        <span>原曲紐付け済み</span>
+        <strong><%= number_with_delimiter(@dashboard_summary[:linked_songs]) %> 曲</strong>
+      </div>
+      <div>
+        <span>原曲未紐付け</span>
+        <strong><%= number_with_delimiter(@dashboard_summary[:missing_songs]) %> 曲</strong>
+      </div>
+    </div>
+  </aside>
+</header>
+
+<section class="admin-dashboard-overview" aria-label="主要データ">
+  <%= link_to admin_songs_path, class: "admin-dashboard-feature-card admin-dashboard-feature-card-primary" do %>
+    <div class="admin-dashboard-feature-icon"><%= admin_icon(:songs) %></div>
+    <span>カラオケ配信曲</span>
+    <strong><%= number_with_delimiter(@dashboard_summary[:total_songs]) %></strong>
+    <small>DAM / JOYSOUND / ミュージックポスト</small>
+  <% end %>
+
+  <%= link_to admin_original_songs_path, class: "admin-dashboard-feature-card" do %>
+    <div class="admin-dashboard-feature-icon"><%= admin_icon(:original_songs) %></div>
+    <span>原曲</span>
+    <strong><%= number_with_delimiter(@dashboard_summary[:original_songs]) %></strong>
+    <small>原作・原曲マスタ</small>
+  <% end %>
+
+  <%= link_to admin_display_artists_path, class: "admin-dashboard-feature-card" do %>
+    <div class="admin-dashboard-feature-icon"><%= admin_icon(:display_artists) %></div>
+    <span>アーティスト</span>
+    <strong><%= number_with_delimiter(@dashboard_summary[:display_artists]) %></strong>
+    <small><%= number_with_delimiter(@dashboard_summary[:circles]) %> サークル</small>
+  <% end %>
+</section>
+
+<div class="admin-dashboard-main-grid">
+  <section class="admin-dashboard-panel admin-dashboard-graph-panel" aria-labelledby="admin-dashboard-distribution">
+    <div class="admin-dashboard-section-heading">
+      <div>
+        <h2 id="admin-dashboard-distribution">配信状況</h2>
+        <p>楽曲データの構成</p>
+      </div>
+      <%= link_to admin_songs_path, class: "admin-dashboard-panel-link" do %>
+        <span>一覧へ</span>
+        <%= admin_icon(:next) %>
+      <% end %>
+    </div>
+
+    <div class="admin-dashboard-bars">
+      <% @distribution_groups.each do |group| %>
+        <section class="admin-dashboard-bar-group">
+          <h3><%= group[:label] %></h3>
+          <div>
+            <% group[:metrics].each do |metric| %>
+              <div class="admin-dashboard-bar-row admin-dashboard-bar-<%= metric[:key] %>">
+                <div class="admin-dashboard-bar-label">
+                  <span><%= metric[:label] %></span>
+                  <strong><%= number_with_delimiter(metric[:value]) %></strong>
+                </div>
+                <div class="admin-dashboard-bar-track" aria-hidden="true">
+                  <span style="width: <%= metric[:percentage] %>%"></span>
+                </div>
+                <small><%= metric[:percentage] %>%</small>
+              </div>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="admin-dashboard-panel admin-dashboard-actions-panel" aria-labelledby="admin-dashboard-actions">
+    <div class="admin-dashboard-section-heading">
+      <div>
+        <h2 id="admin-dashboard-actions">よく使う操作</h2>
+        <p>実行前に確認画面を表示します</p>
+      </div>
+    </div>
+
+    <div class="admin-dashboard-action-groups">
+      <% @quick_operation_groups.each do |group| %>
+        <section class="admin-dashboard-action-group">
+          <h3><%= group[:label] %></h3>
+          <div>
+            <% group[:operations].each do |item| %>
+              <%= link_to admin_resource_collection_operation_path(item[:resource], item[:operation].key), class: "admin-dashboard-action-link" do %>
+                <%= admin_icon(:action) %>
+                <span><%= item[:operation].label %></span>
+              <% end %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+    </div>
+  </section>
+</div>
+
+<section class="admin-dashboard-section" aria-labelledby="admin-dashboard-insights">
+  <div class="admin-dashboard-section-heading">
+    <div>
+      <h2 id="admin-dashboard-insights">データ確認</h2>
+      <p>運用で確認したい状態</p>
+    </div>
+  </div>
+  <div class="admin-dashboard-insights">
+    <% @insight_groups.each do |group| %>
+      <section class="admin-dashboard-insight-group" aria-labelledby="admin-dashboard-<%= group[:label].parameterize %>">
+        <h3 id="admin-dashboard-<%= group[:label].parameterize %>"><%= group[:label] %></h3>
+        <p><%= group[:description] %></p>
+        <div class="admin-insight-grid">
+          <% group[:metrics].each do |metric| %>
+            <%= link_to metric[:path], class: "admin-insight-card" do %>
+              <span><%= metric[:label] %></span>
+              <strong><%= number_with_delimiter(metric[:value]) %></strong>
+              <small><%= metric[:unit] %></small>
+            <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</section>
+
+<section class="admin-dashboard-section" aria-labelledby="admin-dashboard-resources">
+  <div class="admin-dashboard-section-heading">
+    <div>
+      <h2 id="admin-dashboard-resources">管理メニュー</h2>
+      <p>関連するデータごとに整理</p>
+    </div>
+  </div>
+
+  <div class="admin-dashboard-management-grid">
+    <% @management_groups.each do |group| %>
+      <section class="admin-dashboard-management-panel">
+        <header>
+          <div class="admin-dashboard-management-icon"><%= admin_icon(group[:icon]) %></div>
+          <div>
+            <h3><%= group[:label] %></h3>
+            <p><%= group[:description] %></p>
+          </div>
+          <span><%= number_with_delimiter(group[:total_count]) %> 件</span>
+        </header>
+
+        <%= link_to admin_resources_path(group[:primary]), class: "admin-dashboard-management-primary" do %>
+          <div>
+            <span>まず見る</span>
+            <strong><%= group[:primary].label %></strong>
+          </div>
+          <%= admin_icon(:next) %>
+        <% end %>
+
+        <div class="admin-dashboard-management-links">
+          <% group[:items].each do |item| %>
+            <% resource = item[:resource] %>
+            <%= link_to admin_resources_path(resource), class: ["admin-dashboard-management-link", ("admin-dashboard-management-link-primary" if resource == group[:primary])] do %>
+              <span class="admin-dashboard-management-link-icon"><%= admin_resource_icon(resource) %></span>
+              <span><%= resource.label %></span>
+              <strong><%= number_with_delimiter(item[:count]) %></strong>
+            <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</section>
