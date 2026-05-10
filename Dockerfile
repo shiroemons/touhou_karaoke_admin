@@ -2,8 +2,8 @@ FROM ruby:4.0.3-bookworm
 
 WORKDIR /app
 
-# Using Node.js v20.x(LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# Using Node.js v24.x (Active LTS)
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 
 # PostgreSQL
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y \
       nodejs \
       vim
 
-# Add yarnpkg for assets:precompile
-RUN npm install -g yarn
+# Add Yarn Classic for assets:precompile
+RUN npm install -g yarn@1.22.22
 
 # Add Chromium
 RUN apt-get update && apt-get install -y chromium

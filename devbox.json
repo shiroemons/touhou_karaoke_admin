@@ -2,8 +2,6 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": {
     "postgresql_18": "latest",
-    "nodejs":        "20",
-    "yarn":          "1.22",
     "libyaml":       "latest",
     "openssl":       "latest",
     "zlib":          "latest",
@@ -14,8 +12,10 @@
       "version":            "latest",
       "excluded_platforms": ["aarch64-darwin"]
     },
-    "libpq": "latest",
-    "ruby":  "4.0.3"
+    "libpq":  "latest",
+    "ruby":   "4.0.3",
+    "nodejs": "24",
+    "yarn":   "1.22.22"
   },
   "env": {
     "BUNDLE_PATH":        ".devbox/virtenv/bundle",

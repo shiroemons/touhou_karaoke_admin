@@ -1,6 +1,11 @@
 {
   "name": "touhou_karaoke_admin",
   "private": true,
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24 <25",
+    "yarn": "1.22.22"
+  },
   "dependencies": {
     "@rails/ujs": "7.1.501"
   },
