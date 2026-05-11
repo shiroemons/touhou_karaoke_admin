@@ -4,11 +4,61 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '.github/workflows/**'
+      - '.ruby-version'
+      - '.rubocop*.yml'
+      - 'Gemfile'
+      - 'Gemfile.lock'
+      - 'Makefile'
+      - 'Procfile*'
+      - 'Rakefile'
+      - 'app/**'
+      - 'bin/**'
+      - 'config/**'
+      - 'config.ru'
+      - 'db/**'
+      - 'devbox.json'
+      - 'devbox.lock'
+      - 'docker-compose.yml'
+      - 'Dockerfile'
+      - 'lib/**'
+      - 'package.json'
+      - 'process-compose.yaml'
+      - 'public/**'
+      - 'test/**'
+      - 'vendor/**'
+      - 'yarn.lock'
   pull_request:
     types:
       - opened
       - synchronize
       - reopened
+    paths:
+      - '.github/workflows/**'
+      - '.ruby-version'
+      - '.rubocop*.yml'
+      - 'Gemfile'
+      - 'Gemfile.lock'
+      - 'Makefile'
+      - 'Procfile*'
+      - 'Rakefile'
+      - 'app/**'
+      - 'bin/**'
+      - 'config/**'
+      - 'config.ru'
+      - 'db/**'
+      - 'devbox.json'
+      - 'devbox.lock'
+      - 'docker-compose.yml'
+      - 'Dockerfile'
+      - 'lib/**'
+      - 'package.json'
+      - 'process-compose.yaml'
+      - 'public/**'
+      - 'test/**'
+      - 'vendor/**'
+      - 'yarn.lock'
 
 env:
   CI: "true"

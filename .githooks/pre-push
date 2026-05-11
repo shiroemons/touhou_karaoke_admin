@@ -1,5 +1,38 @@
 #!/bin/sh
 set -eu
 
+zero_sha=0000000000000000000000000000000000000000
+has_changes=false
+has_ci_relevant_changes=false
+
+while read -r local_ref local_sha remote_ref remote_sha
+do
+  if [ "$local_sha" = "$zero_sha" ]; then
+    continue
+  fi
+
+  if [ "$remote_sha" = "$zero_sha" ]; then
+    base_sha=$(git merge-base "$local_sha" "origin/master" 2>/dev/null || git rev-list --max-parents=0 "$local_sha")
+  else
+    base_sha="$remote_sha"
+  fi
+
+  changed_files=$(git diff --name-only "$base_sha" "$local_sha")
+
+  if [ -n "$changed_files" ]; then
+    has_changes=true
+  fi
+
+  if [ -n "$changed_files" ] && printf '%s\n' "$changed_files" | grep -Eq '^\.github/workflows/|^\.ruby-version$|^\.rubocop.*\.yml$|^Gemfile$|^Gemfile\.lock$|^Makefile$|^Procfile|^Rakefile$|^app/|^bin/|^config/|^config\.ru$|^db/|^devbox\.json$|^devbox\.lock$|^docker-compose\.yml$|^Dockerfile$|^lib/|^package\.json$|^process-compose\.yaml$|^public/|^test/|^vendor/|^yarn\.lock$'; then
+    has_ci_relevant_changes=true
+    break
+  fi
+done
+
+if [ "$has_changes" = true ] && [ "$has_ci_relevant_changes" = false ]; then
+  echo "Skipping tests: pushed changes do not affect CI-relevant files."
+  exit 0
+fi
+
 echo "Running tests before push..."
 make minitest

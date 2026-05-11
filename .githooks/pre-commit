@@ -1,5 +1,12 @@
 #!/bin/sh
 set -eu
 
+changed_files=$(git diff --cached --name-only)
+
+if [ -n "$changed_files" ] && ! printf '%s\n' "$changed_files" | grep -Eq '(^|/)(Gemfile|Gemfile\.lock|Rakefile|config\.ru|\.ruby-version)$|^\.rubocop.*\.yml$|\.rb$|\.rake$|\.ru$|\.gemspec$|^app/|^bin/|^config/|^db/|^lib/|^test/'; then
+  echo "Skipping RuboCop: staged changes do not affect Ruby/Rails files."
+  exit 0
+fi
+
 echo "Running RuboCop before commit..."
 make rubocop
