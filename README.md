@@ -1,227 +1,281 @@
 # 東方カラオケ検索管理サイト
 
-## 機能
+東方Project関連のカラオケ配信データを管理する Rails 管理アプリケーションです。DAM、JOYSOUND、JOYSOUND ミュージックポストの取得データをもとに、楽曲、原曲、アーティスト、サークル、配信機種、外部配信 URL を整理します。
+
+## 主な機能
 
 ### カラオケ楽曲管理
-- **DAM・JOYSOUND対応**: 両カラオケシステムの東方アレンジ楽曲を一元管理
-- **楽曲情報の自動収集**: Web スクレイピングによる最新楽曲情報の取得
-- **原曲との紐付け**: 東方原作の楽曲との関連付け管理
-- **機種別配信状況**: カラオケ機種ごとの配信状況を追跡
 
-### データ管理機能
-- **アーティスト管理**: サークル（同人音楽グループ）情報との紐付け
-- **楽曲メタデータ**: YouTube、Apple Music、Spotify などの配信 URL 管理
-- **配信期限管理**: JOYSOUND の楽曲配信期限の追跡と更新
-
-### 検索・出力機能
-- **Algolia 連携**: 高速な楽曲検索のための検索エンジン連携
-- **データエクスポート**: カラオケ楽曲情報の CSV/JSON 形式での出力
-- **原曲不明楽曲の抽出**: 原曲との紐付けが未完了の楽曲リスト生成
+- **DAM / JOYSOUND / JOYSOUND ミュージックポスト対応**: 各サービスの取得データとカラオケ楽曲マスタを一元管理
+- **楽曲情報の取得・更新**: DAM / JOYSOUND の検索結果、楽曲詳細、アーティスト情報、ミュージックポスト情報を取得
+- **原曲との紐付け**: 東方原作・原曲データとカラオケ楽曲の関連を管理
+- **配信機種管理**: DAM / JOYSOUND の機種別配信状況と表示順を管理
+- **配信期限管理**: JOYSOUND ミュージックポストの配信期限を確認・更新
 
 ### 管理画面
-- **Rails 標準 UI**: Controller / View / Policy ベースの管理インターフェース
-- **データ管理**: 楽曲、原曲、アーティスト、配信機種、外部サービス URL の管理
-- **一括操作**: 一部のデータ取得・更新操作を管理画面から実行
+
+- **Rails 管理 UI**: Controller / View / Policy / ResourceRegistry ベースの管理画面
+- **ダッシュボード**: 楽曲数、原曲紐付け状況、配信種別、外部配信 URL などの状態を表示
+- **検索・絞り込み・ソート**: Ransack と管理画面用フィルタによる一覧操作
+- **非同期操作**: Solid Queue を使った取得・更新・検証処理と進捗表示
+- **運用ワークフロー**: JOYSOUND ミュージックポスト、JOYSOUND、DAM、共通作業を手順化して実行
+- **部分更新 UI**: 一覧の検索、フィルタ、ページング、進捗確認などを JavaScript で軽量更新
+
+### データ入出力
+
+- **TSV インポート / エクスポート**: 楽曲、原曲紐付け、アーティスト、初期 fixtures を管理
+- **Algolia 連携**: 検索用 JSON の出力とアップロード差分確認
+- **統計出力**: 楽曲・原曲・配信状況の集計
+- **保守スクリプト**: 重複確認、配信機種名正規化、期限切れチェックなど
+
+## 技術スタック
+
+- Ruby 4.0.3
+- Rails 8.1.x
+- PostgreSQL 18
+- Solid Queue
+- Pundit
+- Ransack
+- Algolia Search
+- Tailwind CSS 4 / daisyUI 5
+- esbuild
+- Node.js 24 / Yarn 1.22.22
+- Minitest
+- RuboCop / rubocop-rails / rubocop-performance
 
 ## 開発環境
 
-このプロジェクトは **devbox** を使用した開発を推奨しています。devboxはローカル実行で高速・軽量な開発体験を提供します。
+このプロジェクトは **devbox** を標準の開発環境として使います。Docker 環境も代替手段として残していますが、通常の開発・テスト・Lint・DB 操作は `make` ターゲット経由で実行してください。
 
-> **Note**: Docker環境も利用可能です。詳細は[Docker環境（代替手段）](#docker環境代替手段)を参照してください。
-
-## セットアップ
-
-### devboxのインストール
+### devbox のインストール
 
 ```shell
 curl -fsSL https://get.jetify.com/devbox | bash
 ```
 
-### 初回の環境構築
+### 初回セットアップ
 
-1. devbox環境を初期化
+1. 環境変数ファイルを作成します。
+
+```shell
+cp .env.devbox.template .env
+```
+
+Algolia を使う処理を実行する場合は、`.env` の `ALGOLIA_APPLICATION_ID`、`ALGOLIA_API_KEY`、`ALGOLIA_INDEX_NAME` を実値に変更してください。
+
+2. devbox シェルに入ります。
 
 ```shell
 devbox shell
 ```
 
-2. PostgreSQLサービスを起動
+3. PostgreSQL と開発用プロセスを起動します。
 
 ```shell
 make up
 ```
 
-3. セットアップを実行（bundle install, yarn install, DB準備）
+4. 依存関係と DB を準備します。
 
 ```shell
 make setup
 ```
 
-### 日常の開発コマンド
+初回は依存関係のインストール前に Rails / JS / CSS プロセスが一時的に失敗することがあります。その場合は `make setup` 完了後に `make restart` を実行してください。
 
-#### サービス管理
+5. Git hooks を有効化します。
 
 ```shell
-make shell    # devboxシェルに入る
-make up       # PostgreSQL / Rails / Solid Queue / asset watcher を起動
-make down     # devboxサービスを停止
-make status   # サービス状態を確認
+make setup-git-hooks
 ```
 
-#### サーバーの起動
+Git hooks を有効化すると、コミット前に `make rubocop`、push 前に `make minitest` が実行されます。
+
+### サービス管理
+
+```shell
+make shell    # devbox シェルに入る
+make up       # PostgreSQL / Rails / Solid Queue / JS watcher / CSS watcher をバックグラウンド起動
+make tui      # process-compose の TUI で起動
+make down     # devbox サービスを停止
+make status   # サービス状態を確認
+make ps       # make status のエイリアス
+make restart  # devbox サービスを再起動
+make logs     # Rails development.log を tail
+make fix-pg   # 古い postmaster.pid を削除して PostgreSQL を再起動
+make versions # Ruby / Rails / Node / Yarn / PostgreSQL / Bundler のバージョンを表示
+```
+
+`make up` 後、管理画面は http://localhost:3000/admin で開けます。ヘルスチェックは http://localhost:3000/up です。
+
+Rails サーバーだけを起動したい場合は次を使います。
 
 ```shell
 make server
 ```
 
-実行すると http://localhost:3000 でアクセスできる。
-
-管理画面アクションの非同期処理を実行するには、別ターミナルで Solid Queue worker も起動する。
+管理画面の非同期操作を処理するには、別ターミナルで Solid Queue worker も起動します。
 
 ```shell
 make jobs
 ```
 
-`make up` を使う場合は Rails server と worker がまとめて起動する。
-
-#### コンソールの起動
+### Rails / DB 操作
 
 ```shell
-make console            # Railsコンソール
-make console-sandbox    # サンドボックスモード
+make console            # Rails コンソール
+make console-sandbox    # サンドボックスモードの Rails コンソール
+make bundle             # bundle install
+
+make dbinit             # DB を drop して setup
+make dbconsole          # DB コンソール
+make migrate            # マイグレーション実行
+make migrate-redo       # 最後のマイグレーションをやり直し
+make rollback           # ロールバック
+make dbseed             # db/seeds.rb を実行
+make db-dump            # tmp/data/dev.bak に DB バックアップ
+make db-restore         # tmp/data/dev.bak から DB リストア
 ```
 
-#### DB関連
+### 原作・原曲データ
 
 ```shell
-make dbinit       # DBを初期化 (drop and setup)
-make dbconsole    # DBコンソール
-make migrate      # マイグレーション実行
-make migrate-redo # 最後のマイグレーションをやり直し
-make rollback     # ロールバック
-make dbseed       # シードデータ投入
-make db-dump      # DBバックアップ (tmp/data/dev.bak)
-make db-restore   # DBリストア
+make update-originals-all   # 原作・原曲データを upsert
+make seed-originals         # 原作データだけを truncate して再投入
+make seed-original-songs    # 原曲データだけを truncate して再投入
+make seed-originals-all     # 原作・原曲データを truncate して再投入
 ```
 
-#### bundle install
+### テスト・Lint・アセット
 
 ```shell
-make bundle
+make minitest               # Minitest を実行
+make minitest-assets        # Minitest 後に CSS / JS アセットをビルド
+make rubocop                # RuboCop を実行
+make rubocop-correct        # RuboCop の安全な自動修正
+make rubocop-correct-all    # RuboCop の全自動修正
+
+yarn build                  # JavaScript をビルド
+yarn build:css              # Tailwind CSS をビルド
+yarn playwright-cli         # Playwright CLI
 ```
 
-#### テストの実行
+### データ入出力・保守
 
 ```shell
-make minitest
-```
-
-#### Rubocop
-
-```shell
-make rubocop            # リント実行
-make rubocop-correct    # 自動修正
-make rubocop-correct-all # 全て自動修正
-```
-
-#### データエクスポート/インポート
-
-```shell
-make export-for-algolia      # Algolia向けJSON出力
-make export-karaoke-songs    # カラオケ楽曲出力
-make import-karaoke-songs    # カラオケ楽曲インポート
-make export-display-artists  # アーティスト出力
-make import-display-artists  # アーティストインポート
+make export-for-algolia      # Algolia 向け JSON 出力
+make check-algolia           # Algolia との差分確認
+make export-karaoke-songs    # カラオケ楽曲 TSV 出力
+make import-karaoke-songs    # カラオケ楽曲 TSV インポート
+make export-display-artists  # アーティスト TSV 出力
+make import-display-artists  # アーティスト TSV インポート
 make import-touhou-music     # 東方楽曲データインポート
+make import-touhou-music-slim # 東方楽曲データの軽量インポート
 make stats                   # 統計情報生成
 ```
 
-#### JOYSOUND(うたスキ) 管理
+### JOYSOUND ミュージックポスト保守
 
 ```shell
-make check-expired-joysound  # 配信期限切れチェック
-make delete-expired-joysound # 配信期限切れ削除
+make check-expired-joysound  # 配信期限切れの確認
+make delete-expired-joysound # 配信期限切れの削除
 ```
 
----
+## プロジェクト構成
+
+```text
+app/
+  controllers/admin/   # 管理画面 controller
+  models/              # Rails models と admin 用 registry / workflow
+  policies/            # Pundit policies
+  services/            # スクレイピング、URL 検証、進捗管理など
+  views/admin/         # 管理画面 views
+  javascript/          # 管理画面 JavaScript
+  assets/              # Tailwind CSS と build 出力
+db/
+  fixtures/            # TSV fixtures
+  seeds/               # 初期データ投入タスク
+lib/
+  *.rb                 # import / export / maintenance scripts
+test/                  # Minitest
+```
+
+## 開発時の注意
+
+- 外部サイト取得、Algolia 操作、インポート、削除を伴う保守処理は失敗やデータ変更を前提に、実行結果とログを確認してください。
+- API キーなどの秘密情報は `.env`、Rails credentials、環境変数で管理し、リポジトリへコミットしないでください。
+- UI を変更した場合は、ローカルサーバー上で管理画面の対象フローを確認してください。
+- コミットは Conventional Commits 形式を使い、説明は日本語で書いてください。
 
 <details>
-<summary><strong>Docker環境（代替手段）</strong></summary>
+<summary><strong>Docker 環境（代替手段）</strong></summary>
 
-Docker環境を使いたい場合は、コマンドに `docker-` プレフィックスを付けて実行します。
+Docker 環境を使う場合は、コマンドに `docker-` プレフィックスを付けて実行します。
 
-### 初回の環境構築
+### 初回セットアップ
 
 ```shell
 make docker-init
 ```
 
-### サーバーの起動
+### サーバー起動
 
 ```shell
 make docker-server
 ```
 
-### Dockerコマンド一覧
+### Docker コマンド
 
 ```shell
-make docker-up               # コンテナ起動
-make docker-down             # コンテナ停止
-make docker-console          # Railsコンソール
-make docker-console-sandbox  # サンドボックスモード
-make docker-bundle           # bundle install
-make docker-dbinit           # DB初期化
-make docker-dbconsole        # DBコンソール
-make docker-migrate          # マイグレーション
-make docker-rollback         # ロールバック
-make docker-dbseed           # シードデータ投入
-make docker-minitest         # テスト実行
-make docker-rubocop          # Rubocop実行
-make docker-bash             # bashシェル
-make docker-db-dump          # DBバックアップ
-make docker-db-restore       # DBリストア
+make docker-up
+make docker-down
+make docker-console
+make docker-console-sandbox
+make docker-bundle
+make docker-dbinit
+make docker-dbconsole
+make docker-migrate
+make docker-migrate-redo
+make docker-rollback
+make docker-dbseed
+make docker-update-originals-all
+make docker-seed-originals
+make docker-seed-original-songs
+make docker-seed-originals-all
+make docker-minitest
+make docker-rubocop
+make docker-rubocop-correct
+make docker-rubocop-correct-all
+make docker-bash
+make docker-export-for-algolia
+make docker-check-algolia
+make docker-export-karaoke-songs
+make docker-import-karaoke-songs
+make docker-export-display-artists
+make docker-import-display-artists
+make docker-import-touhou-music
+make docker-import-touhou-music-slim
+make docker-check-expired-joysound
+make docker-delete-expired-joysound
+make docker-stats
+make docker-db-dump
+make docker-db-restore
 ```
 
-### Dockerからdevboxへの移行
-
-既存のDocker環境からdevbox環境に移行する場合：
-
-1. Dockerでデータベースをバックアップ
+### Docker から devbox へ移行
 
 ```shell
 make docker-db-dump
-```
-
-2. Dockerを停止
-
-```shell
 make docker-down
-```
-
-3. devbox環境を準備
-
-```shell
 devbox shell
 make up
-```
-
-4. データベースを作成してリストア
-
-```shell
 createdb touhou_karaoke_admin_development
 make db-restore
-```
-
-5. セットアップを完了
-
-```shell
 make bundle
 make migrate
 ```
 
-### devboxで問題が発生した場合
-
-devbox環境で問題が発生した場合、Docker環境に戻すことができます：
+### devbox で問題が発生した場合
 
 ```shell
 make down
@@ -231,62 +285,8 @@ make docker-server
 
 </details>
 
----
-
-## 利用可能なコマンド一覧
+## コマンド一覧
 
 ```shell
 make help
-```
-
----
-
-## 情報収集方法
-
-### DAM
-
-```ruby
-DamArtistUrl.fetch_dam_artist
-DamSong.fetch_dam_songs
-Song.fetch_dam_songs
-```
-
-### JOYSOUND
-
-```ruby
-JoysoundSong.fetch_joysound_song
-Song.fetch_joysound_songs
-DisplayArtist.fetch_joysound_artist
-```
-
-### JOYSOUND(うたスキ)
-
-```ruby
-JoysoundMusicPost.fetch_music_post
-DisplayArtist.fetch_joysound_music_post_artist
-JoysoundMusicPost.fetch_music_post_song_joysound_url
-Song.fetch_joysound_music_post_song
-Song.refresh_joysound_music_post_song
-```
-
-- 差分がある場合の確認方法
-  - 原因は、アーティストが重複している可能性あり。
-
-```ruby
-JoysoundMusicPost.all.map { { title: _1.title } } - Song.music_post.map { { title: _1.title} }
-```
-
-## Algolia向けのJSONを生成
-
-```shell
-make export-for-algolia
-```
-
-## JOYSOUND(うたスキ) 配信期限切れチェック・削除
-
-Algolia上のJOYSOUND(うたスキ)レコードから配信期限切れのものを検出・削除する。
-
-```shell
-make check-expired-joysound  # 配信期限切れチェック（表示のみ）
-make delete-expired-joysound # 配信期限切れ削除（確認プロンプトあり）
 ```
