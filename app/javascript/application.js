@@ -68,6 +68,15 @@ const browserUrl = (url) => {
   return nextUrl
 }
 
+const setupAdminPageBehaviors = () => {
+  setupAdminFilterForms()
+  setupAdminInfiniteScroll()
+  setupAdminResourceSelection()
+  setupAdminOperationModal()
+  setupAdminOperationForms()
+  setupAdminWorkflowRunner()
+}
+
 const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
   const response = await fetch(adminContentUrl(url), {
     headers: {
@@ -84,11 +93,7 @@ const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
 
   currentContent.outerHTML = payload.html
   if (pushState) window.history.pushState({}, "", browserUrl(url))
-  setupAdminFilterForms()
-  setupAdminInfiniteScroll()
-  setupAdminResourceSelection()
-  setupAdminOperationModal()
-  setupAdminOperationForms()
+  setupAdminPageBehaviors()
 }
 
 const isAsyncAdminLink = (link) => {
@@ -127,15 +132,112 @@ const setupAdminAsyncIndex = () => {
     })
   })
 
+}
+
+document.addEventListener("DOMContentLoaded", setupAdminAsyncIndex)
+
+let adminPageNavigationController
+
+const adminPageUrl = (url) => {
+  const nextUrl = new URL(url, window.location.origin)
+  nextUrl.searchParams.delete("partial")
+  return nextUrl
+}
+
+const isPrimaryNavigationClick = (event) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+
+const isAsyncAdminPageLink = (link, event) => {
+  if (!link || !isPrimaryNavigationClick(event)) return false
+  if (event.defaultPrevented) return false
+  if (link.matches("[data-admin-operation-trigger]")) return false
+  if (link.target || link.hasAttribute("download")) return false
+  if (link.dataset.turbo === "false" || link.dataset.adminFullPage === "true") return false
+  if (link.dataset.method && link.dataset.method.toLowerCase() !== "get") return false
+  if (isAsyncAdminLink(link)) return false
+
+  const url = adminPageUrl(link.href)
+  return url.origin === window.location.origin && url.pathname.startsWith("/admin/")
+}
+
+const replaceAdminPage = (html, url, { pushState = true } = {}) => {
+  const nextDocument = new DOMParser().parseFromString(html, "text/html")
+  const nextContent = nextDocument.querySelector("[data-admin-page-content]")
+  const currentContent = document.querySelector("[data-admin-page-content]")
+
+  if (!nextContent || !currentContent) throw new Error("Admin page content was not found.")
+
+  const nextSidebar = nextDocument.querySelector(".admin-sidebar")
+  const currentSidebar = document.querySelector(".admin-sidebar")
+  if (nextSidebar && currentSidebar) currentSidebar.outerHTML = nextSidebar.outerHTML
+
+  currentContent.replaceWith(nextContent)
+  document.title = nextDocument.title || document.title
+  if (pushState) window.history.pushState({}, "", adminPageUrl(url))
+
+  const pageContent = document.querySelector("[data-admin-page-content]")
+  pageContent?.scrollTo({ top: 0, left: 0 })
+  setupAdminPageBehaviors()
+}
+
+const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
+  if (adminPageNavigationController) adminPageNavigationController.abort()
+
+  const controller = new AbortController()
+  adminPageNavigationController = controller
+  document.body.dataset.adminNavigation = "loading"
+  document.querySelector("[data-admin-page-content]")?.setAttribute("aria-busy", "true")
+
+  try {
+    const response = await fetch(adminPageUrl(url), {
+      credentials: "same-origin",
+      headers: {
+        Accept: "text/html",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      signal: controller.signal,
+    })
+
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+
+    replaceAdminPage(await response.text(), response.url, { pushState })
+  } finally {
+    if (adminPageNavigationController === controller) {
+      delete document.body.dataset.adminNavigation
+      document.querySelector("[data-admin-page-content]")?.removeAttribute("aria-busy")
+      adminPageNavigationController = undefined
+    }
+  }
+}
+
+const setupAdminPageNavigation = () => {
+  if (document.documentElement.dataset.adminPageNavigationInitialized === "true") return
+
+  document.documentElement.dataset.adminPageNavigationInitialized = "true"
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a")
+    if (!isAsyncAdminPageLink(link, event)) return
+
+    event.preventDefault()
+    fetchAndReplaceAdminPage(link.href).catch((error) => {
+      if (error.name === "AbortError") return
+
+      console.error(error)
+      window.location.href = link.href
+    })
+  })
+
   window.addEventListener("popstate", () => {
-    replaceAdminResourceContent(window.location.href, { pushState: false }).catch((error) => {
+    fetchAndReplaceAdminPage(window.location.href, { pushState: false }).catch((error) => {
+      if (error.name === "AbortError") return
+
       console.error(error)
       window.location.reload()
     })
   })
 }
 
-document.addEventListener("DOMContentLoaded", setupAdminAsyncIndex)
+document.addEventListener("DOMContentLoaded", setupAdminPageNavigation)
 
 const setupAdminFilterForms = () => {
   document.querySelectorAll("[data-admin-filter-form]").forEach((form) => {
