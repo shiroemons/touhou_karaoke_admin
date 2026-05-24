@@ -2607,10 +2607,7 @@ body[data-admin-navigation="loading"] .admin-main {
 }
 
 .admin-original-song-chip {
-  background: #eaf6ff;
-  border: 1px solid #bfdbfe;
   border-radius: 999px;
-  color: #1e3a8a;
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
@@ -2620,6 +2617,18 @@ body[data-admin-navigation="loading"] .admin-main {
   text-align: left;
   white-space: normal;
   word-break: break-word;
+}
+
+.admin-original-song-chip-valid {
+  background: #ecfdf3;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.admin-original-song-chip-invalid {
+  background: #fff1f2;
+  border: 1px solid #fda4af;
+  color: #9f1239;
 }
 
 .admin-original-song-chip::after {

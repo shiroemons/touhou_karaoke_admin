@@ -33,6 +33,16 @@ module Admin
       assert_includes payload.first.fetch('label'), original_song.title
     end
 
+    test 'returns original song options with minor title notation differences' do
+      original_song = create_original_song(title: '最後の一人は慣れてるから　～ Stone Goddess')
+
+      get admin_karaoke_song_bulk_edit_original_song_options_path(q: '最後の一人は慣れてるから 〜Stone')
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_equal original_song.title, payload.first.fetch('title')
+    end
+
     test 'resolves pasted original song text for picker' do
       original_song = create_original_song(title: 'Picker Resolve Original')
 
@@ -42,6 +52,34 @@ module Admin
       payload = response.parsed_body
       assert_equal [original_song.title], payload.fetch('titles')
       assert_empty payload.fetch('errors')
+    end
+
+    test 'does not return partial picker resolution when a pasted original song is unknown' do
+      create_original_song(title: 'Picker Known Original')
+
+      post admin_karaoke_song_bulk_edit_resolve_original_songs_path,
+           params: { text: 'Picker Missing Original / Picker Known Original' },
+           as: :json
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_empty payload.fetch('titles')
+      assert_equal [
+        {
+          'input_title' => 'Picker Missing Original',
+          'title' => 'Picker Missing Original',
+          'exists' => false,
+          'error' => '原曲「Picker Missing Original」が見つかりません。'
+        },
+        {
+          'input_title' => 'Picker Known Original',
+          'title' => 'Picker Known Original',
+          'exists' => true,
+          'error' => nil
+        }
+      ], payload.fetch('items')
+      assert_equal 1, payload.fetch('errors').size
+      assert_match(/Picker Missing Original/, payload.fetch('errors').first)
     end
 
     test 'updates visible form rows' do

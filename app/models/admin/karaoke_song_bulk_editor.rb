@@ -11,6 +11,22 @@ module Admin
     Result = Data.define(:updated_count, :skipped_count, :errors)
     PreviewResult = Data.define(:checked_count, :errors, :rows)
 
+    def self.normalize_original_song_title(title)
+      title.to_s.unicode_normalize(:nfkc)
+           .tr('〜∼', '~')
+           .gsub(/[[:space:]]+/, ' ')
+           .gsub(/\s*~\s*/, ' ~ ')
+           .strip
+    end
+
+    def self.search_original_song_options(query, limit: 20)
+      normalized_query = normalize_original_song_title(query)
+      songs = OriginalSong.non_duplicated.includes(:original).order(:title).to_a
+      songs = songs.select { |song| normalize_original_song_title(song.title).include?(normalized_query) } if normalized_query.present?
+
+      songs.first(limit)
+    end
+
     def initialize(actor_name:)
       @actor_name = actor_name
       @song_resource = ResourceRegistry.fetch(:song)
@@ -44,10 +60,12 @@ module Admin
 
     def resolve_original_song_titles(text)
       errors = []
-      original_songs = resolve_original_songs(text.to_s, 1, errors)
+      entries = resolve_original_song_entries(text.to_s, 1, errors)
+      original_songs = entries.filter_map { |entry| entry.fetch(:original_song) }
 
       {
-        titles: original_songs.map(&:title),
+        titles: errors.present? ? [] : original_songs.map(&:title),
+        items: entries.map { |entry| original_song_resolution_item(entry) },
         errors: errors.map { |error| error.sub(/\A1行目: /, '') }
       }
     end
@@ -170,22 +188,39 @@ module Admin
     end
 
     def resolve_original_songs(text, row_number, errors)
+      resolve_original_song_entries(text, row_number, errors).filter_map { |entry| entry.fetch(:original_song) }
+    end
+
+    def resolve_original_song_entries(text, row_number, errors)
       queries = original_song_queries(text)
       return [] if queries.blank?
 
-      queries.filter_map do |query|
+      queries.map do |query|
         candidates = original_songs_by_normalized_title[normalize_original_song_title(query)]
         if candidates.blank?
-          errors << "#{row_number}行目: 原曲「#{query}」が見つかりません。"
-          next
+          error = "#{row_number}行目: 原曲「#{query}」が見つかりません。"
+          errors << error
+          next({ query:, original_song: nil, error: })
         end
         if candidates.many?
-          errors << "#{row_number}行目: 原曲「#{query}」が複数候補に一致しました。"
-          next
+          error = "#{row_number}行目: 原曲「#{query}」が複数候補に一致しました。"
+          errors << error
+          next({ query:, original_song: nil, error: })
         end
 
-        candidates.first
+        { query:, original_song: candidates.first, error: nil }
       end
+    end
+
+    def original_song_resolution_item(entry)
+      original_song = entry.fetch(:original_song)
+
+      {
+        input_title: entry.fetch(:query),
+        title: original_song&.title || entry.fetch(:query),
+        exists: original_song.present?,
+        error: entry.fetch(:error)&.sub(/\A1行目: /, '')
+      }
     end
 
     def original_song_queries(text)
@@ -257,10 +292,7 @@ module Admin
     end
 
     def normalize_original_song_title(title)
-      title.to_s.unicode_normalize(:nfkc)
-           .gsub(/[[:space:]]+/, ' ')
-           .gsub(/\s*~\s*/, ' ~ ')
-           .strip
+      self.class.normalize_original_song_title(title)
     end
   end
 end

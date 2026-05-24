@@ -17,11 +17,9 @@ module Admin
     def original_song_options
       authorize Song, :index?
 
-      query = params[:q].to_s.strip
-      scope = OriginalSong.non_duplicated.includes(:original).order(:title).limit(20)
-      scope = scope.where(OriginalSong.arel_table[:title].matches("%#{OriginalSong.sanitize_sql_like(query)}%")) if query.present?
+      original_songs = KaraokeSongBulkEditor.search_original_song_options(params[:q].to_s)
 
-      render json: scope.map { |original_song| original_song_option(original_song) }
+      render json: original_songs.map { |original_song| original_song_option(original_song) }
     end
 
     def resolve_original_songs

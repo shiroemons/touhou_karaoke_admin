@@ -61,27 +61,56 @@ const selectedOriginalSongTitles = (picker) => {
   return value.split("/").map((item) => item.trim()).filter(Boolean)
 }
 
-const updateOriginalSongPickerValue = (picker, titles) => {
-  const uniqueTitles = Array.from(new Set(titles.map((item) => item.trim()).filter(Boolean)))
+const selectedOriginalSongItems = (picker) => {
+  const chips = picker.querySelectorAll("[data-admin-original-song-remove]")
+  if (chips.length > 0) {
+    return Array.from(chips).map((chip) => ({
+      title: chip.dataset.adminOriginalSongRemove,
+      status: chip.dataset.adminOriginalSongStatus || "valid",
+    }))
+  }
+
+  return selectedOriginalSongTitles(picker).map((title) => ({ title, status: "valid" }))
+}
+
+const normalizedOriginalSongPickerItems = (items) => {
+  const itemByTitle = new Map()
+  items.forEach((item) => {
+    const title = (typeof item === "string" ? item : item.title).trim()
+    if (!title) return
+
+    const status = typeof item === "string" ? "valid" : (item.status || "valid")
+    const current = itemByTitle.get(title)
+    if (!current || current.status === "invalid" && status === "valid") {
+      itemByTitle.set(title, { title, status })
+    }
+  })
+
+  return Array.from(itemByTitle.values())
+}
+
+const updateOriginalSongPickerValue = (picker, items) => {
+  const uniqueItems = normalizedOriginalSongPickerItems(items)
   const valueInput = picker.querySelector("[data-admin-original-song-value]")
   const chips = picker.querySelector("[data-admin-original-song-chips]")
   if (!valueInput || !chips) return
 
-  valueInput.value = uniqueTitles.join("/")
+  valueInput.value = uniqueItems.map((item) => item.title).join("/")
   chips.innerHTML = ""
-  uniqueTitles.forEach((title) => {
+  uniqueItems.forEach((item) => {
     const chip = document.createElement("button")
     chip.type = "button"
-    chip.className = "admin-original-song-chip"
-    chip.dataset.adminOriginalSongRemove = title
-    chip.textContent = title
-    chip.title = `${title} を外す`
+    chip.className = `admin-original-song-chip admin-original-song-chip-${item.status}`
+    chip.dataset.adminOriginalSongRemove = item.title
+    chip.dataset.adminOriginalSongStatus = item.status
+    chip.textContent = item.title
+    chip.title = item.status === "invalid" ? `${item.title} はDBに存在しません。クリックで外す` : `${item.title} を外す`
     chips.appendChild(chip)
   })
 }
 
 const addOriginalSongTitle = (picker, title) => {
-  updateOriginalSongPickerValue(picker, [...selectedOriginalSongTitles(picker), title])
+  updateOriginalSongPickerValue(picker, [...selectedOriginalSongItems(picker), { title, status: "valid" }])
 }
 
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
@@ -165,10 +194,13 @@ const setOriginalSongPickerText = async (searchInput, text) => {
 
   try {
     const payload = await resolveOriginalSongText(picker, text)
-    updateOriginalSongPickerValue(picker, payload.titles?.length ? payload.titles : [text])
+    const items = payload.items?.length
+      ? payload.items.map((item) => ({ title: item.title, status: item.exists ? "valid" : "invalid" }))
+      : [{ title: text, status: payload.titles?.length ? "valid" : "invalid" }]
+    updateOriginalSongPickerValue(picker, items)
   } catch (error) {
     console.error(error)
-    updateOriginalSongPickerValue(picker, [text])
+    updateOriginalSongPickerValue(picker, [{ title: text, status: "invalid" }])
   } finally {
     searchInput.value = ""
     hideOriginalSongOptions(picker)
@@ -188,7 +220,7 @@ const setupAdminOriginalSongPickers = () => {
       if (removeTitle) {
         updateOriginalSongPickerValue(
           picker,
-          selectedOriginalSongTitles(picker).filter((title) => title !== removeTitle)
+          selectedOriginalSongItems(picker).filter((item) => item.title !== removeTitle)
         )
         return
       }
@@ -226,8 +258,25 @@ const setupAdminOriginalSongPickers = () => {
       }
     })
 
-    picker.querySelector("[data-admin-original-song-search]")?.addEventListener("keydown", (event) => {
+    const searchInput = picker.querySelector("[data-admin-original-song-search]")
+
+    searchInput?.addEventListener("compositionstart", (event) => {
+      event.target.dataset.adminOriginalSongComposing = "true"
+    })
+
+    searchInput?.addEventListener("compositionend", (event) => {
+      event.target.dataset.adminOriginalSongComposing = "false"
+    })
+
+    searchInput?.addEventListener("keydown", (event) => {
       if (event.key !== "Enter") return
+      if (
+        event.isComposing ||
+        event.keyCode === 229 ||
+        event.target.dataset.adminOriginalSongComposing === "true"
+      ) {
+        return
+      }
 
       event.preventDefault()
       const firstOption = picker.querySelector("[data-admin-original-song-select]")
