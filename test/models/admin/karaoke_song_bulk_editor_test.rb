@@ -83,5 +83,26 @@ module Admin
       assert_empty result.errors
       assert_equal [delimiter_original_song.code, other_original_song.code].sort, song.reload.original_songs.map(&:code).sort
     end
+
+    test 'previews each resolved original song without updating records' do
+      song = create_song
+      first_original_song = create_original_song(title: 'Preview First Original')
+      second_original_song = create_original_song(title: 'Preview Second Original')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').preview_from_form_rows(
+        song.id => {
+          'original_songs' => "#{first_original_song.title}/#{second_original_song.title}",
+          'youtube_url' => 'https://youtube.example/preview'
+        }
+      )
+
+      assert_empty result.errors
+      assert_equal 1, result.checked_count
+      resolved_titles = result.rows.first.fetch(:original_songs).map { |item| item.fetch(:title) }
+      assert_equal [first_original_song.title, second_original_song.title], resolved_titles
+      assert_equal ['youtube_url'], result.rows.first.fetch(:changed_url_columns)
+      assert_empty song.reload.original_songs
+      assert_equal '', song.youtube_url
+    end
   end
 end

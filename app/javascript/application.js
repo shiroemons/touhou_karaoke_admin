@@ -56,6 +56,217 @@ const setupAdminInfiniteScroll = () => {
 
 document.addEventListener("DOMContentLoaded", setupAdminInfiniteScroll)
 
+const selectedOriginalSongTitles = (picker) => {
+  const value = picker.querySelector("[data-admin-original-song-value]")?.value || ""
+  return value.split("/").map((item) => item.trim()).filter(Boolean)
+}
+
+const updateOriginalSongPickerValue = (picker, titles) => {
+  const uniqueTitles = Array.from(new Set(titles.map((item) => item.trim()).filter(Boolean)))
+  const valueInput = picker.querySelector("[data-admin-original-song-value]")
+  const chips = picker.querySelector("[data-admin-original-song-chips]")
+  if (!valueInput || !chips) return
+
+  valueInput.value = uniqueTitles.join("/")
+  chips.innerHTML = ""
+  uniqueTitles.forEach((title) => {
+    const chip = document.createElement("button")
+    chip.type = "button"
+    chip.className = "admin-original-song-chip"
+    chip.dataset.adminOriginalSongRemove = title
+    chip.textContent = title
+    chip.title = `${title} を外す`
+    chips.appendChild(chip)
+  })
+}
+
+const addOriginalSongTitle = (picker, title) => {
+  updateOriginalSongPickerValue(picker, [...selectedOriginalSongTitles(picker), title])
+}
+
+const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
+let activeOriginalSongPicker
+
+const positionOriginalSongOptions = (picker) => {
+  const searchInput = picker.querySelector("[data-admin-original-song-search]")
+  const options = picker.querySelector("[data-admin-original-song-options]")
+  if (!searchInput || !options || options.hidden) return
+
+  const viewportPadding = 12
+  const gap = 4
+  const inputRect = searchInput.getBoundingClientRect()
+  const width = Math.min(Math.max(inputRect.width, 300), window.innerWidth - (viewportPadding * 2))
+  const availableBelow = window.innerHeight - inputRect.bottom - viewportPadding - gap
+  const availableAbove = inputRect.top - viewportPadding - gap
+  const openAbove = availableBelow < 160 && availableAbove > availableBelow
+  const availableHeight = openAbove ? availableAbove : availableBelow
+  const maxHeight = Math.max(120, Math.min(ORIGINAL_SONG_OPTIONS_MAX_HEIGHT, availableHeight))
+  const left = Math.max(
+    viewportPadding,
+    Math.min(inputRect.left, window.innerWidth - width - viewportPadding)
+  )
+  const top = openAbove
+    ? Math.max(viewportPadding, inputRect.top - maxHeight - gap)
+    : Math.min(inputRect.bottom + gap, window.innerHeight - maxHeight - viewportPadding)
+
+  options.style.left = `${left}px`
+  options.style.top = `${top}px`
+  options.style.width = `${width}px`
+  options.style.maxHeight = `${maxHeight}px`
+}
+
+const hideOriginalSongOptions = (picker) => {
+  const options = picker.querySelector("[data-admin-original-song-options]")
+  if (options) options.hidden = true
+  if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
+}
+
+const renderOriginalSongOptions = (picker, optionsPayload) => {
+  const options = picker.querySelector("[data-admin-original-song-options]")
+  if (!options) return
+
+  options.innerHTML = ""
+  optionsPayload.forEach((item) => {
+    const option = document.createElement("button")
+    option.type = "button"
+    option.className = "admin-original-song-option"
+    option.dataset.adminOriginalSongSelect = item.title
+    option.textContent = item.label || item.title
+    options.appendChild(option)
+  })
+  options.hidden = optionsPayload.length === 0
+  activeOriginalSongPicker = options.hidden ? undefined : picker
+  positionOriginalSongOptions(picker)
+}
+
+const resolveOriginalSongText = async (picker, text) => {
+  const response = await fetch(picker.dataset.resolveUrl, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || "",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify({ text }),
+  })
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+
+  return response.json()
+}
+
+const setOriginalSongPickerText = async (searchInput, text) => {
+  const picker = searchInput.closest("[data-admin-original-song-picker]")
+  if (!picker) {
+    searchInput.value = text
+    return
+  }
+
+  try {
+    const payload = await resolveOriginalSongText(picker, text)
+    updateOriginalSongPickerValue(picker, payload.titles?.length ? payload.titles : [text])
+  } catch (error) {
+    console.error(error)
+    updateOriginalSongPickerValue(picker, [text])
+  } finally {
+    searchInput.value = ""
+    hideOriginalSongOptions(picker)
+  }
+}
+
+const setupAdminOriginalSongPickers = () => {
+  document.querySelectorAll("[data-admin-original-song-picker]").forEach((picker) => {
+    if (picker.dataset.adminOriginalSongPickerInitialized === "true") return
+
+    picker.dataset.adminOriginalSongPickerInitialized = "true"
+    updateOriginalSongPickerValue(picker, selectedOriginalSongTitles(picker))
+    let searchController
+
+    picker.addEventListener("click", (event) => {
+      const removeTitle = event.target.closest("[data-admin-original-song-remove]")?.dataset.adminOriginalSongRemove
+      if (removeTitle) {
+        updateOriginalSongPickerValue(
+          picker,
+          selectedOriginalSongTitles(picker).filter((title) => title !== removeTitle)
+        )
+        return
+      }
+
+      const selectedTitle = event.target.closest("[data-admin-original-song-select]")?.dataset.adminOriginalSongSelect
+      if (!selectedTitle) return
+
+      addOriginalSongTitle(picker, selectedTitle)
+      picker.querySelector("[data-admin-original-song-search]").value = ""
+      hideOriginalSongOptions(picker)
+    })
+
+    picker.querySelector("[data-admin-original-song-search]")?.addEventListener("input", async (event) => {
+      const query = event.target.value.trim()
+      if (searchController) searchController.abort()
+      if (!query) {
+        hideOriginalSongOptions(picker)
+        return
+      }
+
+      searchController = new AbortController()
+      try {
+        const url = new URL(picker.dataset.optionsUrl, window.location.origin)
+        url.searchParams.set("q", query)
+        const response = await fetch(url, {
+          credentials: "same-origin",
+          headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+          signal: searchController.signal,
+        })
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+
+        renderOriginalSongOptions(picker, await response.json())
+      } catch (error) {
+        if (error.name !== "AbortError") console.error(error)
+      }
+    })
+
+    picker.querySelector("[data-admin-original-song-search]")?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return
+
+      event.preventDefault()
+      const firstOption = picker.querySelector("[data-admin-original-song-select]")
+      if (firstOption) {
+        addOriginalSongTitle(picker, firstOption.dataset.adminOriginalSongSelect)
+        event.target.value = ""
+        hideOriginalSongOptions(picker)
+        return
+      }
+
+      const text = event.target.value.trim()
+      if (text) setOriginalSongPickerText(event.target, text)
+    })
+
+    picker.querySelector("[data-admin-original-song-search]")?.addEventListener("paste", (event) => {
+      const text = event.clipboardData?.getData("text")
+      if (!text || text.includes("\t") || text.includes("\n")) return
+
+      event.preventDefault()
+      setOriginalSongPickerText(event.target, text)
+    })
+  })
+}
+
+document.addEventListener("click", (event) => {
+  if (!activeOriginalSongPicker) return
+  if (event.target.closest("[data-admin-original-song-picker]") === activeOriginalSongPicker) return
+
+  hideOriginalSongOptions(activeOriginalSongPicker)
+})
+
+window.addEventListener("resize", () => {
+  if (activeOriginalSongPicker) positionOriginalSongOptions(activeOriginalSongPicker)
+})
+
+document.addEventListener("scroll", () => {
+  if (activeOriginalSongPicker) positionOriginalSongOptions(activeOriginalSongPicker)
+}, true)
+
 const setupAdminBulkEditTables = () => {
   document.querySelectorAll("[data-admin-bulk-edit-table]").forEach((table) => {
     if (table.dataset.adminBulkEditInitialized === "true") return
@@ -81,15 +292,20 @@ const setupAdminBulkEditTables = () => {
           )
           if (!cell) return
 
-          cell.value = value
-          cell.dispatchEvent(new Event("input", { bubbles: true }))
-          cell.dispatchEvent(new Event("change", { bubbles: true }))
+          if (cell.dataset.adminOriginalSongSearch === "true") {
+            setOriginalSongPickerText(cell, value)
+          } else {
+            cell.value = value
+            cell.dispatchEvent(new Event("input", { bubbles: true }))
+            cell.dispatchEvent(new Event("change", { bubbles: true }))
+          }
         })
       })
     })
   })
 }
 
+document.addEventListener("DOMContentLoaded", setupAdminOriginalSongPickers)
 document.addEventListener("DOMContentLoaded", setupAdminBulkEditTables)
 
 const adminContentUrl = (url) => {
@@ -107,6 +323,7 @@ const browserUrl = (url) => {
 const setupAdminPageBehaviors = () => {
   setupAdminFilterForms()
   setupAdminInfiniteScroll()
+  setupAdminOriginalSongPickers()
   setupAdminBulkEditTables()
   setupAdminResourceSelection()
   setupAdminOperationModal()

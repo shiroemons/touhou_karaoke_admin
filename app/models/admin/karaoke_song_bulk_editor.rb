@@ -9,6 +9,7 @@ module Admin
     EDITABLE_COLUMNS = ['original_songs', *URL_COLUMNS].freeze
 
     Result = Data.define(:updated_count, :skipped_count, :errors)
+    PreviewResult = Data.define(:checked_count, :errors, :rows)
 
     def initialize(actor_name:)
       @actor_name = actor_name
@@ -16,26 +17,58 @@ module Admin
     end
 
     def update_from_form_rows(row_params)
-      rows = row_params.to_h.map do |song_id, attributes|
-        attributes.to_h.stringify_keys.slice(*EDITABLE_COLUMNS).merge('id' => song_id)
-      end
-
-      update_rows(rows)
+      update_rows(normalized_form_rows(row_params))
     end
 
     def update_from_tsv(tsv)
-      table = CSV.parse(tsv.to_s, col_sep: "\t", headers: true, converters: nil, liberal_parsing: true)
-      missing_columns = COLUMNS - table.headers.compact
-      return Result.new(updated_count: 0, skipped_count: 0, errors: ["TSVの列が不足しています: #{missing_columns.join(', ')}"]) if missing_columns.present?
+      rows = parse_tsv_rows(tsv)
+      return rows if rows.is_a?(Result)
 
-      update_rows(table.map { |row| row.to_h.slice(*COLUMNS) })
+      update_rows(rows)
     rescue CSV::MalformedCSVError => e
       Result.new(updated_count: 0, skipped_count: 0, errors: ["TSVを読み取れませんでした: #{e.message}"])
+    end
+
+    def preview_from_form_rows(row_params)
+      preview_rows(normalized_form_rows(row_params), include_unchanged: false)
+    end
+
+    def preview_from_tsv(tsv)
+      rows = parse_tsv_rows(tsv)
+      return PreviewResult.new(checked_count: 0, errors: rows.errors, rows: []) if rows.is_a?(Result)
+
+      preview_rows(rows, include_unchanged: true)
+    rescue CSV::MalformedCSVError => e
+      PreviewResult.new(checked_count: 0, errors: ["TSVを読み取れませんでした: #{e.message}"], rows: [])
+    end
+
+    def resolve_original_song_titles(text)
+      errors = []
+      original_songs = resolve_original_songs(text.to_s, 1, errors)
+
+      {
+        titles: original_songs.map(&:title),
+        errors: errors.map { |error| error.sub(/\A1行目: /, '') }
+      }
     end
 
     private
 
     attr_reader :actor_name, :song_resource
+
+    def normalized_form_rows(row_params)
+      row_params.to_h.map do |song_id, attributes|
+        attributes.to_h.stringify_keys.slice(*EDITABLE_COLUMNS).merge('id' => song_id)
+      end
+    end
+
+    def parse_tsv_rows(tsv)
+      table = CSV.parse(tsv.to_s, col_sep: "\t", headers: true, converters: nil, liberal_parsing: true)
+      missing_columns = COLUMNS - table.headers.compact
+      return Result.new(updated_count: 0, skipped_count: 0, errors: ["TSVの列が不足しています: #{missing_columns.join(', ')}"]) if missing_columns.present?
+
+      table.map { |row| row.to_h.slice(*COLUMNS) }
+    end
 
     def update_rows(rows)
       updates, errors = build_updates(rows)
@@ -55,6 +88,16 @@ module Admin
       end
 
       Result.new(updated_count:, skipped_count:, errors: [])
+    end
+
+    def preview_rows(rows, include_unchanged:)
+      updates, errors = build_updates(rows)
+      preview_items = updates.filter_map do |update|
+        item = preview_item(update)
+        item if include_unchanged || item.fetch(:changed)
+      end
+
+      PreviewResult.new(checked_count: preview_items.size, errors:, rows: preview_items)
     end
 
     def build_updates(rows)
@@ -78,6 +121,35 @@ module Admin
       end
 
       [updates, errors]
+    end
+
+    def preview_item(update)
+      song = update.fetch(:song)
+      attributes = update.fetch(:attributes)
+      current_attributes = URL_COLUMNS.index_with { |column| song.public_send(column).to_s }
+      original_songs = update.fetch(:original_songs)
+
+      {
+        song:,
+        original_songs: original_songs.map { |original_song| original_song_preview(original_song) },
+        current_original_song_titles: song.original_songs.map(&:title),
+        changed_url_columns: URL_COLUMNS.reject { |column| current_attributes[column] == attributes[column].to_s },
+        changed: preview_changed?(song, original_songs, current_attributes, attributes)
+      }
+    end
+
+    def preview_changed?(song, original_songs, current_attributes, attributes)
+      song.original_songs.map(&:code).sort != original_songs.map(&:code).sort ||
+        URL_COLUMNS.any? { |column| current_attributes[column] != attributes[column].to_s }
+    end
+
+    def original_song_preview(original_song)
+      {
+        code: original_song.code,
+        title: original_song.title,
+        original_short_title: original_song.original_short_title,
+        label: "[#{original_song.original_short_title}] #{original_song.title}"
+      }
     end
 
     def update_applied?(update)

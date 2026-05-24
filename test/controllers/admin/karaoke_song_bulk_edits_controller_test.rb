@@ -16,8 +16,32 @@ module Admin
         assert_select 'th', text: column
       end
       assert_select "input[name=?]", "songs[#{missing_song.id}][original_songs]"
+      assert_select '[data-admin-original-song-picker]'
+      assert_select '[data-admin-original-song-search]'
       assert_includes response.body, missing_song.title
       assert_not_includes response.body, linked_song.title
+    end
+
+    test 'returns original song options for picker search' do
+      original_song = create_original_song(title: 'Picker Search Original')
+
+      get admin_karaoke_song_bulk_edit_original_song_options_path(q: 'Picker Search')
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_equal original_song.title, payload.first.fetch('title')
+      assert_includes payload.first.fetch('label'), original_song.title
+    end
+
+    test 'resolves pasted original song text for picker' do
+      original_song = create_original_song(title: 'Picker Resolve Original')
+
+      post admin_karaoke_song_bulk_edit_resolve_original_songs_path, params: { text: "原曲: #{original_song.title}" }, as: :json
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_equal [original_song.title], payload.fetch('titles')
+      assert_empty payload.fetch('errors')
     end
 
     test 'updates visible form rows' do
@@ -43,6 +67,32 @@ module Admin
       assert_select '.admin-flash-notice', text: '更新が完了しました。更新件数: 1件、変更なし: 0件'
       assert_equal [original_song], song.reload.original_songs.to_a
       assert_equal 'https://youtube.example/controller', song.youtube_url
+    end
+
+    test 'previews multiple original song links without updating records' do
+      song = create_song(title: 'Controller Preview Song')
+      first_original_song = create_original_song(title: 'Controller Preview First')
+      second_original_song = create_original_song(title: 'Controller Preview Second')
+
+      post admin_karaoke_song_bulk_edit_path, params: {
+        mode: 'preview',
+        songs: {
+          song.id => {
+            original_songs: "#{first_original_song.title}/#{second_original_song.title}",
+            youtube_url: 'https://youtube.example/preview'
+          }
+        }
+      }
+
+      assert_response :success
+      assert_select 'h2', text: '原曲紐づけチェック結果'
+      assert_select '.admin-original-song-preview-row', text: /Controller Preview Song/
+      assert_select '.admin-original-song-preview-row li', text: /#{first_original_song.code}/
+      assert_select '.admin-original-song-preview-row li', text: /#{second_original_song.code}/
+      assert_select '.admin-original-song-preview-row li', text: /Controller Preview First/
+      assert_select '.admin-original-song-preview-row li', text: /Controller Preview Second/
+      assert_empty song.reload.original_songs
+      assert_equal '', song.youtube_url
     end
 
     test 'updates from pasted export tsv' do

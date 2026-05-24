@@ -14,8 +14,38 @@ module Admin
       load_index
     end
 
+    def original_song_options
+      authorize Song, :index?
+
+      query = params[:q].to_s.strip
+      scope = OriginalSong.non_duplicated.includes(:original).order(:title).limit(20)
+      scope = scope.where(OriginalSong.arel_table[:title].matches("%#{OriginalSong.sanitize_sql_like(query)}%")) if query.present?
+
+      render json: scope.map { |original_song| original_song_option(original_song) }
+    end
+
+    def resolve_original_songs
+      authorize Song, :index?
+
+      result = KaraokeSongBulkEditor.new(actor_name: current_user.name).resolve_original_song_titles(params[:text])
+
+      render json: result
+    end
+
     def update
-      authorize Song, :update?
+      authorize Song, preview_request? ? :index? : :update?
+
+      if preview_request?
+        @preview_result = if bulk_tsv.present?
+                            KaraokeSongBulkEditor.new(actor_name: current_user.name).preview_from_tsv(bulk_tsv)
+                          else
+                            KaraokeSongBulkEditor.new(actor_name: current_user.name).preview_from_form_rows(song_rows)
+                          end
+        load_index
+        flash.now[:alert] = @preview_result.errors.join("\n") if @preview_result.errors.present?
+        render :index, status: @preview_result.errors.present? ? :unprocessable_content : :ok
+        return
+      end
 
       result = if bulk_tsv.present?
                  KaraokeSongBulkEditor.new(actor_name: current_user.name).update_from_tsv(bulk_tsv)
@@ -107,6 +137,17 @@ module Admin
 
     def bulk_tsv
       params[:bulk_tsv].to_s.strip
+    end
+
+    def preview_request?
+      params[:mode] == 'preview'
+    end
+
+    def original_song_option(original_song)
+      {
+        title: original_song.title,
+        label: "[#{original_song.original_short_title}] #{original_song.title}"
+      }
     end
   end
 end

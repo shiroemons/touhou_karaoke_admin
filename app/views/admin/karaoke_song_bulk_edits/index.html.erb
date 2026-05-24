@@ -31,6 +31,60 @@
   </div>
 
   <%= form_with url: admin_karaoke_song_bulk_edit_path(status: @status, q: @query, page: @page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
+    <% if @preview_result.present? %>
+      <section class="admin-panel admin-original-song-preview">
+        <div class="admin-dashboard-section-heading">
+          <div>
+            <h2>原曲紐づけチェック結果</h2>
+            <p><%= @preview_result.checked_count %>件の楽曲を確認しました。DBは更新していません。</p>
+          </div>
+        </div>
+        <% if @preview_result.errors.present? %>
+          <div class="admin-original-song-preview-errors">
+            <% @preview_result.errors.each do |error| %>
+              <p><%= error %></p>
+            <% end %>
+          </div>
+        <% end %>
+        <% if @preview_result.errors.blank? && @preview_result.rows.blank? %>
+          <p class="admin-original-song-preview-empty">変更または確認対象の行はありません。</p>
+        <% end %>
+        <% if @preview_result.rows.present? %>
+          <div class="admin-original-song-preview-list">
+            <% @preview_result.rows.each do |row| %>
+              <article class="admin-original-song-preview-row">
+                <div>
+                  <strong><%= row[:song].title %></strong>
+                  <span><%= row[:song].karaoke_type %> / <%= row[:song].display_artist.name %></span>
+                </div>
+                <div>
+                  <span>現在</span>
+                  <p><%= row[:current_original_song_titles].presence&.join(" / ") || "未設定" %></p>
+                </div>
+                <div>
+                  <span>解決結果</span>
+                  <ul>
+                    <% row[:original_songs].each do |original_song| %>
+                      <li>
+                        <code><%= original_song[:code] %></code>
+                        <strong><%= original_song[:label] %></strong>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+                <% if row[:changed_url_columns].present? %>
+                  <div>
+                    <span>URL更新予定</span>
+                    <p><%= row[:changed_url_columns].join(", ") %></p>
+                  </div>
+                <% end %>
+              </article>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+
     <details class="admin-control-panel admin-bulk-tsv-panel">
       <summary class="admin-filter-summary">
         <%= admin_icon(:upload) %>
@@ -46,10 +100,16 @@
       <div class="admin-result-summary">
         <span>表示中 <strong><%= number_with_delimiter(@songs.size) %></strong> / <%= number_with_delimiter(@total_count) %> 件</span>
       </div>
-      <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary" do %>
-        <%= admin_icon(:action) %>
-        <span>更新</span>
-      <% end %>
+      <div class="admin-header-actions">
+        <%= button_tag type: :submit, name: :mode, value: :preview, class: "admin-button admin-button-primary btn btn-primary" do %>
+          <%= admin_icon(:search) %>
+          <span>紐づけチェック</span>
+        <% end %>
+        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn" do %>
+          <%= admin_icon(:action) %>
+          <span>チェック結果を反映</span>
+        <% end %>
+      </div>
     </div>
 
     <datalist id="admin-original-song-title-options">
@@ -72,14 +132,28 @@
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
               <td><%= song.karaoke_type %></td>
-              <td title="<%= song.display_artist.name %>"><%= song.display_artist.name %></td>
+              <td class="admin-table-field-display-artist-name"><%= song.display_artist.name %></td>
               <td title="<%= song.title %>"><%= link_to song.title, admin_song_path(song) %></td>
               <td>
-                <%= text_field_tag "songs[#{song.id}][original_songs]",
-                                   song.original_songs.map(&:title).join('/'),
-                                   class: "admin-bulk-cell admin-bulk-original-songs input input-bordered",
-                                   list: "admin-original-song-title-options",
-                                   data: { admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: 0 } %>
+                <div
+                  class="admin-original-song-picker"
+                  data-admin-original-song-picker
+                  data-options-url="<%= admin_karaoke_song_bulk_edit_original_song_options_path %>"
+                  data-resolve-url="<%= admin_karaoke_song_bulk_edit_resolve_original_songs_path %>">
+                  <%= hidden_field_tag "songs[#{song.id}][original_songs]",
+                                       song.original_songs.map(&:title).join('/'),
+                                       data: { admin_original_song_value: true } %>
+                  <div class="admin-original-song-chips" data-admin-original-song-chips></div>
+                  <div class="admin-original-song-search-wrap">
+                    <%= text_field_tag nil,
+                                       nil,
+                                       class: "admin-bulk-cell admin-bulk-original-songs admin-original-song-search input input-bordered",
+                                       autocomplete: "off",
+                                       placeholder: "原曲を検索",
+                                       data: { admin_original_song_search: true, admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: 0 } %>
+                    <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
+                  </div>
+                </div>
               </td>
               <% Admin::KaraokeSongBulkEditor::URL_COLUMNS.each_with_index do |column, column_index| %>
                 <td>
