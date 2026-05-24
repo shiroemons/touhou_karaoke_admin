@@ -22,6 +22,10 @@
             <span class="admin-nav-icon"><%= admin_icon(:workflow) %></span>
             <span>運用フロー</span>
           <% end %>
+          <%= link_to admin_karaoke_song_bulk_edit_path, class: ["admin-nav-link", ("admin-nav-link-active" if controller_path == "admin/karaoke_song_bulk_edits")] do %>
+            <span class="admin-nav-icon"><%= admin_icon(:table) %></span>
+            <span>カラオケ楽曲紐づけ</span>
+          <% end %>
         </section>
         <% admin_navigation_groups.each do |group_label, resources| %>
           <section class="admin-nav-group" aria-label="<%= group_label %>">

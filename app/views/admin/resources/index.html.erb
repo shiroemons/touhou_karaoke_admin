@@ -5,12 +5,20 @@
     <h1><%= @resource.label %></h1>
     <p class="admin-page-count">総件数 <strong><%= number_with_delimiter(@total_count) %></strong> 件</p>
   </div>
-  <% if policy(@resource.model).create? %>
-    <%= link_to new_admin_resource_path(@resource), class: "admin-button admin-button-primary btn btn-primary" do %>
-      <%= admin_icon(:create) %>
-      <span>新規作成</span>
+  <div class="admin-header-actions">
+    <% if @resource.key == :song %>
+      <%= link_to admin_karaoke_song_bulk_edit_path, class: "admin-button btn" do %>
+        <%= admin_icon(:table) %>
+        <span>カラオケ楽曲紐づけ</span>
+      <% end %>
     <% end %>
-  <% end %>
+    <% if policy(@resource.model).create? %>
+      <%= link_to new_admin_resource_path(@resource), class: "admin-button admin-button-primary btn btn-primary" do %>
+        <%= admin_icon(:create) %>
+        <span>新規作成</span>
+      <% end %>
+    <% end %>
+  </div>
 </header>
 
 <%= render "operations", resource: @resource, record: nil %>

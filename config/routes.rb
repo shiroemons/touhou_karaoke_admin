@@ -7,6 +7,8 @@ Rails.application.routes.draw do
     get "workflow/:workflow_key", to: "workflow#show", as: :workflow_steps
     post "workflow/:workflow_key/run", to: "workflow#run", as: :run_workflow
     get "workflow/:workflow_key/progress", to: "workflow#progress", as: :workflow_progress
+    get :karaoke_song_bulk_edit, to: "karaoke_song_bulk_edits#index"
+    post :karaoke_song_bulk_edit, to: "karaoke_song_bulk_edits#update"
 
     resources :originals
     resources :original_songs

@@ -120,6 +120,7 @@ module Admin
       get admin_songs_path
 
       assert_response :success
+      assert_select 'a[href=?]', admin_karaoke_song_bulk_edit_path, text: /カラオケ楽曲紐づけ/
       assert_select '.admin-operation-guide-item', text: /楽曲TSVをエクスポート/
       assert_select '.admin-operation-guide-item', { text: /原曲未設定TSVをエクスポート/, count: 0 }
       assert_select '.admin-operation-guide-item', { text: /DAM候補をカラオケ楽曲へ登録/, count: 0 }

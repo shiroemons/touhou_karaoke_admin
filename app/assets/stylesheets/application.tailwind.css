@@ -2426,6 +2426,87 @@ body[data-admin-navigation="loading"] .admin-main {
   width: 136px;
 }
 
+.admin-karaoke-song-bulk-edit {
+  gap: 12px;
+}
+
+.admin-karaoke-song-bulk-edit .admin-bulk-edit-form {
+  display: contents;
+}
+
+.admin-bulk-tsv-panel {
+  height: auto;
+}
+
+.admin-bulk-tsv-panel summary {
+  list-style: none;
+}
+
+.admin-bulk-tsv-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-bulk-tsv-body {
+  padding-top: 10px;
+}
+
+.admin-bulk-tsv-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  min-height: 112px;
+  width: 100%;
+}
+
+.admin-table-karaoke-song-bulk-edit {
+  min-width: 2380px;
+}
+
+.admin-table-karaoke-song-bulk-edit th,
+.admin-table-karaoke-song-bulk-edit td {
+  padding: 10px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-id {
+  width: 272px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-karaoke-type {
+  width: 138px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-display-artist-name {
+  width: 220px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-title {
+  width: 260px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-original-songs {
+  width: 320px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-youtube-url,
+.admin-table-karaoke-song-bulk-edit .admin-table-field-nicovideo-url,
+.admin-table-karaoke-song-bulk-edit .admin-table-field-apple-music-url,
+.admin-table-karaoke-song-bulk-edit .admin-table-field-youtube-music-url,
+.admin-table-karaoke-song-bulk-edit .admin-table-field-spotify-url,
+.admin-table-karaoke-song-bulk-edit .admin-table-field-line-music-url {
+  width: 230px;
+}
+
+.admin-table-karaoke-song-bulk-edit code {
+  font-size: 12px;
+}
+
+.admin-bulk-cell {
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-bulk-original-songs {
+  min-width: 280px;
+}
+
 th.admin-actions-column {
   text-align: center;
 }
