@@ -21,7 +21,7 @@
     "BUNDLE_PATH":        ".devbox/virtenv/bundle",
     "GEM_HOME":           ".devbox/virtenv/gems",
     "BOOTSNAP_CACHE_DIR": ".devbox/virtenv/bootsnap",
-    "PGHOST":             "127.0.0.1",
+    "PGHOST":             "/tmp",
     "PGPORT":             "5432",
     "PGUSER":             "postgres",
     "PGPASSWORD":         "postgres",
@@ -38,12 +38,12 @@
       "if ! command -v bundle &> /dev/null; then gem install bundler; fi"
     ],
     "scripts": {
-      "setup":               "bundle install --jobs=4 && yarn install && bin/rails db:prepare",
+      "setup":               "bundle config unset bin && bundle install --jobs=4 && yarn install && bin/rails db:prepare",
       "server":              "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0",
       "jobs":                "bin/jobs start",
       "console":             "bin/rails console",
       "console:sandbox":     "bin/rails console --sandbox",
-      "bundle":              "bundle config set clean true && bundle install --jobs=4",
+      "bundle":              "bundle config unset bin && bundle config set clean true && bundle install --jobs=4",
       "db:init":             "bin/rails db:drop db:setup",
       "db:console":          "bin/rails dbconsole",
       "db:migrate":          "bin/rails db:migrate",
