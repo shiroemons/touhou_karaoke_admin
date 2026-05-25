@@ -11,6 +11,10 @@
         <%= admin_icon(:table) %>
         <span>カラオケ楽曲紐づけ</span>
       <% end %>
+      <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path, class: "admin-button btn" do %>
+        <%= admin_icon(:table) %>
+        <span>カラオケ配信URL編集</span>
+      <% end %>
     <% end %>
     <% if policy(@resource.model).create? %>
       <%= link_to new_admin_resource_path(@resource), class: "admin-button admin-button-primary btn btn-primary" do %>

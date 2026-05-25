@@ -2460,6 +2460,10 @@ body[data-admin-navigation="loading"] .admin-main {
   min-width: 2380px;
 }
 
+.admin-table-karaoke-delivery-url-bulk-edit {
+  min-width: 2190px;
+}
+
 .admin-table-karaoke-song-bulk-edit th,
 .admin-table-karaoke-song-bulk-edit td {
   padding: 10px;
@@ -2513,6 +2517,57 @@ body[data-admin-navigation="loading"] .admin-main {
 
 .admin-bulk-original-songs {
   min-width: 280px;
+}
+
+.admin-delivery-url-controls {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.admin-delivery-url-control-group {
+  border-top: 1px solid #dbe8f6;
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.admin-delivery-url-control-group h2 {
+  color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.admin-delivery-url-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-url-filter-grid {
+  display: grid;
+  gap: 8px 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.admin-url-filter-option {
+  align-items: center;
+  border: 1px solid #dbe8f6;
+  border-radius: 8px;
+  color: color-mix(in oklab, var(--color-base-content) 78%, transparent);
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.admin-url-filter-option-active,
+.admin-url-filter-option:has(input:checked) {
+  background: #ecfdf3;
+  border-color: #86efac;
+  color: #166534;
 }
 
 .admin-original-song-preview {

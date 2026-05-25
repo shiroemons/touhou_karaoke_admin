@@ -15,6 +15,8 @@ module Admin
       KaraokeSongBulkEditor::COLUMNS.each do |column|
         assert_select 'th', text: column
       end
+      assert_select 'form[data-admin-filter-form]'
+      assert_select 'select[name="status"][data-admin-auto-submit]'
       assert_select "input[name=?]", "songs[#{missing_song.id}][original_songs]"
       assert_select '[data-admin-original-song-picker]'
       assert_select '[data-admin-original-song-search]'

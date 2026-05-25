@@ -11,6 +11,8 @@ Rails.application.routes.draw do
     post :karaoke_song_bulk_edit, to: "karaoke_song_bulk_edits#update"
     get "karaoke_song_bulk_edit/original_song_options", to: "karaoke_song_bulk_edits#original_song_options", as: :karaoke_song_bulk_edit_original_song_options
     post "karaoke_song_bulk_edit/resolve_original_songs", to: "karaoke_song_bulk_edits#resolve_original_songs", as: :karaoke_song_bulk_edit_resolve_original_songs
+    get :karaoke_song_delivery_url_bulk_edit, to: "karaoke_song_delivery_url_bulk_edits#index"
+    post :karaoke_song_delivery_url_bulk_edit, to: "karaoke_song_delivery_url_bulk_edits#update"
 
     resources :originals
     resources :original_songs
