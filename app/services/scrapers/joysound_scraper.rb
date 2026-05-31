@@ -3,6 +3,37 @@
 module Scrapers
   # JOYSOUND楽曲情報のスクレイピングを行うクラス
   class JoysoundScraper < BaseScraper
+    KNOWN_DELIVERY_MODEL_NAMES = [
+      'EnjoyPortable',
+      'EnjoyStage',
+      'HyperJoy V2',
+      'CelebJoyHearts',
+      'HyperJoy Wave',
+      'JEWEL',
+      'CROSSO',
+      'スマホサービス',
+      '家庭用カラオケ'
+    ].freeze
+
+    JOYSOUND_DELIVERY_MODEL_NAME_PATTERN = /\A(?:JOYSOUND\s+(?:[A-Za-z0-9]+\s*)+|JOYSOUND\s+響(?:Ⅱ|II|2)?)\z/
+
+    DELIVERY_MODEL_NOTE_PATTERNS = [
+      /\A※/,
+      /採点ランキングを見る/,
+      /全国採点/,
+      /分析採点/,
+      /うたスキ動画/,
+      /スピードコントロール/,
+      /キーコントロール/,
+      /ご利用いただけません/,
+      /通信環境/,
+      /店舗検索結果/,
+      /歌唱可能/,
+      /主に.+モデル/
+    ].freeze
+
+    DELIVERY_MODEL_MORE_BUTTON_SELECTOR = '#song-distribution [data-testid="card-information"] button'
+
     # JOYSOUNDの楽曲ページをスクレイピング
     def scrape_song_page(url)
       with_retry do
@@ -80,6 +111,8 @@ module Scrapers
         url: artist_url
       )
 
+      expand_delivery_model_sections
+
       browser_manager.find_all(@selectors['song_detail']['songs']).each do |song_el|
         create_song_from_element(song_el, display_artist, browser_manager.current_url)
       end
@@ -107,8 +140,30 @@ module Scrapers
 
     def extract_delivery_models(element)
       element.css(@selectors['song_detail']['platform_item'])
-             .filter_map { |li| li.inner_text.strip.presence }
-             .reject { |text| text == "採点ランキングを見る" }
+             .filter_map { |li| normalize_delivery_model_name(li.inner_text) }
+             .uniq
+    end
+
+    def normalize_delivery_model_name(text)
+      name = text.to_s.squish
+      name = name.split(/※|\.{3}|…/, 2).first.to_s.squish
+
+      return if name.blank?
+      return if DELIVERY_MODEL_NOTE_PATTERNS.any? { |pattern| name.match?(pattern) }
+
+      name if joysound_delivery_model_name?(name)
+    end
+
+    def joysound_delivery_model_name?(name)
+      KNOWN_DELIVERY_MODEL_NAMES.include?(name) || name.match?(JOYSOUND_DELIVERY_MODEL_NAME_PATTERN)
+    end
+
+    def expand_delivery_model_sections
+      browser_manager.find_all(DELIVERY_MODEL_MORE_BUTTON_SELECTOR).each do |button|
+        next unless button.inner_text.to_s.squish == "その他"
+
+        button.focus.click
+      end
     end
 
     def song_information
@@ -144,6 +199,8 @@ module Scrapers
         karaoke_type: "JOYSOUND(うたスキ)",
         url: artist_url
       )
+
+      expand_delivery_model_sections
 
       browser_manager.find_all(@selectors['song_detail']['songs']).each do |block|
         create_music_post_song(block, display_artist, joysound_music_post)

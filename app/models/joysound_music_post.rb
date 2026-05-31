@@ -23,9 +23,9 @@ class JoysoundMusicPost < ApplicationRecord
 
   def self.fetch_music_post_song_joysound_url(progress: nil)
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
-    search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songlist"
+    search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songList"
 
-    artist_names = JoysoundMusicPost.where(joysound_url: "").pluck(:artist)
+    artist_names = JoysoundMusicPost.where(joysound_url: [nil, ""]).distinct.pluck(:artist)
     display_artists = DisplayArtist.music_post.where(name: artist_names)
     total_count = display_artists.count
     display_artists.each.with_index(1) do |da, index|
@@ -43,24 +43,19 @@ class JoysoundMusicPost < ApplicationRecord
       sleep(1.0)
 
       loop do
-        song_list_selector = "#songlist > div.jp-cmp-music-list-001.jp-cmp-music-list-song-002 > ul > li"
-        browser.css(song_list_selector).each do |el|
-          url_path = el.at_css("a").attribute("href")
-          url = URI.join(Constants::Karaoke::Joysound::BASE_URL, url_path).to_s
-          display_title = el.at_css("div > a > h3").inner_text
-          title = display_title.split("／").first
+        joysound_song_links(browser).each do |link|
+          title = joysound_song_link_title(link)
           record = JoysoundMusicPost.find_by(artist: da.name, title:)
-          if record
-            record.joysound_url = url
-            record.save! if record.changed?
-          end
+          next unless record
+
+          record.joysound_url = absolute_joysound_url(link.attribute("href").to_s)
+          record.save! if record.changed?
         end
 
-        next_selector = "nav > div.jp-cmp-sp-none > div.jp-cmp-btn-pager-next.ng-scope.ng-scope"
-        next_text = browser.at_css(next_selector)&.inner_text
-        break unless next_text == "次の20件"
+        next_link = joysound_artist_next_song_list_link(browser)
+        break unless next_link
 
-        browser.at_css(next_selector).at_css("a").focus.click
+        next_link.focus.click
         sleep(1.0)
       end
       progress&.call(
@@ -75,6 +70,8 @@ class JoysoundMusicPost < ApplicationRecord
   rescue StandardError => e
     logger.error(e)
     browser.screenshot(path: "tmp/music_post.png")
+  ensure
+    browser&.quit
   end
 
   def self.link_music_posts_to_joysound_urls(progress: nil)
@@ -163,5 +160,28 @@ class JoysoundMusicPost < ApplicationRecord
     finish_percentage = progress_range.end
 
     (start_percentage + ((finish_percentage - start_percentage) * ratio)).floor.clamp(start_percentage, finish_percentage)
+  end
+
+  def self.joysound_song_links(browser)
+    browser.css('#songList [data-testid="card-information"] a[href^="/web/search/song/"]')
+  end
+
+  def self.joysound_song_link_title(link)
+    display_title = link.css("h3, p")
+                        .map { |node| node.inner_text.to_s.squish }
+                        .find(&:present?)
+    display_title ||= link.inner_text.to_s.squish
+
+    display_title.split("／").first.to_s.squish
+  end
+
+  def self.joysound_artist_next_song_list_link(browser)
+    browser.css('#songList a[href*="page="]').find do |link|
+      link.inner_text.to_s.include?("次") || link.attribute("href").to_s.include?("#songList")
+    end
+  end
+
+  def self.absolute_joysound_url(path)
+    URI.join(Constants::Karaoke::Joysound::BASE_URL, path).to_s
   end
 end
