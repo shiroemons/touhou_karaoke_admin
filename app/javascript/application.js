@@ -62,10 +62,10 @@ const selectedOriginalSongTitles = (picker) => {
 }
 
 const selectedOriginalSongItems = (picker) => {
-  const chips = picker.querySelectorAll("[data-admin-original-song-remove]")
+  const chips = picker.querySelectorAll("[data-admin-original-song-item]")
   if (chips.length > 0) {
     return Array.from(chips).map((chip) => ({
-      title: chip.dataset.adminOriginalSongRemove,
+      title: chip.dataset.adminOriginalSongItem,
       status: chip.dataset.adminOriginalSongStatus || "valid",
     }))
   }
@@ -101,10 +101,15 @@ const updateOriginalSongPickerValue = (picker, items) => {
     const chip = document.createElement("button")
     chip.type = "button"
     chip.className = `admin-original-song-chip admin-original-song-chip-${item.status}`
-    chip.dataset.adminOriginalSongRemove = item.title
+    chip.dataset.adminOriginalSongItem = item.title
     chip.dataset.adminOriginalSongStatus = item.status
+    if (item.status === "invalid") {
+      chip.dataset.adminOriginalSongEdit = item.title
+    } else {
+      chip.dataset.adminOriginalSongRemove = item.title
+    }
     chip.textContent = item.title
-    chip.title = item.status === "invalid" ? `${item.title} はDBに存在しません。クリックで外す` : `${item.title} を外す`
+    chip.title = item.status === "invalid" ? `${item.title} を編集する` : `${item.title} を外す`
     chips.appendChild(chip)
   })
 }
@@ -160,6 +165,7 @@ const renderOriginalSongOptions = (picker, optionsPayload) => {
     option.type = "button"
     option.className = "admin-original-song-option"
     option.dataset.adminOriginalSongSelect = item.title
+    if (item.candidateFor) option.dataset.adminOriginalSongCandidateFor = item.candidateFor
     option.textContent = item.label || item.title
     options.appendChild(option)
   })
@@ -198,12 +204,27 @@ const setOriginalSongPickerText = async (searchInput, text) => {
       ? payload.items.map((item) => ({ title: item.title, status: item.exists ? "valid" : "invalid" }))
       : [{ title: text, status: payload.titles?.length ? "valid" : "invalid" }]
     updateOriginalSongPickerValue(picker, items)
+    const selectedTitles = new Set(selectedOriginalSongTitles(picker))
+    const candidates = (payload.items || []).flatMap((item) => (
+      item.exists ? [] : (item.candidates || []).map((candidate) => ({
+        ...candidate,
+        candidateFor: item.title,
+      }))
+    )).filter((candidate, index, list) => (
+      !selectedTitles.has(candidate.title) &&
+        list.findIndex((item) => item.title === candidate.title) === index
+    ))
+    if (candidates.length > 0) {
+      renderOriginalSongOptions(picker, candidates)
+    } else {
+      hideOriginalSongOptions(picker)
+    }
   } catch (error) {
     console.error(error)
     updateOriginalSongPickerValue(picker, [{ title: text, status: "invalid" }])
+    hideOriginalSongOptions(picker)
   } finally {
     searchInput.value = ""
-    hideOriginalSongOptions(picker)
   }
 }
 
@@ -216,6 +237,21 @@ const setupAdminOriginalSongPickers = () => {
     let searchController
 
     picker.addEventListener("click", (event) => {
+      const editTitle = event.target.closest("[data-admin-original-song-edit]")?.dataset.adminOriginalSongEdit
+      if (editTitle) {
+        updateOriginalSongPickerValue(
+          picker,
+          selectedOriginalSongItems(picker).filter((item) => item.title !== editTitle)
+        )
+        const searchInput = picker.querySelector("[data-admin-original-song-search]")
+        if (searchInput) {
+          searchInput.value = editTitle
+          searchInput.focus()
+          searchInput.dispatchEvent(new Event("input", { bubbles: true }))
+        }
+        return
+      }
+
       const removeTitle = event.target.closest("[data-admin-original-song-remove]")?.dataset.adminOriginalSongRemove
       if (removeTitle) {
         updateOriginalSongPickerValue(
@@ -225,10 +261,15 @@ const setupAdminOriginalSongPickers = () => {
         return
       }
 
-      const selectedTitle = event.target.closest("[data-admin-original-song-select]")?.dataset.adminOriginalSongSelect
+      const selectedOption = event.target.closest("[data-admin-original-song-select]")
+      const selectedTitle = selectedOption?.dataset.adminOriginalSongSelect
       if (!selectedTitle) return
 
-      addOriginalSongTitle(picker, selectedTitle)
+      const candidateFor = selectedOption.dataset.adminOriginalSongCandidateFor
+      const currentItems = candidateFor
+        ? selectedOriginalSongItems(picker).filter((item) => !(item.status === "invalid" && item.title === candidateFor))
+        : selectedOriginalSongItems(picker)
+      updateOriginalSongPickerValue(picker, [...currentItems, { title: selectedTitle, status: "valid" }])
       picker.querySelector("[data-admin-original-song-search]").value = ""
       hideOriginalSongOptions(picker)
     })

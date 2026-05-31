@@ -84,6 +84,40 @@ module Admin
       assert_equal [delimiter_original_song.code, other_original_song.code].sort, song.reload.original_songs.map(&:code).sort
     end
 
+    test 'keeps ascii comma inside known original song titles when splitting pasted text' do
+      song = create_song
+      comma_original_song = create_original_song(title: 'My Maid, Sweet Maid')
+      other_original_song = create_original_song(title: '妖魔夜行')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').preview_from_form_rows(
+        song.id => {
+          'original_songs' => "#{comma_original_song.title},#{other_original_song.title}"
+        }
+      )
+
+      assert_empty result.errors
+      resolved_titles = result.rows.first.fetch(:original_songs).map { |item| item.fetch(:title) }
+      assert_equal [comma_original_song.title, other_original_song.title], resolved_titles
+      assert_empty song.reload.original_songs
+    end
+
+    test 'keeps slash and ampersand inside known original song titles when splitting pasted text' do
+      song = create_song
+      popularity_original_song = create_original_song(title: '人気爆発／雲居一輪＆雲山')
+      other_original_song = create_original_song(title: '少女綺想曲　～ Dream Battle')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').preview_from_form_rows(
+        song.id => {
+          'original_songs' => "#{popularity_original_song.title}＆#{other_original_song.title}"
+        }
+      )
+
+      assert_empty result.errors
+      resolved_titles = result.rows.first.fetch(:original_songs).map { |item| item.fetch(:title) }
+      assert_equal [popularity_original_song.title, other_original_song.title], resolved_titles
+      assert_empty song.reload.original_songs
+    end
+
     test 'resolves multiple original songs with minor title notation differences' do
       song = create_song
       stone_goddess = create_original_song(title: '最後の一人は慣れてるから　～ Stone Goddess')
@@ -101,10 +135,35 @@ module Admin
       assert_empty song.reload.original_songs
     end
 
+    test 'splits pasted original song text on ampersand and normalizes matched titles' do
+      song = create_song
+      master_spark = create_original_song(title: '恋色マスタースパーク')
+      dream_battle = create_original_song(title: '少女綺想曲　～ Dream Battle')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').preview_from_form_rows(
+        song.id => {
+          'original_songs' => '恋色マスタースパーク＆少女綺想曲 ～ Dream Battle'
+        }
+      )
+
+      assert_empty result.errors
+      resolved_titles = result.rows.first.fetch(:original_songs).map { |item| item.fetch(:title) }
+      assert_equal [master_spark.title, dream_battle.title], resolved_titles
+      assert_empty song.reload.original_songs
+    end
+
     test 'searches original song options with normalized title notation' do
       original_song = create_original_song(title: '最後の一人は慣れてるから　～ Stone Goddess')
 
       results = KaraokeSongBulkEditor.search_original_song_options('最後の一人は慣れてるから 〜Stone')
+
+      assert_includes results, original_song
+    end
+
+    test 'searches original song options when punctuation is omitted' do
+      original_song = create_original_song(title: '少女綺想曲　～ Dream Battle')
+
+      results = KaraokeSongBulkEditor.search_original_song_options('少女綺想曲 Dream Battle')
 
       assert_includes results, original_song
     end
@@ -117,12 +176,25 @@ module Admin
       )
 
       assert_empty result.fetch(:titles)
-      assert_equal [
-        { input_title: 'Missing Original', title: 'Missing Original', exists: false, error: '原曲「Missing Original」が見つかりません。' },
-        { input_title: 'U.N.オーエンは彼女なのか?', title: 'U.N.オーエンは彼女なのか？', exists: true, error: nil }
-      ], result.fetch(:items)
+      assert_equal ['Missing Original', 'U.N.オーエンは彼女なのか?'], result.fetch(:items).pluck(:input_title)
+      assert_equal ['Missing Original', 'U.N.オーエンは彼女なのか？'], result.fetch(:items).pluck(:title)
+      assert_equal [false, true], result.fetch(:items).pluck(:exists)
+      assert_equal '原曲「Missing Original」が見つかりません。', result.fetch(:items).first.fetch(:error)
       assert_equal 1, result.fetch(:errors).size
       assert_match(/Missing Original/, result.fetch(:errors).first)
+    end
+
+    test 'returns candidates for unresolved picker titles' do
+      candidate = create_original_song(title: '少女綺想曲　～ Dream Battle')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').resolve_original_song_titles(
+        '少女綺想曲 Dream Battle Extra'
+      )
+
+      assert_empty result.fetch(:titles)
+      item = result.fetch(:items).first
+      assert_equal false, item.fetch(:exists)
+      assert_equal candidate.title, item.fetch(:candidates).first.fetch(:title)
     end
 
     test 'previews each resolved original song without updating records' do

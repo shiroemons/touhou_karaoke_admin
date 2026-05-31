@@ -56,6 +56,20 @@ module Admin
       assert_empty payload.fetch('errors')
     end
 
+    test 'resolves pasted ampersand separated original song text for picker' do
+      master_spark = create_original_song(title: '恋色マスタースパーク')
+      dream_battle = create_original_song(title: '少女綺想曲　～ Dream Battle')
+
+      post admin_karaoke_song_bulk_edit_resolve_original_songs_path,
+           params: { text: '恋色マスタースパーク＆少女綺想曲 ～ Dream Battle' },
+           as: :json
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_equal [master_spark.title, dream_battle.title], payload.fetch('titles')
+      assert_empty payload.fetch('errors')
+    end
+
     test 'does not return partial picker resolution when a pasted original song is unknown' do
       create_original_song(title: 'Picker Known Original')
 
@@ -66,22 +80,25 @@ module Admin
       assert_response :success
       payload = response.parsed_body
       assert_empty payload.fetch('titles')
-      assert_equal [
-        {
-          'input_title' => 'Picker Missing Original',
-          'title' => 'Picker Missing Original',
-          'exists' => false,
-          'error' => '原曲「Picker Missing Original」が見つかりません。'
-        },
-        {
-          'input_title' => 'Picker Known Original',
-          'title' => 'Picker Known Original',
-          'exists' => true,
-          'error' => nil
-        }
-      ], payload.fetch('items')
+      assert_equal ['Picker Missing Original', 'Picker Known Original'], payload.fetch('items').pluck('input_title')
+      assert_equal ['Picker Missing Original', 'Picker Known Original'], payload.fetch('items').pluck('title')
+      assert_equal [false, true], payload.fetch('items').pluck('exists')
+      assert_equal '原曲「Picker Missing Original」が見つかりません。', payload.fetch('items').first.fetch('error')
       assert_equal 1, payload.fetch('errors').size
       assert_match(/Picker Missing Original/, payload.fetch('errors').first)
+    end
+
+    test 'returns original song candidates when picker resolution fails' do
+      original_song = create_original_song(title: '少女綺想曲　～ Dream Battle')
+
+      post admin_karaoke_song_bulk_edit_resolve_original_songs_path,
+           params: { text: '少女綺想曲 Dream Battle Extra' },
+           as: :json
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_empty payload.fetch('titles')
+      assert_equal original_song.title, payload.fetch('items').first.fetch('candidates').first.fetch('title')
     end
 
     test 'updates visible form rows' do

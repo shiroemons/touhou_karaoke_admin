@@ -2684,11 +2684,16 @@ body[data-admin-navigation="loading"] .admin-main {
   background: #fff1f2;
   border: 1px solid #fda4af;
   color: #9f1239;
+  cursor: text;
 }
 
 .admin-original-song-chip::after {
   content: " ×";
   font-weight: 900;
+}
+
+.admin-original-song-chip-invalid::after {
+  content: "";
 }
 
 .admin-original-song-search-wrap {

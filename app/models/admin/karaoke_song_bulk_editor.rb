@@ -22,9 +22,24 @@ module Admin
     def self.search_original_song_options(query, limit: 20)
       normalized_query = normalize_original_song_title(query)
       songs = OriginalSong.non_duplicated.includes(:original).order(:title).to_a
-      songs = songs.select { |song| normalize_original_song_title(song.title).include?(normalized_query) } if normalized_query.present?
+      songs = songs.select { |song| original_song_search_match?(song.title, normalized_query) } if normalized_query.present?
 
       songs.first(limit)
+    end
+
+    def self.normalized_original_song_search_key(title)
+      normalize_original_song_title(title)
+        .downcase
+        .gsub(%r{[[:space:]~・･!！?？.,，、/／&＆:：()\[\]（）「」『』【】-]+}, '')
+    end
+
+    def self.original_song_search_match?(title, normalized_query)
+      normalized_title = normalize_original_song_title(title)
+      return true if normalized_title.include?(normalized_query)
+
+      title_key = normalized_original_song_search_key(normalized_title)
+      query_key = normalized_original_song_search_key(normalized_query)
+      query_key.present? && (title_key.include?(query_key) || query_key.include?(title_key))
     end
 
     def initialize(actor_name:)
@@ -200,16 +215,20 @@ module Admin
         if candidates.blank?
           error = "#{row_number}行目: 原曲「#{query}」が見つかりません。"
           errors << error
-          next({ query:, original_song: nil, error: })
+          next({ query:, original_song: nil, error:, candidates: candidate_original_songs_for_query(query) })
         end
         if candidates.many?
           error = "#{row_number}行目: 原曲「#{query}」が複数候補に一致しました。"
           errors << error
-          next({ query:, original_song: nil, error: })
+          next({ query:, original_song: nil, error:, candidates: candidates })
         end
 
-        { query:, original_song: candidates.first, error: nil }
+        { query:, original_song: candidates.first, error: nil, candidates: [] }
       end
+    end
+
+    def candidate_original_songs_for_query(query)
+      self.class.search_original_song_options(query, limit: 6)
     end
 
     def original_song_resolution_item(entry)
@@ -219,7 +238,8 @@ module Admin
         input_title: entry.fetch(:query),
         title: original_song&.title || entry.fetch(:query),
         exists: original_song.present?,
-        error: entry.fetch(:error)&.sub(/\A1行目: /, '')
+        error: entry.fetch(:error)&.sub(/\A1行目: /, ''),
+        candidates: entry.fetch(:candidates, []).map { |candidate| original_song_preview(candidate) }
       }
     end
 
@@ -232,7 +252,7 @@ module Admin
     end
 
     def split_original_song_queries(text)
-      tokens = text.split(%r{([/／,，、])}).compact_blank
+      tokens = text.split(%r{([/／,，、&＆])}).compact_blank
       queries = []
       index = 0
 
@@ -272,7 +292,7 @@ module Admin
     def original_song_delimiter?(token)
       return false if token.nil?
 
-      token.match?(%r{\A[/／,，、]\z})
+      token.match?(%r{\A[/／,，、&＆]\z})
     end
 
     def known_original_song_title?(title)
