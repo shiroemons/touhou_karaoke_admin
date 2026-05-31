@@ -14,6 +14,17 @@ class CircleTest < ActiveSupport::TestCase
     assert_equal 1, circle.songs_count
   end
 
+  test 'orders display artists by first linked time' do
+    circle = Circle.create!(name: '並び順サークル')
+    later_artist = create_display_artist(name: '後から紐づけ')
+    earlier_artist = create_display_artist(name: '先に紐づけ')
+
+    DisplayArtistsCircle.create!(display_artist: later_artist, circle:, created_at: 1.day.ago)
+    DisplayArtistsCircle.create!(display_artist: earlier_artist, circle:, created_at: 2.days.ago)
+
+    assert_equal [earlier_artist, later_artist], circle.reload.display_artists.to_a
+  end
+
   test 'destroys join records when destroyed' do
     circle = Circle.create!(name: '削除対象サークル')
     artist = create_display_artist

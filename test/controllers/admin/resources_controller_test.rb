@@ -212,11 +212,31 @@ module Admin
 
         assert_response :success, "#{resource.key} index should render"
         assert_select 'tbody tr td:not(.admin-actions-column)', { minimum: 1 }, "#{resource.key} index should render data cells"
+        assert_select 'tbody tr[data-admin-row-href]', { minimum: 1 }, "#{resource.key} index rows should link to show pages"
 
         get admin_resource_path(resource, record)
 
         assert_response :success, "#{resource.key} show should render"
       end
+    end
+
+    test 'display artist index rows link to show page' do
+      get admin_display_artists_path
+
+      assert_response :success
+      assert_select %(tbody tr[data-admin-row-href="#{admin_display_artist_path(@display_artist)}"]), { minimum: 1 }
+    end
+
+    test 'display artist index shows linked circles in first column' do
+      later_circle = Circle.create!(name: '後から表示')
+      DisplayArtistsCircle.find_by!(display_artist: @display_artist, circle: @circle).update!(created_at: 2.days.ago)
+      DisplayArtistsCircle.create!(display_artist: @display_artist, circle: later_circle, created_at: 1.day.ago)
+
+      get admin_display_artists_path, params: { q: @display_artist.name }
+
+      assert_response :success
+      assert_select 'thead th:first-child.admin-table-field-circles', text: 'サークル'
+      assert_select %(tbody tr[data-admin-row-href="#{admin_display_artist_path(@display_artist)}"] td:first-child.admin-table-field-circles), text: "#{@circle.name}、#{later_circle.name}"
     end
 
     test 'show page renders title labels identifiers and badge fields' do
@@ -728,6 +748,60 @@ module Admin
       assert_select 'input[name="song[youtube_url]"]'
     end
 
+    test 'does not render circle selector on display artist basic edit form' do
+      get edit_admin_display_artist_path(@display_artist)
+
+      assert_response :success
+      assert_select '[data-admin-searchable-select]', 0
+      assert_select 'input[name="display_artist[name_reading]"]'
+      assert_select 'input[name="display_artist[url]"]'
+    end
+
+    test 'renders circle association dialog on display artist show page' do
+      other_circle = Circle.create!(name: '追加サークル')
+
+      get admin_display_artist_path(@display_artist)
+
+      assert_response :success
+      assert_select '.admin-related-section header button[data-admin-association-dialog-trigger="display-artist-circles"]', text: /紐づけ/
+      assert_select 'dialog[data-admin-association-dialog="display-artist-circles"]'
+      assert_select '[data-admin-searchable-select]'
+      assert_select 'input[type="search"][data-admin-searchable-select-search][placeholder="サークルを検索"]'
+      assert_select '[data-admin-searchable-select-chips]'
+      assert_select '[data-admin-searchable-select-options][hidden="hidden"]'
+      assert_select 'input[type="hidden"][name="display_artist[circle_ids][]"][value=""]'
+      assert_select '[data-admin-searchable-select-values][data-input-name="display_artist[circle_ids][]"]'
+      assert_select '[data-admin-searchable-select-values] input[type="hidden"][name="display_artist[circle_ids][]"][value=?]', @circle.id.to_s
+      assert_select '[data-admin-searchable-select-option]', text: @circle.name do
+        assert_select 'input[type="checkbox"][name]', 0
+        assert_select 'input[type="checkbox"][value=?][checked="checked"]', @circle.id.to_s
+      end
+      assert_select '[data-admin-searchable-select-option]', text: other_circle.name do
+        assert_select 'input[type="checkbox"][name]', 0
+        assert_select 'input[type="checkbox"][value=?]', other_circle.id.to_s
+      end
+    end
+
+    test 'renders display artist circles by first linked time' do
+      later_circle = Circle.create!(name: '後から紐づけ')
+      unselected_circle = Circle.create!(name: 'AAA未選択')
+      DisplayArtistsCircle.find_by!(display_artist: @display_artist, circle: @circle).update!(created_at: 2.days.ago)
+      DisplayArtistsCircle.create!(display_artist: @display_artist, circle: later_circle, created_at: 1.day.ago)
+
+      get admin_display_artist_path(@display_artist)
+
+      assert_response :success
+      circle_section = css_select('.admin-related-section').find { |section| section.at_css('h3')&.text == 'サークル' }
+      assert_equal [@circle.name, later_circle.name], circle_section.css('.admin-related-list a').map(&:text)
+
+      option_labels = css_select('[data-admin-searchable-select-option] span').map(&:text)
+      assert_equal [@circle.name, later_circle.name], option_labels.first(2)
+      assert_includes option_labels, unselected_circle.name
+
+      hidden_values = css_select('[data-admin-searchable-select-values] input[name="display_artist[circle_ids][]"]').pluck('value')
+      assert_equal [@circle.id, later_circle.id], hidden_values
+    end
+
     test 'updates resource through strong parameters' do
       patch admin_song_path(@song), params: {
         song: {
@@ -746,6 +820,34 @@ module Admin
       follow_redirect!
       assert_select '.admin-change-event-update', text: '更新'
       assert_select '.admin-change-field dt', text: 'YouTube URL'
+    end
+
+    test 'updates display artist circle links through edit form' do
+      other_circle = Circle.create!(name: '差し替えサークル')
+
+      patch admin_display_artist_path(@display_artist), params: {
+        display_artist: {
+          name_reading: @display_artist.name_reading,
+          url: @display_artist.url,
+          circle_ids: [other_circle.id]
+        }
+      }
+
+      assert_redirected_to admin_display_artist_path(@display_artist)
+      assert_equal [other_circle.id], @display_artist.reload.circle_ids
+    end
+
+    test 'clears display artist circle links through edit form' do
+      patch admin_display_artist_path(@display_artist), params: {
+        display_artist: {
+          name_reading: @display_artist.name_reading,
+          url: @display_artist.url,
+          circle_ids: ['']
+        }
+      }
+
+      assert_redirected_to admin_display_artist_path(@display_artist)
+      assert_empty @display_artist.reload.circle_ids
     end
 
     test 'destroys resource when policy allows it' do

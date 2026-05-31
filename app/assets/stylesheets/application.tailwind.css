@@ -2276,6 +2276,17 @@ body[data-admin-navigation="loading"] .admin-main {
     box-shadow 140ms ease;
 }
 
+.admin-table tbody tr[data-admin-row-href] {
+  cursor: pointer;
+}
+
+.admin-table tbody tr[data-admin-row-href] a,
+.admin-table tbody tr[data-admin-row-href] button,
+.admin-table tbody tr[data-admin-row-href] input,
+.admin-table tbody tr[data-admin-row-href] label {
+  cursor: auto;
+}
+
 .admin-table.table-zebra tbody tr:nth-child(2n) {
   background: #fbfdff;
 }
@@ -3176,7 +3187,7 @@ th.admin-actions-column {
 }
 
 .admin-related-section header {
-  align-items: baseline;
+  align-items: center;
   display: flex;
   gap: 10px;
   justify-content: space-between;
@@ -3188,10 +3199,29 @@ th.admin-actions-column {
   margin: 0;
 }
 
-.admin-related-section header span {
+.admin-related-section header > div > span {
   color: color-mix(in oklab, var(--color-base-content) 56%, transparent);
   font-size: 12px;
   font-weight: 700;
+}
+
+.admin-association-dialog-box {
+  display: flex;
+  flex-direction: column;
+  height: min(620px, calc(100vh - 64px));
+  max-width: 760px;
+}
+
+.admin-association-dialog-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  max-width: none;
+  min-height: 0;
+}
+
+.admin-association-dialog-form .admin-form-actions {
+  margin-top: auto;
 }
 
 .admin-change-log-list {
@@ -3297,6 +3327,123 @@ th.admin-actions-column {
 
 .admin-form-row label {
   font-weight: 700;
+}
+
+.admin-searchable-select {
+  align-content: start;
+  display: grid;
+  gap: 8px;
+  min-height: 316px;
+  min-width: 0;
+  position: relative;
+}
+
+.admin-searchable-select-search {
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-searchable-select-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-searchable-select-chips:empty {
+  display: none;
+}
+
+.admin-searchable-select-chip {
+  align-items: center;
+  background: #e6f0ff;
+  border: 1px solid #b8d4ff;
+  border-radius: 999px;
+  color: #0f3f85;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px 9px;
+}
+
+.admin-searchable-select-chip::after {
+  color: #315f9f;
+  content: "×";
+  font-size: 15px;
+  line-height: 1;
+}
+
+.admin-searchable-select-chip:hover,
+.admin-searchable-select-chip:focus-visible {
+  background: #d8e8ff;
+}
+
+.admin-searchable-select-options {
+  align-content: start;
+  background: var(--color-base-100);
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  display: grid;
+  gap: 2px;
+  height: 260px;
+  left: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 8px;
+  position: absolute;
+  right: 0;
+  top: 46px;
+  width: 100%;
+  z-index: 20;
+}
+
+.admin-searchable-select-option {
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  font-size: 15px;
+  gap: 8px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  min-height: 36px;
+  padding: 6px 8px;
+}
+
+.admin-searchable-select-option:hover,
+.admin-searchable-select-option:has(input:focus-visible) {
+  background: #eff6ff;
+}
+
+.admin-searchable-select-option:has(input:checked) {
+  background: #e6f0ff;
+  color: #0f3f85;
+  font-weight: 700;
+}
+
+.admin-searchable-select-option input {
+  height: 18px;
+  margin: 0;
+  min-height: 18px;
+  padding: 0;
+  width: 18px;
+}
+
+.admin-searchable-select-option span {
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-searchable-select-status {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: 12px;
+  margin: 0;
 }
 
 .admin-inline-operation {

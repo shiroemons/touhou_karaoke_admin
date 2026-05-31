@@ -95,27 +95,6 @@ module Admin
       field.helper ? field.helper.call(record) : record.public_send(field.name)
     end
 
-    def admin_field_input(form, field)
-      case field.type
-      when :select
-        form.select(field.name, Array(field.options).map { |option| [option, option] }, { include_blank: true })
-      when :belongs_to_select
-        form.select(field.name, field_options(field), { include_blank: true })
-      when :number
-        form.number_field(field.name)
-      when :boolean
-        form.check_box(field.name)
-      when :date
-        form.date_field(field.name)
-      else
-        form.text_field(field.name)
-      end
-    end
-
-    def field_options(field)
-      field.options.respond_to?(:call) ? field.options.call : Array(field.options)
-    end
-
     def admin_page_params(page)
       request.query_parameters.merge(page:)
     end

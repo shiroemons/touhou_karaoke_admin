@@ -1,5 +1,5 @@
 class DisplayArtist < ApplicationRecord
-  has_many :display_artists_circles, dependent: :destroy
+  has_many :display_artists_circles, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :display_artist
   has_many :circles, through: :display_artists_circles
   has_many :songs, dependent: :destroy
   has_many :dam_songs, dependent: :destroy

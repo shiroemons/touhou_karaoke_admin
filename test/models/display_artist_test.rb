@@ -13,6 +13,17 @@ class DisplayArtistTest < ActiveSupport::TestCase
     assert_equal [dam_song], artist.dam_songs.to_a
   end
 
+  test 'orders circles by first linked time' do
+    artist = create_display_artist
+    later_circle = Circle.create!(name: '後から紐づけ')
+    earlier_circle = Circle.create!(name: '先に紐づけ')
+
+    DisplayArtistsCircle.create!(display_artist: artist, circle: later_circle, created_at: 1.day.ago)
+    DisplayArtistsCircle.create!(display_artist: artist, circle: earlier_circle, created_at: 2.days.ago)
+
+    assert_equal [earlier_circle, later_circle], artist.reload.circles.to_a
+  end
+
   test 'destroys dependent records' do
     artist = create_display_artist
     circle = Circle.create!(name: '関連サークル')

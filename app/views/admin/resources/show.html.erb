@@ -96,8 +96,16 @@
         <% count = admin_association_count(@record, association) %>
         <section class="admin-related-section">
           <header>
-            <h3><%= admin_association_label(association) %></h3>
-            <span><%= number_with_delimiter(count) %> 件</span>
+            <div>
+              <h3><%= admin_association_label(association) %></h3>
+              <span><%= number_with_delimiter(count) %> 件</span>
+            </div>
+            <% if @resource.key == :display_artist && association == :circles && policy(@record).update? %>
+              <button type="button" class="admin-button btn btn-sm" data-admin-association-dialog-trigger="display-artist-circles">
+                <%= admin_icon(:edit) %>
+                <span>紐づけ</span>
+              </button>
+            <% end %>
           </header>
           <% if records.present? %>
             <ul class="admin-related-list">
@@ -119,4 +127,41 @@
       <% end %>
     </div>
   </section>
+<% end %>
+
+<% if @resource.key == :display_artist && policy(@record).update? %>
+  <% circle_field = @resource.fields.find { |field| field.name == :circle_ids } %>
+  <% if circle_field %>
+    <dialog class="modal admin-association-dialog" data-admin-association-dialog="display-artist-circles">
+      <div class="modal-box admin-association-dialog-box">
+        <div class="admin-operation-modal-header">
+          <div>
+            <span class="admin-operation-modal-resource">関連データ</span>
+            <h2>サークルを紐づけ</h2>
+          </div>
+          <button type="button" class="btn btn-sm btn-circle btn-ghost" aria-label="閉じる" data-admin-association-dialog-close><%= admin_icon(:clear) %></button>
+        </div>
+
+        <%= form_with model: [:admin, @record], url: admin_resource_path(@resource, @record), method: :patch, class: "admin-form admin-association-dialog-form" do |form| %>
+          <div class="admin-form-row">
+            <%= form.label circle_field.name, circle_field.label %>
+            <%= admin_field_input(form, circle_field) %>
+          </div>
+          <div class="admin-form-actions">
+            <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary" do %>
+              <%= admin_icon(:edit) %>
+              <span>更新</span>
+            <% end %>
+            <button type="button" class="admin-button btn" data-admin-association-dialog-close>
+              <%= admin_icon(:clear) %>
+              <span>キャンセル</span>
+            </button>
+          </div>
+        <% end %>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button type="submit">閉じる</button>
+      </form>
+    </dialog>
+  <% end %>
 <% end %>

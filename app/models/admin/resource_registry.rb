@@ -491,7 +491,8 @@ module Admin
             presence_filter(:name_reading, label: '読み', present_label: '読みあり', blank_label: '読みなし')
           ],
           fields: [
-            field(:circle, label: 'サークル', type: :boolean_mark, show: false, form: false, helper: ->(record) { record.circles.present? }),
+            field(:circles, label: 'サークル', show: false, form: false, helper: ->(record) { record.circles.map(&:name).join('、') }),
+            field(:circle_ids, label: 'サークル', type: :has_many_select, index: false, show: false, form: false, options: -> { Circle.order(:name).pluck(:name, :id) }),
             field(:karaoke_type, label: 'カラオケ種別', readonly: true, sortable: true),
             field(:name, label: 'アーティスト名', readonly: true, sortable: true),
             field(:name_reading, label: 'アーティスト名読み', sortable: true),
@@ -506,7 +507,7 @@ module Admin
             operation('無効なアーティストを削除', handler: :cleanup_invalid_display_artists, group: '検証・削除', confirmation: 'URLが無効なアーティストを削除します。実行しますか？'),
             operation('孤立アーティストを削除', handler: :cleanup_orphan_display_artists, group: '検証・削除', confirmation: '楽曲が紐づいていないアーティストを削除します。実行しますか？', inputs: [{ name: :export_tsv, label: '削除結果TSV', description: '削除したアーティストをTSVで出力する', type: :checkbox, checked: true, required: false }])
           ],
-          strong_parameters: %i[name_reading url]
+          strong_parameters: [:name_reading, :url, { circle_ids: [] }]
         )
       end
 
