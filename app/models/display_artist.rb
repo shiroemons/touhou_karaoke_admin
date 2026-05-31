@@ -58,84 +58,71 @@ class DisplayArtist < ApplicationRecord
   end
 
   def self.fetch_joysound_music_post_artist(progress: nil)
-    url = Constants::Karaoke::Joysound::BASE_URL
     browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
 
     music_port_artists = JoysoundMusicPost.distinct.pluck(:artist).sort
-    exist_artists = DisplayArtist.music_post.distinct.pluck(:name).sort
-    artists = music_port_artists - exist_artists
+    completed_artists = DisplayArtist.music_post.where.not(name_reading: [nil, ""]).distinct.pluck(:name).sort
+    artists = music_port_artists - completed_artists
     error_artist = []
 
-    artists.each.with_index(1) do |artist, index|
-      progress&.call(
-        percentage: progress_percentage(index - 1, artists.count),
-        status: "ミュージックポストアーティスト取得中",
-        label: "ミュージックポストアーティストを検索しています",
-        detail: "処理済み: #{index - 1}/#{artists.count}件",
-        current: index - 1,
-        total: artists.count
-      )
-      rescue_count = 0
-      begin
-        browser.goto(url)
-        # 検索対象を 歌手名 に変更
-        browser.at_xpath('//*[@id="jp-cmp-header-select-keywordtype"]').select(["artist"])
-        # 検索キーワードのinput
-        input = browser.at_xpath('//*[@id="jp-cmp-header-input-keyword"]')
-        # 検索キーワードに アーティスト名を入力し、Enterキーで検索
-        input.focus.type(artist, :Enter)
-        # 描画に少し時間がかかるため 1秒待つ
-        sleep(1.0)
+    begin
+      artists.each.with_index(1) do |artist, index|
+        progress&.call(
+          percentage: progress_percentage(index - 1, artists.count),
+          status: "ミュージックポストアーティスト取得中",
+          label: "ミュージックポストアーティストを検索しています",
+          detail: "処理済み: #{index - 1}/#{artists.count}件",
+          current: index - 1,
+          total: artists.count
+        )
+        rescue_count = 0
+        begin
+          browser.goto(joysound_artist_search_url(artist))
+          browser.network.wait_for_idle(duration: 1.0)
 
-        result_list_selector = "#searchresult > ul > li"
-        browser.css(result_list_selector).each do |el|
-          no_data = el.inner_text
-          if no_data == "該当データがありません"
-            JoysoundMusicPost.where(artist:)&.destroy_all
+          if joysound_artist_search_no_data?(browser)
+            JoysoundMusicPost.where(artist:).destroy_all
             DisplayArtist.find_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")&.destroy
           else
-            option = el.at_css("div > div > div.jp-cmp-list-inline-003").inner_text
-            option.gsub!("ウィキペディア", "")
-            next if option.present?
+            artist_link = joysound_artist_search_result_links(browser).find do |link|
+              joysound_artist_search_result_name(link) == artist
+            end
 
-            display_artist = el.at_css("h3.jp-cmp-music-title-001").inner_text
-            display_artist.gsub!(" 新曲あり", "")
-            next if artist != display_artist
+            if artist_link.present?
+              artist_url = absolute_joysound_url(artist_link.attribute("href").to_s)
+              display_artist = DisplayArtist.find_or_initialize_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")
 
-            artist_url = el.at_css("a").property("href")
-            next if DisplayArtist.exists?(name: artist, karaoke_type: "JOYSOUND(うたスキ)", url: artist_url)
-
-            # 別ブラウザを起動する
-            sub_browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
-            sub_browser.goto(artist_url)
-            sleep(1.0)
-            artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
-            artist_el = sub_browser.at_css(artist_selector)
-            name_reading = artist_el.inner_text.gsub(/[（）]/, "")
-
-            DisplayArtist.find_or_create_by!(name: display_artist, name_reading:, karaoke_type: "JOYSOUND(うたスキ)", url: sub_browser.current_url)
-            sub_browser.quit
+              if display_artist.new_record? || display_artist.url != artist_url || display_artist.name_reading.blank?
+                browser.goto(artist_url)
+                browser.network.wait_for_idle(duration: 1.0)
+                display_artist.name_reading = joysound_artist_name_reading(browser, artist)
+                display_artist.url = browser.current_url
+                display_artist.save!
+              end
+            end
+          end
+        rescue Ferrum::NodeNotFoundError => e
+          logger.debug(e)
+          rescue_count += 1
+          if rescue_count > 3
+            browser.screenshot(path: "tmp/music_post_#{artist.tr('/', '／')}.png")
+            error_artist << artist
+          else
+            browser.network.clear(:traffic)
+            retry
           end
         end
-      rescue Ferrum::NodeNotFoundError => e
-        logger.debug(e)
-        rescue_count += 1
-        if rescue_count > 3
-          browser.screenshot(path: "tmp/music_post_#{artist.tr('/', '／')}.png")
-          error_artist << artist
-        else
-          browser.network.clear(:traffic)
-          retry
-        end
+        progress&.call(
+          percentage: progress_percentage(index, artists.count),
+          status: "ミュージックポストアーティスト取得中",
+          label: "ミュージックポストアーティストを検索しています",
+          detail: "処理済み: #{index}/#{artists.count}件",
+          current: index,
+          total: artists.count
+        )
       end
-      progress&.call(
-        percentage: progress_percentage(index, artists.count),
-        status: "ミュージックポストアーティスト取得中",
-        label: "ミュージックポストアーティストを検索しています",
-        detail: "処理済み: #{index}/#{artists.count}件",
-        current: index,
-        total: artists.count
-      )
+    ensure
+      browser.quit
     end
     logger.debug("未登録アーティスト：#{error_artist}") if error_artist.present?
   end
@@ -148,5 +135,41 @@ class DisplayArtist < ApplicationRecord
     return 96 if total.to_i.zero?
 
     (8 + (88 * (current.to_f / total))).floor.clamp(8, 96)
+  end
+
+  def self.joysound_artist_search_url(artist)
+    uri = URI.join(Constants::Karaoke::Joysound::BASE_URL, "search/artist")
+    uri.query = URI.encode_www_form(match: 1, keyword: artist)
+    uri.to_s
+  end
+
+  def self.joysound_artist_search_no_data?(browser)
+    browser.at_css("body")&.inner_text.to_s.include?("該当データがありません")
+  end
+
+  def self.joysound_artist_search_result_links(browser)
+    browser.css('a[href^="/web/search/artist/"]')
+  end
+
+  def self.joysound_artist_search_result_name(link)
+    link.css("p").map { |node| node.inner_text.to_s.strip }.find(&:present?) ||
+      link.inner_text.to_s.gsub(/\A新曲あり/, "").strip
+  end
+
+  def self.joysound_artist_name_reading(browser, artist)
+    reading = browser.css("main section p").map { |node| node.inner_text.to_s.strip }.find do |text|
+      text.match?(/\A[（(].+[）)]\z/)
+    end
+    lines = browser.at_css("body")&.inner_text.to_s.lines.map(&:strip).compact_blank
+    artist_index = lines.index(artist)
+    reading ||= lines[(artist_index || -1) + 1] if artist_index
+
+    return "" unless reading&.match?(/\A[（(].+[）)]\z/)
+
+    reading.gsub(/[（）()]/, "")
+  end
+
+  def self.absolute_joysound_url(path)
+    URI.join(Constants::Karaoke::Joysound::BASE_URL, path).to_s
   end
 end
