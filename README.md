@@ -30,7 +30,7 @@
 
 ## 技術スタック
 
-- Ruby 4.0.3
+- Ruby 4.0.5
 - Rails 8.1.x
 - PostgreSQL 18
 - Solid Queue
