@@ -17,7 +17,7 @@
 
 **問題点**: `app/models/admin/resource_registry.rb` がリソース定義、フィールド定義、フィルタ DSL、操作説明、ナビゲーション構成をすべて抱えている。
 
-- [ ] リソース定義を `app/models/admin/resources/*.rb` へ分割する。
+- [x] リソース定義を `app/models/admin/resources/*.rb` へ分割する。
 - [x] フィールド、フィルタ、操作定義の builder を独立クラスまたは concern に切り出す。
 - [ ] 長文の操作説明を `config/locales/admin.ja.yml` または専用定義ファイルへ移す。
 - [ ] `ResourceRegistry` は登録と参照だけを担当する薄いクラスにする。

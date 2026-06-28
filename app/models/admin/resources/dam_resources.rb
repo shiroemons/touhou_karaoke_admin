@@ -45,6 +45,25 @@ module Admin
           ]
         )
       end
+
+      def song_with_dam_ouchikaraoke
+        resource(
+          key: :song_with_dam_ouchikaraoke,
+          model: SongWithDamOuchikaraoke,
+          label: 'DAMおうちカラオケ',
+          title: :url,
+          navigation: false,
+          includes: [:song],
+          filters: [
+            association_exact_filter(:karaoke_type, label: 'カラオケ種別', association: :song, column: :karaoke_type, options: karaoke_type_value_options)
+          ],
+          fields: [
+            field(:song, label: 'カラオケ配信曲', type: :belongs_to, form: false, link: true, sortable: true),
+            field(:song_id, label: 'カラオケ配信曲', type: :belongs_to_select, index: false, show: false, readonly: true, options: -> { Song.order(:title).limit(500).pluck(:title, :id) }),
+            field(:url, label: 'URL', type: :url, readonly: true, sortable: true)
+          ]
+        )
+      end
     end
   end
 end
