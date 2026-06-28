@@ -131,6 +131,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: '孤立アーティストを削除'
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][checked="checked"]'
+      assert_select '.admin-checkbox-field', text: /削除せず対象を確認する/
       assert_select 'input[type="checkbox"][name="operation_fields[export_tsv]"][checked="checked"]'
       assert_select '.admin-checkbox-field', text: /削除したアーティストをTSVで出力する/
     end
@@ -939,6 +941,15 @@ module Admin
       assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Joysound::MUSIC_POST_BASE_URL
     end
 
+    test 'expired music post cleanup operation renders dry run checkbox' do
+      get operation_admin_joysound_music_posts_path(operation: 'cleanup_expired_joysound_music_posts')
+
+      assert_response :success
+      assert_select 'h1', text: '期限切れを削除'
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][checked="checked"]'
+      assert_select '.admin-checkbox-field', text: /削除せず対象を確認する/
+    end
+
     test 'operation progress endpoint returns current progress payload' do
       progress_id = SecureRandom.uuid
       OperationProgress.update!(
@@ -1038,6 +1049,23 @@ module Admin
       assert_equal 'DAM候補一覧を取得のバックグラウンド処理を開始しました。', payload['message']
       assert_equal 'queued', payload.dig('progress', 'state')
       assert_equal '待機中', payload.dig('progress', 'status')
+    end
+
+    test 'async destructive operation preserves dry run option in job params' do
+      progress_id = SecureRandom.uuid
+
+      assert_enqueued_with(job: OperationJob, queue: 'admin_operations') do
+        post operation_admin_joysound_music_posts_path(format: :json), params: {
+          operation: 'cleanup_expired_joysound_music_posts',
+          operation_progress_id: progress_id,
+          operation_fields: { dry_run: '1' }
+        }
+      end
+
+      job_args = enqueued_jobs.last.fetch(:args).first
+      assert_equal 'joysound_music_post', job_args.fetch('resource_key')
+      assert_equal 'cleanup_expired_joysound_music_posts', job_args.fetch('operation_key')
+      assert_equal '1', job_args.dig('params', 'operation_fields', 'dry_run')
     end
 
     test 'joysound touhou operation receives progress callback' do
@@ -1201,6 +1229,22 @@ module Admin
       assert_includes response.body, orphan.id
     end
 
+    test 'previews orphan display artist cleanup without deleting records' do
+      orphan = DisplayArtist.create!(karaoke_type: 'DAM', name: 'Preview Orphan', url: 'https://example.com/preview-orphan')
+
+      assert_no_difference -> { DisplayArtist.count } do
+        post operation_admin_display_artists_path, params: {
+          operation: operation_index(:display_artist, :cleanup_orphan_display_artists),
+          operation_fields: { dry_run: '1', export_tsv: '1' }
+        }
+      end
+
+      assert_response :success
+      assert_includes response.headers['Content-Disposition'], 'preview_deleted_orphan_display_artists.tsv'
+      assert_includes response.body, orphan.id
+      assert DisplayArtist.exists?(orphan.id)
+    end
+
     test 'cleanup orphan display artists can skip tsv output' do
       DisplayArtist.create!(karaoke_type: 'DAM', name: 'Orphan Without TSV', url: 'https://example.com/orphan-without-tsv')
 
@@ -1214,6 +1258,40 @@ module Admin
       assert_redirected_to admin_display_artists_path
       follow_redirect!
       assert_select '.admin-flash-notice', text: /TSVは出力していません/
+    end
+
+    test 'passes dry run option to invalid display artist cleanup' do
+      result = {
+        checked: 1,
+        invalid: 1,
+        deleted: 1,
+        invalid_records: [],
+        deleted_records: [{ id: @display_artist.id, name: @display_artist.name, karaoke_type: @display_artist.karaoke_type, url: @display_artist.url }],
+        errors: []
+      }
+      validator = Struct.new(:result) do
+        def validate_all = result
+      end.new(result)
+      captured_delete_invalid = nil
+      captured_dry_run = nil
+
+      with_stubbed_class_method(DisplayArtistUrlValidator, :new, lambda { |delete_invalid:, dry_run:, progress: nil|
+        captured_delete_invalid = delete_invalid
+        captured_dry_run = dry_run
+        progress&.call(percentage: 25, status: 'URL検証中', label: '検証中')
+        validator
+      }) do
+        post operation_admin_display_artists_path, params: {
+          operation: 'cleanup_invalid_display_artists',
+          operation_fields: { dry_run: '1' }
+        }
+      end
+
+      assert_response :success
+      assert captured_delete_invalid
+      assert captured_dry_run
+      assert_includes response.headers['Content-Disposition'], 'preview_deleted_display_artists.tsv'
+      assert_includes response.body, @display_artist.url
     end
 
     test 'runs joysound music post maintenance operation through service' do

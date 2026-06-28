@@ -34,8 +34,9 @@
 class DisplayArtistUrlValidator
   attr_reader :checked_count, :invalid_count, :deleted_count, :invalid_records, :deleted_records, :errors
 
-  def initialize(delete_invalid: false, progress: nil)
+  def initialize(delete_invalid: false, dry_run: false, progress: nil)
     @delete_invalid = delete_invalid
+    @dry_run = dry_run
     @progress = progress
     @checked_count = 0
     @invalid_count = 0
@@ -115,10 +116,11 @@ class DisplayArtistUrlValidator
         karaoke_type: record.karaoke_type,
         url: record.url
       }
-      record.destroy!
+      record.destroy! unless @dry_run
       @deleted_count += 1
       @deleted_records << deleted_record_info
-      Rails.logger.info("DisplayArtistUrlValidator: Deleted DisplayArtist - ID: #{record.id}, Name: #{record.name}")
+      action = @dry_run ? 'Would delete' : 'Deleted'
+      Rails.logger.info("DisplayArtistUrlValidator: #{action} DisplayArtist - ID: #{record.id}, Name: #{record.name}")
     else
       Rails.logger.info("DisplayArtistUrlValidator: Skipping deletion (has #{record.songs.count} songs) - ID: #{record.id}, Name: #{record.name}")
     end

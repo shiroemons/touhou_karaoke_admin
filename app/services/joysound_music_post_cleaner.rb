@@ -22,12 +22,14 @@
 #   - deleted: 削除したレコード数
 #   - errors: エラーメッセージの配列
 class JoysoundMusicPostCleaner
-  attr_reader :deleted_count, :checked_count, :errors
+  attr_reader :deleted_count, :checked_count, :deleted_records, :errors
 
-  def initialize(progress: nil)
+  def initialize(dry_run: false, progress: nil)
+    @dry_run = dry_run
     @progress = progress
     @deleted_count = 0
     @checked_count = 0
+    @deleted_records = []
     @errors = []
   end
 
@@ -45,6 +47,7 @@ class JoysoundMusicPostCleaner
     {
       checked: @checked_count,
       deleted: @deleted_count,
+      deleted_records: @deleted_records,
       errors: @errors
     }
   end
@@ -57,14 +60,28 @@ class JoysoundMusicPostCleaner
     if UrlChecker.url_exists?(record.url)
       Rails.logger.info("URL still exists for expired record: #{record.title} by #{record.artist}")
     else
-      record.destroy!
+      @deleted_records << record_info(record)
+      record.destroy! unless @dry_run
       @deleted_count += 1
-      Rails.logger.info("Deleted expired JoysoundMusicPost: #{record.title} by #{record.artist}")
+      action = @dry_run ? 'Would delete' : 'Deleted'
+      Rails.logger.info("#{action} expired JoysoundMusicPost: #{record.title} by #{record.artist}")
     end
   rescue StandardError => e
     error_message = "Failed to process record ID #{record.id}: #{e.message}"
     @errors << error_message
     Rails.logger.error(error_message)
+  end
+
+  def record_info(record)
+    {
+      id: record.id,
+      title: record.title,
+      artist: record.artist,
+      producer: record.producer,
+      delivery_deadline_on: record.delivery_deadline_on,
+      url: record.url,
+      joysound_url: record.joysound_url
+    }
   end
 
   def report_progress(total_count)
