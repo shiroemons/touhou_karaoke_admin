@@ -46,6 +46,24 @@ module Admin
       assert_equal grouped_resources.map(&:key).uniq, grouped_resources.map(&:key)
     end
 
+    test 'configured resources expose required attributes' do
+      ResourceRegistry.all.each do |key, resource|
+        assert_equal key, resource.key
+        assert resource.model < ApplicationRecord, "#{key} must reference an application model"
+        assert_predicate resource.label, :present?, "#{key} must define a label"
+        assert_includes [String, Symbol, Proc], resource.title.class, "#{key} must define a display title"
+        assert_predicate resource.fields, :present?, "#{key} must define fields"
+      end
+    end
+
+    test 'configured resource fields filters and operations have unique keys' do
+      ResourceRegistry.all.each_value do |resource|
+        assert_unique_names(resource.fields, "#{resource.key} fields")
+        assert_unique_names(resource.filters, "#{resource.key} filters")
+        assert_unique_names(resource.operations, "#{resource.key} operations", attribute: :key)
+      end
+    end
+
     test 'collection and member operations expose stable keys and action keys' do
       song = ResourceRegistry.fetch(:song)
       export = song.operations.find { |operation| operation.key == 'export_songs' }
@@ -58,6 +76,14 @@ module Admin
       assert_equal 'FetchDamSong', fetch.action_key
       assert_equal :fetch_dam_song, fetch.handler
       assert(fetch.inputs.any? { |input| input[:name] == :dam_song_url })
+    end
+
+    private
+
+    def assert_unique_names(items, label, attribute: :name)
+      values = items.map { |item| item.public_send(attribute).to_s }
+
+      assert_equal values.uniq, values, "#{label} must be unique"
     end
   end
 end
