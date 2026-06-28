@@ -108,6 +108,7 @@ module Admin
           resource_key: @resource.key.to_s,
           operation_key: @operation.key,
           record_id: @record&.id,
+          actor_name: current_user.name,
           params: operation_job_params(progress_id)
         )
 

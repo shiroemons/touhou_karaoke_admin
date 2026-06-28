@@ -15,7 +15,13 @@ module Admin
             resource_key: 'dam_song',
             operation_key: 'fetch_dam_touhou_songs',
             record_id: nil,
-            params: { operation_progress_id: progress_id }
+            actor_name: 'Admin tester',
+            params: {
+              operation: 'fetch_dam_touhou_songs',
+              operation_progress_id: progress_id,
+              selected_ids: %w[1 2 2],
+              operation_fields: { 'dry_run' => '1' }
+            }
           )
         end
       end
@@ -23,6 +29,10 @@ module Admin
       logs = log_output.string
       assert_includes logs, 'Admin::OperationJob started resource=dam_song operation=fetch_dam_touhou_songs'
       assert_includes logs, "progress_id=#{progress_id}"
+      assert_includes logs, 'actor=Admin tester'
+      assert_includes logs, 'selected_ids_count=2'
+      assert_includes logs, 'operation_field_keys=dry_run'
+      assert_includes logs, 'param_keys=operation'
       assert_includes logs, 'Admin::OperationJob completed resource=dam_song operation=fetch_dam_touhou_songs'
     end
 

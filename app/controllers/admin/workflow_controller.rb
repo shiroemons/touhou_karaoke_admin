@@ -36,7 +36,7 @@ module Admin
       progress_id = SecureRandom.uuid
 
       WorkflowRunProgress.create!(progress_id, workflow:)
-      WorkflowRunJob.perform_later(workflow_key: workflow.key, progress_id:)
+      WorkflowRunJob.perform_later(workflow_key: workflow.key, progress_id:, actor_name: current_user.name)
 
       respond_to do |format|
         format.json { render json: WorkflowRunProgress.read(progress_id), status: :accepted }

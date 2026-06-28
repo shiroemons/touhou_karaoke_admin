@@ -73,7 +73,7 @@
 - [x] `admin_operation_progresses` の古いレコード削除方針を決める。
 - [ ] 失敗ジョブの再実行導線を管理画面に追加するか判断する。
 - [x] ジョブ実行時の resource / operation をログに残す。
-- [ ] ジョブ実行時の actor / params summary をログに残す。
+- [x] ジョブ実行時の actor / params summary をログに残す。
 - [ ] operation ごとの timeout と retry 方針を定義する。
 - [ ] 非同期化できない操作（ファイル upload、即時 download など）の制約をコード上で表現する。
 

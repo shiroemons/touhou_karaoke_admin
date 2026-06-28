@@ -76,14 +76,16 @@ module Admin
 
       with_logger(ActiveSupport::Logger.new(log_output)) do
         stub_operation_runner(fake_runner) do
-          WorkflowRunJob.perform_now(workflow_key: 'dam', progress_id: run_id)
+          WorkflowRunJob.perform_now(workflow_key: 'dam', progress_id: run_id, actor_name: 'Workflow tester')
         end
       end
 
       logs = log_output.string
       assert_includes logs, "Admin::WorkflowRunJob started workflow=dam progress_id=#{run_id}"
+      assert_includes logs, 'actor=Workflow tester'
       assert_includes logs, 'Admin::WorkflowRunJob step started'
       assert_includes logs, 'resource=dam_song operation=fetch_dam_touhou_songs attempt=1'
+      assert_includes logs, 'selected_ids_count=0 operation_field_keys=- param_keys=-'
       assert_includes logs, 'Admin::WorkflowRunJob step completed'
       assert_includes logs, "Admin::WorkflowRunJob completed workflow=dam progress_id=#{run_id}"
     end
