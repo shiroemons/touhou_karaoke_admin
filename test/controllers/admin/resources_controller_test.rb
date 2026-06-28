@@ -423,6 +423,23 @@ module Admin
       assert_select 'td', { text: original_category_song.title, count: 0 }
     end
 
+    test 'filters songs by original category without duplicate rows for multiple originals' do
+      extra_original_song = OriginalSong.create!(code: '000197', original: @original, title: 'ほおずきみたいに紅い魂', composer: 'ZUN', track_number: 2)
+      multi_original_song = Song.create!(
+        display_artist: @display_artist,
+        karaoke_type: 'DAM',
+        title: 'Multiple Original Filter Song',
+        url: 'https://example.com/multiple-original-filter'
+      )
+      multi_original_song.original_songs << [@original_song, extra_original_song]
+
+      get admin_songs_path, params: { q: multi_original_song.title, filters: { original_category: 'touhou_arrange' } }
+
+      assert_response :success
+      assert_select %(tbody tr[data-admin-row-href="#{admin_song_path(multi_original_song)}"]), 1
+      assert_select 'td', text: multi_original_song.title
+    end
+
     test 'song index shows service status columns in information order' do
       @song.update!(
         youtube_url: 'https://youtube.example/watch',
@@ -638,6 +655,30 @@ module Admin
       per_circle_count_queries = sql.count { |statement| statement.match?(/WHERE "display_artists_circles"."circle_id" = \$\d+/) }
       assert_equal 0, per_circle_count_queries
       assert(sql.any? { |statement| statement.include?('GROUP BY "display_artists_circles"."circle_id"') })
+    end
+
+    test 'song index uses eager loaded originals for displayed counts' do
+      3.times do |index|
+        song = Song.create!(
+          display_artist: @display_artist,
+          karaoke_type: 'DAM',
+          title: "N+1 Original Count Song #{index}",
+          url: "https://example.com/n-plus-one-original-count-song-#{index}"
+        )
+        song.original_songs << create_original_song(code: "n1-original-count-#{index}")
+      end
+
+      sql = capture_sql do
+        get admin_songs_path, params: { q: 'N+1 Original Count Song' }
+      end
+
+      assert_response :success
+      assert_select 'tbody tr', 3
+      per_song_original_count_queries = sql.count do |statement|
+        statement.include?('SELECT COUNT(*) FROM "original_songs"') && statement.include?('"songs_original_songs"."song_id" =')
+      end
+      assert_equal 0, per_song_original_count_queries
+      assert(sql.any? { |statement| statement.include?('FROM "songs_original_songs"') && statement.include?('"songs_original_songs"."song_id" IN') })
     end
 
     test 'display artist index preloads songs used by destroy policy' do
