@@ -9,7 +9,7 @@
 - 管理画面は Avo 依存から Rails 標準の Controller / View / Policy ベースへ移行済み。
 - Web スクレイピング、並列処理、配信機種管理、Song モデルの責務分割は実施済み。
 - 管理画面アクションは Active Job + Solid Queue で非同期実行できる状態。
-- 新しい肥大化ポイントは `Admin::ResourceRegistry`、`Admin::OperationRunner`、`app/javascript/application.js`。
+- 新しい肥大化ポイントは `Admin::ResourceRegistry`、`Admin::OperationRunner`、管理画面 JavaScript modules。
 
 ## 優先度: 高
 
@@ -33,12 +33,12 @@
 
 **問題点**: TSV 入出力、外部サイト取得、検証・削除、進捗更新、ダウンロード生成が 1 クラスに集約されている。
 
-- [ ] `Admin::Operations::BaseOperation` を作り、結果生成と進捗更新を共通化する。
-- [ ] TSV 入出力を `Admin::Operations::SongTsvOperation` などに分離する。
-- [ ] DisplayArtist 検証・削除系を専用 operation に分離する。
-- [ ] JOYSOUND ミュージックポスト系を専用 operation に分離する。
+- [x] `Admin::Operations::BaseOperation` を作り、結果生成を共通化する。
+- [x] TSV 入出力を `Admin::Operations::SongTsvOperation` などに分離する。
+- [x] DisplayArtist 検証・削除系を専用 operation に分離する。
+- [x] JOYSOUND ミュージックポスト系を専用 operation に分離する。
 - [ ] `OperationRunner` は operation の解決、実行、例外処理だけに限定する。
-- [ ] operation ごとの入力検証エラーを `ArgumentError` ではなく明示的なアプリケーション例外へ整理する。
+- [x] operation ごとの入力検証エラーを `ArgumentError` ではなく明示的なアプリケーション例外へ整理する。
 
 **完了条件**:
 
@@ -48,10 +48,10 @@
 
 ### 3. 管理画面 JavaScript の分割
 
-**問題点**: `app/javascript/application.js` に無限スクロール、非同期 index 更新、フィルタ、選択状態、操作モーダル、進捗 polling が混在している。
+**問題点**: `app/javascript/admin/` へ機能分割済みだが、選択状態、操作モーダル、進捗 polling はまだ同一 module 内に残っている。
 
-- [ ] `app/javascript/admin/infinite_scroll.js` を作成する。
-- [ ] `app/javascript/admin/async_index.js` を作成する。
+- [x] `app/javascript/admin/infinite_scroll.js` を作成する。
+- [x] 非同期 index 更新を navigation module へ分離する。
 - [ ] `app/javascript/admin/resource_selection.js` を作成する。
 - [ ] `app/javascript/admin/operation_modal.js` を作成する。
 - [ ] `app/javascript/admin/operation_progress.js` を作成する。
@@ -70,9 +70,10 @@
 
 **問題点**: 非同期実行は導入済みだが、失敗時の再実行、進捗レコードの保存期間、ジョブの可観測性がまだ最小限。
 
-- [ ] `admin_operation_progresses` の古いレコード削除方針を決める。
+- [x] `admin_operation_progresses` の古いレコード削除方針を決める。
 - [ ] 失敗ジョブの再実行導線を管理画面に追加するか判断する。
-- [ ] ジョブ実行時の resource / operation / actor / params summary をログに残す。
+- [x] ジョブ実行時の resource / operation をログに残す。
+- [ ] ジョブ実行時の actor / params summary をログに残す。
 - [ ] operation ごとの timeout と retry 方針を定義する。
 - [ ] 非同期化できない操作（ファイル upload、即時 download など）の制約をコード上で表現する。
 
