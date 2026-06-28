@@ -4,7 +4,6 @@ module Admin
 
     Result = Data.define(:message, :download_data, :download_filename, :download_content_type)
 
-    UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
     SONG_TSV_HANDLERS = %i[export_songs export_missing_original_songs import_songs_with_original_songs].freeze
     DISPLAY_ARTIST_HANDLERS = %i[validate_display_artist_urls cleanup_invalid_display_artists cleanup_orphan_display_artists].freeze
     JOYSOUND_MUSIC_POST_HANDLERS = %i[
@@ -52,7 +51,7 @@ module Admin
     attr_reader :operation, :record, :params, :scope, :progress_id
 
     def song_tsv_operation
-      @song_tsv_operation ||= Operations::SongTsvOperation.new(params:, scope: operation_scope)
+      @song_tsv_operation ||= Operations::SongTsvOperation.new(resource: @resource, operation:, params:, scope:)
     end
 
     def display_artist_operation
@@ -65,31 +64,6 @@ module Admin
 
     def karaoke_candidate_operation
       @karaoke_candidate_operation ||= Operations::KaraokeCandidateOperation.new(params:)
-    end
-
-    def operation_scope
-      ids = selected_ids
-      raise InputError, '対象を選択してください。' if operation.selection == :required && ids.blank?
-      return scope if ids.blank? && !selected_ids_submitted?
-      return scope.none if ids.blank?
-
-      scope.where(@resource.model.primary_key => ids)
-    end
-
-    def selected_ids_submitted?
-      params.key?(:selected_ids) || params.key?('selected_ids')
-    end
-
-    def selected_ids
-      raw_ids = Array(params[:selected_ids]).map(&:to_s).compact_blank.uniq
-      return [] if raw_ids.blank?
-      return raw_ids unless uuid_primary_key?
-
-      raw_ids.grep(UUID_PATTERN)
-    end
-
-    def uuid_primary_key?
-      @resource.model.columns_hash.fetch(@resource.model.primary_key).type == :uuid
     end
 
     def run_method_operation
