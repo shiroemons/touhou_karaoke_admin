@@ -31,8 +31,8 @@ module Admin
 
       def import_songs_with_original_songs
         uploaded_file = @params.dig(:operation_fields, :tsv_file)
-        raise ArgumentError, 'TSVファイルを指定してください。' unless uploaded_file.respond_to?(:path)
-        raise ArgumentError, 'TSVファイルを指定してください。' unless tsv_file?(uploaded_file)
+        raise OperationRunner::InputError, 'TSVファイルを指定してください。' unless uploaded_file.respond_to?(:path)
+        raise OperationRunner::InputError, 'TSVファイルを指定してください。' unless tsv_file?(uploaded_file)
 
         imported_count = 0
         skipped_count = 0

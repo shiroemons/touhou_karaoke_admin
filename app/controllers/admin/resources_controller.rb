@@ -136,7 +136,7 @@ module Admin
       end
 
       redirect_back_or_to admin_resources_path(@resource), notice: result.message
-    rescue ArgumentError => e
+    rescue OperationRunner::InputError, ArgumentError => e
       redirect_back_or_to admin_resources_path(@resource), alert: e.message
     rescue StandardError => e
       Rails.logger.error(e)

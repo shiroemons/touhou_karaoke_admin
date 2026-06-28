@@ -1,5 +1,7 @@
 module Admin
   class OperationRunner
+    class InputError < StandardError; end
+
     Result = Data.define(:message, :download_data, :download_filename, :download_content_type)
 
     UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
@@ -35,7 +37,7 @@ module Admin
 
     def fetch_dam_song(progress: nil)
       url = params.dig(:operation_fields, :dam_song_url).to_s
-      raise ArgumentError, 'DAMの楽曲URLではありません。' unless url.start_with?(Constants::Karaoke::Dam::SONG_URL)
+      raise InputError, 'DAMの楽曲URLではありません。' unless url.start_with?(Constants::Karaoke::Dam::SONG_URL)
 
       progress&.call(percentage: 25, status: 'DAM候補追加中', label: '指定URLからDAM候補を取得しています', detail: nil)
       DamSong.fetch_dam_song(url)
@@ -45,7 +47,7 @@ module Admin
 
     def fetch_joysound_detail(progress: nil)
       url = params.dig(:operation_fields, :joysound_url).to_s
-      raise ArgumentError, 'JOYSOUNDの楽曲URLではありません。' unless url.start_with?("#{Constants::Karaoke::Joysound::SEARCH_URL}/")
+      raise InputError, 'JOYSOUNDの楽曲URLではありません。' unless url.start_with?("#{Constants::Karaoke::Joysound::SEARCH_URL}/")
 
       progress&.call(percentage: 25, status: 'JOYSOUND候補追加中', label: '指定URLからJOYSOUND候補を取得しています', detail: nil)
       JoysoundSong.fetch_joysound_song_direct(url:)
@@ -126,7 +128,7 @@ module Admin
 
     def operation_scope
       ids = selected_ids
-      raise ArgumentError, '対象を選択してください。' if operation.selection == :required && ids.blank?
+      raise InputError, '対象を選択してください。' if operation.selection == :required && ids.blank?
       return scope if ids.blank? && !selected_ids_submitted?
       return scope.none if ids.blank?
 

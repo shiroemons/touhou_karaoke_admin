@@ -34,7 +34,7 @@ module Admin
       progress_id = SecureRandom.uuid
       runner = OperationRunner.new(resource:, operation:, record: nil, params: { selected_ids: [], operation_progress_id: progress_id }, scope: Song.all)
 
-      assert_raises(ArgumentError) { runner.run }
+      assert_raises(OperationRunner::InputError) { runner.run }
       assert_equal 'failed', OperationProgress.read(progress_id)[:state]
       assert_equal '対象を選択してください。', OperationProgress.read(progress_id)[:detail]
     end
@@ -103,7 +103,7 @@ module Admin
         scope: Song.all
       )
 
-      assert_raises(ArgumentError) { runner.run }
+      assert_raises(OperationRunner::InputError) { runner.run }
     ensure
       File.delete(path) if path && File.exist?(path)
     end
