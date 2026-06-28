@@ -32,19 +32,15 @@ class ResumableProcessor
 
   # 処理を実行（新規または再開）
   def process(collection, batch_size: 100)
-    @state[:total] ||= collection.count
+    @state[:total] = collection_count(collection) if @state[:total].to_i.zero?
     @state[:status] = 'processing'
     save_state
 
     begin
       # 処理済みのIDをスキップ
-      remaining = if @state[:processed_ids].any?
-                    collection.where.not(id: @state[:processed_ids])
-                  else
-                    collection
-                  end
+      remaining = remaining_collection(collection)
 
-      remaining.find_in_batches(batch_size: batch_size).with_index do |batch, _batch_index|
+      each_batch(remaining, batch_size:) do |batch|
         batch.each_with_index do |record, index|
           global_index = @state[:processed_count] + index
 
@@ -61,7 +57,7 @@ class ResumableProcessor
           save_state if ((global_index + 1) % 10).zero?
         end
 
-        @state[:processed_count] += batch.size
+        @state[:processed_count] = @state[:processed_ids].count
         save_state
       end
 
@@ -122,6 +118,28 @@ class ResumableProcessor
       started_at: Time.current,
       updated_at: Time.current
     }
+  end
+
+  def collection_count(collection)
+    collection.respond_to?(:count) ? collection.count : collection.to_a.size
+  end
+
+  def remaining_collection(collection)
+    return collection if @state[:processed_ids].blank?
+
+    if collection.respond_to?(:where)
+      collection.where.not(id: @state[:processed_ids])
+    else
+      collection.to_a.reject { |record| @state[:processed_ids].include?(record.id) }
+    end
+  end
+
+  def each_batch(collection, batch_size:, &)
+    if collection.respond_to?(:find_in_batches)
+      collection.find_in_batches(batch_size:, &)
+    else
+      collection.each_slice(batch_size, &)
+    end
   end
 
   def load_state
