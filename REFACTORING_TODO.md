@@ -54,7 +54,7 @@
 - [x] 非同期 index 更新を navigation module へ分離する。
 - [x] `app/javascript/admin/resource_selection.js` を作成する。
 - [x] `app/javascript/admin/operation_modal.js` を作成する。
-- [ ] `app/javascript/admin/operation_progress.js` を作成する。
+- [x] `app/javascript/admin/operation_progress.js` を作成する。
 - [ ] DOM selector を定数化し、同じ selector 文字列の重複を減らす。
 - [ ] 非同期処理失敗時の fallback 動作をテストで固定する。
 
