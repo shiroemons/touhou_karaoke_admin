@@ -42,6 +42,16 @@ class JoysoundMusicPostTest < ActiveSupport::TestCase
     end
   end
 
+  TimeoutBrowser = Struct.new(:quit_called, keyword_init: true) do
+    def goto(_url)
+      raise Ferrum::TimeoutError, 'timeout'
+    end
+
+    def quit
+      self.quit_called = true
+    end
+  end
+
   test 'requires core music post attributes' do
     post = JoysoundMusicPost.new
 
@@ -128,5 +138,20 @@ class JoysoundMusicPostTest < ActiveSupport::TestCase
 
     assert_equal 'https://www.joysound.com/web/search/song/999002', music_post.reload.joysound_url
     assert browser.quit_called
+  end
+
+  test 'closes browser for every timed out music post parser attempt' do
+    browsers = []
+    original_browser_new = Ferrum::Browser.method(:new)
+    Ferrum::Browser.define_singleton_method(:new) do |*_args, **_kwargs|
+      TimeoutBrowser.new.tap { |browser| browsers << browser }
+    end
+
+    JoysoundMusicPost.music_post_parser('https://example.com/music-post')
+
+    assert_equal 4, browsers.size
+    assert browsers.all?(&:quit_called)
+  ensure
+    Ferrum::Browser.define_singleton_method(:new, original_browser_new)
   end
 end

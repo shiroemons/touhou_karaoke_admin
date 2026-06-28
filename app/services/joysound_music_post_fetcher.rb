@@ -61,53 +61,57 @@ class JoysoundMusicPostFetcher
     end
 
     def music_post_parser(url, progress: nil, progress_range: 8..96, label: "ミュージックポストを取得しています")
-      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       retry_count = 0
       page = 1
       processed_count = 0
-      begin
-        browser.goto(url)
-        browser.network.wait_for_idle(duration: 1.0)
-        loop do
-          music_block_selector = "#box_music_list_bottom > div.music_block"
-          blocks = browser.css(music_block_selector)
-          progress&.call(
-            percentage: unknown_page_progress(page, 0, blocks.size, progress_range),
-            status: "ミュージックポスト取得中",
-            label:,
-            detail: "処理済み: #{processed_count}件 / #{page}ページ目",
-            current: processed_count,
-            total: nil
-          )
-          blocks.each_with_index do |element, index|
-            save_music_post_entry(element)
-            processed_count += 1
 
-            next unless ((index + 1) % 10).zero? || index + 1 == blocks.size
+      loop do
+        browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+        begin
+          browser.goto(url)
+          browser.network.wait_for_idle(duration: 1.0)
+          loop do
+            music_block_selector = "#box_music_list_bottom > div.music_block"
+            blocks = browser.css(music_block_selector)
 
             progress&.call(
-              percentage: unknown_page_progress(page, index + 1, blocks.size, progress_range),
+              percentage: unknown_page_progress(page, 0, blocks.size, progress_range),
               status: "ミュージックポスト取得中",
               label:,
               detail: "処理済み: #{processed_count}件 / #{page}ページ目",
               current: processed_count,
               total: nil
             )
-          end
-          next_link = music_post_next_page_link(browser)
-          break if next_link.blank?
+            blocks.each_with_index do |element, index|
+              save_music_post_entry(element)
+              processed_count += 1
 
-          next_link.focus.click
-          page += 1
+              next unless ((index + 1) % 10).zero? || index + 1 == blocks.size
+
+              progress&.call(
+                percentage: unknown_page_progress(page, index + 1, blocks.size, progress_range),
+                status: "ミュージックポスト取得中",
+                label:,
+                detail: "処理済み: #{processed_count}件 / #{page}ページ目",
+                current: processed_count,
+                total: nil
+              )
+            end
+            next_link = music_post_next_page_link(browser)
+            break if next_link.blank?
+
+            next_link.focus.click
+            page += 1
+          end
+          break
+        rescue Ferrum::TimeoutError => e
+          Rails.logger.error("self.music_post_parser: #{e}")
+          retry_count += 1
+          break if retry_count > 3
+        ensure
+          browser&.quit
         end
       end
-      browser.quit
-    rescue Ferrum::TimeoutError => e
-      Rails.logger.error("self.music_post_parser: #{e}")
-      browser.quit
-      browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-      retry_count += 1
-      retry unless retry_count > 3
     end
 
     def progress_percentage(current, total)
