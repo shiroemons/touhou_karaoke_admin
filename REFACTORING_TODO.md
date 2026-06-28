@@ -19,7 +19,7 @@
 
 - [x] リソース定義を `app/models/admin/resources/*.rb` へ分割する。
 - [x] フィールド、フィルタ、操作定義の builder を独立クラスまたは concern に切り出す。
-- [ ] 長文の操作説明を `config/locales/admin.ja.yml` または専用定義ファイルへ移す。
+- [x] 長文の操作説明を `config/locales/admin.ja.yml` または専用定義ファイルへ移す。
 - [ ] `ResourceRegistry` は登録と参照だけを担当する薄いクラスにする。
 - [ ] リソース定義の単体テストを追加し、必須属性、検索対象、操作キーの重複を検出する。
 

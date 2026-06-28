@@ -10,10 +10,6 @@ module Admin
     include Resources::DamResources
     include Resources::JoysoundResources
 
-    OPERATION_DESCRIPTIONS = ResourceRegistry::OPERATION_DESCRIPTIONS
-    FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION = ResourceRegistry::FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION
-    FULL_JOYSOUND_MUSIC_POST_MAINTENANCE_DESCRIPTION = ResourceRegistry::FULL_JOYSOUND_MUSIC_POST_MAINTENANCE_DESCRIPTION
-
     private
 
     def build_resources
