@@ -53,6 +53,26 @@ class JoysoundMusicPostTest < ActiveSupport::TestCase
     assert post.errors.added?(:url, :blank)
   end
 
+  test 'requires unique url' do
+    existing = JoysoundMusicPost.create!(
+      title: '重複防止曲',
+      artist: '重複防止アーティスト',
+      producer: '重複防止投稿者',
+      delivery_deadline_on: Date.current,
+      url: 'https://musicpost.example/unique'
+    )
+    duplicate = JoysoundMusicPost.new(
+      title: '別曲',
+      artist: '別アーティスト',
+      producer: '別投稿者',
+      delivery_deadline_on: Date.current,
+      url: existing.url
+    )
+
+    assert_not duplicate.valid?
+    assert duplicate.errors.added?(:url, :taken, value: existing.url)
+  end
+
   test 'exposes title and artist as searchable attributes' do
     assert_equal %w[artist title], JoysoundMusicPost.ransackable_attributes
   end

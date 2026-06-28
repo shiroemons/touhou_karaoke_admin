@@ -18,4 +18,14 @@ class SongsOriginalSongTest < ActiveSupport::TestCase
     assert_equal original_song, join.original_song
     assert_equal 'th06-01', join.original_song_code
   end
+
+  test 'requires unique original song per song' do
+    song = create_song
+    original_song = create_original_song(code: 'th06-02')
+    SongsOriginalSong.create!(song:, original_song:)
+    duplicate = SongsOriginalSong.new(song:, original_song:)
+
+    assert_not duplicate.valid?
+    assert duplicate.errors.added?(:original_song_code, :taken, value: original_song.code)
+  end
 end

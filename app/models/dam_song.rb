@@ -1,6 +1,12 @@
 class DamSong < ApplicationRecord
   belongs_to :display_artist
 
+  # Existing data can contain duplicates; keep this application guard until a non-destructive cleanup is complete.
+  # rubocop:disable Rails/UniqueValidationWithoutIndex
+  validates :url, presence: true, uniqueness: true
+  # rubocop:enable Rails/UniqueValidationWithoutIndex
+  validates :title, presence: true
+
   def self.ransackable_attributes(_auth_object = nil)
     ["title"]
   end

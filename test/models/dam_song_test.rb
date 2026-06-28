@@ -30,6 +30,19 @@ class DamSongTest < ActiveSupport::TestCase
     assert_equal artist, song.display_artist
   end
 
+  test 'requires core attributes and unique url' do
+    artist = create_display_artist
+    existing = DamSong.create!(display_artist: artist, title: 'DAM曲', url: 'https://example.com/dam/songs/unique')
+    duplicate = DamSong.new(display_artist: artist, title: '別DAM曲', url: existing.url)
+    blank = DamSong.new(display_artist: artist, title: '', url: '')
+
+    assert_not duplicate.valid?
+    assert duplicate.errors.added?(:url, :taken, value: existing.url)
+    assert_not blank.valid?
+    assert blank.errors.added?(:title, :blank)
+    assert blank.errors.added?(:url, :blank)
+  end
+
   test 'exposes title as searchable attribute' do
     assert_equal ['title'], DamSong.ransackable_attributes
   end

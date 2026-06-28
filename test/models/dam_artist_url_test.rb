@@ -8,6 +8,14 @@ class DamArtistUrlTest < ActiveSupport::TestCase
     assert record.errors.added?(:url, :blank)
   end
 
+  test 'requires unique url' do
+    existing = DamArtistUrl.create!(url: 'https://example.com/dam/artists/unique')
+    duplicate = DamArtistUrl.new(url: existing.url)
+
+    assert_not duplicate.valid?
+    assert duplicate.errors.added?(:url, :taken, value: existing.url)
+  end
+
   test 'exposes only url as searchable attribute' do
     assert_equal ['url'], DamArtistUrl.ransackable_attributes
   end

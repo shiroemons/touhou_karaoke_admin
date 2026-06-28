@@ -29,6 +29,14 @@ class JoysoundSongTest < ActiveSupport::TestCase
     assert song.errors.added?(:url, :blank)
   end
 
+  test 'requires unique url' do
+    existing = JoysoundSong.create!(display_title: '重複防止曲', url: 'https://example.com/joysound/unique')
+    duplicate = JoysoundSong.new(display_title: '別曲', url: existing.url)
+
+    assert_not duplicate.valid?
+    assert duplicate.errors.added?(:url, :taken, value: existing.url)
+  end
+
   test 'filters enabled service flags' do
     smartphone = JoysoundSong.create!(display_title: 'スマホ曲', url: 'https://example.com/joysound/smartphone', smartphone_service_enabled: true)
     home = JoysoundSong.create!(display_title: '家庭用曲', url: 'https://example.com/joysound/home', home_karaoke_enabled: true)
