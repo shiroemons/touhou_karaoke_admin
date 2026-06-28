@@ -53,6 +53,14 @@ module Admin
         Rails.cache.read(cache_key(id)) || memory_store[id] || payload(state: 'pending', percentage: 0, status: '待機中', label: '処理を開始しています...', detail: nil)
       end
 
+      def prune_older_than!(time)
+        expired_ids = Record.where(updated_at: ...time).pluck(:id)
+        deleted_count = Record.where(id: expired_ids).delete_all
+        expired_ids.each { |id| Rails.cache.delete(cache_key(id)) }
+        memory_store.delete_if { |_id, data| Time.iso8601(data.fetch(:updated_at)) < time }
+        deleted_count
+      end
+
       private
 
       def write(id, data)

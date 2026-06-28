@@ -52,5 +52,23 @@ module Admin
         OperationProgress.fail!('invalid', message: '失敗')
       end
     end
+
+    test 'prunes old persisted and cached progress records' do
+      old_id = SecureRandom.uuid
+      fresh_id = SecureRandom.uuid
+      threshold = 1.day.ago
+
+      OperationProgress.start!(old_id, label: '古い処理')
+      OperationProgress.start!(fresh_id, label: '新しい処理')
+      OperationProgress::Record.find(old_id).update!(updated_at: 2.days.ago)
+      OperationProgress.send(:memory_store)[old_id] = OperationProgress.send(:memory_store)[old_id].merge(updated_at: 2.days.ago.iso8601)
+
+      assert_equal 1, OperationProgress.prune_older_than!(threshold)
+
+      assert_not OperationProgress::Record.exists?(old_id)
+      assert OperationProgress::Record.exists?(fresh_id)
+      assert_equal 'pending', OperationProgress.read(old_id)[:state]
+      assert_equal 'running', OperationProgress.read(fresh_id)[:state]
+    end
   end
 end
