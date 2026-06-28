@@ -1182,7 +1182,7 @@ module Admin
       progress_id = SecureRandom.uuid
       runner = lambda do |progress: nil|
         progress.call(percentage: 48, status: 'URL検証中', label: 'アーティストURLを検証しています')
-        Admin::OperationRunner::Result.new(message: 'ok', download_data: nil, download_filename: nil, download_content_type: nil)
+        Admin::OperationRunner::Result.new(message: 'ok', download_data: nil, download_filename: nil, download_content_type: nil, metadata: {})
       end
 
       original_handler = Admin::Operations::DisplayArtistOperation.instance_method(:validate_display_artist_urls)

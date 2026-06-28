@@ -3,7 +3,7 @@ require 'stringio'
 
 module Admin
   class WorkflowRunJobTest < ActiveJob::TestCase
-    FakeRunnerResult = Data.define(:message, :download_data, :download_filename, :download_content_type)
+    FakeRunnerResult = Data.define(:message, :download_data, :download_filename, :download_content_type, :metadata)
 
     test 'repeatable steps run until no new records are added' do
       run_id = SecureRandom.uuid
@@ -19,7 +19,7 @@ module Admin
                    '変更なし（追加・更新・削除はありません）'
                  end
         OperationProgress.complete!(progress_id, label: "#{operation_key}完了", detail:)
-        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil)
+        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil, { change_summary: { created_count: detail.include?('追加2件') ? 2 : 0 } })
       end
 
       stub_operation_runner(fake_runner) do
@@ -48,7 +48,7 @@ module Admin
       fake_runner = lambda do |operation_key, progress_id|
         calls[operation_key] += 1
         OperationProgress.complete!(progress_id, label: "#{operation_key}完了", detail: 'DB変更: DAM楽曲一覧 追加1件')
-        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil)
+        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil, { change_summary: { created_count: 1 } })
       end
 
       stub_operation_runner(fake_runner) do
@@ -63,6 +63,25 @@ module Admin
       assert_equal 3, fetch_step[:attempts].size
     end
 
+    test 'repeatable steps prefer structured metadata over detail text' do
+      run_id = SecureRandom.uuid
+      workflow = WorkflowDefinition.fetch('dam')
+      WorkflowRunProgress.create!(run_id, workflow:)
+      calls = Hash.new(0)
+
+      fake_runner = lambda do |operation_key, progress_id|
+        calls[operation_key] += 1
+        OperationProgress.complete!(progress_id, label: "#{operation_key}完了", detail: 'DB変更: DAM楽曲一覧 追加99件')
+        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil, { change_summary: { created_count: 0 } })
+      end
+
+      stub_operation_runner(fake_runner) do
+        WorkflowRunJob.perform_now(workflow_key: 'dam', progress_id: run_id)
+      end
+
+      assert_equal 1, calls['fetch_dam_touhou_songs']
+    end
+
     test 'logs workflow and step context' do
       run_id = SecureRandom.uuid
       workflow = WorkflowDefinition.fetch('dam')
@@ -71,7 +90,7 @@ module Admin
 
       fake_runner = lambda do |operation_key, progress_id|
         OperationProgress.complete!(progress_id, label: "#{operation_key}完了", detail: '変更なし（追加・更新・削除はありません）')
-        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil)
+        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil, { change_summary: { created_count: 0 } })
       end
 
       with_logger(ActiveSupport::Logger.new(log_output)) do

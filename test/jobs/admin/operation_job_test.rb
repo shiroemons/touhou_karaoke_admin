@@ -3,7 +3,7 @@ require 'stringio'
 
 module Admin
   class OperationJobTest < ActiveJob::TestCase
-    FakeRunnerResult = Data.define(:message, :download_data, :download_filename, :download_content_type)
+    FakeRunnerResult = Data.define(:message, :download_data, :download_filename, :download_content_type, :metadata)
 
     test 'logs operation context when running an admin operation' do
       log_output = StringIO.new
@@ -51,7 +51,7 @@ module Admin
       OperationRunner.define_singleton_method(:new) do |**_args|
         runner = Object.new
         runner.define_singleton_method(:run) do
-          FakeRunnerResult.new('ok', nil, nil, nil)
+          FakeRunnerResult.new('ok', nil, nil, nil, {})
         end
         runner
       end

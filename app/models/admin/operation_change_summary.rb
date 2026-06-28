@@ -11,18 +11,33 @@ module Admin
     end
 
     def summarize(baseline:, started_at:)
-      summaries = tracked_change_models.filter_map do |model|
-        summarize_model_changes(model, baseline.fetch(model.name, 0), started_at)
-      end
+      summaries = change_summaries(baseline:, started_at:).filter_map { |summary| summary[:text] }
 
       return NO_CHANGES_MESSAGE if summaries.blank?
 
       "DB変更: #{summaries.join('、')}"
     end
 
+    def metadata(baseline:, started_at:)
+      summaries = change_summaries(baseline:, started_at:)
+
+      {
+        created_count: summaries.sum { |summary| summary[:created_count] },
+        updated_count: summaries.sum { |summary| summary[:updated_count] },
+        deleted_count: summaries.sum { |summary| summary[:deleted_count] },
+        resources: summaries
+      }
+    end
+
     private
 
     attr_reader :resources
+
+    def change_summaries(baseline:, started_at:)
+      tracked_change_models.map do |model|
+        summarize_model_changes(model, baseline.fetch(model.name, 0), started_at)
+      end
+    end
 
     def summarize_model_changes(model, before_count, started_at)
       after_count = model.count
@@ -33,9 +48,15 @@ module Admin
       parts << "追加#{created_count}件" if created_count.positive?
       parts << "更新#{updated_count}件" if updated_count.positive?
       parts << "削除#{deleted_count}件" if deleted_count.positive?
-      return if parts.blank?
 
-      "#{change_model_label(model)} #{parts.join(' ')}"
+      {
+        model: model.name,
+        label: change_model_label(model),
+        created_count:,
+        updated_count:,
+        deleted_count:,
+        text: parts.present? ? "#{change_model_label(model)} #{parts.join(' ')}" : nil
+      }
     end
 
     def timestamp_count(model, column, started_at)

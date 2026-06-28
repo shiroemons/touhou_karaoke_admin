@@ -4,7 +4,7 @@ module Admin
       private
 
       def message(text)
-        OperationRunner::Result.new(message: text, download_data: nil, download_filename: nil, download_content_type: nil)
+        OperationRunner::Result.new(message: text, download_data: nil, download_filename: nil, download_content_type: nil, metadata: {})
       end
 
       def download(data, filename)
@@ -12,7 +12,8 @@ module Admin
           message: "#{filename}を生成しました。",
           download_data: data,
           download_filename: filename,
-          download_content_type: 'text/tab-separated-values; charset=utf-8'
+          download_content_type: 'text/tab-separated-values; charset=utf-8',
+          metadata: {}
         )
       end
     end

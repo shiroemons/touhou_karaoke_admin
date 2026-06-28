@@ -2,7 +2,7 @@ module Admin
   class OperationRunner
     class InputError < StandardError; end
 
-    Result = Data.define(:message, :download_data, :download_filename, :download_content_type)
+    Result = Data.define(:message, :download_data, :download_filename, :download_content_type, :metadata)
 
     def initialize(resource:, operation:, record:, params:, scope:)
       @resource = resource
@@ -19,13 +19,15 @@ module Admin
       change_baseline = change_summary.snapshot
       OperationProgress.start!(progress_id, label: operation.label)
       result = operation.handler.blank? ? run_method_operation : run_handler_operation
+      detail = change_summary.summarize(baseline: change_baseline, started_at:)
+      metadata = result.metadata.merge(change_summary: change_summary.metadata(baseline: change_baseline, started_at:))
 
       OperationProgress.complete!(
         progress_id,
         label: result.message.presence || '処理が完了しました',
-        detail: change_summary.summarize(baseline: change_baseline, started_at:)
+        detail:
       )
-      result
+      result.with(metadata:)
     rescue StandardError => e
       OperationProgress.fail!(progress_id, message: e.message)
       raise
@@ -75,7 +77,7 @@ module Admin
     end
 
     def message(text)
-      Result.new(message: text, download_data: nil, download_filename: nil, download_content_type: nil)
+      Result.new(message: text, download_data: nil, download_filename: nil, download_content_type: nil, metadata: {})
     end
   end
 end

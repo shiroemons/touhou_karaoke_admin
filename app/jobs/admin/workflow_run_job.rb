@@ -86,7 +86,7 @@ module Admin
         )
         WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'running', progress_id: child_progress_id, attempt:)
         OperationProgress.enqueue!(child_progress_id, label: "#{operation.label}を開始待ちです")
-        OperationRunner.new(
+        result = OperationRunner.new(
           resource:,
           operation:,
           record: nil,
@@ -100,7 +100,7 @@ module Admin
           "resource=#{resource.key} operation=#{operation.key} attempt=#{attempt} progress_id=#{child_progress_id} " \
           "actor=#{actor} #{params_summary}"
         )
-        break unless repeat_step?(detail, attempt, max_attempts)
+        break unless repeat_step?(result, detail, attempt, max_attempts)
       end
     rescue StandardError => e
       WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'failed', progress_id: child_progress_id, error: e.message) if defined?(step_key)
@@ -111,12 +111,21 @@ module Admin
       step.numbered && REPEATABLE_OPERATION_KEYS.include?(step.operation_key)
     end
 
-    def repeat_step?(detail, attempt, max_attempts)
-      attempt < max_attempts && created_count(detail).positive?
+    def repeat_step?(result, detail, attempt, max_attempts)
+      attempt < max_attempts && created_count(result, detail).positive?
     end
 
-    def created_count(detail)
+    def created_count(result, detail)
+      metadata_count = result_metadata_created_count(result)
+      return metadata_count if metadata_count
+
       detail.to_s.scan(/追加(\d+)件/).sum { |match| match.first.to_i }
+    end
+
+    def result_metadata_created_count(result)
+      return unless result.respond_to?(:metadata)
+
+      result.metadata.dig(:change_summary, :created_count)
     end
   end
 end
