@@ -10,6 +10,8 @@ module Admin
     DISPLAY_ARTIST_EXPORT_COLUMNS = %w[id name karaoke_type url].freeze
     UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
+    delegate :export_songs, :export_missing_original_songs, :import_songs_with_original_songs, to: :song_tsv_operation
+
     def initialize(resource:, operation:, record:, params:, scope:)
       @resource = resource
       @operation = operation
@@ -35,57 +37,6 @@ module Admin
     rescue StandardError => e
       OperationProgress.fail!(progress_id, message: e.message)
       raise
-    end
-
-    def export_songs
-      songs = operation_scope.includes(:display_artist, :original_songs)
-      tsv = generate_songs_tsv(songs)
-
-      download(tsv, 'songs.tsv')
-    end
-
-    def export_missing_original_songs
-      songs = Song
-              .includes(:display_artist, :original_songs)
-              .missing_original_songs
-              .left_outer_joins(:display_artist)
-              .order('display_artists.name asc')
-              .order(title: :asc)
-
-      download(generate_songs_tsv(songs), 'missing_original_songs.tsv')
-    end
-
-    def import_songs_with_original_songs
-      uploaded_file = params.dig(:operation_fields, :tsv_file)
-      raise ArgumentError, 'TSVファイルを指定してください。' unless uploaded_file.respond_to?(:path)
-      raise ArgumentError, 'TSVファイルを指定してください。' unless tsv_file?(uploaded_file)
-
-      imported_count = 0
-      skipped_count = 0
-
-      CSV.table(uploaded_file.path, col_sep: "\t", converters: nil, liberal_parsing: true).each do |row|
-        song = Song.find_by(id: row[:id])
-        original_song_titles = row[:original_songs].to_s.split('/').compact_blank
-
-        if song.blank? || original_song_titles.blank?
-          skipped_count += 1
-          next
-        end
-
-        song.original_songs = OriginalSong.where(title: original_song_titles, is_duplicate: false)
-        song.assign_attributes(
-          youtube_url: row[:youtube_url].to_s,
-          nicovideo_url: row[:nicovideo_url].to_s,
-          apple_music_url: row[:apple_music_url].to_s,
-          youtube_music_url: row[:youtube_music_url].to_s,
-          spotify_url: row[:spotify_url].to_s,
-          line_music_url: row[:line_music_url].to_s
-        )
-        song.save!
-        imported_count += 1
-      end
-
-      message("インポートが完了しました。更新件数: #{imported_count}件、スキップ件数: #{skipped_count}件")
     end
 
     def fetch_dam_song(progress: nil)
@@ -142,95 +93,23 @@ module Admin
     alias sync_joysound_music_post_delivery_deadlines update_joysound_music_post_delivery_deadline_dates
 
     def validate_display_artist_urls(progress: nil)
-      result = DisplayArtistUrlValidator.new(delete_invalid: false, progress:).validate_all
-
-      raise StandardError, result[:errors].join("\n") if result[:errors].any?
-
-      if result[:invalid_records].empty?
-        message("URL検証が完了しました。確認件数: #{result[:checked]}件、無効なURLはありませんでした。")
-      else
-        download(generate_display_artists_tsv(result[:invalid_records]), 'invalid_display_artists.tsv')
-      end
+      display_artist_operation.validate_display_artist_urls(progress:)
     end
 
     def cleanup_invalid_display_artists(progress: nil)
-      dry_run = dry_run?
-      result = DisplayArtistUrlValidator.new(delete_invalid: true, dry_run:, progress:).validate_all
-
-      raise StandardError, result[:errors].join("\n") if result[:errors].any?
-
-      if result[:deleted_records].any?
-        filename = dry_run ? 'preview_deleted_display_artists.tsv' : 'deleted_display_artists.tsv'
-        download(generate_display_artists_tsv(result[:deleted_records]), filename)
-      else
-        skipped_count = result[:invalid] - result[:deleted]
-        summary = destructive_summary(dry_run, "検証が完了しました。確認件数: #{result[:checked]}件、無効URL: #{result[:invalid]}件、#{deletion_count_label(dry_run)}: #{result[:deleted]}件")
-        summary += "。#{skipped_count}件は関連するsongsがあるため削除対象外です。" if skipped_count.positive?
-        message(summary)
-      end
+      display_artist_operation.cleanup_invalid_display_artists(progress:)
     end
 
     def cleanup_orphan_display_artists(progress: nil)
-      records = DisplayArtist.where.missing(:songs)
-      return message('削除対象のレコードはありませんでした。') if records.empty?
-
-      export_tsv = ActiveModel::Type::Boolean.new.cast(params.dig(:operation_fields, :export_tsv))
-      dry_run = dry_run?
-      total_count = records.count
-      status = dry_run ? '孤立アーティスト確認中' : '孤立アーティスト削除中'
-      label = dry_run ? '楽曲が紐づいていないアーティストを確認しています' : '楽曲が紐づいていないアーティストを削除しています'
-      progress&.call(percentage: 8, status:, label:, detail: "処理済み: 0/#{total_count}件", current: 0, total: total_count)
-      deleted_records = records.map do |record|
-        {
-          id: record.id,
-          name: record.name,
-          karaoke_type: record.karaoke_type,
-          url: record.url
-        }
-      end
-      records.find_each.with_index(1) do |record, index|
-        record.destroy! unless dry_run
-        next unless (index % 10).zero? || index == total_count
-
-        progress&.call(
-          percentage: (8 + (88 * (index.to_f / total_count))).floor.clamp(8, 96),
-          status:,
-          label:,
-          detail: "処理済み: #{index}/#{total_count}件",
-          current: index,
-          total: total_count
-        )
-      end
-
-      return download(generate_display_artists_tsv(deleted_records), dry_run ? 'preview_deleted_orphan_display_artists.tsv' : 'deleted_orphan_display_artists.tsv') if export_tsv
-
-      action = dry_run ? '削除対象を確認しました' : '孤立アーティストを削除しました'
-      message("#{action}。#{deletion_count_label(dry_run)}: #{deleted_records.size}件。TSVは出力していません。")
+      display_artist_operation.cleanup_orphan_display_artists(progress:)
     end
 
     def cleanup_expired_joysound_music_posts(progress: nil)
-      dry_run = dry_run?
-      result = JoysoundMusicPostCleaner.new(dry_run:, progress:).cleanup_expired_records
-      raise StandardError, result[:errors].join("\n") if result[:errors].any?
-
-      summary = destructive_summary(dry_run, "クリーンアップが完了しました。確認件数: #{result[:checked]}件、#{deletion_count_label(dry_run)}: #{result[:deleted]}件")
-      summary += "。対象例: #{joysound_music_post_preview_labels(result[:deleted_records])}" if dry_run && result[:deleted_records].present?
-      message(summary)
+      joysound_music_post_operation.cleanup_expired_joysound_music_posts(progress:)
     end
 
     def perform_full_joysound_music_post_maintenance(progress: nil)
-      results = JoysoundMusicPostManager.new.perform_full_maintenance(progress:)
-      summary = [
-        "統合メンテナンスが完了しました:",
-        "期限切れクリーンアップ: #{results[:cleanup][:deleted]}件削除",
-        "楽曲取得: #{results[:fetch][:fetched]}件取得",
-        "URL確認: #{results[:refresh][:deleted]}件削除",
-        "配信期限更新: #{results[:update_deadlines][:updated]}件更新"
-      ].join("\n")
-      total_errors = results.values.sum { |result| result[:errors]&.count || 0 }
-
-      summary += "\n#{total_errors}件のエラーが発生しました。詳細はログを確認してください。" if total_errors.positive?
-      message(summary)
+      joysound_music_post_operation.perform_full_joysound_music_post_maintenance(progress:)
     end
 
     alias run_full_joysound_music_post_maintenance perform_full_joysound_music_post_maintenance
@@ -238,6 +117,18 @@ module Admin
     private
 
     attr_reader :operation, :record, :params, :scope, :progress_id
+
+    def song_tsv_operation
+      @song_tsv_operation ||= Operations::SongTsvOperation.new(params:, scope: operation_scope)
+    end
+
+    def display_artist_operation
+      @display_artist_operation ||= Operations::DisplayArtistOperation.new(params:)
+    end
+
+    def joysound_music_post_operation
+      @joysound_music_post_operation ||= Operations::JoysoundMusicPostOperation.new(params:)
+    end
 
     def operation_scope
       ids = selected_ids
