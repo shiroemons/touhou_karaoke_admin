@@ -572,6 +572,21 @@ module Admin
       assert_select 'a.admin-sort-link-active .admin-sort-label', text: '曲数'
     end
 
+    test 'sorts index by belongs to association display column' do
+      artist_a = DisplayArtist.create!(karaoke_type: 'DAM', name: 'Association Sort Artist A', url: 'https://example.com/association-sort-a')
+      artist_b = DisplayArtist.create!(karaoke_type: 'DAM', name: 'Association Sort Artist B', url: 'https://example.com/association-sort-b')
+      song_b = Song.create!(display_artist: artist_b, karaoke_type: 'DAM', title: 'Association Sort Song B', url: 'https://example.com/association-sort-song-b')
+      song_a = Song.create!(display_artist: artist_a, karaoke_type: 'DAM', title: 'Association Sort Song A', url: 'https://example.com/association-sort-song-a')
+
+      get admin_songs_path, params: { q: 'Association Sort Song', sort: 'display_artist', direction: 'asc' }
+
+      assert_response :success
+      assert_select 'tbody tr', 2
+      assert_select 'tbody tr:first-child td', text: song_a.title
+      assert_select 'tbody tr:last-child td', text: song_b.title
+      assert_select 'a.admin-sort-link-active .admin-sort-label', text: 'アーティスト'
+    end
+
     test 'circle index loads displayed association counts in batch' do
       Circle.create!(name: 'N+1 Count Circle Empty')
 
