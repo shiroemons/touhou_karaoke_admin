@@ -1073,6 +1073,10 @@ body[data-admin-navigation="loading"] .admin-main {
   margin: 0;
 }
 
+.admin-workflow-header-actions .admin-button {
+  white-space: nowrap;
+}
+
 .admin-workflow-runner {
   display: grid;
   gap: 14px;
@@ -1111,6 +1115,45 @@ body[data-admin-navigation="loading"] .admin-main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-workflow-results {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-workflow-results[hidden] {
+  display: none;
+}
+
+.admin-workflow-result-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-workflow-result-item {
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.admin-workflow-result-item strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.admin-workflow-result-item span {
+  color: color-mix(in oklab, var(--color-base-content) 68%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .admin-workflow-parallel-note {
@@ -2893,6 +2936,19 @@ th.admin-actions-column {
   .admin-index-content {
     height: auto;
     min-height: calc(100vh - 54px);
+  }
+
+  .admin-page-header {
+    display: grid;
+  }
+
+  .admin-workflow-header-actions {
+    width: 100%;
+  }
+
+  .admin-workflow-header-actions form,
+  .admin-workflow-header-actions .admin-button {
+    width: 100%;
   }
 
   .admin-original-song-preview-row {

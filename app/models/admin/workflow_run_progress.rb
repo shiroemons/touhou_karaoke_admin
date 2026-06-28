@@ -16,8 +16,10 @@ module Admin
         workflow = detail_payload(progress[:detail])
         workflow[:steps]&.each do |step|
           step[:progress] = OperationProgress.read(step[:progress_id]) if step[:progress_id].present?
+          step[:detail] ||= step.dig(:progress, :detail) if step[:status] == 'completed'
         end
         workflow[:current_step] = current_step_payload(workflow[:steps])
+        workflow[:result_steps] = result_steps_payload(workflow[:steps])
         progress[:percentage] = workflow_percentage(progress, workflow)
         progress.merge(workflow:)
       end
@@ -44,16 +46,31 @@ module Admin
         OperationProgress.update!(id, state: 'failed', status: 'エラー', label: "処理中にエラーが発生しました: #{message}")
       end
 
-      def mark_step!(id, step_key, status:, progress_id: nil, error: nil)
+      def mark_step!(id, step_key, status:, **attributes)
+        progress_id = attributes[:progress_id]
+        error = attributes[:error]
+        attempt = attributes[:attempt]
+        detail = attributes[:detail]
+
         update_detail!(id) do |payload|
           step = payload[:steps].find { |item| item[:key] == step_key }
           if step
             step[:status] = status
             step[:progress_id] = progress_id if progress_id
             step[:error] = error if error
+            step[:attempt] = attempt if attempt
+            step[:detail] = detail if detail
+            if attempt && detail
+              attempts = step[:attempts] ||= []
+              attempts.reject! { |item| item[:attempt].to_i == attempt.to_i }
+              attempts << { attempt:, detail:, progress_id: }
+            end
           end
           payload[:completed_steps] = payload[:steps].count { |item| item[:status] == 'completed' }
           payload[:failed_steps] = payload[:steps].count { |item| item[:status] == 'failed' }
+          payload[:result_steps] = payload[:steps].select { |item| item[:detail].present? }.map do |item|
+            item.slice(:key, :label, :status, :detail, :attempt, :attempts)
+          end
           payload
         end
         update_parent_percentage!(id)
@@ -131,6 +148,12 @@ module Admin
         return nil unless current
 
         current.slice(:key, :label, :stage_label, :branch_label, :status, :progress)
+      end
+
+      def result_steps_payload(steps)
+        Array(steps).select { |step| step[:detail].present? }.map do |step|
+          step.slice(:key, :label, :status, :detail, :attempt, :attempts)
+        end
       end
 
       def workflow_percentage(progress, workflow)

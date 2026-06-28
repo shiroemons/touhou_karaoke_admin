@@ -46,12 +46,14 @@
     </aside>
 
     <main class="admin-main" data-admin-page-content>
-      <% if notice.present? %>
-        <div class="admin-flash admin-flash-notice alert alert-success"><%= notice %></div>
-      <% end %>
-      <% if alert.present? %>
-        <div class="admin-flash admin-flash-alert alert alert-error"><%= alert %></div>
-      <% end %>
+      <div data-admin-flash-container>
+        <% if notice.present? %>
+          <div class="admin-flash admin-flash-notice alert alert-success" data-admin-flash="notice" data-admin-flash-autohide="true"><%= notice %></div>
+        <% end %>
+        <% if alert.present? %>
+          <div class="admin-flash admin-flash-alert alert alert-error" data-admin-flash="alert"><%= alert %></div>
+        <% end %>
+      </div>
 
       <%= yield %>
     </main>

@@ -20,6 +20,7 @@
 
 <% workflow_steps_by_key = (@workflow_run&.dig(:workflow, :steps) || []).index_by { |step| step[:key] } %>
 <% current_step = @workflow_run&.dig(:workflow, :current_step) %>
+<% result_steps = @workflow_run&.dig(:workflow, :result_steps) || [] %>
 
 <% if @active_workflow_run.present? && @active_workflow_run[:workflow_key] != @workflow.key %>
   <section class="admin-workflow-status admin-panel">
@@ -59,7 +60,25 @@
   </section>
 <% end %>
 
-<section class="admin-workflow-runner admin-panel" data-admin-workflow-runner data-admin-workflow-key="<%= @workflow.key %>" data-admin-workflow-run-id="<%= @workflow_run_id %>" data-admin-workflow-progress-url="<%= admin_workflow_progress_path(@workflow.key, run_id: @workflow_run_id) if @workflow_run_id.present? %>">
+<% if @workflow_run.present? %>
+  <section class="admin-workflow-results admin-panel" data-admin-workflow-results <%= "hidden" if result_steps.blank? %>>
+    <div class="admin-section-heading">
+      <h2>実行結果</h2>
+      <p>完了したステップごとの追加・更新・削除件数です。</p>
+    </div>
+    <ol class="admin-workflow-result-list" data-admin-workflow-result-list>
+      <% result_steps.each do |step| %>
+        <% attempts = step[:attempts].presence || [{ attempt: step[:attempt], detail: step[:detail] }] %>
+        <li class="admin-workflow-result-item" data-admin-workflow-result-step="<%= step[:key] %>">
+          <strong><%= step[:label] %><%= "（#{step[:attempt]}周実行）" if step[:attempt].to_i > 1 %></strong>
+          <span><%= attempts.map { |attempt| [attempt[:attempt].to_i > 1 ? "#{attempt[:attempt]}周目" : nil, attempt[:detail]].compact.join(": ") }.join(" / ") %></span>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+<% end %>
+
+<section class="admin-workflow-runner admin-panel" data-admin-workflow-runner data-admin-workflow-key="<%= @workflow.key %>" data-admin-workflow-run-id="<%= @workflow_run_id %>" data-admin-workflow-state="<%= @workflow_run[:state] if @workflow_run.present? %>" data-admin-workflow-progress-url="<%= admin_workflow_progress_path(@workflow.key, run_id: @workflow_run_id) if @workflow_run_id.present? %>">
   <div class="admin-section-heading">
     <h2>ステップ実行</h2>
     <p>個別実行も残しつつ、まとまった処理はバックグラウンドで順番に実行できます。</p>

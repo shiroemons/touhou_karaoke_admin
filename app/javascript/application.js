@@ -4,6 +4,41 @@ import Rails from "@rails/ujs"
 
 Rails.start()
 
+const ADMIN_FLASH_AUTOHIDE_MS = 5000
+
+const hideAdminFlash = (flash) => {
+  if (!flash) return
+
+  flash.hidden = true
+  flash.remove()
+}
+
+const scheduleAdminFlashAutohide = (flash) => {
+  if (!flash || flash.dataset.adminFlashAutohide !== "true" || flash.dataset.adminFlashTimer === "true") return
+
+  flash.dataset.adminFlashTimer = "true"
+  window.setTimeout(() => hideAdminFlash(flash), ADMIN_FLASH_AUTOHIDE_MS)
+}
+
+const showAdminFlash = (message, type = "notice", autohide = true) => {
+  const container = document.querySelector("[data-admin-flash-container]")
+  if (!container || !message) return
+
+  const flash = document.createElement("div")
+  flash.className = `admin-flash admin-flash-${type} alert ${type === "alert" ? "alert-error" : "alert-success"}`
+  flash.dataset.adminFlash = type
+  if (autohide) flash.dataset.adminFlashAutohide = "true"
+  flash.textContent = message
+  container.appendChild(flash)
+  scheduleAdminFlashAutohide(flash)
+}
+
+const setupAdminFlash = () => {
+  document.querySelectorAll("[data-admin-flash-autohide='true']").forEach(scheduleAdminFlashAutohide)
+}
+
+document.addEventListener("DOMContentLoaded", setupAdminFlash)
+
 const setupAdminInfiniteScroll = () => {
   const sentinel = document.querySelector("[data-admin-infinite-scroll]")
   const rows = document.querySelector("#admin-resource-rows")
@@ -1251,6 +1286,9 @@ const setupAdminWorkflowRunner = () => {
     const statusCurrent = statusPanel?.querySelector("[data-admin-workflow-status-current]")
     const statusCount = statusPanel?.querySelector("[data-admin-workflow-status-count]")
     const currentStepLabel = runner.querySelector("[data-admin-workflow-current-step]")
+    const resultsPanel = document.querySelector("[data-admin-workflow-results]")
+    const resultsList = resultsPanel?.querySelector("[data-admin-workflow-result-list]")
+    let completionNotified = runner.dataset.adminWorkflowState === "completed"
 
     const applyStatus = (payload) => {
       const currentStep = payload.workflow?.current_step
@@ -1291,6 +1329,40 @@ const setupAdminWorkflowRunner = () => {
       }
     }
 
+    const attemptDetailText = (step) => {
+      const attempts = Array.isArray(step.attempts) && step.attempts.length > 0 ? step.attempts : [{ attempt: step.attempt, detail: step.detail }]
+      return attempts
+        .filter((attempt) => attempt?.detail)
+        .map((attempt) => {
+          const attemptNumber = Number.parseInt(attempt.attempt || "1", 10)
+          return `${attemptNumber > 1 ? `${attemptNumber}周目: ` : ""}${attempt.detail}`
+        })
+        .join(" / ")
+    }
+
+    const applyResults = (payload) => {
+      if (!resultsPanel || !resultsList) return
+
+      const resultSteps = payload.workflow?.result_steps || []
+      resultsPanel.hidden = resultSteps.length === 0
+      resultsList.replaceChildren()
+      resultSteps.forEach((step) => {
+        const item = document.createElement("li")
+        item.className = "admin-workflow-result-item"
+        item.dataset.adminWorkflowResultStep = step.key
+
+        const title = document.createElement("strong")
+        const attempt = Number.parseInt(step.attempt || "1", 10)
+        title.textContent = `${step.label}${attempt > 1 ? `（${attempt}周実行）` : ""}`
+
+        const detail = document.createElement("span")
+        detail.textContent = attemptDetailText(step)
+
+        item.append(title, detail)
+        resultsList.appendChild(item)
+      })
+    }
+
     const poll = async () => {
       try {
         const response = await fetch(runner.dataset.adminWorkflowProgressUrl, {
@@ -1304,7 +1376,12 @@ const setupAdminWorkflowRunner = () => {
         const payload = await response.json()
         applyStatus(payload)
         payload.workflow?.steps?.forEach(applyStep)
+        applyResults(payload)
         runner.dataset.adminWorkflowState = payload.state
+        if (payload.state === "completed" && !completionNotified) {
+          completionNotified = true
+          showAdminFlash(payload.label || `${payload.workflow?.workflow_label || "運用フロー"}が完了しました。`)
+        }
         if (payload.state === "completed" || payload.state === "failed") return
         window.setTimeout(poll, 1500)
       } catch (error) {

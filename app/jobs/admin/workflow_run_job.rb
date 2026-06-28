@@ -3,6 +3,19 @@
 module Admin
   class WorkflowRunJob < ApplicationJob
     queue_as :admin_operations
+    REPEATABLE_OPERATION_KEYS = %w[
+      fetch_music_post
+      fetch_music_post_song_joysound_url
+      fetch_joysound_music_post_artist
+      fetch_joysound_music_post_song
+      fetch_joysound_touhou_songs
+      fetch_joysound_songs
+      fetch_joysound_artist
+      fetch_dam_touhou_songs
+      fetch_dam_artist
+      fetch_dam_songs
+    ].freeze
+    MAX_STEP_ATTEMPTS = 3
 
     def perform(workflow_key:, progress_id:)
       workflow = WorkflowDefinition.fetch(workflow_key)
@@ -54,22 +67,41 @@ module Admin
       resource = ResourceRegistry.fetch(step.resource_key)
       operation = resource.operations.find { |item| item.key == step.operation_key } ||
                   raise(ArgumentError, "指定されたアクションは見つかりません: #{step.operation_key}")
-      child_progress_id = SecureRandom.uuid
       step_key = "#{stage.key}:#{branch.key}:#{step.key}"
+      max_attempts = repeatable_step?(step) ? MAX_STEP_ATTEMPTS : 1
+      attempt = 0
 
-      WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'running', progress_id: child_progress_id)
-      OperationProgress.enqueue!(child_progress_id, label: "#{operation.label}を開始待ちです")
-      OperationRunner.new(
-        resource:,
-        operation:,
-        record: nil,
-        params: { operation_progress_id: child_progress_id },
-        scope: resource.model.all
-      ).run
-      WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'completed', progress_id: child_progress_id)
+      loop do
+        attempt += 1
+        child_progress_id = SecureRandom.uuid
+        WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'running', progress_id: child_progress_id, attempt:)
+        OperationProgress.enqueue!(child_progress_id, label: "#{operation.label}を開始待ちです")
+        OperationRunner.new(
+          resource:,
+          operation:,
+          record: nil,
+          params: { operation_progress_id: child_progress_id },
+          scope: resource.model.all
+        ).run
+        detail = OperationProgress.read(child_progress_id)[:detail]
+        WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'completed', progress_id: child_progress_id, attempt:, detail:)
+        break unless repeat_step?(detail, attempt, max_attempts)
+      end
     rescue StandardError => e
       WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'failed', progress_id: child_progress_id, error: e.message) if defined?(step_key)
       raise
+    end
+
+    def repeatable_step?(step)
+      step.numbered && REPEATABLE_OPERATION_KEYS.include?(step.operation_key)
+    end
+
+    def repeat_step?(detail, attempt, max_attempts)
+      attempt < max_attempts && created_count(detail).positive?
+    end
+
+    def created_count(detail)
+      detail.to_s.scan(/追加(\d+)件/).sum { |match| match.first.to_i }
     end
   end
 end

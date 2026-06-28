@@ -149,6 +149,7 @@ module Admin
       assert_select '[data-admin-workflow-status-count]', text: '0 / 3'
       assert_select '[data-admin-workflow-current-step]', text: '現在: DAM候補一覧を取得'
       assert_select '.admin-workflow-step-progress', text: '順番待ち'
+      assert_select '[data-admin-workflow-results][hidden]'
       assert_select 'button[disabled]', text: /自動実行中/
       assert_select '[data-admin-workflow-runner][data-admin-workflow-run-id=?]', run_id
     end
@@ -204,6 +205,30 @@ module Admin
       assert_equal 7, payload.dig(:workflow, :steps).size
       assert_equal 'ミュージックポスト一覧を取得', payload.dig(:workflow, :current_step, :label)
       assert_equal 6, payload[:percentage]
+    end
+
+    test 'workflow step page shows completed result details' do
+      run_id = SecureRandom.uuid
+      workflow = WorkflowDefinition.fetch('dam')
+      WorkflowRunProgress.create!(run_id, workflow:)
+      WorkflowRunProgress.start!(run_id, workflow:)
+      child_progress_id = SecureRandom.uuid
+      OperationProgress.complete!(child_progress_id, label: 'DAM候補一覧を取得しました', detail: 'DB変更: DAM楽曲一覧 追加2件')
+      WorkflowRunProgress.mark_step!(
+        run_id,
+        'dam:dam:dam_song:fetch_dam_touhou_songs',
+        status: 'completed',
+        progress_id: child_progress_id,
+        attempt: 1,
+        detail: 'DB変更: DAM楽曲一覧 追加2件'
+      )
+
+      get admin_workflow_steps_path('dam', run_id:)
+
+      assert_response :success
+      assert_select '[data-admin-workflow-results]:not([hidden])'
+      assert_select '.admin-workflow-result-item', text: /DAM候補一覧を取得/
+      assert_select '.admin-workflow-result-item', text: /DAM楽曲一覧 追加2件/
     end
 
     test 'all resources render index and show pages' do
