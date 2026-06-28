@@ -1,11 +1,13 @@
+import { adminSelectors } from "./selectors"
+
 export const setupAdminOperationModal = ({ updateSelectionState } = {}) => {
-  document.querySelectorAll("[data-admin-operation-modal]").forEach((modal) => {
+  document.querySelectorAll(adminSelectors.operationModal).forEach((modal) => {
     if (modal.dataset.initialized === "true") return
 
     modal.dataset.initialized = "true"
-    const title = modal.querySelector("[data-admin-operation-modal-title]")
-    const panels = Array.from(modal.querySelectorAll("[data-admin-operation-panel]"))
-    const closeButton = modal.querySelector("[data-admin-operation-modal-close]")
+    const title = modal.querySelector(adminSelectors.operationModalTitle)
+    const panels = Array.from(modal.querySelectorAll(adminSelectors.operationPanel))
+    const closeButton = modal.querySelector(adminSelectors.operationModalClose)
     const resourceKey = modal.dataset.adminOperationResource
 
     const showPanel = (operationKey, label) => {
@@ -20,7 +22,7 @@ export const setupAdminOperationModal = ({ updateSelectionState } = {}) => {
       activePanel?.dispatchEvent(new Event("admin-operation-panel-open"))
     }
 
-    document.querySelectorAll("[data-admin-operation-trigger]").forEach((trigger) => {
+    document.querySelectorAll(adminSelectors.operationTrigger).forEach((trigger) => {
       if (trigger.dataset.modalInitialized === "true") return
       if (resourceKey && trigger.dataset.adminOperationResource !== resourceKey) return
 

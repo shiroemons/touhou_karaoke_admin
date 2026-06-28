@@ -5,9 +5,10 @@ import {
 } from "./resource_selection"
 import { setupAdminOperationModal } from "./operation_modal"
 import { AdminOperationProgress } from "./operation_progress"
+import { adminSelectors } from "./selectors"
 
 const adminOperationRequiredInputsReady = (form) =>
-  Array.from(form.querySelectorAll("[data-admin-operation-required-input]")).every((input) => {
+  Array.from(form.querySelectorAll(adminSelectors.operationRequiredInput)).every((input) => {
     if (input.type === "file") return input.files.length > 0
 
     return input.value.trim().length > 0
@@ -21,8 +22,8 @@ const adminOperationFormReady = (form) => {
 }
 
 const updateAdminOperationSubmitStates = () => {
-  document.querySelectorAll("[data-admin-operation-form]").forEach((form) => {
-    const submitButton = form.querySelector("[data-admin-operation-submit]")
+  document.querySelectorAll(adminSelectors.operationForm).forEach((form) => {
+    const submitButton = form.querySelector(adminSelectors.operationSubmit)
     if (!submitButton) return
 
     submitButton.disabled = form.dataset.adminOperationBusy === "true" || !adminOperationFormReady(form)
@@ -32,29 +33,29 @@ const updateAdminOperationSubmitStates = () => {
 export const updateAdminResourceSelectionState = () => updateResourceSelectionState({ afterUpdate: updateAdminOperationSubmitStates })
 
 const setupAdminOperationForms = () => {
-  document.querySelectorAll("[data-admin-operation-form]").forEach((form) => {
+  document.querySelectorAll(adminSelectors.operationForm).forEach((form) => {
     if (form.dataset.initialized === "true") return
 
     form.dataset.initialized = "true"
-    const dialog = document.querySelector("[data-admin-operation-confirm-dialog]")
-    const dialogMessage = dialog?.querySelector("[data-admin-operation-dialog-message]")
-    const confirmButton = dialog?.querySelector("[data-admin-operation-confirm]")
-    const cancelButton = dialog?.querySelector("[data-admin-operation-cancel]")
+    const dialog = document.querySelector(adminSelectors.operationConfirmDialog)
+    const dialogMessage = dialog?.querySelector(adminSelectors.operationDialogMessage)
+    const confirmButton = dialog?.querySelector(adminSelectors.operationConfirm)
+    const cancelButton = dialog?.querySelector(adminSelectors.operationCancel)
     const inlineConfirmation = form.dataset.adminOperationInlineConfirmation === "true"
     const asyncOperation = form.dataset.adminOperationAsync === "true"
-    const operationModal = form.closest("[data-admin-operation-modal]")
-    const operationPanel = form.closest("[data-admin-operation-panel]")
-    const selectedIdsContainer = form.querySelector("[data-admin-operation-selected-ids]")
-    const modalCancelButton = form.querySelector("[data-admin-operation-modal-cancel]")
-    const submitButton = form.querySelector("[data-admin-operation-submit]")
-    const progress = form.querySelector("[data-admin-operation-progress]")
-    const progressLabel = form.querySelector("[data-admin-operation-progress-label]")
-    const progressPercent = form.querySelector("[data-admin-operation-progress-percent]")
-    const progressStatus = form.querySelector("[data-admin-operation-progress-status]")
-    const progressElapsed = form.querySelector("[data-admin-operation-progress-elapsed]")
-    const progressbar = form.querySelector("[data-admin-operation-progressbar]")
-    const progressBar = form.querySelector("[data-admin-operation-progress-bar]")
-    const progressSteps = form.querySelectorAll("[data-admin-operation-step]")
+    const operationModal = form.closest(adminSelectors.operationModal)
+    const operationPanel = form.closest(adminSelectors.operationPanel)
+    const selectedIdsContainer = form.querySelector(adminSelectors.operationSelectedIds)
+    const modalCancelButton = form.querySelector(adminSelectors.operationModalCancel)
+    const submitButton = form.querySelector(adminSelectors.operationSubmit)
+    const progress = form.querySelector(adminSelectors.operationProgress)
+    const progressLabel = form.querySelector(adminSelectors.operationProgressLabel)
+    const progressPercent = form.querySelector(adminSelectors.operationProgressPercent)
+    const progressStatus = form.querySelector(adminSelectors.operationProgressStatus)
+    const progressElapsed = form.querySelector(adminSelectors.operationProgressElapsed)
+    const progressbar = form.querySelector(adminSelectors.operationProgressbar)
+    const progressBar = form.querySelector(adminSelectors.operationProgressBar)
+    const progressSteps = form.querySelectorAll(adminSelectors.operationStep)
     const progressUrl = form.dataset.adminOperationProgressUrl
     const parsedEstimatedSeconds = Number.parseInt(form.dataset.adminOperationEstimatedSeconds || "40", 10)
     const estimatedSeconds = Number.isFinite(parsedEstimatedSeconds) && parsedEstimatedSeconds > 0 ? parsedEstimatedSeconds : 40
@@ -82,7 +83,7 @@ const setupAdminOperationForms = () => {
       operationProgress.start()
 
       try {
-        const csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content")
+        const csrfToken = document.querySelector(adminSelectors.csrfToken)?.getAttribute("content")
         const response = await fetch(form.action, {
           method: form.method.toUpperCase(),
           headers: {
@@ -176,7 +177,7 @@ const setupAdminOperationForms = () => {
       operationModal?.close()
     })
 
-    form.querySelectorAll("[data-admin-operation-required-input]").forEach((input) => {
+    form.querySelectorAll(adminSelectors.operationRequiredInput).forEach((input) => {
       input.addEventListener("input", updateAdminOperationSubmitStates)
       input.addEventListener("change", updateAdminOperationSubmitStates)
     })

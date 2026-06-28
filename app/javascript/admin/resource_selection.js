@@ -1,20 +1,22 @@
+import { adminSelectors, checkedResourceSelectSelector } from "./selectors"
+
 export const selectedAdminResourceIds = () =>
-  Array.from(document.querySelectorAll("[data-admin-resource-select]:checked")).map((input) => input.value)
+  Array.from(document.querySelectorAll(checkedResourceSelectSelector)).map((input) => input.value)
 
 export const updateAdminResourceSelectionState = ({ afterUpdate } = {}) => {
-  const rowCheckboxes = Array.from(document.querySelectorAll("[data-admin-resource-select]"))
+  const rowCheckboxes = Array.from(document.querySelectorAll(adminSelectors.resourceSelect))
   const selectedCount = rowCheckboxes.filter((input) => input.checked).length
 
-  document.querySelectorAll("[data-admin-resource-select-all]").forEach((input) => {
+  document.querySelectorAll(adminSelectors.resourceSelectAll).forEach((input) => {
     input.checked = rowCheckboxes.length > 0 && selectedCount === rowCheckboxes.length
     input.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length
   })
 
-  document.querySelectorAll("[data-admin-operation-selection-count]").forEach((item) => {
+  document.querySelectorAll(adminSelectors.operationSelectionCount).forEach((item) => {
     item.textContent = selectedCount.toLocaleString()
   })
-  document.querySelectorAll("[data-admin-operation-form]").forEach((form) => {
-    const note = form.querySelector("[data-admin-operation-selection-note]")
+  document.querySelectorAll(adminSelectors.operationForm).forEach((form) => {
+    const note = form.querySelector(adminSelectors.operationSelectionNote)
     if (!note || form.dataset.adminOperationSelectionRequired !== "true") return
 
     note.textContent = selectedCount > 0 ? "選択した対象で実行できます。" : "対象を選択してください。"
@@ -24,21 +26,21 @@ export const updateAdminResourceSelectionState = ({ afterUpdate } = {}) => {
 }
 
 export const setupAdminResourceSelection = ({ afterUpdate } = {}) => {
-  const content = document.querySelector("[data-admin-resource-content]")
+  const content = document.querySelector(adminSelectors.resourceContent)
   if (!content || content.dataset.selectionInitialized === "true") return
 
   content.dataset.selectionInitialized = "true"
   content.addEventListener("change", (event) => {
-    const selectAll = event.target.closest("[data-admin-resource-select-all]")
+    const selectAll = event.target.closest(adminSelectors.resourceSelectAll)
     if (selectAll) {
-      document.querySelectorAll("[data-admin-resource-select]").forEach((input) => {
+      document.querySelectorAll(adminSelectors.resourceSelect).forEach((input) => {
         input.checked = selectAll.checked
       })
       updateAdminResourceSelectionState({ afterUpdate })
       return
     }
 
-    if (event.target.closest("[data-admin-resource-select]")) updateAdminResourceSelectionState({ afterUpdate })
+    if (event.target.closest(adminSelectors.resourceSelect)) updateAdminResourceSelectionState({ afterUpdate })
   })
 
   updateAdminResourceSelectionState({ afterUpdate })

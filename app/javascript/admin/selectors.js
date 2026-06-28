@@ -1,0 +1,33 @@
+export const adminSelectors = {
+  csrfToken: "meta[name='csrf-token']",
+  operationCancel: "[data-admin-operation-cancel]",
+  operationConfirm: "[data-admin-operation-confirm]",
+  operationConfirmDialog: "[data-admin-operation-confirm-dialog]",
+  operationDialogMessage: "[data-admin-operation-dialog-message]",
+  operationForm: "[data-admin-operation-form]",
+  operationModal: "[data-admin-operation-modal]",
+  operationModalCancel: "[data-admin-operation-modal-cancel]",
+  operationModalClose: "[data-admin-operation-modal-close]",
+  operationModalTitle: "[data-admin-operation-modal-title]",
+  operationPanel: "[data-admin-operation-panel]",
+  operationProgress: "[data-admin-operation-progress]",
+  operationProgressBar: "[data-admin-operation-progress-bar]",
+  operationProgressElapsed: "[data-admin-operation-progress-elapsed]",
+  operationProgressLabel: "[data-admin-operation-progress-label]",
+  operationProgressPercent: "[data-admin-operation-progress-percent]",
+  operationProgressStatus: "[data-admin-operation-progress-status]",
+  operationProgressbar: "[data-admin-operation-progressbar]",
+  operationRequiredInput: "[data-admin-operation-required-input]",
+  operationSelectionCount: "[data-admin-operation-selection-count]",
+  operationSelectionNote: "[data-admin-operation-selection-note]",
+  operationSelectedIds: "[data-admin-operation-selected-ids]",
+  operationStep: "[data-admin-operation-step]",
+  operationSubmit: "[data-admin-operation-submit]",
+  operationTrigger: "[data-admin-operation-trigger]",
+  resourceContent: "[data-admin-resource-content]",
+  resourceSelect: "[data-admin-resource-select]",
+  resourceSelectAll: "[data-admin-resource-select-all]",
+}
+
+export const checkedResourceSelectSelector = `${adminSelectors.resourceSelect}:checked`
+export const activeOperationPanelSelector = `${adminSelectors.operationPanel}:not([hidden])`
