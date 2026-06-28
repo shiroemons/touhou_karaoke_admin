@@ -2,30 +2,30 @@
   "lockfile_version": "1",
   "packages": {
     "chromedriver@latest": {
-      "last_modified": "2026-01-30T02:32:49Z",
-      "resolved": "github:NixOS/nixpkgs/6308c3b21396534d8aaeac46179c14c439a89b8a#chromedriver",
+      "last_modified": "2026-06-22T09:00:13Z",
+      "resolved": "github:NixOS/nixpkgs/b3c092d3c36d91e2f61f3dfb39a159f180a56659#chromedriver",
       "source": "devbox-search",
-      "version": "144.0.7559.110",
+      "version": "149.0.7827.156",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/74vricfivrg0y44bxgq33dql9k8h5skv-chromedriver-144.0.7559.110",
+              "path": "/nix/store/ly45n2svr1h9y84545sdmaisnvlv436g-chromedriver-149.0.7827.156",
               "default": true
             }
           ],
-          "store_path": "/nix/store/74vricfivrg0y44bxgq33dql9k8h5skv-chromedriver-144.0.7559.110"
+          "store_path": "/nix/store/ly45n2svr1h9y84545sdmaisnvlv436g-chromedriver-149.0.7827.156"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/f4fwc9hzb297wykvkxivwn723cm1fpgw-chromedriver-144.0.7559.110",
+              "path": "/nix/store/h945avcz1dwjmvwb205sianrl3np1r7m-chromedriver-149.0.7827.156",
               "default": true
             }
           ],
-          "store_path": "/nix/store/f4fwc9hzb297wykvkxivwn723cm1fpgw-chromedriver-144.0.7559.110"
+          "store_path": "/nix/store/h945avcz1dwjmvwb205sianrl3np1r7m-chromedriver-149.0.7827.156"
         }
       }
     },
