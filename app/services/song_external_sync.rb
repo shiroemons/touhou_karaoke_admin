@@ -33,7 +33,7 @@ class SongExternalSync
 
     def fetch_joysound_music_post_song
       scraper = Scrapers::JoysoundScraper.new
-      prioritized_posts = prioritized_joysound_music_posts
+      prioritized_posts = JoysoundMusicPostPrioritizer.call
 
       Song.process_with_progress(prioritized_posts, label: "JOYSOUND Music Posts") do |record|
         scraper.scrape_music_post_page(record)
@@ -41,14 +41,7 @@ class SongExternalSync
     end
 
     def prioritized_joysound_music_posts
-      unmatched_urls = JoysoundMusicPost.pluck(:joysound_url) - Song.music_post.pluck(:url)
-      unmatched_posts = JoysoundMusicPost.where(joysound_url: unmatched_urls)
-
-      upcoming_posts = JoysoundMusicPost
-                       .where(delivery_deadline_on: ...1.month.from_now)
-                       .order(delivery_deadline_on: :asc)
-
-      (unmatched_posts.to_a + upcoming_posts.to_a).uniq
+      JoysoundMusicPostPrioritizer.call
     end
 
     def refresh_joysound_music_post_song

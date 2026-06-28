@@ -55,7 +55,7 @@ class JoysoundMusicPostManager
   # 楽曲の取得処理（改善版）
   def fetch_songs_with_progress(resumable: false, progress: nil)
     scraper = Scrapers::JoysoundScraper.new
-    prioritized_posts = prioritized_joysound_music_posts
+    prioritized_posts = JoysoundMusicPostPrioritizer.call
 
     Rails.logger.info("Starting JOYSOUND music post song fetch: #{prioritized_posts.count} posts")
 
@@ -229,20 +229,6 @@ class JoysoundMusicPostManager
         label: "#{phase_label}: #{attributes[:label]}"
       )
     end
-  end
-
-  def prioritized_joysound_music_posts
-    # 差分URLの取得
-    unmatched_urls = JoysoundMusicPost.pluck(:joysound_url) - Song.music_post.pluck(:url)
-    unmatched_posts = JoysoundMusicPost.where(joysound_url: unmatched_urls)
-
-    # 1ヶ月以内の配信期限のポスト
-    upcoming_posts = JoysoundMusicPost
-                     .where(delivery_deadline_on: ...1.month.from_now)
-                     .order(delivery_deadline_on: :asc)
-
-    # 優先度順に結合（差分を優先）
-    (unmatched_posts.to_a + upcoming_posts.to_a).uniq
   end
 
   def process_music_post_record(scraper, record)
