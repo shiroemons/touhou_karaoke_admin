@@ -1,13 +1,7 @@
-require 'csv'
-
 module Admin
   class OperationRunner
     Result = Data.define(:message, :download_data, :download_filename, :download_content_type)
 
-    SONG_EXPORT_COLUMNS = %w[
-      id karaoke_type display_artist_name title original_songs youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url
-    ].freeze
-    DISPLAY_ARTIST_EXPORT_COLUMNS = %w[id name karaoke_type url].freeze
     UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
     delegate :export_songs, :export_missing_original_songs, :import_songs_with_original_songs, to: :song_tsv_operation
@@ -183,56 +177,6 @@ module Admin
 
     def operation_target
       @resource.model
-    end
-
-    def generate_songs_tsv(songs)
-      CSV.generate(col_sep: "\t") do |csv|
-        csv << SONG_EXPORT_COLUMNS
-        songs.each do |song|
-          csv << [
-            song.id,
-            song.karaoke_type,
-            song.display_artist.name,
-            song.title,
-            song.original_songs.map(&:title).join('/'),
-            song.youtube_url,
-            song.nicovideo_url,
-            song.apple_music_url,
-            song.youtube_music_url,
-            song.spotify_url,
-            song.line_music_url
-          ]
-        end
-      end
-    end
-
-    def generate_display_artists_tsv(records)
-      CSV.generate(col_sep: "\t") do |csv|
-        csv << DISPLAY_ARTIST_EXPORT_COLUMNS
-        records.each do |record|
-          csv << [record[:id], record[:name], record[:karaoke_type], record[:url]]
-        end
-      end
-    end
-
-    def tsv_file?(uploaded_file)
-      uploaded_file.content_type.in?(%w[text/tab-separated-values text/plain]) || uploaded_file.original_filename.ends_with?('.tsv')
-    end
-
-    def dry_run?
-      ActiveModel::Type::Boolean.new.cast(params.dig(:operation_fields, :dry_run))
-    end
-
-    def destructive_summary(dry_run, text)
-      dry_run ? "プレビューのみ実行しました。DBは変更していません。#{text}" : text
-    end
-
-    def deletion_count_label(dry_run)
-      dry_run ? '削除予定件数' : '削除件数'
-    end
-
-    def joysound_music_post_preview_labels(records)
-      records.first(5).map { |record| "#{record[:artist]} - #{record[:title]}" }.join(' / ')
     end
 
     def change_baseline_snapshot

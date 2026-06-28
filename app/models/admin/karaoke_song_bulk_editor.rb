@@ -2,7 +2,7 @@ require 'csv'
 
 module Admin
   class KaraokeSongBulkEditor
-    COLUMNS = OperationRunner::SONG_EXPORT_COLUMNS
+    COLUMNS = Operations::SongTsvOperation::SONG_EXPORT_COLUMNS
     URL_COLUMNS = %w[
       youtube_url nicovideo_url apple_music_url youtube_music_url spotify_url line_music_url
     ].freeze
