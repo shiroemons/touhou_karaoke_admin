@@ -63,6 +63,8 @@ cp .env.devbox.template .env
 
 Algolia を使う処理を実行する場合は、`.env` の `ALGOLIA_APPLICATION_ID`、`ALGOLIA_API_KEY`、`ALGOLIA_INDEX_NAME` を実値に変更してください。
 
+管理画面に Basic 認証を付けたい場合は、`.env` に `TOUHOU_KARAOKE_ADMIN_BASIC_AUTH_USERNAME` と `TOUHOU_KARAOKE_ADMIN_BASIC_AUTH_PASSWORD` を両方設定してください。未設定の場合は認証なしで従来通り動作します。
+
 2. devbox シェルに入ります。
 
 ```shell
