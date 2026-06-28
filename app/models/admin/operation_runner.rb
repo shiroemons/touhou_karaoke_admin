@@ -5,6 +5,20 @@ module Admin
     Result = Data.define(:message, :download_data, :download_filename, :download_content_type)
 
     UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
+    SONG_TSV_HANDLERS = %i[export_songs export_missing_original_songs import_songs_with_original_songs].freeze
+    DISPLAY_ARTIST_HANDLERS = %i[validate_display_artist_urls cleanup_invalid_display_artists cleanup_orphan_display_artists].freeze
+    JOYSOUND_MUSIC_POST_HANDLERS = %i[
+      fetch_joysound_music_post_song
+      register_joysound_music_post_songs
+      refresh_joysound_music_post_song
+      verify_joysound_music_post_songs
+      update_joysound_music_post_delivery_deadline_dates
+      sync_joysound_music_post_delivery_deadlines
+      cleanup_expired_joysound_music_posts
+      perform_full_joysound_music_post_maintenance
+      run_full_joysound_music_post_maintenance
+    ].freeze
+    KARAOKE_CANDIDATE_HANDLERS = %i[fetch_dam_song fetch_joysound_detail].freeze
 
     def initialize(resource:, operation:, record:, params:, scope:)
       @resource = resource
@@ -33,26 +47,6 @@ module Admin
       raise
     end
 
-    def fetch_dam_song(progress: nil)
-      url = params.dig(:operation_fields, :dam_song_url).to_s
-      raise InputError, 'DAMの楽曲URLではありません。' unless url.start_with?(Constants::Karaoke::Dam::SONG_URL)
-
-      progress&.call(percentage: 25, status: 'DAM候補追加中', label: '指定URLからDAM候補を取得しています', detail: nil)
-      DamSong.fetch_dam_song(url)
-      progress&.call(percentage: 96, status: 'DAM候補追加中', label: 'DAM候補の保存が完了しました', detail: nil)
-      message('DAM候補を追加しました。')
-    end
-
-    def fetch_joysound_detail(progress: nil)
-      url = params.dig(:operation_fields, :joysound_url).to_s
-      raise InputError, 'JOYSOUNDの楽曲URLではありません。' unless url.start_with?("#{Constants::Karaoke::Joysound::SEARCH_URL}/")
-
-      progress&.call(percentage: 25, status: 'JOYSOUND候補追加中', label: '指定URLからJOYSOUND候補を取得しています', detail: nil)
-      JoysoundSong.fetch_joysound_song_direct(url:)
-      progress&.call(percentage: 96, status: 'JOYSOUND候補追加中', label: 'JOYSOUND候補の保存が完了しました', detail: nil)
-      message('JOYSOUND候補を追加しました。')
-    end
-
     private
 
     attr_reader :operation, :record, :params, :scope, :progress_id
@@ -67,6 +61,10 @@ module Admin
 
     def joysound_music_post_operation
       @joysound_music_post_operation ||= Operations::JoysoundMusicPostOperation.new(params:)
+    end
+
+    def karaoke_candidate_operation
+      @karaoke_candidate_operation ||= Operations::KaraokeCandidateOperation.new(params:)
     end
 
     def operation_scope
@@ -116,9 +114,18 @@ module Admin
     end
 
     def handler_operation_target
-      [song_tsv_operation, display_artist_operation, joysound_music_post_operation].find do |target|
-        target.respond_to?(operation.handler)
-      end || self
+      case operation.handler.to_sym
+      when *SONG_TSV_HANDLERS
+        song_tsv_operation
+      when *DISPLAY_ARTIST_HANDLERS
+        display_artist_operation
+      when *JOYSOUND_MUSIC_POST_HANDLERS
+        joysound_music_post_operation
+      when *KARAOKE_CANDIDATE_HANDLERS
+        karaoke_candidate_operation
+      else
+        self
+      end
     end
 
     def method_progress
@@ -133,15 +140,6 @@ module Admin
 
     def message(text)
       Result.new(message: text, download_data: nil, download_filename: nil, download_content_type: nil)
-    end
-
-    def download(data, filename)
-      Result.new(
-        message: "#{filename}を生成しました。",
-        download_data: data,
-        download_filename: filename,
-        download_content_type: 'text/tab-separated-values; charset=utf-8'
-      )
     end
   end
 end
