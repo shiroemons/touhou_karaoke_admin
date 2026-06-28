@@ -6,8 +6,6 @@ module Admin
 
     UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
-    delegate :export_songs, :export_missing_original_songs, :import_songs_with_original_songs, to: :song_tsv_operation
-
     def initialize(resource:, operation:, record:, params:, scope:)
       @resource = resource
       @operation = operation
@@ -54,61 +52,6 @@ module Admin
       progress&.call(percentage: 96, status: 'JOYSOUND候補追加中', label: 'JOYSOUND候補の保存が完了しました', detail: nil)
       message('JOYSOUND候補を追加しました。')
     end
-
-    def fetch_joysound_music_post_song(progress: nil)
-      result = JoysoundMusicPostManager.new.fetch_songs_with_progress(progress:)
-      if result[:errors].any?
-        message("取得処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。取得件数: #{result[:fetched]}件")
-      else
-        message("取得処理が正常に完了しました。取得件数: #{result[:fetched]}件、スキップ件数: #{result[:skipped]}件")
-      end
-    end
-
-    alias register_joysound_music_post_songs fetch_joysound_music_post_song
-
-    def refresh_joysound_music_post_song(progress: nil)
-      result = JoysoundMusicPostManager.new.refresh_songs_efficiently(progress:)
-      if result[:errors].any?
-        message("更新処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。削除件数: #{result[:deleted]}件")
-      else
-        message("更新処理が正常に完了しました。確認件数: #{result[:total_checked]}件、削除件数: #{result[:deleted]}件")
-      end
-    end
-
-    alias verify_joysound_music_post_songs refresh_joysound_music_post_song
-
-    def update_joysound_music_post_delivery_deadline_dates(progress: nil)
-      result = JoysoundMusicPostManager.new.update_delivery_deadlines_optimized(progress:)
-      if result[:errors].any?
-        message("更新処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。更新件数: #{result[:updated]}件")
-      else
-        message("更新処理が正常に完了しました。処理件数: #{result[:total_processed]}件、更新件数: #{result[:updated]}件")
-      end
-    end
-
-    alias sync_joysound_music_post_delivery_deadlines update_joysound_music_post_delivery_deadline_dates
-
-    def validate_display_artist_urls(progress: nil)
-      display_artist_operation.validate_display_artist_urls(progress:)
-    end
-
-    def cleanup_invalid_display_artists(progress: nil)
-      display_artist_operation.cleanup_invalid_display_artists(progress:)
-    end
-
-    def cleanup_orphan_display_artists(progress: nil)
-      display_artist_operation.cleanup_orphan_display_artists(progress:)
-    end
-
-    def cleanup_expired_joysound_music_posts(progress: nil)
-      joysound_music_post_operation.cleanup_expired_joysound_music_posts(progress:)
-    end
-
-    def perform_full_joysound_music_post_maintenance(progress: nil)
-      joysound_music_post_operation.perform_full_joysound_music_post_maintenance(progress:)
-    end
-
-    alias run_full_joysound_music_post_maintenance perform_full_joysound_music_post_maintenance
 
     private
 
@@ -163,12 +106,19 @@ module Admin
     end
 
     def run_handler_operation
-      handler_method = method(operation.handler)
+      target = handler_operation_target
+      handler_method = target.method(operation.handler)
       if handler_method.parameters.any? { |type, name| type == :key && name == :progress }
-        public_send(operation.handler, progress: method_progress)
+        target.public_send(operation.handler, progress: method_progress)
       else
-        public_send(operation.handler)
+        target.public_send(operation.handler)
       end
+    end
+
+    def handler_operation_target
+      [song_tsv_operation, display_artist_operation, joysound_music_post_operation].find do |target|
+        target.respond_to?(operation.handler)
+      end || self
     end
 
     def method_progress

@@ -6,6 +6,39 @@ module Admin
         @params = params
       end
 
+      def fetch_joysound_music_post_song(progress: nil)
+        result = JoysoundMusicPostManager.new.fetch_songs_with_progress(progress:)
+        if result[:errors].any?
+          message("取得処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。取得件数: #{result[:fetched]}件")
+        else
+          message("取得処理が正常に完了しました。取得件数: #{result[:fetched]}件、スキップ件数: #{result[:skipped]}件")
+        end
+      end
+
+      alias register_joysound_music_post_songs fetch_joysound_music_post_song
+
+      def refresh_joysound_music_post_song(progress: nil)
+        result = JoysoundMusicPostManager.new.refresh_songs_efficiently(progress:)
+        if result[:errors].any?
+          message("更新処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。削除件数: #{result[:deleted]}件")
+        else
+          message("更新処理が正常に完了しました。確認件数: #{result[:total_checked]}件、削除件数: #{result[:deleted]}件")
+        end
+      end
+
+      alias verify_joysound_music_post_songs refresh_joysound_music_post_song
+
+      def update_joysound_music_post_delivery_deadline_dates(progress: nil)
+        result = JoysoundMusicPostManager.new.update_delivery_deadlines_optimized(progress:)
+        if result[:errors].any?
+          message("更新処理が完了しましたが、#{result[:errors].count}件のエラーが発生しました。更新件数: #{result[:updated]}件")
+        else
+          message("更新処理が正常に完了しました。処理件数: #{result[:total_processed]}件、更新件数: #{result[:updated]}件")
+        end
+      end
+
+      alias sync_joysound_music_post_delivery_deadlines update_joysound_music_post_delivery_deadline_dates
+
       def cleanup_expired_joysound_music_posts(progress: nil)
         dry_run = dry_run?
         result = JoysoundMusicPostCleaner.new(dry_run:, progress:).cleanup_expired_records
@@ -30,6 +63,8 @@ module Admin
         summary += "\n#{total_errors}件のエラーが発生しました。詳細はログを確認してください。" if total_errors.positive?
         message(summary)
       end
+
+      alias run_full_joysound_music_post_maintenance perform_full_joysound_music_post_maintenance
 
       private
 

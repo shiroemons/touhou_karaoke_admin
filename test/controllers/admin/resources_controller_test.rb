@@ -1144,12 +1144,12 @@ module Admin
         Admin::OperationRunner::Result.new(message: 'ok', download_data: nil, download_filename: nil, download_content_type: nil)
       end
 
-      original_handler = Admin::OperationRunner.instance_method(:validate_display_artist_urls)
-      Admin::OperationRunner.define_method(:validate_display_artist_urls, &runner)
+      original_handler = Admin::Operations::DisplayArtistOperation.instance_method(:validate_display_artist_urls)
+      Admin::Operations::DisplayArtistOperation.define_method(:validate_display_artist_urls, &runner)
       begin
         post operation_admin_display_artists_path, params: { operation: 'validate_display_artist_urls', operation_progress_id: progress_id }
       ensure
-        Admin::OperationRunner.define_method(:validate_display_artist_urls, original_handler)
+        Admin::Operations::DisplayArtistOperation.define_method(:validate_display_artist_urls, original_handler)
       end
 
       assert_redirected_to admin_display_artists_path
