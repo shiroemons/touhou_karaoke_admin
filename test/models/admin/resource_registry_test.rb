@@ -64,6 +64,34 @@ module Admin
       end
     end
 
+    test 'configured search columns resolve to model or association columns' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.search.each_key do |key|
+          column_path = key.to_s.delete_suffix('_cont')
+          next if column_path == 'm'
+
+          assert_search_column_exists(resource, column_path)
+        end
+      end
+    end
+
+    test 'strong parameters are backed by editable form fields' do
+      ResourceRegistry.all.each_value do |resource|
+        permitted_field_names = resource.form_fields.map { |field| field.name.to_sym } + association_id_parameter_names(resource)
+        flattened_parameters = flatten_parameter_keys(resource.strong_parameters)
+
+        assert(flattened_parameters.all? { |name| permitted_field_names.include?(name) }, "#{resource.key} has strong parameters not present in editable fields or associations")
+      end
+    end
+
+    test 'async operations do not require direct file uploads' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.select(&:async).each do |operation|
+          assert(operation.inputs.none? { |input| input[:type] == :file }, "#{resource.key}.#{operation.key} cannot be async with file inputs")
+        end
+      end
+    end
+
     test 'collection and member operations expose stable keys and action keys' do
       song = ResourceRegistry.fetch(:song)
       export = song.operations.find { |operation| operation.key == 'export_songs' }
@@ -84,6 +112,34 @@ module Admin
       values = items.map { |item| item.public_send(attribute).to_s }
 
       assert_equal values.uniq, values, "#{label} must be unique"
+    end
+
+    def assert_search_column_exists(resource, column_path)
+      return assert_includes(resource.model.column_names, column_path) if resource.model.column_names.include?(column_path)
+
+      association = resource.model.reflect_on_all_associations.find { |candidate| column_path.start_with?("#{candidate.name}_") }
+      assert association, "#{resource.key} search #{column_path} must reference an association"
+
+      column = column_path.delete_prefix("#{association.name}_")
+      assert_includes association.klass.column_names, column, "#{resource.key} search #{column_path} must reference an association column"
+    end
+
+    def flatten_parameter_keys(parameters)
+      parameters.flat_map do |parameter|
+        case parameter
+        when Hash
+          parameter.keys
+        else
+          parameter
+        end
+      end.map(&:to_sym)
+    end
+
+    def association_id_parameter_names(resource)
+      resource.associations.filter_map do |association|
+        reflection = resource.model.reflect_on_association(association)
+        :"#{association.to_s.singularize}_ids" if reflection&.collection?
+      end
     end
   end
 end

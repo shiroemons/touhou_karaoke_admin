@@ -60,7 +60,7 @@ module Admin
         fields:,
         associations: attributes.fetch(:associations, []),
         operations: attributes.fetch(:operations, []),
-        strong_parameters: attributes.fetch(:strong_parameters, nil) || fields.select(&:form).map(&:name)
+        strong_parameters: attributes.fetch(:strong_parameters, nil) || fields.select { |field| field.form && !field.readonly }.map(&:name)
       )
     end
 
