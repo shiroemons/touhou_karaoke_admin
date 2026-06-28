@@ -56,7 +56,7 @@
 - [x] `app/javascript/admin/operation_modal.js` を作成する。
 - [x] `app/javascript/admin/operation_progress.js` を作成する。
 - [x] DOM selector を定数化し、同じ selector 文字列の重複を減らす。
-- [ ] 非同期処理失敗時の fallback 動作をテストで固定する。
+- [x] 非同期処理失敗時の fallback 動作をテストで固定する。
 
 **完了条件**:
 
