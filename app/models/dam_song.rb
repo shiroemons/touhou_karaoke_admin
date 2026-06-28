@@ -14,15 +14,15 @@ class DamSong < ApplicationRecord
   def self.fetch_dam_song(song_url)
     raise "Not DAM URL" unless song_url.start_with?(Constants::Karaoke::Dam::SONG_URL)
 
-    @browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    @browser.goto(song_url)
-    @browser.network.wait_for_idle(duration: 1.0)
+    browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+    browser.goto(song_url)
+    browser.network.wait_for_idle(duration: 1.0)
 
     title_selector = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
-    song_title = @browser.at_css(title_selector).inner_text
+    song_title = browser.at_css(title_selector).inner_text
 
     artist_selector = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.song-detail > div.artist-detail"
-    artist_el = @browser.at_css(artist_selector)
+    artist_el = browser.at_css(artist_selector)
     artist_name = artist_el.inner_text
     artist_path = artist_el.at_css("a").attribute("href")
     artist_url = URI.join(Constants::Karaoke::Dam::BASE_URL, artist_path).to_s
@@ -35,7 +35,8 @@ class DamSong < ApplicationRecord
       song.display_artist = display_artist
     end
     dam_song.update(title: song_title, display_artist:)
-    @browser.quit
+  ensure
+    browser&.quit
   end
 
   def self.fetch_dam_touhou_songs(progress: nil)

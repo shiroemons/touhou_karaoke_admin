@@ -23,6 +23,24 @@ class DamSongTest < ActiveSupport::TestCase
     end
   end
 
+  FailingBrowser = Struct.new(:quit_called, keyword_init: true) do
+    def network
+      self
+    end
+
+    def goto(_url); end
+
+    def wait_for_idle(duration:); end
+
+    def at_css(_selector)
+      raise Ferrum::NodeNotFoundError, 'missing selector'
+    end
+
+    def quit
+      self.quit_called = true
+    end
+  end
+
   test 'belongs to display artist' do
     artist = create_display_artist
     song = DamSong.create!(display_artist: artist, title: 'DAM曲', url: 'https://example.com/dam/song')
@@ -55,6 +73,21 @@ class DamSongTest < ActiveSupport::TestCase
     browser = FakeBrowser.new(links, FakeNode.new('検索結果 350件', nil))
 
     assert_equal 5, DamSong.detect_dam_search_total_pages(browser, 100)
+  end
+
+  test 'closes browser when direct DAM song fetch fails' do
+    browser = FailingBrowser.new(quit_called: false)
+    original_browser_new = Ferrum::Browser.method(:new)
+    Ferrum::Browser.define_singleton_method(:new) { |*_args, **_kwargs| browser }
+
+    assert_raises(Ferrum::NodeNotFoundError) do
+      DamSong.fetch_dam_song("#{Constants::Karaoke::Dam::SONG_URL}123456")
+    end
+    assert browser.quit_called
+  ensure
+    Ferrum::Browser.define_singleton_method(:new) do |*args, **kwargs, &block|
+      original_browser_new.call(*args, **kwargs, &block)
+    end
   end
 
   test 'calculates bounded touhou fetch progress' do
