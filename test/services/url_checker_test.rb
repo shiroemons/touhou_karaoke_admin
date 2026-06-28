@@ -1,6 +1,14 @@
 require 'test_helper'
 
 class UrlCheckerTest < ActiveSupport::TestCase
+  FakeResponse = Struct.new(:code)
+
+  FakeHttp = Struct.new(:code) do
+    def request(_request)
+      FakeResponse.new(code)
+    end
+  end
+
   test 'check_url returns false for blank url' do
     assert_equal({ exists: false, error: 'Blank URL' }, UrlChecker.check_url(''))
   end
@@ -78,6 +86,46 @@ class UrlCheckerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'perform_check classifies successful http status' do
+    with_stubbed_http_start(FakeHttp.new('204')) do
+      result = UrlChecker.perform_check(URI.parse('https://example.com/ok'))
+
+      assert_equal true, result[:exists]
+      assert_equal 204, result[:status_code]
+      assert_equal false, result[:should_retry]
+    end
+  end
+
+  test 'perform_check classifies not found http status' do
+    with_stubbed_http_start(FakeHttp.new('404')) do
+      result = UrlChecker.perform_check(URI.parse('https://example.com/missing'))
+
+      assert_equal false, result[:exists]
+      assert_equal 404, result[:status_code]
+      assert_equal false, result[:should_retry]
+    end
+  end
+
+  test 'perform_check treats timeout as retryable' do
+    with_stubbed_http_start(-> { raise Net::OpenTimeout, 'execution expired' }) do
+      result = UrlChecker.perform_check(URI.parse('https://example.com/timeout'))
+
+      assert_nil result[:exists]
+      assert_equal 'Timeout', result[:error]
+      assert_equal true, result[:should_retry]
+    end
+  end
+
+  test 'perform_check treats socket errors as retryable network errors' do
+    with_stubbed_http_start(-> { raise SocketError, 'getaddrinfo failed' }) do
+      result = UrlChecker.perform_check(URI.parse('https://example.invalid/network'))
+
+      assert_nil result[:exists]
+      assert_equal 'Network error', result[:error]
+      assert_equal true, result[:should_retry]
+    end
+  end
+
   private
 
   def with_stubbed_class_method(klass, method_name, replacement)
@@ -86,6 +134,18 @@ class UrlCheckerTest < ActiveSupport::TestCase
     yield
   ensure
     klass.define_singleton_method(method_name) do |*args, **kwargs, &block|
+      original.call(*args, **kwargs, &block)
+    end
+  end
+
+  def with_stubbed_http_start(result)
+    original = Net::HTTP.method(:start)
+    Net::HTTP.define_singleton_method(:start) do |*_args, **_kwargs, &block|
+      result.respond_to?(:call) ? result.call : block.call(result)
+    end
+    yield
+  ensure
+    Net::HTTP.define_singleton_method(:start) do |*args, **kwargs, &block|
       original.call(*args, **kwargs, &block)
     end
   end
