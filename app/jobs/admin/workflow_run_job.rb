@@ -19,6 +19,7 @@ module Admin
 
     def perform(workflow_key:, progress_id:)
       workflow = WorkflowDefinition.fetch(workflow_key)
+      Rails.logger.info("Admin::WorkflowRunJob started workflow=#{workflow.key} progress_id=#{progress_id}")
       WorkflowRunProgress.start!(progress_id, workflow:)
 
       workflow.stages.each do |stage|
@@ -31,6 +32,7 @@ module Admin
       end
 
       WorkflowRunProgress.complete!(progress_id, workflow:)
+      Rails.logger.info("Admin::WorkflowRunJob completed workflow=#{workflow.key} progress_id=#{progress_id}")
     rescue StandardError => e
       WorkflowRunProgress.fail!(progress_id, message: e.message)
       Rails.logger.error(e.full_message)
@@ -74,6 +76,10 @@ module Admin
       loop do
         attempt += 1
         child_progress_id = SecureRandom.uuid
+        Rails.logger.info(
+          "Admin::WorkflowRunJob step started workflow_progress_id=#{progress_id} step=#{step_key} " \
+          "resource=#{resource.key} operation=#{operation.key} attempt=#{attempt} progress_id=#{child_progress_id}"
+        )
         WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'running', progress_id: child_progress_id, attempt:)
         OperationProgress.enqueue!(child_progress_id, label: "#{operation.label}を開始待ちです")
         OperationRunner.new(
@@ -85,6 +91,10 @@ module Admin
         ).run
         detail = OperationProgress.read(child_progress_id)[:detail]
         WorkflowRunProgress.mark_step!(progress_id, step_key, status: 'completed', progress_id: child_progress_id, attempt:, detail:)
+        Rails.logger.info(
+          "Admin::WorkflowRunJob step completed workflow_progress_id=#{progress_id} step=#{step_key} " \
+          "resource=#{resource.key} operation=#{operation.key} attempt=#{attempt} progress_id=#{child_progress_id}"
+        )
         break unless repeat_step?(detail, attempt, max_attempts)
       end
     rescue StandardError => e

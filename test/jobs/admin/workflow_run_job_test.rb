@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'stringio'
 
 module Admin
   class WorkflowRunJobTest < ActiveJob::TestCase
@@ -62,7 +63,40 @@ module Admin
       assert_equal 3, fetch_step[:attempts].size
     end
 
+    test 'logs workflow and step context' do
+      run_id = SecureRandom.uuid
+      workflow = WorkflowDefinition.fetch('dam')
+      WorkflowRunProgress.create!(run_id, workflow:)
+      log_output = StringIO.new
+
+      fake_runner = lambda do |operation_key, progress_id|
+        OperationProgress.complete!(progress_id, label: "#{operation_key}完了", detail: '変更なし（追加・更新・削除はありません）')
+        FakeRunnerResult.new("#{operation_key}完了", nil, nil, nil)
+      end
+
+      with_logger(ActiveSupport::Logger.new(log_output)) do
+        stub_operation_runner(fake_runner) do
+          WorkflowRunJob.perform_now(workflow_key: 'dam', progress_id: run_id)
+        end
+      end
+
+      logs = log_output.string
+      assert_includes logs, "Admin::WorkflowRunJob started workflow=dam progress_id=#{run_id}"
+      assert_includes logs, 'Admin::WorkflowRunJob step started'
+      assert_includes logs, 'resource=dam_song operation=fetch_dam_touhou_songs attempt=1'
+      assert_includes logs, 'Admin::WorkflowRunJob step completed'
+      assert_includes logs, "Admin::WorkflowRunJob completed workflow=dam progress_id=#{run_id}"
+    end
+
     private
+
+    def with_logger(logger)
+      original_logger = Rails.logger
+      Rails.logger = logger
+      yield
+    ensure
+      Rails.logger = original_logger
+    end
 
     def stub_operation_runner(fake_runner)
       original_new = OperationRunner.method(:new)
