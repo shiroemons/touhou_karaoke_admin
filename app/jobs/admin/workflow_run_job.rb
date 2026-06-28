@@ -3,19 +3,6 @@
 module Admin
   class WorkflowRunJob < ApplicationJob
     queue_as :admin_operations
-    REPEATABLE_OPERATION_KEYS = %w[
-      fetch_music_post
-      fetch_music_post_song_joysound_url
-      fetch_joysound_music_post_artist
-      fetch_joysound_music_post_song
-      fetch_joysound_touhou_songs
-      fetch_joysound_songs
-      fetch_joysound_artist
-      fetch_dam_touhou_songs
-      fetch_dam_artist
-      fetch_dam_songs
-    ].freeze
-    MAX_STEP_ATTEMPTS = 3
 
     def perform(workflow_key:, progress_id:, actor_name: nil)
       workflow = WorkflowDefinition.fetch(workflow_key)
@@ -71,7 +58,7 @@ module Admin
       operation = resource.operations.find { |item| item.key == step.operation_key } ||
                   raise(ArgumentError, "指定されたアクションは見つかりません: #{step.operation_key}")
       step_key = "#{stage.key}:#{branch.key}:#{step.key}"
-      max_attempts = repeatable_step?(step) ? MAX_STEP_ATTEMPTS : 1
+      max_attempts = repeatable_step?(step, operation) ? operation.max_attempts : 1
       attempt = 0
 
       loop do
@@ -107,8 +94,8 @@ module Admin
       raise
     end
 
-    def repeatable_step?(step)
-      step.numbered && REPEATABLE_OPERATION_KEYS.include?(step.operation_key)
+    def repeatable_step?(step, operation)
+      step.numbered && operation.repeat_while_created
     end
 
     def repeat_step?(result, detail, attempt, max_attempts)

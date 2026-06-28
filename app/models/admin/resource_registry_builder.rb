@@ -39,7 +39,9 @@ module Admin
         group: attributes.fetch(:group, '操作'),
         estimated_seconds: attributes.fetch(:estimated_seconds, nil),
         selection: attributes.fetch(:selection, :none),
-        async: attributes.fetch(:async, false)
+        async: attributes.fetch(:async, false),
+        repeat_while_created: attributes.fetch(:repeat_while_created, false),
+        max_attempts: attributes.fetch(:max_attempts, 1)
       )
     end
 

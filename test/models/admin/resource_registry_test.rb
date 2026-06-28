@@ -92,6 +92,29 @@ module Admin
       end
     end
 
+    test 'repeatable operations are async and bounded' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.select(&:repeat_while_created).each do |operation|
+          assert_predicate operation, :async, "#{resource.key}.#{operation.key} must run async when repeatable"
+          assert_operator operation.max_attempts, :>, 1, "#{resource.key}.#{operation.key} must allow multiple attempts"
+        end
+      end
+    end
+
+    test 'workflow steps reference configured operations' do
+      WorkflowDefinition.all.each_value do |workflow|
+        workflow.stages.each do |stage|
+          stage.branches.each do |branch|
+            branch.steps.each do |step|
+              resource = ResourceRegistry.fetch(step.resource_key)
+
+              assert(resource.operations.any? { |operation| operation.key == step.operation_key }, "#{workflow.key} #{step.resource_key}.#{step.operation_key} must reference a configured operation")
+            end
+          end
+        end
+      end
+    end
+
     test 'collection and member operations expose stable keys and action keys' do
       song = ResourceRegistry.fetch(:song)
       export = song.operations.find { |operation| operation.key == 'export_songs' }

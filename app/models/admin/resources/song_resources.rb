@@ -72,10 +72,10 @@ module Admin
             operation('楽曲TSVをエクスポート', handler: :export_songs, group: 'TSV入出力', selection: :required),
             operation('原曲未設定TSVをエクスポート', handler: :export_missing_original_songs, group: 'TSV入出力'),
             operation('原曲付き楽曲TSVをインポート', handler: :import_songs_with_original_songs, group: 'TSV入出力', inputs: [{ name: :tsv_file, label: 'TSVファイル', type: :file, accept: 'text/tab-separated-values' }]),
-            operation('DAM候補をカラオケ楽曲へ登録', key: :fetch_dam_songs, method_name: :register_dam_songs_from_candidates, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAM候補をカラオケ楽曲へ登録します。実行しますか？'),
+            operation('DAM候補をカラオケ楽曲へ登録', key: :fetch_dam_songs, method_name: :register_dam_songs_from_candidates, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてDAM候補をカラオケ楽曲へ登録します。実行しますか？'),
             operation('DAM配信機種を再同期', key: :update_dam_delivery_models, method_name: :sync_dam_delivery_models, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAM配信機種を再同期します。実行しますか？'),
-            operation('JOYSOUND候補をカラオケ楽曲へ登録', key: :fetch_joysound_songs, method_name: :register_joysound_songs_from_candidates, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてJOYSOUND候補をカラオケ楽曲へ登録します。実行しますか？'),
-            operation('ミュージックポストをカラオケ楽曲へ登録', handler: :fetch_joysound_music_post_song, group: 'ミュージックポスト', async: true, confirmation: '外部サイトへアクセスしてミュージックポストをカラオケ楽曲へ登録します。実行しますか？'),
+            operation('JOYSOUND候補をカラオケ楽曲へ登録', key: :fetch_joysound_songs, method_name: :register_joysound_songs_from_candidates, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてJOYSOUND候補をカラオケ楽曲へ登録します。実行しますか？'),
+            operation('ミュージックポストをカラオケ楽曲へ登録', handler: :fetch_joysound_music_post_song, group: 'ミュージックポスト', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてミュージックポストをカラオケ楽曲へ登録します。実行しますか？'),
             operation('ミュージックポストURLを検証', handler: :refresh_joysound_music_post_song, group: 'ミュージックポスト', async: true, confirmation: '外部サイトへアクセスして無効な楽曲を削除します。実行しますか？'),
             operation('うたスキ配信期限を反映', handler: :update_joysound_music_post_delivery_deadline_dates, group: 'ミュージックポスト', async: true, confirmation: '配信期限を一括更新します。実行しますか？')
           ],

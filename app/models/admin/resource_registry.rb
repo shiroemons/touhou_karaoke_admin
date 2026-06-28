@@ -3,7 +3,23 @@
 module Admin
   Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :options, :link, :helper, :count_association)
   Filter = Data.define(:name, :label, :type, :options, :apply)
-  Operation = Data.define(:key, :action_key, :label, :description, :method_name, :confirmation, :scope, :handler, :inputs, :group, :estimated_seconds, :selection, :async)
+  Operation = Data.define(
+    :key,
+    :action_key,
+    :label,
+    :description,
+    :method_name,
+    :confirmation,
+    :scope,
+    :handler,
+    :inputs,
+    :group,
+    :estimated_seconds,
+    :selection,
+    :async,
+    :repeat_while_created,
+    :max_attempts
+  )
 
   Resource = Data.define(
     :key,

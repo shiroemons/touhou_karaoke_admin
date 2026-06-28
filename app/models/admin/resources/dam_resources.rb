@@ -24,7 +24,7 @@ module Admin
             field(:url, label: 'URL', type: :url, readonly: true, sortable: true)
           ],
           operations: [
-            operation('DAM候補一覧を取得', key: :fetch_dam_touhou_songs, method_name: :fetch_dam_candidate_songs, group: '外部取得', async: true, estimated_seconds: 40, confirmation: '外部サイトへアクセスしてDAM候補一覧を取得します。実行しますか？'),
+            operation('DAM候補一覧を取得', key: :fetch_dam_touhou_songs, method_name: :fetch_dam_candidate_songs, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, estimated_seconds: 40, confirmation: '外部サイトへアクセスしてDAM候補一覧を取得します。実行しますか？'),
             operation('DAM楽曲URLから候補を追加', handler: :fetch_dam_song, group: 'URL指定取得', async: true, confirmation: '指定URLからDAM候補を追加します。実行しますか？', inputs: [{ name: :dam_song_url, label: 'DAM楽曲URL', type: :text, placeholder: Constants::Karaoke::Dam::SONG_URL }])
           ]
         )

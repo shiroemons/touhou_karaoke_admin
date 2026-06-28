@@ -23,7 +23,7 @@ module Admin
             field(:home_karaoke_enabled, label: '家庭用カラオケ', type: :boolean, readonly: true, sortable: true)
           ],
           operations: [
-            operation('JOYSOUND候補一覧を取得', key: :fetch_joysound_touhou_songs, method_name: :fetch_joysound_candidate_songs, group: '外部取得', async: true, description: ResourceRegistry::FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION, confirmation: '外部サイトへアクセスしてJOYSOUND候補一覧を取得・更新します。実行しますか？'),
+            operation('JOYSOUND候補一覧を取得', key: :fetch_joysound_touhou_songs, method_name: :fetch_joysound_candidate_songs, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, description: ResourceRegistry::FETCH_JOYSOUND_TOUHOU_SONGS_DESCRIPTION, confirmation: '外部サイトへアクセスしてJOYSOUND候補一覧を取得・更新します。実行しますか？'),
             operation('JOYSOUND楽曲URLから候補を追加', handler: :fetch_joysound_detail, group: 'URL指定取得', async: true, confirmation: '指定URLからJOYSOUND候補を追加します。実行しますか？', inputs: [{ name: :joysound_url, label: 'JOYSOUND楽曲URL', type: :text }])
           ]
         )
@@ -50,8 +50,8 @@ module Admin
             field(:joysound_url, label: 'JOYSOUND URL', type: :url, index: false, sortable: true)
           ],
           operations: [
-            operation('ミュージックポスト一覧を取得', key: :fetch_music_post, method_name: :fetch_music_post_entries, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてミュージックポスト一覧を取得します。実行しますか？'),
-            operation('JOYSOUND URLを取得', key: :fetch_music_post_song_joysound_url, method_name: :link_music_posts_to_joysound_urls, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてJOYSOUND URLを取得します。実行しますか？'),
+            operation('ミュージックポスト一覧を取得', key: :fetch_music_post, method_name: :fetch_music_post_entries, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてミュージックポスト一覧を取得します。実行しますか？'),
+            operation('JOYSOUND URLを取得', key: :fetch_music_post_song_joysound_url, method_name: :link_music_posts_to_joysound_urls, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてJOYSOUND URLを取得します。実行しますか？'),
             operation(
               '期限切れを削除',
               handler: :cleanup_expired_joysound_music_posts,
