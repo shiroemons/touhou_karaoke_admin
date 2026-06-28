@@ -32,6 +32,10 @@ class DamSongTest < ActiveSupport::TestCase
 
     def wait_for_idle(duration:); end
 
+    def css(_selector)
+      raise Ferrum::NodeNotFoundError, 'missing list'
+    end
+
     def at_css(_selector)
       raise Ferrum::NodeNotFoundError, 'missing selector'
     end
@@ -94,5 +98,21 @@ class DamSongTest < ActiveSupport::TestCase
     assert_equal 8, DamSong.dam_touhou_progress_percentage(page: 1, item_index: 0, item_count: 100, total_pages: 2)
     assert_equal 52, DamSong.dam_touhou_progress_percentage(page: 2, item_index: 0, item_count: 100, total_pages: 2)
     assert_equal 96, DamSong.dam_touhou_progress_percentage(page: 2, item_index: 100, item_count: 100, total_pages: 2)
+  end
+
+  test 'closes browser for every failed DAM song list parser attempt' do
+    artist = create_display_artist(karaoke_type: 'DAM', url: 'https://example.com/dam/artist')
+    browsers = []
+    original_browser_new = Ferrum::Browser.method(:new)
+    Ferrum::Browser.define_singleton_method(:new) do |*_args, **_kwargs|
+      FailingBrowser.new.tap { |browser| browsers << browser }
+    end
+
+    DamSong.dam_song_list_parser(artist)
+
+    assert_equal 4, browsers.size
+    assert browsers.all?(&:quit_called)
+  ensure
+    Ferrum::Browser.define_singleton_method(:new, original_browser_new)
   end
 end
