@@ -58,6 +58,38 @@ module Admin
       assert_select 'a.admin-dashboard-management-link', text: /原曲/
     end
 
+    test 'admin basic auth is optional by default' do
+      get admin_root_path
+
+      assert_response :success
+    end
+
+    test 'admin basic auth challenges when configured without credentials' do
+      with_admin_basic_auth(username: 'admin', password: 'secret') do
+        get admin_root_path
+
+        assert_response :unauthorized
+        assert_match(/Basic realm="Touhou Karaoke Admin"/, response.headers['WWW-Authenticate'])
+      end
+    end
+
+    test 'admin basic auth accepts matching credentials' do
+      with_admin_basic_auth(username: 'admin', password: 'secret') do
+        get admin_root_path, headers: basic_auth_headers('admin', 'secret')
+
+        assert_response :success
+        assert_select '.admin-dashboard-hero h1', text: '管理画面'
+      end
+    end
+
+    test 'admin basic auth rejects mismatched credentials' do
+      with_admin_basic_auth(username: 'admin', password: 'secret') do
+        get admin_root_path, headers: basic_auth_headers('admin', 'wrong')
+
+        assert_response :unauthorized
+      end
+    end
+
     test 'workflow page groups actions by delivery type' do
       get admin_workflow_path
 
@@ -1356,6 +1388,33 @@ module Admin
 
     def operation_index(resource_key, handler)
       ResourceRegistry.fetch(resource_key).operations.index { |operation| operation.handler == handler }
+    end
+
+    def with_admin_basic_auth(username:, password:)
+      username_env = Admin::BaseController::BASIC_AUTH_USERNAME_ENV
+      password_env = Admin::BaseController::BASIC_AUTH_PASSWORD_ENV
+      original_username = ENV.fetch(username_env, nil)
+      original_password = ENV.fetch(password_env, nil)
+      ENV[username_env] = username
+      ENV[password_env] = password
+      yield
+    ensure
+      restore_env(username_env, original_username)
+      restore_env(password_env, original_password)
+    end
+
+    def restore_env(key, value)
+      if value.nil?
+        ENV.delete(key)
+      else
+        ENV[key] = value
+      end
+    end
+
+    def basic_auth_headers(username, password)
+      {
+        'Authorization' => ActionController::HttpAuthentication::Basic.encode_credentials(username, password)
+      }
     end
 
     def import_tsv_path(original_song)
