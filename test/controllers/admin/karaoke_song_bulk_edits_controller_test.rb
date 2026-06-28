@@ -18,6 +18,8 @@ module Admin
       assert_select 'form[data-admin-filter-form]'
       assert_select 'select[name="status"][data-admin-auto-submit]'
       assert_select "input[name=?]", "songs[#{missing_song.id}][original_songs]"
+      assert_select "input[name=?][placeholder=?]", "songs[#{missing_song.id}][youtube_url]", 'https://www.youtube.com/watch?v=...'
+      assert_select "input[name=?][placeholder=?]", "songs[#{missing_song.id}][spotify_url]", 'https://open.spotify.com/track/...'
       assert_select '[data-admin-original-song-picker]'
       assert_select '[data-admin-original-song-search]'
       assert_includes response.body, missing_song.title
