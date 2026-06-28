@@ -37,7 +37,7 @@
 - [x] TSV 入出力を `Admin::Operations::SongTsvOperation` などに分離する。
 - [x] DisplayArtist 検証・削除系を専用 operation に分離する。
 - [x] JOYSOUND ミュージックポスト系を専用 operation に分離する。
-- [ ] `OperationRunner` は operation の解決、実行、例外処理だけに限定する。
+- [x] `OperationRunner` は operation の解決、実行、例外処理だけに限定する。
 - [x] operation ごとの入力検証エラーを `ArgumentError` ではなく明示的なアプリケーション例外へ整理する。
 
 **完了条件**:

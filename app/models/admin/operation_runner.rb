@@ -4,21 +4,6 @@ module Admin
 
     Result = Data.define(:message, :download_data, :download_filename, :download_content_type)
 
-    SONG_TSV_HANDLERS = %i[export_songs export_missing_original_songs import_songs_with_original_songs].freeze
-    DISPLAY_ARTIST_HANDLERS = %i[validate_display_artist_urls cleanup_invalid_display_artists cleanup_orphan_display_artists].freeze
-    JOYSOUND_MUSIC_POST_HANDLERS = %i[
-      fetch_joysound_music_post_song
-      register_joysound_music_post_songs
-      refresh_joysound_music_post_song
-      verify_joysound_music_post_songs
-      update_joysound_music_post_delivery_deadline_dates
-      sync_joysound_music_post_delivery_deadlines
-      cleanup_expired_joysound_music_posts
-      perform_full_joysound_music_post_maintenance
-      run_full_joysound_music_post_maintenance
-    ].freeze
-    KARAOKE_CANDIDATE_HANDLERS = %i[fetch_dam_song fetch_joysound_detail].freeze
-
     def initialize(resource:, operation:, record:, params:, scope:)
       @resource = resource
       @operation = operation
@@ -50,22 +35,6 @@ module Admin
 
     attr_reader :operation, :record, :params, :scope, :progress_id
 
-    def song_tsv_operation
-      @song_tsv_operation ||= Operations::SongTsvOperation.new(resource: @resource, operation:, params:, scope:)
-    end
-
-    def display_artist_operation
-      @display_artist_operation ||= Operations::DisplayArtistOperation.new(params:)
-    end
-
-    def joysound_music_post_operation
-      @joysound_music_post_operation ||= Operations::JoysoundMusicPostOperation.new(params:)
-    end
-
-    def karaoke_candidate_operation
-      @karaoke_candidate_operation ||= Operations::KaraokeCandidateOperation.new(params:)
-    end
-
     def run_method_operation
       target = record || operation_target
       operation_method = target.method(operation.method_name)
@@ -88,18 +57,11 @@ module Admin
     end
 
     def handler_operation_target
-      case operation.handler.to_sym
-      when *SONG_TSV_HANDLERS
-        song_tsv_operation
-      when *DISPLAY_ARTIST_HANDLERS
-        display_artist_operation
-      when *JOYSOUND_MUSIC_POST_HANDLERS
-        joysound_music_post_operation
-      when *KARAOKE_CANDIDATE_HANDLERS
-        karaoke_candidate_operation
-      else
-        self
-      end
+      handler_registry.resolve(operation.handler) || self
+    end
+
+    def handler_registry
+      @handler_registry ||= Operations::HandlerRegistry.new(resource: @resource, operation:, params:, scope:)
     end
 
     def method_progress
