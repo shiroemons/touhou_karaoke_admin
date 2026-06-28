@@ -15,37 +15,41 @@ class DisplayArtist < ApplicationRecord
 
   def self.fetch_joysound_artist(progress: nil)
     browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-    total_count = DisplayArtist.joysound.name_reading_empty.count
-    DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
-      logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
-      progress&.call(
-        percentage: progress_percentage(i - 1, total_count),
-        status: "JOYSOUNDアーティスト取得中",
-        label: "JOYSOUNDアーティスト読みを取得しています",
-        detail: "処理済み: #{i - 1}/#{total_count}件",
-        current: i - 1,
-        total: total_count
-      )
-      browser.goto(da.url)
-      browser.network.wait_for_idle(duration: 1.0)
+    begin
+      total_count = DisplayArtist.joysound.name_reading_empty.count
+      DisplayArtist.joysound.name_reading_empty.each.with_index(1) do |da, i|
+        logger.debug("#{i}/#{total_count}: #{((i / total_count.to_f) * 100).floor}%")
+        progress&.call(
+          percentage: progress_percentage(i - 1, total_count),
+          status: "JOYSOUNDアーティスト取得中",
+          label: "JOYSOUNDアーティスト読みを取得しています",
+          detail: "処理済み: #{i - 1}/#{total_count}件",
+          current: i - 1,
+          total: total_count
+        )
+        browser.goto(da.url)
+        browser.network.wait_for_idle(duration: 1.0)
 
-      artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
-      artist_el = browser.at_css(artist_selector)
-      name_reading = artist_el&.inner_text&.gsub(/[（）]/, "")
+        artist_selector = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
+        artist_el = browser.at_css(artist_selector)
+        name_reading = artist_el&.inner_text&.gsub(/[（）]/, "")
 
-      if name_reading.present?
-        logger.debug(name_reading)
-        da.name_reading = name_reading
-        da.save!
+        if name_reading.present?
+          logger.debug(name_reading)
+          da.name_reading = name_reading
+          da.save!
+        end
+        progress&.call(
+          percentage: progress_percentage(i, total_count),
+          status: "JOYSOUNDアーティスト取得中",
+          label: "JOYSOUNDアーティスト読みを取得しています",
+          detail: "処理済み: #{i}/#{total_count}件",
+          current: i,
+          total: total_count
+        )
       end
-      progress&.call(
-        percentage: progress_percentage(i, total_count),
-        status: "JOYSOUNDアーティスト取得中",
-        label: "JOYSOUNDアーティスト読みを取得しています",
-        detail: "処理済み: #{i}/#{total_count}件",
-        current: i,
-        total: total_count
-      )
+    ensure
+      browser.quit
     end
   end
 

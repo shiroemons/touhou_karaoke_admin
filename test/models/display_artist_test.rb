@@ -39,6 +39,16 @@ class DisplayArtistTest < ActiveSupport::TestCase
     end
   end
 
+  FailingBrowser = Struct.new(:quit_called, keyword_init: true) do
+    def goto(_url)
+      raise 'navigation failed'
+    end
+
+    def quit
+      self.quit_called = true
+    end
+  end
+
   FakeArtistLink = Struct.new(:href, :text, :paragraphs) do
     def attribute(name)
       href if name == 'href'
@@ -181,5 +191,20 @@ class DisplayArtistTest < ActiveSupport::TestCase
     assert JoysoundMusicPost.exists?(artist: artist_name)
     assert_not JoysoundMusicPost.exists?(artist: missing_artist_name)
     assert browser.quit_called
+  end
+
+  test 'closes browser when joysound artist reading fetch fails' do
+    create_display_artist(karaoke_type: 'JOYSOUND', name_reading: '', url: 'https://example.com/joysound/artist')
+    browser = FailingBrowser.new
+
+    original_browser_new = Ferrum::Browser.method(:new)
+    Ferrum::Browser.define_singleton_method(:new) { |*_args, **_kwargs| browser }
+
+    assert_raises RuntimeError do
+      DisplayArtist.fetch_joysound_artist
+    end
+    assert browser.quit_called
+  ensure
+    Ferrum::Browser.define_singleton_method(:new, original_browser_new)
   end
 end
