@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_091000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -40,6 +40,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_140000) do
     t.string "status", null: false
     t.integer "total"
     t.datetime "updated_at", null: false
+    t.index ["updated_at"], name: "index_admin_operation_progresses_on_updated_at"
   end
 
   create_table "circles", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
