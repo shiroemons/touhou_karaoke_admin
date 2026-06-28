@@ -9,6 +9,12 @@ module Admin
       operation = resource.operations.find { |item| item.key == operation_key } ||
                   raise(ArgumentError, '指定されたアクションは見つかりません。')
       record = resource.model.find(record_id) if record_id.present?
+      progress_id = params[:operation_progress_id] || params['operation_progress_id']
+
+      Rails.logger.info(
+        "Admin::OperationJob started resource=#{resource.key} operation=#{operation.key} " \
+        "record_id=#{record_id.presence || '-'} progress_id=#{progress_id.presence || '-'}"
+      )
 
       OperationRunner.new(
         resource:,
@@ -17,6 +23,11 @@ module Admin
         params: params.with_indifferent_access,
         scope: resource.model.all
       ).run
+
+      Rails.logger.info(
+        "Admin::OperationJob completed resource=#{resource.key} operation=#{operation.key} " \
+        "record_id=#{record_id.presence || '-'} progress_id=#{progress_id.presence || '-'}"
+      )
     rescue StandardError => e
       OperationProgress.fail!(params[:operation_progress_id] || params['operation_progress_id'], message: e.message) if params.is_a?(Hash)
       Rails.logger.error(e.full_message)
