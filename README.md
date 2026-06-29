@@ -176,6 +176,7 @@ make import-display-artists  # アーティスト TSV インポート
 make import-touhou-music     # 東方楽曲データインポート
 make import-touhou-music-slim # 東方楽曲データの軽量インポート
 make stats                   # 統計情報生成
+make data-duplicate-report   # unique index 追加前の重複データ確認
 ```
 
 ### JOYSOUND ミュージックポスト保守

@@ -68,6 +68,7 @@
       "check:joysound":      "bin/rails runner lib/check_expired_joysound_utasuki.rb --verbose",
       "delete:joysound":     "bin/rails runner lib/check_expired_joysound_utasuki.rb --delete --verbose",
       "stats":               "bin/rails runner lib/stats.rb",
+      "data:duplicates":     "bin/rails data_integrity:duplicate_report",
       "update:originals":    "bin/rails db:seed:update_originals",
       "seed:originals":      "bin/rails db:seed:originals",
       "seed:original_songs": "bin/rails db:seed:original_songs",
