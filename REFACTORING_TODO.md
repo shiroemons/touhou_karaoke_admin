@@ -84,7 +84,7 @@
 
 **問題点**: 汎用リソース管理の検索・フィルタ・ソートが増えたため、画面ごとのクエリ数が見えにくい。
 
-- [ ] `Admin::ResourcesController` の検索、フィルタ、ソート、ページング、部分描画を query/service object に切り出す。
+- [x] `Admin::ResourcesController` の検索、フィルタ、ソート、ページング、部分描画を query/service object に切り出す。
 - [x] 各リソースの index で発行されるクエリ数を確認する。
 - [x] `count_association` ソートと association ソートの SQL をテストする。
 - [x] `includes` と `left_outer_joins` の組み合わせで重複行が出ないことを確認する。
