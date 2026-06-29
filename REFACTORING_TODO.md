@@ -58,7 +58,7 @@
 - [x] `app/javascript/admin/operation_progress.js` を作成する。
 - [x] DOM selector を定数化し、同じ selector 文字列の重複を減らす。
 - [x] 非同期処理失敗時の fallback 動作をテストで固定する。
-- [ ] `bulk_edit_controls.js` を原曲 picker、TSV paste、検索可能 select、関連 dialog に分ける。
+- [x] `bulk_edit_controls.js` を原曲 picker、TSV paste、検索可能 select、関連 dialog に分ける。
 - [ ] バルク編集 UI の JavaScript テストを追加する。
 
 **完了条件**:
@@ -77,7 +77,7 @@
 - [ ] 失敗ジョブの再実行導線を管理画面に追加するか判断する。
 - [x] ジョブ実行時の resource / operation をログに残す。
 - [x] ジョブ実行時の actor / params summary をログに残す。
-- [ ] operation ごとの timeout と retry 方針を定義する。
+- [x] operation ごとの timeout と retry 方針を定義する。
 - [ ] 非同期化できない操作（ファイル upload、即時 download など）の制約をコード上で表現する。
 
 ### 5. 管理画面クエリと N+1 の確認
@@ -136,7 +136,7 @@
 
 ### 11. DB 制約と index の見直し
 
-- [ ] 重複データの存在を確認し、非破壊の cleanup / dry-run 手順を用意する。
+- [x] 重複データの存在を確認し、非破壊の cleanup / dry-run 手順を用意する。
 - [ ] 外部 URL の一意性制約が必要なテーブルを確認する。
 - [ ] `dam_songs.url`、`joysound_songs.url`、`dam_artist_urls.url`、`joysound_music_posts.url` の unique index 化可否を確認する。
 - [ ] `display_artists_circles`、`songs_original_songs` の複合 unique index 化可否を確認する。
@@ -202,8 +202,7 @@
 ## 推奨着手順
 
 1. `Admin::ResourcesController` から index query 構築を切り出し、既存 controller test で検索・フィルタ・ソートの挙動を固定する。
-2. `ResourceRegistryDefinitions` の検証テストを増やし、操作キー重複や検索対象の不整合を検出する。
-3. `bulk_edit_controls.js` を機能別 module へ分割し、JavaScript test を追加する。
-4. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
-5. Solid Queue の timeout / retry 方針と失敗時の再実行導線を決める。
-6. DB 制約追加は必ず dry-run の重複確認と cleanup 手順を先に用意してから進める。
+2. `bulk_edit_controls.js` の分割済み module に JavaScript test を追加する。
+3. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
+4. Solid Queue の失敗時の再実行導線を決める。
+5. DB 制約追加は必ず dry-run の重複確認結果を見てから進める。
