@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_29_091000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_30_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -85,6 +85,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_29_091000) do
     t.uuid "display_artist_id", null: false
     t.datetime "updated_at", null: false
     t.index ["circle_id"], name: "index_display_artists_circles_on_circle_id"
+    t.index ["display_artist_id", "circle_id"], name: "idx_display_artists_circles_unique_artist_circle", unique: true
     t.index ["display_artist_id"], name: "index_display_artists_circles_on_display_artist_id"
   end
 
@@ -208,6 +209,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_29_091000) do
     t.uuid "song_id", null: false
     t.datetime "updated_at", null: false
     t.index ["original_song_code"], name: "index_songs_original_songs_on_original_song_code"
+    t.index ["song_id", "original_song_code"], name: "idx_songs_original_songs_unique_song_original", unique: true
     t.index ["song_id"], name: "index_songs_original_songs_on_song_id"
   end
 
