@@ -41,18 +41,18 @@ class JoysoundMusicPostUrlRefresher
     if result[:exists] == false && result[:status_code] == 404
       song.destroy!
       @deleted_count += 1
-      Rails.logger.info("Deleted unavailable song (404): #{song.title}")
+      Admin::OperationLogger.log(level: :info, event: :external_fetch, action: :delete, resource: :song, id: song.id, title: song.title, reason: "not_found")
     elsif result[:exists].nil? && result[:should_retry]
       @skipped_count += 1
-      Rails.logger.warn("Skipped song due to network error: #{song.title} (#{result[:error]})")
+      Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :skip, resource: :song, id: song.id, title: song.title, error: result[:error])
     elsif result[:exists] == true
-      Rails.logger.debug { "Song still available: #{song.title}" }
+      Admin::OperationLogger.log(level: :debug, event: :external_fetch, action: :keep, resource: :song, id: song.id, title: song.title)
     end
   rescue StandardError => e
     error_message = "Error checking song #{song.id}: #{e.message}"
     @errors << error_message
     error_reporter.add_error(type: :url_check, message: error_message, record: song, exception: e)
-    Rails.logger.error(error_message)
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :song, id: song.id, error: e.message)
   end
 
   def report_progress(current, total)

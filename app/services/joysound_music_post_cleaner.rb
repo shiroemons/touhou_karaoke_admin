@@ -58,18 +58,18 @@ class JoysoundMusicPostCleaner
 
   def process_record(record)
     if UrlChecker.url_exists?(record.url)
-      Rails.logger.info("URL still exists for expired record: #{record.title} by #{record.artist}")
+      Admin::OperationLogger.log(level: :info, event: :external_fetch, action: :skip, resource: :joysound_music_post, id: record.id, title: record.title, artist: record.artist, reason: "url_exists")
     else
       @deleted_records << record_info(record)
       record.destroy! unless @dry_run
       @deleted_count += 1
       action = @dry_run ? 'Would delete' : 'Deleted'
-      Rails.logger.info("#{action} expired JoysoundMusicPost: #{record.title} by #{record.artist}")
+      Admin::OperationLogger.log(level: :info, event: :db_update, action: action.parameterize(separator: "_"), resource: :joysound_music_post, id: record.id, title: record.title, artist: record.artist)
     end
   rescue StandardError => e
     error_message = "Failed to process record ID #{record.id}: #{e.message}"
     @errors << error_message
-    Rails.logger.error(error_message)
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, id: record.id, error: e.message)
   end
 
   def record_info(record)

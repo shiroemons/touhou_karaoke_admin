@@ -43,12 +43,12 @@ class JoysoundMusicPostDeadlineSyncer
 
     utasuki_record.update!(delivery_deadline_date: new_deadline)
     @updated_count += 1
-    Rails.logger.debug { "Updated delivery deadline for: #{song.title}" }
+    Admin::OperationLogger.log(level: :debug, event: :db_update, action: :update, resource: :song_with_joysound_utasuki, id: utasuki_record.id, song_id: song.id, title: song.title)
   rescue StandardError => e
     error_message = "Error updating song #{song.id}: #{e.message}"
     @errors << error_message
     error_reporter.add_error(type: :deadline_update, message: error_message, record: song, exception: e)
-    Rails.logger.error(error_message)
+    Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :song_with_joysound_utasuki, song_id: song.id, error: e.message)
   end
 
   def report_progress(current, total)
