@@ -15,15 +15,14 @@ class JoysoundMusicPostFetcher
       artist_names = JoysoundMusicPost.where(joysound_url: [nil, ""]).distinct.pluck(:artist)
       display_artists = DisplayArtist.music_post.where(name: artist_names)
       total_count = display_artists.count
+      reporter = progress_reporter(
+        progress:,
+        status: "JOYSOUND URL取得中",
+        label: "ミュージックポストのJOYSOUND URLを検索しています",
+        unit: "アーティスト"
+      )
       display_artists.each.with_index(1) do |display_artist, index|
-        progress&.call(
-          percentage: progress_percentage(index - 1, total_count),
-          status: "JOYSOUND URL取得中",
-          label: "ミュージックポストのJOYSOUND URLを検索しています",
-          detail: "処理済み: #{index - 1}/#{total_count}アーティスト",
-          current: index - 1,
-          total: total_count
-        )
+        reporter&.advance(current: index - 1, total: total_count, force: true)
         url = display_artist.url + search_option
         browser.goto(url)
         sleep(1.0)
@@ -44,14 +43,7 @@ class JoysoundMusicPostFetcher
           next_link.focus.click
           sleep(1.0)
         end
-        progress&.call(
-          percentage: progress_percentage(index, total_count),
-          status: "JOYSOUND URL取得中",
-          label: "ミュージックポストのJOYSOUND URLを検索しています",
-          detail: "処理済み: #{index}/#{total_count}アーティスト",
-          current: index,
-          total: total_count
-        )
+        reporter&.advance(current: index, total: total_count, force: true)
       end
     rescue StandardError => e
       Rails.logger.error(e)
@@ -115,9 +107,13 @@ class JoysoundMusicPostFetcher
     end
 
     def progress_percentage(current, total)
-      return 96 if total.to_i.zero?
+      Admin::ProgressReporter.percentage(current, total)
+    end
 
-      (8 + (88 * (current.to_f / total))).floor.clamp(8, 96)
+    def progress_reporter(progress:, status:, label:, unit: "件")
+      return unless progress
+
+      Admin::ProgressReporter.new(progress:, status:, label:, unit:)
     end
 
     def unknown_page_progress(page, item_index, item_count, progress_range)
