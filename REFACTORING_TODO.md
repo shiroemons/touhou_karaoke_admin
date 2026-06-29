@@ -106,9 +106,9 @@
 **問題点**: スクレイピングや URL 確認は外部サイトの状態に左右されるが、テストがまだ限定的。
 
 - [x] `UrlChecker` の成功、404、timeout、network error のテストを追加する。
-- [ ] DAM / JOYSOUND scraper の HTML fixture を用意する。
+- [x] DAM / JOYSOUND scraper の HTML fixture を用意する。
 - [ ] Ferrum を使う処理と HTTP だけで済む処理を分けてテストする。
-- [ ] 外部サイト変更時に壊れやすい CSS selector の検証テストを追加する。
+- [x] 外部サイト変更時に壊れやすい CSS selector の検証テストを追加する。
 - [ ] `DamSong`、`JoysoundSong`、`DisplayArtist`、`DamArtistUrl` に残る Ferrum 直書き処理を service/scraper へ移す。
 
 ## 優先度: 低
