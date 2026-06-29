@@ -1,18 +1,6 @@
 require 'test_helper'
 
 class DamArtistUrlTest < ActiveSupport::TestCase
-  class FailingBrowser
-    attr_reader :quit_called
-
-    def goto(_url)
-      raise 'timeout'
-    end
-
-    def quit
-      @quit_called = true
-    end
-  end
-
   test 'requires url' do
     record = DamArtistUrl.new(url: '')
 
@@ -40,18 +28,17 @@ class DamArtistUrlTest < ActiveSupport::TestCase
     assert_equal 96, DamArtistUrl.progress_percentage(20, 10)
   end
 
-  test 'closes browser for every failed artist parser attempt' do
-    browsers = []
-    original_browser_new = Ferrum::Browser.method(:new)
-    Ferrum::Browser.define_singleton_method(:new) do |*_args, **_kwargs|
-      FailingBrowser.new.tap { |browser| browsers << browser }
-    end
+  test 'delegates artist page parsing to scraper service' do
+    calls = []
+    scraper = Object.new
+    scraper.define_singleton_method(:scrape_artist_page) { |url| calls << url }
+    original_new = Scrapers::DamArtistScraper.method(:new)
+    Scrapers::DamArtistScraper.define_singleton_method(:new) { scraper }
 
     DamArtistUrl.dam_artist_page_parser('https://example.com/dam/artist')
 
-    assert_equal 4, browsers.size
-    assert browsers.all?(&:quit_called)
+    assert_equal ['https://example.com/dam/artist'], calls
   ensure
-    Ferrum::Browser.define_singleton_method(:new, original_browser_new)
+    Scrapers::DamArtistScraper.define_singleton_method(:new, original_new)
   end
 end
