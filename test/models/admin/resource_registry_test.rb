@@ -127,6 +127,25 @@ module Admin
       end
     end
 
+    test 'async operations define timeout and retry policy metadata' do
+      valid_retry_strategies = %i[none repeat_while_created manual]
+
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.select(&:async).each do |operation|
+          assert_predicate operation.timeout_seconds, :positive?, "#{resource.key}.#{operation.key} must define timeout_seconds"
+          assert_includes valid_retry_strategies, operation.retry_strategy, "#{resource.key}.#{operation.key} must define a known retry strategy"
+        end
+      end
+    end
+
+    test 'repeatable operations declare repeat retry strategy' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.select(&:repeat_while_created).each do |operation|
+          assert_equal :repeat_while_created, operation.retry_strategy, "#{resource.key}.#{operation.key} must expose repeat retry strategy"
+        end
+      end
+    end
+
     test 'workflow steps reference configured operations' do
       WorkflowDefinition.all.each_value do |workflow|
         workflow.stages.each do |stage|

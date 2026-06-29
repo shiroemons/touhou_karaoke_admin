@@ -38,9 +38,11 @@ module Admin
         inputs: attributes.fetch(:inputs, []),
         group: attributes.fetch(:group, '操作'),
         estimated_seconds: attributes.fetch(:estimated_seconds, nil),
+        timeout_seconds: attributes.fetch(:timeout_seconds, default_timeout_seconds(attributes)),
         selection: attributes.fetch(:selection, :none),
         async: attributes.fetch(:async, false),
         repeat_while_created: attributes.fetch(:repeat_while_created, false),
+        retry_strategy: attributes.fetch(:retry_strategy, default_retry_strategy(attributes)),
         max_attempts: attributes.fetch(:max_attempts, 1)
       )
     end
@@ -77,6 +79,14 @@ module Admin
 
     def operation_description(operation_key, attributes, label)
       ResourceRegistry::OPERATION_DESCRIPTIONS.fetch(operation_key, attributes.fetch(:confirmation, "#{label}を実行します。"))
+    end
+
+    def default_timeout_seconds(attributes)
+      attributes[:async] ? 30.minutes.to_i : nil
+    end
+
+    def default_retry_strategy(attributes)
+      attributes[:repeat_while_created] ? :repeat_while_created : :none
     end
   end
 end

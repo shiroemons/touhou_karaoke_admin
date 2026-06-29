@@ -15,9 +15,11 @@ module Admin
     :inputs,
     :group,
     :estimated_seconds,
+    :timeout_seconds,
     :selection,
     :async,
     :repeat_while_created,
+    :retry_strategy,
     :max_attempts
   )
 
