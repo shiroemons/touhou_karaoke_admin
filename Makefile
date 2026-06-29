@@ -10,7 +10,7 @@ DEVBOX_PC_URL := http://localhost:$(DEVBOX_PC_PORT_NUM)
 	export-display-artists import-display-artists \
 	import-touhou-music import-touhou-music-slim \
 	check-expired-joysound delete-expired-joysound \
-	stats data-duplicate-report db-dump db-restore \
+	stats data-duplicate-report data-duplicate-impact-report db-dump db-restore \
 	docker-init docker-up docker-down docker-server \
 	docker-console docker-console-sandbox docker-bundle \
 	docker-dbinit docker-dbconsole docker-migrate docker-migrate-redo docker-rollback docker-dbseed \
@@ -272,6 +272,9 @@ stats: ## Generate statistics
 
 data-duplicate-report: ## Report duplicate rows that block future unique indexes
 	devbox run data:duplicates
+
+data-duplicate-impact-report: ## Report duplicate row impact without changing data
+	devbox run -- bin/rails data_integrity:duplicate_impact_report
 
 db-dump: ## Database backup
 	devbox run db:backup

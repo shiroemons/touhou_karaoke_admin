@@ -40,7 +40,9 @@
   url="https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode=141159", duplicate_count=2
 ```
 
-このため、外部 URL の unique index 化は `dam_artist_urls.url` の重複を解消するまで保留する。他の `DataIntegrity::DuplicateFinder::DEFAULT_CHECKS` 対象では、この実行時点で重複は報告されていない。
+2026-06-30 時点の影響確認では、同 URL に紐づく `DisplayArtist` は 1 件、関連 `DamSong` は 17 件だった。`dam_artist_urls` は外部キーで参照されていないため、重複解消時も `DisplayArtist` と `DamSong` は削除しない。
+
+破壊的な自動削除は行わず、まず `make data-duplicate-impact-report` で canonical 候補、重複行 ID、関連件数を確認する。このため、外部 URL の unique index 化は `dam_artist_urls.url` の重複を安全に整理するまで保留する。他の `DataIntegrity::DuplicateFinder::DEFAULT_CHECKS` 対象では、この実行時点で重複は報告されていない。
 
 ## 今は追加しない
 
