@@ -107,17 +107,7 @@ class JoysoundMusicPostManager
 
   # 統合的なメンテナンス処理
   def perform_full_maintenance(progress: nil)
-    Rails.logger.info("Starting full JOYSOUND music post maintenance")
-
-    results = {
-      cleanup: cleanup_expired_records(progress: maintenance_progress(progress, 0...20, "期限切れクリーンアップ")),
-      fetch: fetch_songs_with_progress(progress: maintenance_progress(progress, 20...60, "楽曲取得")),
-      refresh: refresh_songs_efficiently(progress: maintenance_progress(progress, 60...82, "URL確認")),
-      update_deadlines: update_delivery_deadlines_optimized(progress: maintenance_progress(progress, 82..96, "配信期限更新"))
-    }
-
-    Rails.logger.info("Full maintenance completed")
-    results
+    JoysoundMusicPostMaintenanceRunner.new(manager: self, progress:).call
   end
 
   private
@@ -127,22 +117,6 @@ class JoysoundMusicPostManager
     return unless current == total || (current % 10).zero?
 
     Admin::ProgressReporter.new(progress:, status:, label:).advance(current:, total:, force: true)
-  end
-
-  def maintenance_progress(progress, range, phase_label)
-    return nil unless progress
-
-    lambda do |**attributes|
-      source_percentage = attributes[:percentage].to_i.clamp(0, 100)
-      phase_start = range.begin
-      phase_end = range.end
-      mapped_percentage = phase_start + ((phase_end - phase_start) * (source_percentage / 100.0))
-      progress.call(
-        **attributes,
-        percentage: mapped_percentage.floor.clamp(phase_start, phase_end),
-        label: "#{phase_label}: #{attributes[:label]}"
-      )
-    end
   end
 
   def process_music_post_record(scraper, record)
