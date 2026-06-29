@@ -117,7 +117,7 @@
 
 - [ ] 外部取得、DB 更新、削除、スキップ、エラーを同じ形式でログ出力する。
 - [ ] `Rails.logger.debug` / `info` / `warn` / `error` の使い分けを整理する。
-- [ ] 管理画面操作単位の operation id をログに含める。
+- [x] 管理画面操作単位の operation id をログに含める。
 
 ### 9. `ResumableProcessor` の扱いを決める
 
