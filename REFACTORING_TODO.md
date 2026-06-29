@@ -22,7 +22,7 @@
 - [x] 長文の操作説明を `config/locales/admin.ja.yml` または専用定義ファイルへ移す。
 - [x] `ResourceRegistry` は登録と参照だけを担当する薄いクラスにする。
 - [x] リソース定義の単体テストを追加し、必須属性、検索対象、操作キーの重複を検出する。
-- [ ] 共通フィルタ DSL を小さな module に切り出し、`ResourceRegistryDefinitions` は登録順と include だけに近づける。
+- [x] 共通フィルタ DSL を小さな module に切り出し、`ResourceRegistryDefinitions` は登録順と include だけに近づける。
 
 **完了条件**:
 
@@ -201,7 +201,6 @@
 
 ## 推奨着手順
 
-1. 共通フィルタ DSL を小さな module に切り出し、`ResourceRegistryDefinitions` は登録順と include だけに近づける。
-2. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
-3. Solid Queue の失敗時の再実行導線を決める。
-4. DB 制約追加は必ず dry-run の重複確認結果を見てから進める。
+1. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
+2. Solid Queue の失敗時の再実行導線を決める。
+3. DB 制約追加は必ず dry-run の重複確認結果を見てから進める。
