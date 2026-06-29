@@ -118,6 +118,28 @@ module Admin
       end
     end
 
+    test 'download operations are kept synchronous' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.select { |operation| operation.response == :download }.each do |operation|
+          assert_not_predicate operation, :async, "#{resource.key}.#{operation.key} must return downloads in the request"
+        end
+      end
+    end
+
+    test 'builder rejects async operations that need request-bound inputs or responses' do
+      builder = Class.new do
+        include ResourceRegistryBuilder
+      end.new
+
+      assert_raises(ArgumentError) do
+        builder.send(:operation, 'TSVインポート', async: true, inputs: [{ name: :tsv_file, type: :file }])
+      end
+
+      assert_raises(ArgumentError) do
+        builder.send(:operation, 'TSVエクスポート', async: true, response: :download)
+      end
+    end
+
     test 'repeatable operations are async and bounded' do
       ResourceRegistry.all.each_value do |resource|
         resource.operations.select(&:repeat_while_created).each do |operation|

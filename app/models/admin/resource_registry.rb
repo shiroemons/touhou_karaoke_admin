@@ -17,6 +17,7 @@ module Admin
     :estimated_seconds,
     :timeout_seconds,
     :selection,
+    :response,
     :async,
     :repeat_while_created,
     :retry_strategy,

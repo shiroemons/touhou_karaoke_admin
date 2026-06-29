@@ -33,11 +33,12 @@ module Admin
             operation('DAMアーティスト読みを補完', key: :fetch_dam_artist, method_name: :fill_dam_artist_readings, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてDAMアーティスト読みを補完します。実行しますか？'),
             operation('JOYSOUNDアーティスト読みを補完', key: :fetch_joysound_artist, method_name: :fill_joysound_artist_readings, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてJOYSOUNDアーティスト読みを補完します。実行しますか？'),
             operation('うたスキアーティストを登録', key: :fetch_joysound_music_post_artist, method_name: :register_joysound_music_post_artists, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてうたスキアーティストを登録します。実行しますか？'),
-            operation('URLを検証', handler: :validate_display_artist_urls, group: '検証・削除', confirmation: 'アーティストURLを検証します。実行しますか？'),
+            operation('URLを検証', handler: :validate_display_artist_urls, group: '検証・削除', response: :download, confirmation: 'アーティストURLを検証します。実行しますか？'),
             operation(
               '無効なアーティストを削除',
               handler: :cleanup_invalid_display_artists,
               group: '検証・削除',
+              response: :download,
               confirmation: 'URLが無効なアーティストを削除します。実行しますか？',
               inputs: [
                 { name: :dry_run, label: 'プレビューのみ', description: '削除せず対象をTSVで確認する', type: :checkbox, checked: true, required: false }
@@ -47,6 +48,7 @@ module Admin
               '孤立アーティストを削除',
               handler: :cleanup_orphan_display_artists,
               group: '検証・削除',
+              response: :download,
               confirmation: '楽曲が紐づいていないアーティストを削除します。実行しますか？',
               inputs: [
                 { name: :dry_run, label: 'プレビューのみ', description: '削除せず対象を確認する', type: :checkbox, checked: true, required: false },

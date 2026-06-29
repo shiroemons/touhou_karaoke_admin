@@ -25,6 +25,7 @@ module Admin
     end
 
     def operation(label, **attributes)
+      validate_operation_execution!(label, attributes)
       operation_key = attributes.fetch(:key, attributes.fetch(:handler, attributes.fetch(:method_name, label))).to_s
       Operation.new(
         key: operation_key,
@@ -40,6 +41,7 @@ module Admin
         estimated_seconds: attributes.fetch(:estimated_seconds, nil),
         timeout_seconds: attributes.fetch(:timeout_seconds, default_timeout_seconds(attributes)),
         selection: attributes.fetch(:selection, :none),
+        response: attributes.fetch(:response, :redirect),
         async: attributes.fetch(:async, false),
         repeat_while_created: attributes.fetch(:repeat_while_created, false),
         retry_strategy: attributes.fetch(:retry_strategy, default_retry_strategy(attributes)),
@@ -87,6 +89,21 @@ module Admin
 
     def default_retry_strategy(attributes)
       attributes[:repeat_while_created] ? :repeat_while_created : :none
+    end
+
+    def validate_operation_execution!(label, attributes)
+      return unless attributes[:async]
+
+      invalid_reasons = []
+      invalid_reasons << 'file inputs cannot be serialized for background jobs' if file_input_operation?(attributes)
+      invalid_reasons << 'download responses must be returned in the request' if attributes[:response] == :download
+      return if invalid_reasons.blank?
+
+      raise ArgumentError, "#{label} cannot run asynchronously: #{invalid_reasons.join(', ')}"
+    end
+
+    def file_input_operation?(attributes)
+      attributes.fetch(:inputs, []).any? { |input| input[:type] == :file }
     end
   end
 end

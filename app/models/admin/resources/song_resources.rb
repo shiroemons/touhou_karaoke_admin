@@ -69,8 +69,8 @@ module Admin
           ],
           associations: %i[karaoke_delivery_models original_songs song_with_dam_ouchikaraoke song_with_joysound_utasuki],
           operations: [
-            operation('楽曲TSVをエクスポート', handler: :export_songs, group: 'TSV入出力', selection: :required),
-            operation('原曲未設定TSVをエクスポート', handler: :export_missing_original_songs, group: 'TSV入出力'),
+            operation('楽曲TSVをエクスポート', handler: :export_songs, group: 'TSV入出力', selection: :required, response: :download),
+            operation('原曲未設定TSVをエクスポート', handler: :export_missing_original_songs, group: 'TSV入出力', response: :download),
             operation('原曲付き楽曲TSVをインポート', handler: :import_songs_with_original_songs, group: 'TSV入出力', inputs: [{ name: :tsv_file, label: 'TSVファイル', type: :file, accept: 'text/tab-separated-values' }]),
             operation('DAM候補をカラオケ楽曲へ登録', key: :fetch_dam_songs, method_name: :register_dam_songs_from_candidates, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてDAM候補をカラオケ楽曲へ登録します。実行しますか？'),
             operation('DAM配信機種を再同期', key: :update_dam_delivery_models, method_name: :sync_dam_delivery_models, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAM配信機種を再同期します。実行しますか？'),
