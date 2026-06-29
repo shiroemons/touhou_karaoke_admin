@@ -279,6 +279,17 @@ module Admin
       end
     end
 
+    test 'all resource indexes stay within bounded query counts' do
+      resource_records.each_key do |resource|
+        sql = capture_sql do
+          get admin_resources_path(resource), params: { per_page: 24 }
+        end
+
+        assert_response :success, "#{resource.key} index should render"
+        assert_operator sql.size, :<=, 30, "#{resource.key} index issued too many SQL queries: #{sql.size}"
+      end
+    end
+
     test 'display artist index rows link to show page' do
       get admin_display_artists_path
 
