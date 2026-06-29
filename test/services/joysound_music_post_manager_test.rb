@@ -3,6 +3,12 @@
 require 'test_helper'
 
 class JoysoundMusicPostManagerTest < ActiveSupport::TestCase
+  FakeFailedCleaner = Class.new do
+    def cleanup_expired_records
+      { deleted: 0, errors: ['cleanup failed'] }
+    end
+  end
+
   test 'refresh_songs_efficiently deletes 404 songs and skips retryable network errors' do
     deleted_song = create_music_post_song(title: 'Deleted Music Post Song', url: 'https://example.com/music-post/deleted')
     skipped_song = create_music_post_song(title: 'Skipped Music Post Song', url: 'https://example.com/music-post/skipped')
@@ -74,6 +80,19 @@ class JoysoundMusicPostManagerTest < ActiveSupport::TestCase
     assert_empty result.fetch(:errors)
     assert_equal new_deadline, changed_song.song_with_joysound_utasuki.reload.delivery_deadline_date
     assert_equal new_deadline, unchanged_song.song_with_joysound_utasuki.reload.delivery_deadline_date
+  end
+
+  test 'cleanup_expired_records records cleaner errors in error reporter' do
+    manager = JoysoundMusicPostManager.new
+
+    with_stubbed_class_method(JoysoundMusicPostCleaner, :new, ->(**_args) { FakeFailedCleaner.new }) do
+      result = manager.cleanup_expired_records
+
+      assert_equal ['cleanup failed'], result.fetch(:errors)
+      assert_equal ['cleanup failed'], manager.stats.fetch(:errors)
+      assert_equal 1, manager.error_reporter.errors.size
+      assert_equal :cleanup, manager.error_reporter.errors.first.fetch(:type)
+    end
   end
 
   private

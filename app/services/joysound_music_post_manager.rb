@@ -176,7 +176,7 @@ class JoysoundMusicPostManager
     result = cleaner.cleanup_expired_records
 
     @stats[:deleted] += result[:deleted]
-    @stats[:errors].concat(result[:errors])
+    result[:errors].each { |error| record_error(error, type: :cleanup) }
 
     result
   end
