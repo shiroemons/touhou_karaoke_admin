@@ -43,7 +43,7 @@ module Scrapers
         end
       end
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error("Failed to update delivery models for song #{song.id}: #{e.message}")
+      Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :song, id: song.id, error: e.message, attempted_delivery_model_ids: new_delivery_model_ids)
       # エラーが発生しても処理を継続
     end
 

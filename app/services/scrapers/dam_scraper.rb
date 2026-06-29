@@ -10,7 +10,7 @@ module Scrapers
         max_retries: 3,
         errors: [Ferrum::TimeoutError],
         on_retry: lambda do |error, retry_count|
-          Rails.logger.warn("Resetting browser due to #{error.class} (retry #{retry_count}/3)")
+          Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :browser, error: error.class, retry_count:, max_retries: 3)
           reset_browser_manager(timeout: 10, process_timeout: 10)
         end
       ) do
@@ -23,7 +23,7 @@ module Scrapers
         end
       end
     rescue StandardError => e
-      Rails.logger.error("Error scraping DAM song page #{dam_song.url}: #{e.message}")
+      Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :song, id: dam_song.id, url: dam_song.url, karaoke_type:, error: e.message)
       raise
     end
 
@@ -37,7 +37,7 @@ module Scrapers
         max_retries: 3,
         errors: [Ferrum::TimeoutError],
         on_retry: lambda do |error, retry_count|
-          Rails.logger.warn("Resetting browser due to #{error.class} (retry #{retry_count}/3)")
+          Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :browser, error: error.class, retry_count:, max_retries: 3)
           local_browser_manager = BrowserManager.new
         end
       ) do
@@ -51,7 +51,7 @@ module Scrapers
         end
       end
     rescue StandardError => e
-      Rails.logger.error("Error updating DAM delivery models for song #{song.id}: #{e.message}")
+      Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :song, id: song.id, karaoke_type:, error: e.message)
       # エラーが発生しても処理を継続（raiseしない）
     end
 

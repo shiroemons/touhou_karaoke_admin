@@ -47,7 +47,7 @@ module Scrapers
         end
       end
     rescue StandardError => e
-      Rails.logger.error("Error scraping JOYSOUND song page #{url}: #{e.message}")
+      Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :song, url:, karaoke_type:, error: e.message)
       raise
     end
 
@@ -74,13 +74,19 @@ module Scrapers
                       else
                         e.message
                       end
-      Rails.logger.error("Error scraping JOYSOUND music post #{joysound_music_post.id}: #{error_details}")
-      Rails.logger.error("Invalid record: #{e.record.inspect}")
-      Rails.logger.error("Errors: #{e.record.errors.details}") if e.record.respond_to?(:errors)
+      Admin::OperationLogger.log(
+        level: :error,
+        event: :external_fetch,
+        action: :error,
+        resource: :joysound_music_post,
+        id: joysound_music_post.id,
+        error: error_details,
+        record: e.record.inspect,
+        validation_errors: (e.record.errors.details if e.record.respond_to?(:errors))
+      )
       raise
     rescue StandardError => e
-      Rails.logger.error("Error scraping JOYSOUND music post #{joysound_music_post.id}: #{e.message}")
-      Rails.logger.error(e.backtrace.first(5).join("\n"))
+      Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, id: joysound_music_post.id, error: e.message, backtrace: e.backtrace.first(5).join("\n"))
       raise
     end
 
@@ -266,9 +272,7 @@ module Scrapers
         end
       end
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error("Failed to update delivery models for song #{song.id}: #{e.message}")
-      Rails.logger.error("Attempted to set IDs: #{new_delivery_model_ids}")
-      Rails.logger.error("Current IDs: #{song.karaoke_delivery_model_ids}")
+      Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :song, id: song.id, error: e.message, attempted_delivery_model_ids: new_delivery_model_ids, current_delivery_model_ids: song.karaoke_delivery_model_ids)
       # エラーが発生しても処理を継続（ROLLBACKを防ぐ）
     end
   end
