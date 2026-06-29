@@ -53,28 +53,19 @@ class JoysoundMusicPostManager
   end
 
   # 楽曲の取得処理（改善版）
-  def fetch_songs_with_progress(resumable: false, progress: nil)
+  def fetch_songs_with_progress(progress: nil)
     scraper = Scrapers::JoysoundScraper.new
     prioritized_posts = JoysoundMusicPostPrioritizer.call
 
     Rails.logger.info("Starting JOYSOUND music post song fetch: #{prioritized_posts.count} posts")
 
-    if resumable
-      processor = ResumableProcessor.new(@process_id)
-      processor.process(prioritized_posts) do |record|
-        process_music_post_record(scraper, record)
-      end
-      Rails.logger.info("Progress: #{processor.progress}")
-    else
-      # ParallelProcessorを使用してバッチ処理
-      process_with_progress(
-        prioritized_posts,
-        label: "JOYSOUND Music Posts",
-        progress:,
-        progress_options: { status: "ミュージックポスト楽曲取得中", label: "ミュージックポスト楽曲を取得しています" }
-      ) do |record|
-        process_music_post_record(scraper, record)
-      end
+    process_with_progress(
+      prioritized_posts,
+      label: "JOYSOUND Music Posts",
+      progress:,
+      progress_options: { status: "ミュージックポスト楽曲取得中", label: "ミュージックポスト楽曲を取得しています" }
+    ) do |record|
+      process_music_post_record(scraper, record)
     end
 
     generate_final_report
