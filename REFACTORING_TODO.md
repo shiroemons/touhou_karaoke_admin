@@ -97,7 +97,7 @@
 
 - [x] 取得、URL 検証、期限更新、統合メンテナンスを小さな service に分ける。
 - [x] `ErrorReportService` の利用箇所を増やし、戻り値の `errors` 配列と二重管理しない。
-- [ ] 進捗通知を `Admin::ProgressReporter` に寄せる。
+- [x] 進捗通知を `Admin::ProgressReporter` に寄せる。
 - [x] `resumable:` オプションの利用実態を確認し、使わないなら削除する。
 - [x] 大量処理時のスキップ、削除、更新件数をテストで固定する。
 
