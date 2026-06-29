@@ -206,6 +206,14 @@ module Admin
       assert_empty song.reload.original_songs
     end
 
+    test 'limits blank original song option search in title order' do
+      create_original_song(title: '000 Blank Option Search', is_duplicate: false)
+      expected = OriginalSong.non_duplicated.order(:title).first
+      result = KaraokeSongBulkEditor.search_original_song_options('', limit: 1)
+
+      assert_equal [expected], result
+    end
+
     test 'splits pasted original song text on ampersand and normalizes matched titles' do
       song = create_song
       master_spark = create_original_song(title: '恋色マスタースパーク')

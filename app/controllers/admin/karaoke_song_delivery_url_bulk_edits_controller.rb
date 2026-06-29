@@ -1,20 +1,5 @@
 module Admin
   class KaraokeSongDeliveryUrlBulkEditsController < BaseController
-    PER_PAGE = 100
-    SORT_OPTIONS = {
-      'created_at' => 'songs.created_at',
-      'display_artist_name' => 'display_artists.name',
-      'title' => 'songs.title',
-      'karaoke_type' => 'songs.karaoke_type',
-      'youtube_url' => 'songs.youtube_url',
-      'nicovideo_url' => 'songs.nicovideo_url',
-      'apple_music_url' => 'songs.apple_music_url',
-      'youtube_music_url' => 'songs.youtube_music_url',
-      'spotify_url' => 'songs.spotify_url',
-      'line_music_url' => 'songs.line_music_url'
-    }.freeze
-    SORT_DIRECTION_OPTIONS = %w[asc desc].freeze
-
     helper_method :karaoke_song_delivery_url_bulk_edit_columns,
                   :karaoke_song_delivery_url_filter_columns,
                   :karaoke_song_delivery_url_sort_options,
@@ -57,70 +42,21 @@ module Admin
     private
 
     def load_index
-      @query = params[:q].to_s.strip
-      @missing_url_columns = requested_missing_url_columns
-      @karaoke_type = requested_karaoke_type
-      @sort = requested_sort
-      @direction = requested_direction
-      @page = [params[:page].to_i, 1].max
-      @per_page = PER_PAGE
-
-      scope = filtered_scope
-      @total_count = scope.except(:order).count
-      @total_pages = [(@total_count.to_f / @per_page).ceil, 1].max
-      @songs = scope.offset((@page - 1) * @per_page).limit(@per_page)
-    end
-
-    def filtered_scope
-      scope = policy_scope(Song)
-              .includes(:display_artist, original_songs: :original)
-              .left_outer_joins(:display_artist)
-
-      apply_order(apply_karaoke_type_filter(apply_missing_url_filters(apply_query(scope))))
-    end
-
-    def apply_query(scope)
-      return scope if @query.blank?
-
-      pattern = "%#{Song.sanitize_sql_like(@query)}%"
-      songs = Song.arel_table
-      artists = DisplayArtist.arel_table
-      scope.where(
-        songs[:title].matches(pattern)
-          .or(songs[:song_number].matches(pattern))
-          .or(songs[:url].matches(pattern))
-          .or(artists[:name].matches(pattern))
-      )
-    end
-
-    def apply_missing_url_filters(scope)
-      requested_missing_url_columns.reduce(scope) do |filtered_scope, column|
-        songs = Song.arel_table
-        filtered_scope.where(songs[column].eq('').or(songs[column].eq(nil)))
-      end
-    end
-
-    def apply_karaoke_type_filter(scope)
-      return scope if requested_karaoke_type.blank?
-
-      scope.where(karaoke_type: requested_karaoke_type)
-    end
-
-    def apply_order(scope)
-      sort_expression = SORT_OPTIONS.fetch(requested_sort)
-      direction = requested_direction
-      scope.reorder(Arel.sql("#{sort_expression} #{direction.upcase}"), title: :asc)
+      query = index_query
+      @query = query.query
+      @missing_url_columns = query.missing_url_columns
+      @karaoke_type = query.karaoke_type
+      @sort = query.sort
+      @direction = query.direction
+      @page = query.page
+      @per_page = query.per_page
+      @total_count = query.total_count
+      @total_pages = query.total_pages
+      @songs = query.songs
     end
 
     def index_params
-      {
-        q: params[:q].presence,
-        missing_url_columns: requested_missing_url_columns.presence,
-        karaoke_type: requested_karaoke_type.presence,
-        sort: params[:sort].present? ? requested_sort : nil,
-        direction: params[:direction].present? ? requested_direction : nil,
-        page: params[:page].presence
-      }.compact
+      index_query.index_params
     end
 
     def karaoke_song_delivery_url_bulk_edit_columns
@@ -154,26 +90,7 @@ module Admin
     end
 
     def karaoke_song_delivery_url_karaoke_type_options
-      Song.distinct.order(:karaoke_type).pluck(:karaoke_type).compact_blank
-    end
-
-    def requested_missing_url_columns
-      Array.wrap(params[:missing_url_columns]).select do |column|
-        KaraokeSongDeliveryUrlBulkEditor::URL_COLUMNS.include?(column)
-      end
-    end
-
-    def requested_karaoke_type
-      karaoke_type = params[:karaoke_type].to_s
-      karaoke_song_delivery_url_karaoke_type_options.include?(karaoke_type) ? karaoke_type : nil
-    end
-
-    def requested_sort
-      SORT_OPTIONS.key?(params[:sort].to_s) ? params[:sort].to_s : 'created_at'
-    end
-
-    def requested_direction
-      SORT_DIRECTION_OPTIONS.include?(params[:direction].to_s) ? params[:direction].to_s : 'desc'
+      @karaoke_song_delivery_url_karaoke_type_options ||= Song.distinct.order(:karaoke_type).pluck(:karaoke_type).compact_blank
     end
 
     def song_rows
@@ -193,6 +110,14 @@ module Admin
 
     def editor
       KaraokeSongDeliveryUrlBulkEditor.new(actor_name: current_user.name)
+    end
+
+    def index_query
+      @index_query ||= KaraokeSongDeliveryUrlBulkEditQuery.new(
+        scope: policy_scope(Song),
+        params:,
+        karaoke_type_options: karaoke_song_delivery_url_karaoke_type_options
+      )
     end
   end
 end

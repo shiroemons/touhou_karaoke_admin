@@ -21,7 +21,10 @@ module Admin
 
     def self.search_original_song_options(query, limit: 20)
       normalized_query = normalize_original_song_title(query)
-      songs = OriginalSong.non_duplicated.includes(:original).order(:title).to_a
+      scope = OriginalSong.non_duplicated.includes(:original).order(:title)
+      return scope.limit(limit).to_a if normalized_query.blank?
+
+      songs = scope.to_a
       songs = songs.select { |song| original_song_search_match?(song.title, normalized_query) } if normalized_query.present?
 
       songs.first(limit)
