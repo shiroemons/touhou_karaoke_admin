@@ -61,6 +61,32 @@ module Admin
         assert_unique_names(resource.fields, "#{resource.key} fields")
         assert_unique_names(resource.filters, "#{resource.key} filters")
         assert_unique_names(resource.operations, "#{resource.key} operations", attribute: :key)
+        assert_unique_names(resource.operations, "#{resource.key} operation action keys", attribute: :action_key)
+      end
+    end
+
+    test 'configured operations expose labels groups descriptions and executable targets' do
+      ResourceRegistry.all.each_value do |resource|
+        resource.operations.each do |operation|
+          assert_predicate operation.label, :present?, "#{resource.key}.#{operation.key} must define a label"
+          assert_predicate operation.group, :present?, "#{resource.key}.#{operation.key} must define a group"
+          assert_predicate operation.description, :present?, "#{resource.key}.#{operation.key} must define a description"
+
+          target_count = [operation.handler, operation.method_name].count(&:present?)
+          assert_equal 1, target_count, "#{resource.key}.#{operation.key} must define exactly one handler or method_name"
+        end
+      end
+    end
+
+    test 'configured includes and associations reference model associations' do
+      ResourceRegistry.all.each_value do |resource|
+        association_names = resource.model.reflect_on_all_associations.map(&:name)
+
+        assert_valid_includes(resource.model, resource.includes, resource.key)
+
+        resource.associations.each do |association|
+          assert_includes association_names, association, "#{resource.key} association #{association} must reference an association"
+        end
       end
     end
 
@@ -163,6 +189,27 @@ module Admin
         reflection = resource.model.reflect_on_association(association)
         :"#{association.to_s.singularize}_ids" if reflection&.collection?
       end
+    end
+
+    def assert_valid_includes(model, includes, resource_key)
+      Array(includes).each do |item|
+        case item
+        when Hash
+          item.each do |association, nested|
+            reflection = assert_valid_include(model, association, resource_key)
+            assert_valid_includes(reflection.klass, nested, resource_key)
+          end
+        else
+          assert_valid_include(model, item, resource_key)
+        end
+      end
+    end
+
+    def assert_valid_include(model, association, resource_key)
+      reflection = model.reflect_on_association(association)
+
+      assert reflection, "#{resource_key} includes #{model.name}.#{association} must reference an association"
+      reflection
     end
   end
 end
