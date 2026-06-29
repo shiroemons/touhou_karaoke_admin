@@ -7,15 +7,18 @@ module Scrapers
     TITLE_SELECTOR = "#anchor-pagetop > main > div > div > div.main-content > div.song-detail > h2"
     ARTIST_SELECTOR = "#anchor-pagetop > main > div.content-wrap > div > div.main-content > div.song-detail > div.artist-detail"
 
+    def initialize(browser_manager_factory: BrowserManager.method(:new))
+      @browser_manager_factory = browser_manager_factory
+    end
+
     def fetch_song(song_url)
       raise "Not DAM URL" unless song_url.start_with?(Constants::Karaoke::Dam::SONG_URL)
 
-      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-      browser.goto(song_url)
-      browser.network.wait_for_idle(duration: 1.0)
-      upsert_direct_song(song_url, browser)
-    ensure
-      browser&.quit
+      with_browser(timeout: 30) do |browser|
+        browser.goto(song_url)
+        browser.network.wait_for_idle(duration: 1.0)
+        upsert_direct_song(song_url, browser)
+      end
     end
 
     def fetch_touhou_songs(progress: nil)
@@ -27,20 +30,20 @@ module Scrapers
 
       begin
         loop do
-          browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-          browser.goto("#{Constants::Karaoke::Dam::SEARCH_URL}#{page}")
-          browser.network.wait_for_idle(duration: 1.0)
-          song_elements = browser.css(SEARCH_SONG_LIST_SELECTOR)
-          total_pages ||= self.class.detect_total_pages(browser, song_elements.size)
-          report_page_progress(progress, page:, total_pages:, item_index: 0, item_count: song_elements.size, processed_count:, current: page, total: total_pages, label_suffix: "処理しています")
-          processed_count = save_search_song_elements(song_elements, progress, page, total_pages, processed_count)
+          next_page_exists = with_browser(timeout: 10) do |browser|
+            browser.goto("#{Constants::Karaoke::Dam::SEARCH_URL}#{page}")
+            browser.network.wait_for_idle(duration: 1.0)
+            song_elements = browser.css(SEARCH_SONG_LIST_SELECTOR)
+            total_pages ||= self.class.detect_total_pages(browser, song_elements.size)
+            report_page_progress(progress, page:, total_pages:, item_index: 0, item_count: song_elements.size, processed_count:, current: page, total: total_pages, label_suffix: "処理しています")
+            processed_count = save_search_song_elements(song_elements, progress, page, total_pages, processed_count)
 
-          break if song_elements.size != 100
+            song_elements.size == 100
+          end
+          break unless next_page_exists
 
           page += 1
           Rails.logger.debug { "Next page: #{Constants::Karaoke::Dam::SEARCH_URL}#{page}" }
-        ensure
-          browser&.quit
         end
       rescue StandardError => e
         retry_count += 1
@@ -54,21 +57,18 @@ module Scrapers
       url = display_artist.url + Constants::Karaoke::Dam::OPTION_PATH
 
       loop do
-        browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
-        begin
+        with_browser(timeout: 10) do |browser|
           browser.goto(url)
           browser.network.wait_for_idle(duration: 1.0)
           browser.css(ARTIST_SONG_LIST_SELECTOR).each do |element|
             save_artist_song_element(display_artist, element)
           end
-          break
-        rescue StandardError => e
-          retry_count += 1
-          log_fetch_retry(resource: :dam_song, url:, error: e, retry_count:)
-          break if retry_count > 3
-        ensure
-          browser&.quit
         end
+        break
+      rescue StandardError => e
+        retry_count += 1
+        log_fetch_retry(resource: :dam_song, url:, error: e, retry_count:)
+        break if retry_count > 3
       end
     end
 
@@ -101,6 +101,12 @@ module Scrapers
     end
 
     private
+
+    attr_reader :browser_manager_factory
+
+    def with_browser(options, &)
+      browser_manager_factory.call(options).with_browser(&)
+    end
 
     def log_fetch_retry(resource:, url:, error:, retry_count:)
       level = retry_count > 3 ? :error : :warn

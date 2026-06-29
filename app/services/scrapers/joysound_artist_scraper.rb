@@ -4,37 +4,40 @@ module Scrapers
   class JoysoundArtistScraper
     ARTIST_READING_SELECTOR = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
 
+    def initialize(browser_manager_factory: BrowserManager.method(:new))
+      @browser_manager_factory = browser_manager_factory
+    end
+
     def fetch_artist_readings(progress: nil)
-      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
       records = DisplayArtist.joysound.name_reading_empty
       total_count = records.count
       reporter = progress_reporter(progress, status: "JOYSOUNDアーティスト取得中", label: "JOYSOUNDアーティスト読みを取得しています")
 
-      records.each.with_index(1) do |display_artist, index|
-        Rails.logger.debug { "#{index}/#{total_count}: #{((index / total_count.to_f) * 100).floor}%" }
-        reporter&.advance(current: index - 1, total: total_count, force: true)
-        browser.goto(display_artist.url)
-        browser.network.wait_for_idle(duration: 1.0)
-        update_artist_reading(display_artist, browser)
-        reporter&.advance(current: index, total: total_count, force: true)
+      with_browser(timeout: 30) do |browser|
+        records.each.with_index(1) do |display_artist, index|
+          Rails.logger.debug { "#{index}/#{total_count}: #{((index / total_count.to_f) * 100).floor}%" }
+          reporter&.advance(current: index - 1, total: total_count, force: true)
+          browser.goto(display_artist.url)
+          browser.network.wait_for_idle(duration: 1.0)
+          update_artist_reading(display_artist, browser)
+          reporter&.advance(current: index, total: total_count, force: true)
+        end
       end
-    ensure
-      browser&.quit
     end
 
     def register_music_post_artists(progress: nil)
       error_artist = []
-      browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
       artists = unregistered_music_post_artists
       reporter = progress_reporter(progress, status: "ミュージックポストアーティスト取得中", label: "ミュージックポストアーティストを検索しています")
 
-      artists.each.with_index(1) do |artist, index|
-        reporter&.advance(current: index - 1, total: artists.count, force: true)
-        register_music_post_artist(browser, artist, error_artist)
-        reporter&.advance(current: index, total: artists.count, force: true)
+      with_browser(timeout: 10, window_size: [1440, 2000]) do |browser|
+        artists.each.with_index(1) do |artist, index|
+          reporter&.advance(current: index - 1, total: artists.count, force: true)
+          register_music_post_artist(browser, artist, error_artist)
+          reporter&.advance(current: index, total: artists.count, force: true)
+        end
       end
     ensure
-      browser&.quit
       Rails.logger.debug { "未登録アーティスト：#{error_artist}" } if error_artist.present?
     end
 
@@ -79,6 +82,12 @@ module Scrapers
     end
 
     private
+
+    attr_reader :browser_manager_factory
+
+    def with_browser(options, &)
+      browser_manager_factory.call(options).with_browser(&)
+    end
 
     def progress_reporter(progress, status:, label:)
       return unless progress
