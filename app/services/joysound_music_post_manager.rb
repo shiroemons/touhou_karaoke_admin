@@ -72,7 +72,7 @@ class JoysoundMusicPostManager
     @stats
   rescue StandardError => e
     record_error("Fatal error in fetch process: #{e.message}", type: :fatal, exception: e)
-    Rails.logger.error("JoysoundMusicPostManager fetch error: #{e}")
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, error: e.message)
     generate_final_report
     @stats
   end
@@ -139,9 +139,16 @@ class JoysoundMusicPostManager
         record: e.record,
         exception: e
       )
-      Rails.logger.error(error_message)
-      Rails.logger.error("Invalid record: #{e.record.inspect}")
-      Rails.logger.error("Errors: #{e.record.errors.details}") if e.record.respond_to?(:errors)
+      Admin::OperationLogger.log(
+        level: :error,
+        event: :external_fetch,
+        action: :error,
+        resource: :joysound_music_post,
+        id: record.id,
+        error: error_details,
+        record: e.record.inspect,
+        validation_errors: (e.record.errors.details if e.record.respond_to?(:errors))
+      )
     rescue StandardError => e
       error_message = "Error processing record #{record.id}: #{e.message}"
       record_error(
@@ -151,8 +158,7 @@ class JoysoundMusicPostManager
         record: record,
         exception: e
       )
-      Rails.logger.error(error_message)
-      Rails.logger.error(e.backtrace.first(5).join("\n"))
+      Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, id: record.id, error: e.message, backtrace: e.backtrace.first(5).join("\n"))
     end
   end
 

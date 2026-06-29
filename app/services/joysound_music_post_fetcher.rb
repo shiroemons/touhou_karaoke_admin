@@ -46,7 +46,7 @@ class JoysoundMusicPostFetcher
         reporter&.advance(current: index, total: total_count, force: true)
       end
     rescue StandardError => e
-      Rails.logger.error(e)
+      Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, error: e.message)
       browser.screenshot(path: "tmp/music_post.png")
     ensure
       browser&.quit
@@ -99,7 +99,7 @@ class JoysoundMusicPostFetcher
           end
           break
         rescue Ferrum::TimeoutError => e
-          Rails.logger.error("self.music_post_parser: #{e}")
+          Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :joysound_music_post, url:, page:, retry_count:, error: e.message)
           retry_count += 1
           break if retry_count > 3
         ensure
