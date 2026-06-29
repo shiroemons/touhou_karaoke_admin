@@ -49,5 +49,41 @@ module Admin
       assert_equal [artist.id], query.records.map(&:id)
       assert_equal 1, query.total_count
     end
+
+    test 'filtered totals and pagination are calculated from filtered scope' do
+      matched = [
+        Circle.create!(name: 'Filtered Count Circle A'),
+        Circle.create!(name: 'Filtered Count Circle B'),
+        Circle.create!(name: 'Filtered Count Circle C')
+      ]
+      Circle.create!(name: 'Unmatched Count Circle')
+
+      query = ResourceIndexQuery.new(
+        resource: ResourceRegistry.fetch(:circle),
+        params: { q: 'Filtered Count', page: 2, per_page: 2, view_mode: 'paginated' },
+        scope: Circle.order(:name),
+        per_page_options: [2, 24]
+      )
+
+      assert_equal 3, query.total_count
+      assert_equal 2, query.total_pages
+      assert_equal 2, query.page
+      assert_equal 2, query.per_page
+      assert_equal 'paginated', query.view_mode
+      assert_equal [matched.third.id], query.records.map(&:id)
+    end
+
+    test 'infinite view mode is default and invalid pagination parameters fall back' do
+      query = ResourceIndexQuery.new(
+        resource: ResourceRegistry.fetch(:circle),
+        params: { page: -1, per_page: 999 },
+        scope: Circle.all,
+        per_page_options: [24, 48]
+      )
+
+      assert_equal 1, query.page
+      assert_equal 24, query.per_page
+      assert_equal 'infinite', query.view_mode
+    end
   end
 end
