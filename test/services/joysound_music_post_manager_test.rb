@@ -30,6 +30,21 @@ class JoysoundMusicPostManagerTest < ActiveSupport::TestCase
     assert Song.exists?(kept_song.id)
   end
 
+  test 'refresh_songs_efficiently records exceptions in stats and error reporter' do
+    song = create_music_post_song(title: 'Error Music Post Song', url: 'https://example.com/music-post/error')
+    manager = JoysoundMusicPostManager.new
+
+    with_stubbed_class_method(UrlChecker, :check_url, ->(_url) { raise 'connection failed' }) do
+      result = manager.refresh_songs_efficiently
+
+      assert_equal 1, result.fetch(:errors).size
+      assert_match(/Error checking song #{song.id}: connection failed/, result.fetch(:errors).first)
+      assert_equal 1, manager.error_reporter.errors.size
+      assert_equal :url_check, manager.error_reporter.errors.first.fetch(:type)
+      assert_equal song.id, manager.error_reporter.errors.first.fetch(:record_id)
+    end
+  end
+
   test 'update_delivery_deadlines_optimized updates changed deadlines and reports counts' do
     old_deadline = Date.current + 3.days
     new_deadline = Date.current + 10.days

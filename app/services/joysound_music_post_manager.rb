@@ -71,8 +71,7 @@ class JoysoundMusicPostManager
     generate_final_report
     @stats
   rescue StandardError => e
-    @stats[:errors] << "Fatal error in fetch process: #{e.message}"
-    @error_reporter.add_error(type: :fatal, message: e.message, exception: e)
+    record_error("Fatal error in fetch process: #{e.message}", type: :fatal, exception: e)
     Rails.logger.error("JoysoundMusicPostManager fetch error: #{e}")
     generate_final_report
     @stats
@@ -111,7 +110,7 @@ class JoysoundMusicPostManager
       rescue StandardError => e
         error_count += 1
         error_message = "Error checking song #{song.id}: #{e.message}"
-        @stats[:errors] << error_message
+        record_error(error_message, type: :url_check, record: song, exception: e)
         Rails.logger.error(error_message)
       end
       report_progress(progress, index, total_count, status: "ミュージックポスト楽曲検証中", label: "ミュージックポスト楽曲URLを検証しています")
@@ -157,7 +156,7 @@ class JoysoundMusicPostManager
       end
     rescue StandardError => e
       error_message = "Error updating song #{song.id}: #{e.message}"
-      @stats[:errors] << error_message
+      record_error(error_message, type: :deadline_update, record: song, exception: e)
       Rails.logger.error(error_message)
     ensure
       report_progress(progress, index, total_count, status: "配信期限更新中", label: "ミュージックポスト配信期限を更新しています")
@@ -235,8 +234,8 @@ class JoysoundMusicPostManager
                         e.message
                       end
       error_message = "Error processing record #{record.id}: #{error_details}"
-      @stats[:errors] << error_message
-      @error_reporter.add_error(
+      record_error(
+        error_message,
         type: :validation,
         message: error_details,
         record: e.record,
@@ -247,8 +246,8 @@ class JoysoundMusicPostManager
       Rails.logger.error("Errors: #{e.record.errors.details}") if e.record.respond_to?(:errors)
     rescue StandardError => e
       error_message = "Error processing record #{record.id}: #{e.message}"
-      @stats[:errors] << error_message
-      @error_reporter.add_error(
+      record_error(
+        error_message,
         type: :general,
         message: e.message,
         record: record,
@@ -257,6 +256,11 @@ class JoysoundMusicPostManager
       Rails.logger.error(error_message)
       Rails.logger.error(e.backtrace.first(5).join("\n"))
     end
+  end
+
+  def record_error(error_message, type:, message: nil, record: nil, exception: nil)
+    @stats[:errors] << error_message
+    @error_reporter.add_error(type:, message: message || error_message, record:, exception:)
   end
 
   def generate_final_report
