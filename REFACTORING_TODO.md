@@ -1,6 +1,6 @@
 # リファクタリング TODO リスト
 
-最終更新: 2026-06-29
+最終更新: 2026-06-30
 
 このドキュメントは、現在のコードベースで次に着手すべきリファクタリングを優先度順に整理する。完了済みの履歴は残しつつ、今後の作業は独自管理画面、非同期処理、外部サイト取得処理の保守性を中心に進める。
 
@@ -10,6 +10,7 @@
 - Web スクレイピング、並列処理、配信機種管理、Song モデルの責務分割は実施済み。
 - 管理画面アクションは Active Job + Solid Queue で非同期実行できる状態。
 - 新しい肥大化ポイントは `Admin::ResourcesController`、管理画面 JavaScript のバルク編集 UI、JOYSOUND ミュージックポスト処理、モデルに残っている外部サイト取得処理。
+- 2026-06-30 に `dam_artist_urls.url` の重複影響レポート、join table の unique index、scraper の `BrowserManager` 経由化、配信URLバルク編集の query object 化を追加した。
 
 ## 優先度: 高
 
@@ -90,6 +91,7 @@
 - [x] `includes` と `left_outer_joins` の組み合わせで重複行が出ないことを確認する。
 - [x] 一覧表示の件数カウント、無限スクロール、フィルタ適用後の総件数をテストする。
 - [x] 必要な DB index を洗い出す。
+- [x] 配信URLバルク編集画面の検索、フィルタ、ソート、ページングを query object に切り出す。
 
 ### 6. JOYSOUND ミュージックポスト処理の整理
 
@@ -110,6 +112,7 @@
 - [x] Ferrum を使う処理と HTTP だけで済む処理を分けてテストする。
 - [x] 外部サイト変更時に壊れやすい CSS selector の検証テストを追加する。
 - [x] `DamSong`、`JoysoundSong`、`DisplayArtist`、`DamArtistUrl` に残る Ferrum 直書き処理を service/scraper へ移す。
+- [x] `DamSongScraper` と `JoysoundArtistScraper` のブラウザ生成を `BrowserManager` 経由に寄せ、失敗時にブラウザを閉じるテストを追加する。
 
 ## 優先度: 低
 
@@ -140,6 +143,8 @@
 - [x] 外部 URL の一意性制約が必要なテーブルを確認する。
 - [x] `dam_songs.url`、`joysound_songs.url`、`dam_artist_urls.url`、`joysound_music_posts.url` の unique index 化可否を確認する。
 - [x] `display_artists_circles`、`songs_original_songs` の複合 unique index 化可否を確認する。
+- [x] `display_artists_circles(display_artist_id, circle_id)`、`songs_original_songs(song_id, original_song_code)` に事前重複チェック付き unique index を追加する。
+- [x] `dam_artist_urls.url` の重複は削除せず、canonical 候補と関連件数を確認できる非破壊レポートを追加する。
 - [x] `karaoke_type`、期限日、外部 URL、関連 ID の index を確認する。
 - [x] TSV import 時に不正な ID や重複原曲が混入した場合の扱いを明確にする。
 
@@ -201,6 +206,6 @@
 
 ## 推奨着手順
 
-1. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
-2. Solid Queue の失敗時の再実行導線を決める。
-3. DB 制約追加は必ず dry-run の重複確認結果を見てから進める。
+1. `make data-duplicate-impact-report` で `dam_artist_urls.url` の重複影響を確認し、`DisplayArtist` と `DamSong` を削除しない整理方針を決める。
+2. 外部 URL の unique index 化は、テーブルごとの重複確認と非破壊の整理手順を用意してから個別に進める。
+3. scraper selector の YAML 化を追加で進める場合は、HTML fixture と selector 検証テストを先に増やす。
