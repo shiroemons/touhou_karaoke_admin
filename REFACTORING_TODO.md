@@ -141,7 +141,7 @@
 - [x] `dam_songs.url`、`joysound_songs.url`、`dam_artist_urls.url`、`joysound_music_posts.url` の unique index 化可否を確認する。
 - [x] `display_artists_circles`、`songs_original_songs` の複合 unique index 化可否を確認する。
 - [x] `karaoke_type`、期限日、外部 URL、関連 ID の index を確認する。
-- [ ] TSV import 時に不正な ID や重複原曲が混入した場合の扱いを明確にする。
+- [x] TSV import 時に不正な ID や重複原曲が混入した場合の扱いを明確にする。
 
 ## 完了済み
 
