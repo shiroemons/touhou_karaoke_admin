@@ -21,21 +21,8 @@ module Admin
       load_index_association_counts
       load_recent_change_logs
 
-      if infinite_scroll_rows_request?
-        render json: {
-          html: render_to_string(partial: 'admin/resources/rows', formats: [:html], layout: false),
-          next_url: next_infinite_scroll_url
-        }
-        return
-      end
-
       @next_infinite_scroll_url = next_infinite_scroll_url
-      if async_index_request?
-        render json: {
-          html: render_to_string(template: 'admin/resources/index', formats: [:html], layout: false)
-        }
-        return
-      end
+      return if resource_index_responder.call
 
       render 'admin/resources/index'
     end
@@ -240,6 +227,15 @@ module Admin
       return nil unless @view_mode == 'infinite' && @page < @total_pages
 
       admin_resources_path(@resource, request.query_parameters.merge(page: @page + 1, view_mode: 'infinite', partial: 'rows'))
+    end
+
+    def resource_index_responder
+      ResourceIndexResponder.new(
+        controller: self,
+        rows_request: infinite_scroll_rows_request?,
+        content_request: async_index_request?,
+        next_url: @next_infinite_scroll_url
+      )
     end
 
     def find_operation
