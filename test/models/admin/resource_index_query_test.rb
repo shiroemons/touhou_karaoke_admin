@@ -33,5 +33,21 @@ module Admin
       assert_match(/LEFT OUTER JOIN .*"display_artists"/i, sql)
       assert_match(/ORDER BY .*"display_artists"."name" ASC/i, sql)
     end
+
+    test 'includes combined with association filters does not duplicate records' do
+      artist = create_display_artist(name: 'Join Duplicate Artist')
+      artist.circles << Circle.create!(name: 'Join Duplicate Circle A')
+      artist.circles << Circle.create!(name: 'Join Duplicate Circle B')
+
+      query = ResourceIndexQuery.new(
+        resource: ResourceRegistry.fetch(:display_artist),
+        params: { filters: { circles: 'present' } },
+        scope: DisplayArtist.where(id: artist.id),
+        per_page_options: [24]
+      )
+
+      assert_equal [artist.id], query.records.map(&:id)
+      assert_equal 1, query.total_count
+    end
   end
 end
