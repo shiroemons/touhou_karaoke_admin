@@ -49,16 +49,16 @@ class UrlChecker
       # リトライが必要な場合
       attempt += 1
       if attempt <= retries
-        Rails.logger.warn("Retrying URL check for #{url} (attempt #{attempt}/#{retries})")
+        Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :url, url:, attempt:, retries:)
         sleep(RETRY_DELAY)
       end
     end
 
     # 全てのリトライが失敗した場合
-    Rails.logger.error("URL check failed after #{retries} retries for #{url}")
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :url, url:, retries:, reason: "retries_exhausted")
     { exists: nil, error: "Network error after retries", should_retry: true }
   rescue StandardError => e
-    Rails.logger.error("Unexpected error checking URL #{url}: #{e.message}")
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :url, url:, error: e.message)
     { exists: nil, error: e.message, should_retry: true }
   end
 
@@ -78,14 +78,14 @@ class UrlChecker
         should_retry: false
       }
     end
-  rescue Net::OpenTimeout, Net::ReadTimeout => e
-    Rails.logger.warn("Timeout checking URL #{uri}: #{e.message}")
+  rescue Net::OpenTimeout, Net::ReadTimeout
+    Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :timeout, resource: :url, url: uri)
     { exists: nil, error: "Timeout", should_retry: true }
   rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, SocketError => e
-    Rails.logger.warn("Network error checking URL #{uri}: #{e.message}")
+    Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :network_error, resource: :url, url: uri, error: e.message)
     { exists: nil, error: "Network error", should_retry: true }
   rescue Net::HTTPError => e
-    Rails.logger.error("HTTP error checking URL #{uri}: #{e.message}")
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :http_error, resource: :url, url: uri, error: e.message)
     { exists: nil, error: "HTTP error", should_retry: false }
   end
 end
