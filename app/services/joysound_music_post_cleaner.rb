@@ -86,16 +86,14 @@ class JoysoundMusicPostCleaner
 
   def report_progress(total_count)
     return unless progress
-    return progress.call(percentage: 96, status: "期限切れ確認中", label: "期限切れミュージックポストを確認しています", detail: "処理対象はありません", current: 0, total: 0) if total_count.zero?
-    return unless @checked_count == total_count || (@checked_count % 10).zero?
 
-    progress.call(
-      percentage: (8 + (88 * (@checked_count.to_f / total_count))).floor.clamp(8, 96),
+    reporter = Admin::ProgressReporter.new(
+      progress:,
       status: "期限切れ確認中",
-      label: "期限切れミュージックポストを確認しています",
-      detail: "処理済み: #{@checked_count}/#{total_count}件",
-      current: @checked_count,
-      total: total_count
+      label: "期限切れミュージックポストを確認しています"
     )
+    return reporter.start(total: 0) if total_count.zero?
+
+    reporter.advance(current: @checked_count, total: total_count)
   end
 end
