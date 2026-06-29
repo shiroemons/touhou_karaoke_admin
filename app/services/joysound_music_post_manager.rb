@@ -79,50 +79,11 @@ class JoysoundMusicPostManager
 
   # URL存在確認による楽曲の更新処理（改善版）
   def refresh_songs_efficiently(progress: nil)
-    music_post_songs = Song.music_post.includes(:song_with_joysound_utasuki)
-    total_count = music_post_songs.count
-    deleted_count = 0
-    error_count = 0
-
-    Rails.logger.info("Starting efficient refresh: #{total_count} songs")
-
-    music_post_songs.find_each.with_index(1) do |song, index|
-      progress_percentage = (index.to_f / total_count * 100).round(2)
-      Rails.logger.debug { "#{index}/#{total_count} (#{progress_percentage}%): #{song.title}" }
-      report_progress(progress, index - 1, total_count, status: "ミュージックポスト楽曲検証中", label: "ミュージックポスト楽曲URLを検証しています")
-
-      begin
-        result = UrlChecker.check_url(song.url)
-
-        if result[:exists] == false && result[:status_code] == 404
-          # 明確に404の場合のみ削除
-          song.destroy!
-          deleted_count += 1
-          @stats[:deleted] += 1
-          Rails.logger.info("Deleted unavailable song (404): #{song.title}")
-        elsif result[:exists].nil? && result[:should_retry]
-          # ネットワークエラーの場合はスキップ
-          @stats[:skipped] += 1
-          Rails.logger.warn("Skipped song due to network error: #{song.title} (#{result[:error]})")
-        elsif result[:exists] == true
-          Rails.logger.debug { "Song still available: #{song.title}" }
-        end
-      rescue StandardError => e
-        error_count += 1
-        error_message = "Error checking song #{song.id}: #{e.message}"
-        record_error(error_message, type: :url_check, record: song, exception: e)
-        Rails.logger.error(error_message)
-      end
-      report_progress(progress, index, total_count, status: "ミュージックポスト楽曲検証中", label: "ミュージックポスト楽曲URLを検証しています")
-    end
-
-    Rails.logger.info("Refresh completed: deleted #{deleted_count}, skipped #{@stats[:skipped]}, errors #{error_count}")
-    {
-      total_checked: total_count,
-      deleted: deleted_count,
-      skipped: @stats[:skipped],
-      errors: @stats[:errors]
-    }
+    result = JoysoundMusicPostUrlRefresher.new(progress:, error_reporter: @error_reporter).call
+    @stats[:deleted] += result[:deleted]
+    @stats[:skipped] += result[:skipped]
+    @stats[:errors].concat(result[:errors])
+    result
   end
 
   # 配信期限の一括更新処理（改善版）
