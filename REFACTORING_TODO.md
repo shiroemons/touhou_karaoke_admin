@@ -86,7 +86,7 @@
 
 - [ ] `Admin::ResourcesController` の検索、フィルタ、ソート、ページング、部分描画を query/service object に切り出す。
 - [ ] 各リソースの index で発行されるクエリ数を確認する。
-- [ ] `count_association` ソートと association ソートの SQL をテストする。
+- [x] `count_association` ソートと association ソートの SQL をテストする。
 - [ ] `includes` と `left_outer_joins` の組み合わせで重複行が出ないことを確認する。
 - [ ] 一覧表示の件数カウント、無限スクロール、フィルタ適用後の総件数をテストする。
 - [ ] 必要な DB index を洗い出す。
