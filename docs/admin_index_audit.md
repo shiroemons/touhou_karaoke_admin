@@ -31,6 +31,17 @@
 | 中 | `song_with_dam_ouchikaraokes(url)`, `song_with_joysound_utasukis(url)` | 管理画面で URL 表示と外部連携結果の突合が増える場合に有効。現状は `song_id` のみ。 | 実際の検索・検証経路で URL 条件が使われることを確認する。 |
 | 低 | `pg_trgm` + GIN index for `name` / `title` / `url` | 管理画面検索は `%keyword%` の `LIKE` なので通常 btree は効きにくい。対象は `songs.title`, `display_artists.name`, `circles.name`, `originals.title`, `original_songs.title` など。 | レコード数と検索遅延が問題化してから、PostgreSQL拡張と explain で効果を確認する。 |
 
+## 重複確認結果
+
+2026-06-29 に `devbox run -- make data-duplicate-report` を実行した結果、`dam_artist_urls.url` に重複が 1 組見つかった。
+
+```text
+[dam_artist_urls] url
+  url="https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode=141159", duplicate_count=2
+```
+
+このため、外部 URL の unique index 化は `dam_artist_urls.url` の重複を解消するまで保留する。他の `DataIntegrity::DuplicateFinder::DEFAULT_CHECKS` 対象では、この実行時点で重複は報告されていない。
+
 ## 今は追加しない
 
 - `karaoke_type` 単体 index: `songs` と `display_artists` は既に複合 index の先頭列でカバーされる。
