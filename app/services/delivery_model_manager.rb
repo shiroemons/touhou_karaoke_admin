@@ -54,7 +54,7 @@ class DeliveryModelManager
         @cache[[name, karaoke_type]] = model.id if name != normalized_name
         model.id
       else
-        Rails.logger.error("Failed to create KaraokeDeliveryModel: #{normalized_name} (#{karaoke_type})")
+        Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :karaoke_delivery_model, name: normalized_name, karaoke_type:, reason: "create_failed")
         nil
       end
     end

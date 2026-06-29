@@ -51,7 +51,7 @@ class DeliveryModelValidator
     normalized_name = normalize_name(name)
 
     if normalized_name.blank?
-      Rails.logger.warn("DeliveryModelValidator: Invalid name provided: #{name.inspect}")
+      Admin::OperationLogger.log(level: :warn, event: :db_update, action: :skip, resource: :karaoke_delivery_model, name: name.inspect, reason: "blank_name")
       return nil
     end
 
@@ -61,21 +61,21 @@ class DeliveryModelValidator
 
     # 作成前の最終チェック
     if duplicate_exists?(normalized_name, karaoke_type)
-      Rails.logger.info("DeliveryModelValidator: Duplicate detected during creation: #{normalized_name} (#{karaoke_type})")
+      Admin::OperationLogger.log(level: :info, event: :db_update, action: :skip, resource: :karaoke_delivery_model, name: normalized_name, karaoke_type:, reason: "duplicate")
       return KaraokeDeliveryModel.find_by(name: normalized_name, karaoke_type:)
     end
 
     # 新規作成
     begin
       model = KaraokeDeliveryModel.create!(name: normalized_name, karaoke_type:)
-      Rails.logger.info("DeliveryModelValidator: Created new model: #{normalized_name} (#{karaoke_type})")
+      Admin::OperationLogger.log(level: :info, event: :db_update, action: :create, resource: :karaoke_delivery_model, id: model.id, name: normalized_name, karaoke_type:)
       model
     rescue ActiveRecord::RecordNotUnique => e
-      Rails.logger.warn("DeliveryModelValidator: Race condition detected: #{e.message}")
+      Admin::OperationLogger.log(level: :warn, event: :db_update, action: :retry, resource: :karaoke_delivery_model, name: normalized_name, karaoke_type:, error: e.message)
       # 他のプロセスが同時に作成した場合
       KaraokeDeliveryModel.find_by!(name: normalized_name, karaoke_type:)
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error("DeliveryModelValidator: Validation failed: #{e.message}")
+      Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :karaoke_delivery_model, name: normalized_name, karaoke_type:, error: e.message)
       nil
     end
   end
@@ -98,16 +98,17 @@ class DeliveryModelValidator
       if KaraokeDeliveryModel.where(name: normalized_name, karaoke_type: model.karaoke_type)
                              .where.not(id: model.id)
                              .exists?
-        Rails.logger.warn("DeliveryModelValidator: Cannot normalize #{model.name} → #{normalized_name} (duplicate would be created)")
+        Admin::OperationLogger.log(level: :warn, event: :db_update, action: :skip, resource: :karaoke_delivery_model, id: model.id, name: model.name, normalized_name:, reason: "duplicate")
         next
       end
 
       begin
+        original_name = model.name
         model.update!(name: normalized_name)
         updated_count += 1
-        Rails.logger.info("DeliveryModelValidator: Normalized #{model.name} → #{normalized_name}")
+        Admin::OperationLogger.log(level: :info, event: :db_update, action: :update, resource: :karaoke_delivery_model, id: model.id, name: original_name, normalized_name:)
       rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error("DeliveryModelValidator: Failed to normalize #{model.name}: #{e.message}")
+        Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :karaoke_delivery_model, id: model.id, name: model.name, normalized_name:, error: e.message)
       end
     end
 
