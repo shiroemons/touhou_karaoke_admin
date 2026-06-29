@@ -10,18 +10,14 @@ module Admin
 
     def index
       authorize model
-      scope = policy_scope(model)
-      scope = apply_includes(scope)
-      scope = apply_search(scope)
-      scope = apply_filters(scope)
-      @active_filters = active_filter_params
-      @page = requested_page
-      @per_page = requested_per_page
-      @view_mode = requested_view_mode
-      @total_count = scope.count
-      scope = apply_order(scope)
-      @total_pages = [(@total_count.to_f / @per_page).ceil, 1].max
-      @records = scope.offset((@page - 1) * @per_page).limit(@per_page)
+      query = resource_index_query(policy_scope(model))
+      @active_filters = query.active_filters
+      @page = query.page
+      @per_page = query.per_page
+      @view_mode = query.view_mode
+      @total_count = query.total_count
+      @total_pages = query.total_pages
+      @records = query.records
       load_index_association_counts
       load_recent_change_logs
 
@@ -182,165 +178,6 @@ module Admin
       scope.includes(*@resource.includes)
     end
 
-    def apply_search(scope)
-      query = scalar_param(:q).to_s.strip
-      return scope if query.blank?
-
-      pattern = "%#{model.sanitize_sql_like(query)}%"
-      search_parts = search_conditions(pattern)
-
-      return scope if search_parts[:conditions].blank?
-
-      search_parts[:joins].reduce(scope, &:left_outer_joins).where(search_parts[:conditions].reduce { |memo, condition| memo.or(condition) })
-    end
-
-    def search_conditions(pattern)
-      @resource.search.keys.each_with_object({ joins: [], conditions: [] }) do |key, result|
-        column_path = key.to_s.delete_suffix('_cont')
-        next if column_path == 'm'
-
-        if model.column_names.include?(column_path)
-          result[:conditions] << model.arel_table[column_path].matches(pattern)
-          next
-        end
-
-        association, column = association_search_column(column_path)
-        next unless association && column
-
-        result[:joins] << association.name
-        result[:conditions] << association.klass.arel_table[column].matches(pattern)
-      end
-    end
-
-    def association_search_column(column_path)
-      association = model.reflect_on_all_associations.find do |candidate|
-        column_path.start_with?("#{candidate.name}_")
-      end
-      return [nil, nil] unless association
-
-      column = column_path.delete_prefix("#{association.name}_")
-      association.klass.column_names.include?(column) ? [association, column] : [nil, nil]
-    end
-
-    def apply_filters(scope)
-      return scope if @resource.filters.blank?
-
-      active_filter_params.reduce(scope) do |filtered_scope, (name, value)|
-        filter = @resource.filter_by_name(name)
-        next filtered_scope unless filter
-
-        if filter.type == :presence_groups
-          next filtered_scope unless valid_presence_group_filter?(filter, value)
-
-          next filter.apply.call(filtered_scope, value)
-        end
-
-        values = Array(value)
-        next filtered_scope if values.blank?
-        next filtered_scope unless values.all? { |item| filter.options.keys.map(&:to_s).include?(item) }
-
-        filter.apply.call(filtered_scope, filter.type == :checkboxes ? values : values.first)
-      end
-    end
-
-    def active_filter_params
-      raw_filters = params[:filters]
-      return {} unless raw_filters
-
-      raw_filters = raw_filters.to_unsafe_h if raw_filters.respond_to?(:to_unsafe_h)
-      return {} unless raw_filters.is_a?(Hash)
-
-      raw_filters.each_with_object({}) do |(name, value), result|
-        sanitized_value = sanitized_filter_value(value)
-        result[name.to_s] = sanitized_value if sanitized_value.present?
-      end
-    end
-
-    def sanitized_filter_value(value)
-      if value.is_a?(Array)
-        value.map(&:to_s).filter_map(&:presence)
-      elsif value.is_a?(Hash)
-        value.each_with_object({}) do |(key, item), result|
-          sanitized_item = item.to_s.presence
-          result[key.to_s] = sanitized_item if sanitized_item
-        end
-      else
-        value.to_s.presence
-      end
-    end
-
-    def valid_presence_group_filter?(filter, value)
-      return false unless value.is_a?(Hash) && value.present?
-
-      valid_keys = filter.options.keys.map(&:to_s)
-      valid_values = %w[present missing]
-      value.all? do |key, item|
-        valid_keys.include?(key.to_s) && valid_values.include?(item.to_s)
-      end
-    end
-
-    def apply_order(scope)
-      sort_field = @resource.fields.find { |field| field.sortable && field.name.to_s == scalar_param(:sort).to_s }
-      direction = params[:direction] == 'asc' ? :asc : :desc
-
-      if sort_field && model.column_names.include?(sort_field.name.to_s)
-        scope.reorder(sort_field.name => direction)
-      elsif sort_field&.count_association
-        apply_count_order(scope, sort_field, direction)
-      elsif sort_field&.type == :belongs_to
-        apply_association_order(scope, sort_field, direction)
-      elsif @resource.order.present?
-        scope.order(@resource.order)
-      else
-        scope
-      end
-    end
-
-    def apply_association_order(scope, field, direction)
-      association = model.reflect_on_association(field.name)
-      return scope unless association
-
-      sort_column = association_sort_column(association.klass)
-      return scope unless sort_column
-
-      scope.left_outer_joins(field.name).reorder(association.klass.arel_table[sort_column].public_send(direction))
-    end
-
-    def apply_count_order(scope, field, direction)
-      association = model.reflect_on_association(field.count_association)
-      return scope unless association
-
-      quoted_table = association.klass.quoted_table_name
-      quoted_primary_key = association.klass.connection.quote_column_name(association.klass.primary_key)
-      count_expression = "COUNT(DISTINCT #{quoted_table}.#{quoted_primary_key}) #{direction.to_s.upcase}"
-
-      scope
-        .left_outer_joins(field.count_association)
-        .group("#{model.quoted_table_name}.#{model.connection.quote_column_name(model.primary_key)}")
-        .reorder(Arel.sql(count_expression))
-    end
-
-    def association_sort_column(klass)
-      resource = ResourceRegistry.all.values.find { |item| item.model == klass }
-      resource_title = resource&.title
-      candidates = [resource_title.respond_to?(:call) ? nil : resource_title, :name, :title, :display_title, :url, :code, :id].compact.map(&:to_s)
-      candidates.find { |column| klass.column_names.include?(column) }
-    end
-
-    def requested_page
-      page = scalar_param(:page).to_i
-      page.positive? ? page : 1
-    end
-
-    def requested_per_page
-      per_page = scalar_param(:per_page).to_i
-      PER_PAGE_OPTIONS.include?(per_page) ? per_page : PER_PAGE_OPTIONS.first
-    end
-
-    def requested_view_mode
-      params[:view_mode] == 'paginated' ? 'paginated' : 'infinite'
-    end
-
     def load_recent_change_logs
       @recent_admin_change_logs = ChangeLog.latest_for_records(@resource.key.to_s, @records)
     end
@@ -435,11 +272,11 @@ module Admin
     end
 
     def operation_scope
-      scope = policy_scope(model)
-      scope = apply_includes(scope)
-      scope = apply_search(scope)
-      scope = apply_filters(scope)
-      apply_order(scope)
+      resource_index_query(policy_scope(model)).ordered_scope
+    end
+
+    def resource_index_query(scope)
+      ResourceIndexQuery.new(resource: @resource, params:, scope:, per_page_options: PER_PAGE_OPTIONS)
     end
 
     def authorize_operation!
