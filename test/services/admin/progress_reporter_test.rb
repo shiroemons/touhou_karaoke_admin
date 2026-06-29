@@ -37,5 +37,28 @@ module Admin
       assert_equal 50, ProgressReporter.percentage(5, 10, range: 10..90)
       assert_equal 90, ProgressReporter.percentage(20, 10, range: 10..90)
     end
+
+    test 'reports explicit progress payloads' do
+      calls = []
+
+      ProgressReporter.report(
+        progress: ->(**payload) { calls << payload },
+        percentage: 25,
+        status: '処理中',
+        label: '進捗',
+        detail: '準備中',
+        current: 1,
+        total: 4
+      )
+
+      assert_equal(
+        [{ percentage: 25, status: '処理中', label: '進捗', detail: '準備中', current: 1, total: 4 }],
+        calls
+      )
+    end
+
+    test 'ignores explicit progress payloads without callback' do
+      assert_nil ProgressReporter.report(progress: nil, percentage: 25, status: '処理中', label: '進捗')
+    end
   end
 end

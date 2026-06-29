@@ -32,7 +32,8 @@ class JoysoundMusicPostMaintenanceRunner
       phase_start = range.begin
       phase_end = range.end
       mapped_percentage = phase_start + ((phase_end - phase_start) * (source_percentage / 100.0))
-      progress.call(
+      Admin::ProgressReporter.report(
+        progress:,
         **attributes,
         percentage: mapped_percentage.floor.clamp(phase_start, phase_end),
         label: "#{phase_label}: #{attributes[:label]}"

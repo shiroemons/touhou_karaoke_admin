@@ -26,12 +26,19 @@ module Admin
       (range.begin + ((range.end - range.begin) * (current.to_f / total))).floor.clamp(range.begin, range.end)
     end
 
+    def self.report(progress:, **attributes)
+      return unless progress
+
+      progress.call(**attributes)
+    end
+
     private
 
     attr_reader :progress, :status, :label, :range, :unit
 
     def call(current:, total:, detail:)
-      progress.call(
+      self.class.report(
+        progress:,
         percentage: self.class.percentage(current, total, range:),
         status:,
         label:,

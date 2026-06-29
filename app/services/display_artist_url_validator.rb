@@ -134,17 +134,18 @@ class DisplayArtistUrlValidator
   end
 
   def report_progress(total_count)
-    return unless progress
-    return progress.call(percentage: 96, status: "URL検証中", label: "アーティストURLを検証しています", detail: "処理対象はありません", current: 0, total: 0) if total_count.zero?
-    return unless @checked_count == total_count || (@checked_count % 10).zero?
+    return progress_reporter&.start(total: total_count) if total_count.zero?
 
-    progress.call(
-      percentage: (8 + (88 * (@checked_count.to_f / total_count))).floor.clamp(8, 96),
+    progress_reporter&.advance(current: @checked_count, total: total_count)
+  end
+
+  def progress_reporter
+    return unless progress
+
+    @progress_reporter ||= Admin::ProgressReporter.new(
+      progress:,
       status: "URL検証中",
-      label: "アーティストURLを検証しています",
-      detail: "処理済み: #{@checked_count}/#{total_count}件",
-      current: @checked_count,
-      total: total_count
+      label: "アーティストURLを検証しています"
     )
   end
 end

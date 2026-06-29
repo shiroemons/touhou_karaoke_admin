@@ -48,7 +48,8 @@ module Admin
         total_count = records.count
         status = dry_run ? '孤立アーティスト確認中' : '孤立アーティスト削除中'
         label = dry_run ? '楽曲が紐づいていないアーティストを確認しています' : '楽曲が紐づいていないアーティストを削除しています'
-        progress&.call(percentage: 8, status:, label:, detail: "処理済み: 0/#{total_count}件", current: 0, total: total_count)
+        reporter = Admin::ProgressReporter.new(progress:, status:, label:) if progress
+        reporter&.start(total: total_count)
         deleted_records = records.map do |record|
           {
             id: record.id,
@@ -61,14 +62,7 @@ module Admin
           record.destroy! unless dry_run
           next unless (index % 10).zero? || index == total_count
 
-          progress&.call(
-            percentage: (8 + (88 * (index.to_f / total_count))).floor.clamp(8, 96),
-            status:,
-            label:,
-            detail: "処理済み: #{index}/#{total_count}件",
-            current: index,
-            total: total_count
-          )
+          reporter&.advance(current: index, total: total_count, force: true)
         end
 
         return download(generate_display_artists_tsv(deleted_records), dry_run ? 'preview_deleted_orphan_display_artists.tsv' : 'deleted_orphan_display_artists.tsv') if export_tsv

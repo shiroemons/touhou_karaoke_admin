@@ -66,7 +66,8 @@ class JoysoundMusicPostFetcher
             music_block_selector = "#box_music_list_bottom > div.music_block"
             blocks = browser.css(music_block_selector)
 
-            progress&.call(
+            Admin::ProgressReporter.report(
+              progress:,
               percentage: unknown_page_progress(page, 0, blocks.size, progress_range),
               status: "ミュージックポスト取得中",
               label:,
@@ -80,7 +81,8 @@ class JoysoundMusicPostFetcher
 
               next unless ((index + 1) % 10).zero? || index + 1 == blocks.size
 
-              progress&.call(
+              Admin::ProgressReporter.report(
+                progress:,
                 percentage: unknown_page_progress(page, index + 1, blocks.size, progress_range),
                 status: "ミュージックポスト取得中",
                 label:,

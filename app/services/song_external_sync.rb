@@ -19,7 +19,8 @@ class SongExternalSync
       Constants::Karaoke::JOYSOUND_ALLOWLIST.each.with_index(1) do |url, index|
         next if Song.exists?(url:, karaoke_type: "JOYSOUND")
 
-        progress&.call(
+        Admin::ProgressReporter.report(
+          progress:,
           percentage: 97,
           status: "JOYSOUND楽曲取得中",
           label: "JOYSOUND許可リストを確認しています",
