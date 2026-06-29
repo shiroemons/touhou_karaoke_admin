@@ -107,7 +107,7 @@
 
 - [x] `UrlChecker` の成功、404、timeout、network error のテストを追加する。
 - [x] DAM / JOYSOUND scraper の HTML fixture を用意する。
-- [ ] Ferrum を使う処理と HTTP だけで済む処理を分けてテストする。
+- [x] Ferrum を使う処理と HTTP だけで済む処理を分けてテストする。
 - [x] 外部サイト変更時に壊れやすい CSS selector の検証テストを追加する。
 - [ ] `DamSong`、`JoysoundSong`、`DisplayArtist`、`DamArtistUrl` に残る Ferrum 直書き処理を service/scraper へ移す。
 
