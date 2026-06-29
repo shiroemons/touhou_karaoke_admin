@@ -1,6 +1,6 @@
 # リファクタリング TODO リスト
 
-最終更新: 2026-05-10
+最終更新: 2026-06-29
 
 このドキュメントは、現在のコードベースで次に着手すべきリファクタリングを優先度順に整理する。完了済みの履歴は残しつつ、今後の作業は独自管理画面、非同期処理、外部サイト取得処理の保守性を中心に進める。
 
@@ -9,19 +9,20 @@
 - 管理画面は Avo 依存から Rails 標準の Controller / View / Policy ベースへ移行済み。
 - Web スクレイピング、並列処理、配信機種管理、Song モデルの責務分割は実施済み。
 - 管理画面アクションは Active Job + Solid Queue で非同期実行できる状態。
-- 新しい肥大化ポイントは `Admin::ResourceRegistry`、`Admin::OperationRunner`、管理画面 JavaScript modules。
+- 新しい肥大化ポイントは `Admin::ResourcesController`、管理画面 JavaScript のバルク編集 UI、JOYSOUND ミュージックポスト処理、モデルに残っている外部サイト取得処理。
 
 ## 優先度: 高
 
 ### 1. `Admin::ResourceRegistry` の分割
 
-**問題点**: `app/models/admin/resource_registry.rb` がリソース定義、フィールド定義、フィルタ DSL、操作説明、ナビゲーション構成をすべて抱えている。
+**問題点**: リソース定義のファイル分割は進んだが、`ResourceRegistryDefinitions` に共通フィルタ DSL と登録順が残っている。`ResourceRegistry` 本体は薄くなったため、次は定義の検証と追加時の安全性を上げる。
 
 - [x] リソース定義を `app/models/admin/resources/*.rb` へ分割する。
 - [x] フィールド、フィルタ、操作定義の builder を独立クラスまたは concern に切り出す。
 - [x] 長文の操作説明を `config/locales/admin.ja.yml` または専用定義ファイルへ移す。
-- [ ] `ResourceRegistry` は登録と参照だけを担当する薄いクラスにする。
+- [x] `ResourceRegistry` は登録と参照だけを担当する薄いクラスにする。
 - [ ] リソース定義の単体テストを追加し、必須属性、検索対象、操作キーの重複を検出する。
+- [ ] 共通フィルタ DSL を小さな module に切り出し、`ResourceRegistryDefinitions` は登録順と include だけに近づける。
 
 **完了条件**:
 
@@ -48,7 +49,7 @@
 
 ### 3. 管理画面 JavaScript の分割
 
-**問題点**: `app/javascript/admin/` へ機能分割済みだが、選択状態、操作モーダル、進捗 polling はまだ同一 module 内に残っている。
+**問題点**: 一覧更新、選択状態、操作モーダル、進捗 polling は分割済み。次の肥大化ポイントは `bulk_edit_controls.js` に集まっている原曲 picker、TSV paste、検索可能 select、関連 dialog。
 
 - [x] `app/javascript/admin/infinite_scroll.js` を作成する。
 - [x] 非同期 index 更新を navigation module へ分離する。
@@ -57,6 +58,8 @@
 - [x] `app/javascript/admin/operation_progress.js` を作成する。
 - [x] DOM selector を定数化し、同じ selector 文字列の重複を減らす。
 - [x] 非同期処理失敗時の fallback 動作をテストで固定する。
+- [ ] `bulk_edit_controls.js` を原曲 picker、TSV paste、検索可能 select、関連 dialog に分ける。
+- [ ] バルク編集 UI の JavaScript テストを追加する。
 
 **完了条件**:
 
@@ -81,6 +84,7 @@
 
 **問題点**: 汎用リソース管理の検索・フィルタ・ソートが増えたため、画面ごとのクエリ数が見えにくい。
 
+- [ ] `Admin::ResourcesController` の検索、フィルタ、ソート、ページング、部分描画を query/service object に切り出す。
 - [ ] 各リソースの index で発行されるクエリ数を確認する。
 - [ ] `count_association` ソートと association ソートの SQL をテストする。
 - [ ] `includes` と `left_outer_joins` の組み合わせで重複行が出ないことを確認する。
@@ -101,10 +105,11 @@
 
 **問題点**: スクレイピングや URL 確認は外部サイトの状態に左右されるが、テストがまだ限定的。
 
-- [ ] `UrlChecker` の成功、404、timeout、network error のテストを追加する。
+- [x] `UrlChecker` の成功、404、timeout、network error のテストを追加する。
 - [ ] DAM / JOYSOUND scraper の HTML fixture を用意する。
 - [ ] Ferrum を使う処理と HTTP だけで済む処理を分けてテストする。
 - [ ] 外部サイト変更時に壊れやすい CSS selector の検証テストを追加する。
+- [ ] `DamSong`、`JoysoundSong`、`DisplayArtist`、`DamArtistUrl` に残る Ferrum 直書き処理を service/scraper へ移す。
 
 ## 優先度: 低
 
@@ -124,13 +129,17 @@
 
 ### 10. 管理画面 UI の E2E カバレッジ追加
 
+- [ ] `rack_test` の system test だけでなく、JavaScript が動く Selenium または Playwright の system test を追加する。
 - [ ] フィルタ、ソート、ページング、無限スクロールの組み合わせを system test に追加する。
 - [ ] 操作モーダルの入力必須制御、確認、非同期開始、進捗完了を検証する。
 - [ ] 非同期 index 更新後にイベントハンドラが重複登録されないことを確認する。
 
 ### 11. DB 制約と index の見直し
 
+- [ ] 重複データの存在を確認し、非破壊の cleanup / dry-run 手順を用意する。
 - [ ] 外部 URL の一意性制約が必要なテーブルを確認する。
+- [ ] `dam_songs.url`、`joysound_songs.url`、`dam_artist_urls.url`、`joysound_music_posts.url` の unique index 化可否を確認する。
+- [ ] `display_artists_circles`、`songs_original_songs` の複合 unique index 化可否を確認する。
 - [ ] `karaoke_type`、期限日、外部 URL、関連 ID の index を確認する。
 - [ ] TSV import 時に不正な ID や重複原曲が混入した場合の扱いを明確にする。
 
@@ -192,8 +201,9 @@
 
 ## 推奨着手順
 
-1. `Admin::OperationRunner` のテストを先に増やす。
-2. `Admin::OperationRunner` を operation クラスへ分割する。
-3. `Admin::ResourceRegistry` の resource 定義をファイル分割する。
-4. 管理画面 JavaScript を機能別 module へ分割する。
-5. Solid Queue の運用強化と外部取得処理のテストを追加する。
+1. `Admin::ResourcesController` から index query 構築を切り出し、既存 controller test で検索・フィルタ・ソートの挙動を固定する。
+2. `ResourceRegistryDefinitions` の検証テストを増やし、操作キー重複や検索対象の不整合を検出する。
+3. `bulk_edit_controls.js` を機能別 module へ分割し、JavaScript test を追加する。
+4. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
+5. Solid Queue の timeout / retry 方針と失敗時の再実行導線を決める。
+6. DB 制約追加は必ず dry-run の重複確認と cleanup 手順を先に用意してから進める。
