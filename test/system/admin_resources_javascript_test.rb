@@ -8,6 +8,8 @@ class AdminResourcesJavascriptTest < ApplicationSystemTestCase
   setup do
     artist = create_display_artist(name: 'System JS Artist')
     @song = create_song(display_artist: artist, title: 'System JS Karaoke Song')
+    @dam_artist = create_display_artist(karaoke_type: 'DAM', name: 'System JS DAM Artist')
+    @dam_song = DamSong.create!(display_artist: @dam_artist, title: 'System JS DAM Candidate', url: "#{Constants::Karaoke::Dam::SONG_URL}existing")
   end
 
   test 'selection required operation modal updates submit state with JavaScript' do
@@ -33,5 +35,28 @@ class AdminResourcesJavascriptTest < ApplicationSystemTestCase
       assert_selector '[data-admin-operation-selection-note]', text: '選択した対象で実行できます。'
       assert_no_selector '[data-admin-operation-submit][disabled]'
     end
+  end
+
+  test 'async operation modal validates required input starts progress and completes' do
+    visit operation_admin_dam_songs_path(operation: 'fetch_dam_song')
+
+    assert_selector '[data-admin-operation-submit][disabled]'
+    fill_in 'DAM楽曲URL', with: "#{Constants::Karaoke::Dam::SONG_URL}123456"
+    assert_no_selector '[data-admin-operation-submit][disabled]'
+
+    progress_id = find("input[name='operation_progress_id']", visible: :hidden).value
+    find('[data-admin-operation-submit]').click
+
+    assert_selector '[data-admin-operation-progress][hidden]', visible: :hidden
+    assert_text '指定URLからDAM候補を追加します。実行しますか？'
+    find('[data-admin-operation-confirm]').click
+
+    assert_selector '[data-admin-operation-progress]:not([hidden])'
+    assert_selector '[data-admin-operation-progress-status]', text: /確認中|待機中|外部サイト取得中/
+
+    Admin::OperationProgress.complete!(progress_id, label: 'DAM候補を追加しました', detail: '処理が完了しました')
+
+    assert_selector '[data-admin-operation-progress-status]', text: '完了', wait: 3
+    assert_selector '[data-admin-operation-progress-percent]', text: '100%'
   end
 end
