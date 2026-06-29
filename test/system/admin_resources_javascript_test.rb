@@ -59,4 +59,21 @@ class AdminResourcesJavascriptTest < ApplicationSystemTestCase
     assert_selector '[data-admin-operation-progress-status]', text: '完了', wait: 3
     assert_selector '[data-admin-operation-progress-percent]', text: '100%'
   end
+
+  test 'resource selection handlers work after async index replacement' do
+    visit admin_songs_path(view_mode: 'paginated')
+
+    find('.admin-sort-link', text: 'タイトル').click
+    assert_selector '.admin-sort-link-active', text: 'タイトル'
+
+    find("[data-admin-resource-select][value='#{@song.id}']").check
+    find('.admin-operation-guide-summary').click
+    find('[data-admin-operation-trigger][data-admin-operation-key="export_songs"]').click
+
+    within('[data-admin-operation-panel="export_songs"]') do
+      assert_selector '[data-admin-operation-selection-count]', text: '1'
+      assert_selector '[data-admin-operation-selection-note]', text: '選択した対象で実行できます。'
+      assert_no_selector '[data-admin-operation-submit][disabled]'
+    end
+  end
 end

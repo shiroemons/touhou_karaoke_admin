@@ -6,15 +6,29 @@ const selectorsSource = await readFile(new URL("../../../app/javascript/admin/se
 const selectionSource = await readFile(new URL("../../../app/javascript/admin/resource_selection.js", import.meta.url), "utf8")
 const moduleSource = `${selectorsSource}\n${selectionSource.replace(/^import[\s\S]+?from "\.\/selectors"\n/, "")}`
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(moduleSource).toString("base64")}`
-const { selectedAdminResourceIds, updateAdminResourceSelectionState } = await import(moduleUrl)
+const { selectedAdminResourceIds, setupAdminResourceSelection, updateAdminResourceSelectionState } = await import(moduleUrl)
 
 class FakeElement {
   constructor({ checked = false, dataset = {}, value = "" } = {}) {
     this.checked = checked
     this.dataset = dataset
+    this.eventListeners = {}
     this.indeterminate = false
     this.value = value
     this.textContent = ""
+  }
+
+  addEventListener(type, callback) {
+    this.eventListeners[type] ||= []
+    this.eventListeners[type].push(callback)
+  }
+
+  closest(selector) {
+    return matchesSelector(this, selector) ? this : undefined
+  }
+
+  dispatch(type, target = this) {
+    ;(this.eventListeners[type] || []).forEach((callback) => callback({ target }))
   }
 
   querySelector(selector) {
@@ -22,9 +36,20 @@ class FakeElement {
   }
 }
 
+const matchesSelector = (element, selector) => {
+  const dataSelector = selector.match(/^\[data-([a-z0-9-]+)\]$/)
+  if (!dataSelector) return false
+
+  return dataSelectorToProperty(dataSelector[1]) in element.dataset
+}
+
+const dataSelectorToProperty = (name) =>
+  name.replace(/-([a-z0-9])/g, (_, character) => character.toUpperCase())
+
 const withFakeDocument = (selectorMap, callback) => {
   const originalDocument = globalThis.document
   globalThis.document = {
+    querySelector: (selector) => (selectorMap[selector] || [])[0],
     querySelectorAll: (selector) => selectorMap[selector] || [],
   }
 
@@ -76,4 +101,31 @@ test("updateAdminResourceSelectionState updates select-all count and required no
   assert.equal(count.textContent, "2")
   assert.equal(note.textContent, "選択した対象で実行できます。")
   assert.equal(afterUpdateCalled, true)
+})
+
+test("setupAdminResourceSelection does not attach duplicate change listeners", () => {
+  const content = new FakeElement({ dataset: { adminResourceContent: "true" } })
+  const rowCheckbox = new FakeElement({ checked: true, dataset: { adminResourceSelect: "true" }, value: "song-1" })
+  const count = new FakeElement()
+  let afterUpdateCount = 0
+
+  withFakeDocument(
+    {
+      "[data-admin-resource-content]": [content],
+      "[data-admin-resource-select]": [rowCheckbox],
+      "[data-admin-resource-select-all]": [],
+      "[data-admin-operation-selection-count]": [count],
+      "[data-admin-operation-form]": [],
+    },
+    () => {
+      setupAdminResourceSelection({ afterUpdate: () => { afterUpdateCount += 1 } })
+      setupAdminResourceSelection({ afterUpdate: () => { afterUpdateCount += 1 } })
+      content.dispatch("change", rowCheckbox)
+    }
+  )
+
+  assert.equal(content.dataset.selectionInitialized, "true")
+  assert.equal(content.eventListeners.change.length, 1)
+  assert.equal(afterUpdateCount, 2)
+  assert.equal(count.textContent, "1")
 })
