@@ -81,7 +81,7 @@ class DisplayArtistUrlValidator
 
     # ネットワークエラーの場合はスキップ（削除を防ぐ）
     if result[:exists].nil? && result[:should_retry]
-      Rails.logger.warn("DisplayArtistUrlValidator: Skipping due to network error - ID: #{record.id}, Name: #{record.name}")
+      Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :skip, resource: :display_artist, id: record.id, name: record.name, reason: "network_error")
       return
     end
 
@@ -97,13 +97,13 @@ class DisplayArtistUrlValidator
     }
     @invalid_records << record_info
 
-    Rails.logger.info("DisplayArtistUrlValidator: Invalid URL found - ID: #{record.id}, Name: #{record.name}, URL: #{record.url}")
+    Admin::OperationLogger.log(level: :info, event: :external_fetch, action: :invalid, resource: :display_artist, id: record.id, name: record.name, url: record.url)
 
     delete_record_if_applicable(record)
   rescue StandardError => e
     error_message = "Failed to process DisplayArtist ID #{record.id}: #{e.message}"
     @errors << error_message
-    Rails.logger.error("DisplayArtistUrlValidator: #{error_message}")
+    Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :display_artist, id: record.id, error: e.message)
   end
 
   def delete_record_if_applicable(record)
@@ -119,10 +119,10 @@ class DisplayArtistUrlValidator
       record.destroy! unless @dry_run
       @deleted_count += 1
       @deleted_records << deleted_record_info
-      action = @dry_run ? 'Would delete' : 'Deleted'
-      Rails.logger.info("DisplayArtistUrlValidator: #{action} DisplayArtist - ID: #{record.id}, Name: #{record.name}")
+      action = @dry_run ? 'would_delete' : 'delete'
+      Admin::OperationLogger.log(level: :info, event: :db_update, action:, resource: :display_artist, id: record.id, name: record.name)
     else
-      Rails.logger.info("DisplayArtistUrlValidator: Skipping deletion (has #{record.songs.count} songs) - ID: #{record.id}, Name: #{record.name}")
+      Admin::OperationLogger.log(level: :info, event: :db_update, action: :skip, resource: :display_artist, id: record.id, name: record.name, reason: "has_songs", songs_count: record.songs.count)
     end
   end
 
