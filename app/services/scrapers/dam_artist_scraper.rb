@@ -16,7 +16,9 @@ module Scrapers
         upsert_display_artist(url, browser)
         break
       rescue StandardError => e
-        Rails.logger.error(e)
+        level = attempt > 3 ? :error : :warn
+        action = attempt > 3 ? :error : :retry
+        Admin::OperationLogger.log(level:, event: :external_fetch, action:, resource: :display_artist, url:, attempt:, max_retries: 3, error: e.message)
         break if attempt > 3
       ensure
         browser&.quit

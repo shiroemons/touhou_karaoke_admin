@@ -114,13 +114,14 @@ module Scrapers
           upsert_music_post_artist(browser, artist)
         end
       rescue Ferrum::NodeNotFoundError => e
-        Rails.logger.debug(e)
         rescue_count += 1
         if rescue_count > 3
+          Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :display_artist, name: artist, retry_count: rescue_count, max_retries: 3, error: e.message)
           browser.screenshot(path: "tmp/music_post_#{artist.tr('/', '／')}.png")
           error_artist << artist
         else
           browser.network.clear(:traffic)
+          Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :display_artist, name: artist, retry_count: rescue_count, max_retries: 3, error: e.message)
           retry
         end
       end

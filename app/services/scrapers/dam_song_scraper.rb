@@ -43,8 +43,8 @@ module Scrapers
           browser&.quit
         end
       rescue StandardError => e
-        Rails.logger.error(e)
         retry_count += 1
+        log_fetch_retry(resource: :dam_song, url: "#{Constants::Karaoke::Dam::SEARCH_URL}#{page}", error: e, retry_count:)
         retry unless retry_count > 3
       end
     end
@@ -63,8 +63,8 @@ module Scrapers
           end
           break
         rescue StandardError => e
-          Rails.logger.error(e)
           retry_count += 1
+          log_fetch_retry(resource: :dam_song, url:, error: e, retry_count:)
           break if retry_count > 3
         ensure
           browser&.quit
@@ -101,6 +101,12 @@ module Scrapers
     end
 
     private
+
+    def log_fetch_retry(resource:, url:, error:, retry_count:)
+      level = retry_count > 3 ? :error : :warn
+      action = retry_count > 3 ? :error : :retry
+      Admin::OperationLogger.log(level:, event: :external_fetch, action:, resource:, url:, retry_count:, max_retries: 3, error: error.message)
+    end
 
     def upsert_direct_song(song_url, browser)
       song_title = browser.at_css(TITLE_SELECTOR).inner_text
