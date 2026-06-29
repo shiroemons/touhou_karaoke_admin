@@ -4,9 +4,9 @@ module Scrapers
   class BaseScraper
     include Retryable
 
-    def initialize
-      @browser_manager = BrowserManager.new
-      @delivery_model_manager = DeliveryModelManager.instance
+    def initialize(browser_manager: BrowserManager.new, delivery_model_manager: DeliveryModelManager.instance)
+      @browser_manager = browser_manager
+      @delivery_model_manager = delivery_model_manager
       load_selectors
     end
 
