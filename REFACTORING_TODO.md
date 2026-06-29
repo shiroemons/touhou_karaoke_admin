@@ -129,7 +129,7 @@
 
 ### 10. 管理画面 UI の E2E カバレッジ追加
 
-- [ ] `rack_test` の system test だけでなく、JavaScript が動く Selenium または Playwright の system test を追加する。
+- [x] `rack_test` の system test だけでなく、JavaScript が動く Selenium または Playwright の system test を追加する。
 - [ ] フィルタ、ソート、ページング、無限スクロールの組み合わせを system test に追加する。
 - [ ] 操作モーダルの入力必須制御、確認、非同期開始、進捗完了を検証する。
 - [ ] 非同期 index 更新後にイベントハンドラが重複登録されないことを確認する。
