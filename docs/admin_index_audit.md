@@ -25,7 +25,7 @@
 
 | 優先度 | 候補 | 理由 | 事前確認 |
 | --- | --- | --- | --- |
-| 中 | 外部 URL index の unique 化 | `dam_songs.url`, `joysound_songs.url`, `dam_artist_urls.url`, `joysound_music_posts.url` は一意候補。現在は非 unique。 | 外部サイト側で同一 URL が別データを表す例外がないか確認し、重複データ確認後に個別 migration 化する。 |
+| 中 | 外部 URL index の unique 化 | `dam_songs.url`, `joysound_songs.url`, `joysound_music_posts.url` は一意候補。現在は非 unique。 | 外部サイト側で同一 URL が別データを表す例外がないか確認し、重複データ確認後に個別 migration 化する。 |
 | 中 | `song_with_dam_ouchikaraokes(url)`, `song_with_joysound_utasukis(url)` | 管理画面で URL 表示と外部連携結果の突合が増える場合に有効。現状は `song_id` のみ。 | 実際の検索・検証経路で URL 条件が使われることを確認する。 |
 | 低 | `pg_trgm` + GIN index for `name` / `title` / `url` | 管理画面検索は `%keyword%` の `LIKE` なので通常 btree は効きにくい。対象は `songs.title`, `display_artists.name`, `circles.name`, `originals.title`, `original_songs.title` など。 | レコード数と検索遅延が問題化してから、PostgreSQL拡張と explain で効果を確認する。 |
 
@@ -35,6 +35,7 @@
 | --- | --- |
 | `display_artists_circles(display_artist_id, circle_id)` | 2026-06-30 に事前重複チェック付き unique index を追加した。 |
 | `songs_original_songs(song_id, original_song_code)` | 2026-06-30 に事前重複チェック付き unique index を追加した。 |
+| `dam_artist_urls(url)` | 2026-06-30 に重複行を手動確認・整理した後、事前重複チェック付き unique index を追加した。 |
 
 ## 重複確認結果
 

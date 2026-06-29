@@ -10,7 +10,7 @@
 - Web スクレイピング、並列処理、配信機種管理、Song モデルの責務分割は実施済み。
 - 管理画面アクションは Active Job + Solid Queue で非同期実行できる状態。
 - 新しい肥大化ポイントは `Admin::ResourcesController`、管理画面 JavaScript のバルク編集 UI、JOYSOUND ミュージックポスト処理、モデルに残っている外部サイト取得処理。
-- 2026-06-30 に `dam_artist_urls.url` の重複影響レポート、join table の unique index、scraper の `BrowserManager` 経由化、配信URLバルク編集の query object 化を追加した。
+- 2026-06-30 に `dam_artist_urls.url` の重複影響レポートと unique index、join table の unique index、scraper の `BrowserManager` 経由化、配信URLバルク編集の query object 化を追加した。
 
 ## 優先度: 高
 
@@ -144,7 +144,8 @@
 - [x] `dam_songs.url`、`joysound_songs.url`、`dam_artist_urls.url`、`joysound_music_posts.url` の unique index 化可否を確認する。
 - [x] `display_artists_circles`、`songs_original_songs` の複合 unique index 化可否を確認する。
 - [x] `display_artists_circles(display_artist_id, circle_id)`、`songs_original_songs(song_id, original_song_code)` に事前重複チェック付き unique index を追加する。
-- [x] `dam_artist_urls.url` の重複は削除せず、canonical 候補と関連件数を確認できる非破壊レポートを追加する。
+- [x] `dam_artist_urls.url` の重複整理前に、canonical 候補と関連件数を確認できる非破壊レポートを追加する。
+- [x] `dam_artist_urls.url` の重複行を確認・整理し、事前重複チェック付き unique index を追加する。
 - [x] `karaoke_type`、期限日、外部 URL、関連 ID の index を確認する。
 - [x] TSV import 時に不正な ID や重複原曲が混入した場合の扱いを明確にする。
 
@@ -206,6 +207,6 @@
 
 ## 推奨着手順
 
-1. `make data-duplicate-impact-report` で `dam_artist_urls.url` の重複影響を確認し、`DisplayArtist` と `DamSong` を削除しない整理方針を決める。
-2. 外部 URL の unique index 化は、テーブルごとの重複確認と非破壊の整理手順を用意してから個別に進める。
+1. 外部 URL の unique index 化は、テーブルごとの重複確認と非破壊の整理手順を用意してから個別に進める。
+2. `dam_songs.url`、`joysound_songs.url`、`joysound_music_posts.url` の unique 化可否を確認する。
 3. scraper selector の YAML 化を追加で進める場合は、HTML fixture と selector 検証テストを先に増やす。

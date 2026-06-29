@@ -1,9 +1,6 @@
 class DamArtistUrl < ApplicationRecord
   validates :url, presence: true
-  # Existing data can contain duplicates; keep this application guard until a non-destructive cleanup is complete.
-  # rubocop:disable Rails/UniqueValidationWithoutIndex
   validates :url, uniqueness: true
-  # rubocop:enable Rails/UniqueValidationWithoutIndex
 
   def self.ransackable_attributes(_auth_object = nil)
     ["url"]
