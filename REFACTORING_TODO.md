@@ -21,7 +21,7 @@
 - [x] フィールド、フィルタ、操作定義の builder を独立クラスまたは concern に切り出す。
 - [x] 長文の操作説明を `config/locales/admin.ja.yml` または専用定義ファイルへ移す。
 - [x] `ResourceRegistry` は登録と参照だけを担当する薄いクラスにする。
-- [ ] リソース定義の単体テストを追加し、必須属性、検索対象、操作キーの重複を検出する。
+- [x] リソース定義の単体テストを追加し、必須属性、検索対象、操作キーの重複を検出する。
 - [ ] 共通フィルタ DSL を小さな module に切り出し、`ResourceRegistryDefinitions` は登録順と include だけに近づける。
 
 **完了条件**:
@@ -59,7 +59,7 @@
 - [x] DOM selector を定数化し、同じ selector 文字列の重複を減らす。
 - [x] 非同期処理失敗時の fallback 動作をテストで固定する。
 - [x] `bulk_edit_controls.js` を原曲 picker、TSV paste、検索可能 select、関連 dialog に分ける。
-- [ ] バルク編集 UI の JavaScript テストを追加する。
+- [x] バルク編集 UI の JavaScript テストを追加する。
 
 **完了条件**:
 
@@ -201,8 +201,7 @@
 
 ## 推奨着手順
 
-1. `Admin::ResourcesController` から index query 構築を切り出し、既存 controller test で検索・フィルタ・ソートの挙動を固定する。
-2. `bulk_edit_controls.js` の分割済み module に JavaScript test を追加する。
-3. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
-4. Solid Queue の失敗時の再実行導線を決める。
-5. DB 制約追加は必ず dry-run の重複確認結果を見てから進める。
+1. 共通フィルタ DSL を小さな module に切り出し、`ResourceRegistryDefinitions` は登録順と include だけに近づける。
+2. モデルに残る Ferrum 直書き処理を service/scraper へ移し、HTML fixture ベースのテストを追加する。
+3. Solid Queue の失敗時の再実行導線を決める。
+4. DB 制約追加は必ず dry-run の重複確認結果を見てから進める。
