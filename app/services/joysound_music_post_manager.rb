@@ -88,47 +88,10 @@ class JoysoundMusicPostManager
 
   # 配信期限の一括更新処理（改善版）
   def update_delivery_deadlines_optimized(progress: nil)
-    # バッチでデータを取得して効率化
-    songs_with_utasuki = Song.music_post
-                             .joins(:song_with_joysound_utasuki)
-                             .includes(:song_with_joysound_utasuki)
-
-    # JoysoundMusicPostをハッシュで事前読み込み
-    jmp_lookup = JoysoundMusicPost.pluck(:url, :delivery_deadline_on).to_h
-
-    total_count = songs_with_utasuki.count
-    updated_count = 0
-
-    Rails.logger.info("Starting optimized delivery deadline update: #{total_count} songs")
-
-    songs_with_utasuki.find_each.with_index(1) do |song, index|
-      progress_percentage = (index.to_f / total_count * 100).round(2)
-      Rails.logger.debug { "#{index}/#{total_count} (#{progress_percentage}%): #{song.title}" }
-      report_progress(progress, index - 1, total_count, status: "配信期限更新中", label: "ミュージックポスト配信期限を更新しています")
-
-      utasuki_record = song.song_with_joysound_utasuki
-      new_deadline = jmp_lookup[utasuki_record.url]
-
-      if new_deadline && utasuki_record.delivery_deadline_date != new_deadline
-        utasuki_record.update!(delivery_deadline_date: new_deadline)
-        updated_count += 1
-        @stats[:updated] += 1
-        Rails.logger.debug { "Updated delivery deadline for: #{song.title}" }
-      end
-    rescue StandardError => e
-      error_message = "Error updating song #{song.id}: #{e.message}"
-      record_error(error_message, type: :deadline_update, record: song, exception: e)
-      Rails.logger.error(error_message)
-    ensure
-      report_progress(progress, index, total_count, status: "配信期限更新中", label: "ミュージックポスト配信期限を更新しています")
-    end
-
-    Rails.logger.info("Delivery deadline update completed: #{updated_count} updated")
-    {
-      total_processed: total_count,
-      updated: updated_count,
-      errors: @stats[:errors]
-    }
+    result = JoysoundMusicPostDeadlineSyncer.new(progress:, error_reporter: @error_reporter).call
+    @stats[:updated] += result[:updated]
+    @stats[:errors].concat(result[:errors])
+    result
   end
 
   # 期限切れレコードのクリーンアップ
