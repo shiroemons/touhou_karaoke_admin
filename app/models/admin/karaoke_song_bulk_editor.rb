@@ -203,7 +203,9 @@ module Admin
     end
 
     def resolve_original_songs(text, row_number, errors)
-      resolve_original_song_entries(text, row_number, errors).filter_map { |entry| entry.fetch(:original_song) }
+      resolve_original_song_entries(text, row_number, errors)
+        .filter_map { |entry| entry.fetch(:original_song) }
+        .uniq(&:code)
     end
 
     def resolve_original_song_entries(text, row_number, errors)

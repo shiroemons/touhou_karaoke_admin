@@ -52,6 +52,77 @@ module Admin
       assert_equal 'https://nico.example/watch', song.nicovideo_url
     end
 
+    test 'rejects tsv rows with unknown song id without updating valid rows' do
+      song = create_song(title: 'TSV Unknown ID Song', youtube_url: '')
+      original_song = create_original_song(title: 'TSV Unknown ID Original')
+      tsv = [
+        KaraokeSongBulkEditor::COLUMNS.join("\t"),
+        [
+          song.id,
+          song.karaoke_type,
+          song.display_artist.name,
+          song.title,
+          original_song.title,
+          'https://youtube.example/blocked',
+          '',
+          '',
+          '',
+          '',
+          ''
+        ].join("\t"),
+        [
+          SecureRandom.uuid,
+          song.karaoke_type,
+          song.display_artist.name,
+          song.title,
+          original_song.title,
+          '',
+          '',
+          '',
+          '',
+          '',
+          ''
+        ].join("\t")
+      ].join("\n")
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_from_tsv(tsv)
+
+      assert_equal 1, result.errors.size
+      assert_match(/楽曲ID .* が見つかりません。/, result.errors.first)
+      assert_equal 0, result.updated_count
+      assert_equal 2, result.skipped_count
+      assert_empty song.reload.original_songs
+      assert_equal '', song.youtube_url
+    end
+
+    test 'deduplicates repeated original song titles in tsv import' do
+      song = create_song(title: 'TSV Duplicate Original Song')
+      original_song = create_original_song(title: 'TSV Duplicate Original')
+      tsv = [
+        KaraokeSongBulkEditor::COLUMNS.join("\t"),
+        [
+          song.id,
+          song.karaoke_type,
+          song.display_artist.name,
+          song.title,
+          "#{original_song.title}/#{original_song.title}",
+          '',
+          '',
+          '',
+          '',
+          '',
+          ''
+        ].join("\t")
+      ].join("\n")
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_from_tsv(tsv)
+
+      assert_empty result.errors
+      assert_equal 1, result.updated_count
+      assert_equal [original_song.code], song.reload.original_songs.map(&:code)
+      assert_equal 1, song.songs_original_songs.count
+    end
+
     test 'does not update any rows when an original song title cannot be resolved' do
       song = create_song(youtube_url: '')
       valid_original_song = create_original_song(title: 'Valid Bulk Original')
