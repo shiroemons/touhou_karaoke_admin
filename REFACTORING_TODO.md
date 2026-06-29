@@ -89,7 +89,7 @@
 - [x] `count_association` ソートと association ソートの SQL をテストする。
 - [x] `includes` と `left_outer_joins` の組み合わせで重複行が出ないことを確認する。
 - [x] 一覧表示の件数カウント、無限スクロール、フィルタ適用後の総件数をテストする。
-- [ ] 必要な DB index を洗い出す。
+- [x] 必要な DB index を洗い出す。
 
 ### 6. JOYSOUND ミュージックポスト処理の整理
 
