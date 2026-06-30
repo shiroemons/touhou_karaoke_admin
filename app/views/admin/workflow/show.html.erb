@@ -30,7 +30,7 @@
 <% result_steps = @workflow_run&.dig(:workflow, :result_steps) || [] %>
 
 <% if @active_workflow_run.present? && @active_workflow_run[:workflow_key] != @workflow.key %>
-  <section class="admin-workflow-status admin-panel">
+  <section class="admin-workflow-status admin-panel alert alert-warning">
     <div class="admin-section-heading">
       <h2>実行状況</h2>
       <p><%= @active_workflow_run[:workflow_label] %>を実行中です。重複実行を避けるため、このフローの自動実行は開始できません。</p>

@@ -215,6 +215,17 @@ module Admin
       assert_equal '全体更新を実行中のため、新しい自動実行は開始しませんでした。', flash[:alert]
     end
 
+    test 'workflow page explains blocked auto run as warning' do
+      run_id = SecureRandom.uuid
+      WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('full'))
+
+      get admin_workflow_steps_path('dam')
+
+      assert_response :success
+      assert_select '.admin-workflow-status.alert.alert-warning', text: /重複実行を避けるため/
+      assert_select 'a[href=?]', admin_workflow_steps_path('full', run_id:), text: /実行中の状況を見る/
+    end
+
     test 'workflow progress keeps step detail after lifecycle updates' do
       run_id = SecureRandom.uuid
       workflow = WorkflowDefinition.fetch('music_post')
