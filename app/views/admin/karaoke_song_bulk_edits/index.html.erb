@@ -110,7 +110,7 @@
           <%= admin_icon(:search) %>
           <span>紐づけチェック</span>
         <% end %>
-        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn" do %>
+        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn btn-warning", data: { turbo_confirm: "カラオケ楽曲の紐づけとURLをDBに反映します。チェック結果を確認済みですか？" } do %>
           <%= admin_icon(:action) %>
           <span>チェック結果を反映</span>
         <% end %>
