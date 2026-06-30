@@ -21,7 +21,7 @@ const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
     },
   })
 
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+  if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
   const payload = await response.json()
   const currentContent = document.querySelector("[data-admin-resource-content]")
@@ -133,7 +133,7 @@ const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
       signal: controller.signal,
     })
 
-    if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+    if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
     replaceAdminPage(await response.text(), response.url, { pushState })
   } finally {

@@ -128,7 +128,7 @@ const resolveOriginalSongText = async (picker, text) => {
     },
     body: JSON.stringify({ text }),
   })
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+  if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
   return response.json()
 }
@@ -233,7 +233,7 @@ export const setupAdminOriginalSongPickers = () => {
           headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
           signal: searchController.signal,
         })
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+        if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
         renderOriginalSongOptions(picker, await response.json())
       } catch (error) {

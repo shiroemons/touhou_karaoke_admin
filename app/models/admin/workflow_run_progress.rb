@@ -43,12 +43,17 @@ module Admin
       end
 
       def fail!(id, message:)
-        OperationProgress.update!(id, state: 'failed', status: 'エラー', label: "処理中にエラーが発生しました: #{message}")
+        OperationProgress.update!(
+          id,
+          state: 'failed',
+          status: 'エラー',
+          label: "処理中にエラーが発生しました: #{ErrorMessage.user_facing(message)}"
+        )
       end
 
       def mark_step!(id, step_key, status:, **attributes)
         progress_id = attributes[:progress_id]
-        error = attributes[:error]
+        error = ErrorMessage.user_facing(attributes[:error]) if attributes[:error]
         attempt = attributes[:attempt]
         detail = attributes[:detail]
 

@@ -61,7 +61,7 @@ class JoysoundMusicPostManager
 
     process_with_progress(
       prioritized_posts,
-      label: "JOYSOUND Music Posts",
+      label: "ミュージックポスト",
       progress:,
       progress_options: { status: "ミュージックポスト楽曲取得中", label: "ミュージックポスト楽曲を取得しています" }
     ) do |record|
@@ -71,7 +71,7 @@ class JoysoundMusicPostManager
     generate_final_report
     @stats
   rescue StandardError => e
-    record_error("Fatal error in fetch process: #{e.message}", type: :fatal, exception: e)
+    record_error("ミュージックポスト楽曲取得で致命的なエラーが発生しました: #{Admin::ErrorMessage.user_facing(e.message)}", type: :fatal, exception: e)
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, error: e.message)
     generate_final_report
     @stats
@@ -131,7 +131,7 @@ class JoysoundMusicPostManager
                       else
                         e.message
                       end
-      error_message = "Error processing record #{record.id}: #{error_details}"
+      error_message = "ミュージックポストID #{record.id} の処理に失敗しました: #{Admin::ErrorMessage.user_facing(error_details, preserve_unknown: true)}"
       record_error(
         error_message,
         type: :validation,
@@ -150,7 +150,7 @@ class JoysoundMusicPostManager
         validation_errors: (e.record.errors.details if e.record.respond_to?(:errors))
       )
     rescue StandardError => e
-      error_message = "Error processing record #{record.id}: #{e.message}"
+      error_message = "ミュージックポストID #{record.id} の処理に失敗しました: #{Admin::ErrorMessage.user_facing(e.message)}"
       record_error(
         error_message,
         type: :general,

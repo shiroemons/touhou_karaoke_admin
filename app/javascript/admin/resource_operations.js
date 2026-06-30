@@ -21,6 +21,8 @@ const adminOperationFormReady = (form) => {
   return selectionReady && adminOperationRequiredInputsReady(form)
 }
 
+const requestFailureMessage = (status) => `リクエストに失敗しました（HTTP ${status}）。`
+
 const updateAdminOperationSubmitStates = () => {
   document.querySelectorAll(adminSelectors.operationForm).forEach((form) => {
     const submitButton = form.querySelector(adminSelectors.operationSubmit)
@@ -96,12 +98,12 @@ const setupAdminOperationForms = () => {
         })
 
         const payload = await response.json().catch(() => ({}))
-        if (!response.ok) throw new Error(payload.message || `Request failed: ${response.status}`)
+        if (!response.ok) throw new Error(payload.message || requestFailureMessage(response.status))
 
         operationProgress.applyServerProgress(payload.progress)
       } catch (error) {
         console.error(error)
-        operationProgress.fail(error.message)
+        operationProgress.fail(error.message || "処理中にエラーが発生しました。")
       }
     }
 

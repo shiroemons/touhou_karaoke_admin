@@ -107,7 +107,7 @@ class ErrorReportService
     end
 
     # タイムアウトエラーが多い場合
-    timeout_errors = @errors.select { |e| e[:message].include?("Timeout") }
+    timeout_errors = @errors.select { |error| error[:message].match?(/Timeout|タイムアウト/i) }
     if timeout_errors.count > 5
       recommendations << {
         type: :timeout,
@@ -125,7 +125,7 @@ class ErrorReportService
     filename ||= "error_report_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv"
 
     CSV.open(filename, 'w') do |csv|
-      csv << %w[timestamp type message record_type record_id url exception_class]
+      csv << %w[発生日時 種類 メッセージ レコード種別 レコードID URL 例外クラス]
 
       @errors.each do |error|
         csv << [
@@ -145,19 +145,19 @@ class ErrorReportService
 
   # ログ形式で出力
   def to_log
-    lines = ["=== Error Report ==="]
-    lines << "Start Time: #{@start_time}"
-    lines << "Total Errors: #{@errors.count}"
+    lines = ["=== エラーレポート ==="]
+    lines << "開始時刻: #{@start_time}"
+    lines << "エラー件数: #{@errors.count}"
     lines << ""
 
     summary = generate_summary
-    lines << "Error Types:"
+    lines << "エラー種別:"
     summary[:error_types].each do |type, count|
       lines << "  #{type}: #{count}"
     end
 
     lines << ""
-    lines << "Recent Errors:"
+    lines << "直近のエラー:"
     @errors.last(10).each do |error|
       lines << "  [#{error[:timestamp].strftime('%H:%M:%S')}] #{error[:type]}: #{error[:message]}"
     end

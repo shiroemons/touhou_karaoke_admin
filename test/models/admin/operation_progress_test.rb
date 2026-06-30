@@ -38,10 +38,10 @@ module Admin
       assert_equal 'completed', completed[:state]
       assert_equal '変更なし', completed[:detail]
 
-      OperationProgress.fail!(id, message: '失敗しました')
+      OperationProgress.fail!(id, message: 'connection failed')
       failed = OperationProgress.read(id)
       assert_equal 'failed', failed[:state]
-      assert_equal '失敗しました', failed[:detail]
+      assert_equal 'ネットワーク接続に失敗しました。接続状況を確認してから再実行してください。', failed[:detail]
     end
 
     test 'ignores invalid ids without creating records' do

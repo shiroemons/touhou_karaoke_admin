@@ -40,11 +40,11 @@ class JoysoundMusicPostManagerTest < ActiveSupport::TestCase
     song = create_music_post_song(title: 'Error Music Post Song', url: 'https://example.com/music-post/error')
     manager = JoysoundMusicPostManager.new
 
-    with_stubbed_class_method(UrlChecker, :check_url, ->(_url) { raise 'connection failed' }) do
+    with_stubbed_class_method(UrlChecker, :check_url, ->(_url) { raise '接続に失敗しました' }) do
       result = manager.refresh_songs_efficiently
 
       assert_equal 1, result.fetch(:errors).size
-      assert_match(/Error checking song #{song.id}: connection failed/, result.fetch(:errors).first)
+      assert_match(/楽曲ID #{song.id} のURL確認に失敗しました: 接続に失敗しました/, result.fetch(:errors).first)
       assert_equal 1, manager.error_reporter.errors.size
       assert_equal :url_check, manager.error_reporter.errors.first.fetch(:type)
       assert_equal song.id, manager.error_reporter.errors.first.fetch(:record_id)

@@ -109,11 +109,11 @@ test("AdminOperationProgress.fail falls back to an actionable failed state", () 
   submitButton.disabled = true
   progressBar.classList.add("admin-operation-progress-bar-active")
 
-  progress.fail("Request failed: 500")
+  progress.fail("リクエストに失敗しました（HTTP 500）。")
 
   assert.equal(progress.phase, "failed")
   assert.equal(progressStatus.textContent, "エラー")
-  assert.equal(progressLabel.textContent, "Request failed: 500")
+  assert.equal(progressLabel.textContent, "リクエストに失敗しました（HTTP 500）。")
   assert.equal(form.dataset.adminOperationBusy, undefined)
   assert.equal(form.dataset.confirmed, undefined)
   assert.equal(modalCancelButton.disabled, false)

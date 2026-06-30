@@ -45,7 +45,7 @@ class JoysoundMusicPostDeadlineSyncer
     @updated_count += 1
     Admin::OperationLogger.log(level: :debug, event: :db_update, action: :update, resource: :song_with_joysound_utasuki, id: utasuki_record.id, song_id: song.id, title: song.title)
   rescue StandardError => e
-    error_message = "Error updating song #{song.id}: #{e.message}"
+    error_message = "楽曲ID #{song.id} の配信期限更新に失敗しました: #{e.message}"
     @errors << error_message
     error_reporter.add_error(type: :deadline_update, message: error_message, record: song, exception: e)
     Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :song_with_joysound_utasuki, song_id: song.id, error: e.message)

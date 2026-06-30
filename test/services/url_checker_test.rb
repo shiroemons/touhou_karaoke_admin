@@ -10,7 +10,17 @@ class UrlCheckerTest < ActiveSupport::TestCase
   end
 
   test 'check_url returns false for blank url' do
-    assert_equal({ exists: false, error: 'Blank URL' }, UrlChecker.check_url(''))
+    assert_equal({ exists: false, error: 'URLが空です' }, UrlChecker.check_url(''))
+  end
+
+  test 'check_url returns Japanese message for unexpected errors' do
+    with_stubbed_class_method(URI, :parse, ->(_url) { raise URI::InvalidURIError, 'bad URI(is not URI?)' }) do
+      result = UrlChecker.check_url('not a url')
+
+      assert_nil result[:exists]
+      assert_equal Admin::ErrorMessage::DEFAULT_MESSAGE, result[:error]
+      assert_equal true, result[:should_retry]
+    end
   end
 
   test 'check_url returns successful result without retrying' do
@@ -49,7 +59,7 @@ class UrlCheckerTest < ActiveSupport::TestCase
     with_stubbed_class_method(UrlChecker, :sleep, ->(_delay) {}) do
       with_stubbed_class_method(UrlChecker, :perform_check, lambda { |_uri|
         calls += 1
-        next({ exists: nil, error: 'Timeout', should_retry: true }) if calls == 1
+        next({ exists: nil, error: 'タイムアウトしました', should_retry: true }) if calls == 1
 
         { exists: true, status_code: 200, should_retry: false }
       }) do
@@ -68,12 +78,12 @@ class UrlCheckerTest < ActiveSupport::TestCase
     with_stubbed_class_method(UrlChecker, :sleep, ->(_delay) {}) do
       with_stubbed_class_method(UrlChecker, :perform_check, lambda { |_uri|
         calls += 1
-        { exists: nil, error: 'Network error', should_retry: true }
+        { exists: nil, error: 'ネットワークエラー', should_retry: true }
       }) do
         result = UrlChecker.check_url('https://example.com/network-error', retries: 2)
 
         assert_nil result[:exists]
-        assert_equal 'Network error after retries', result[:error]
+        assert_equal 'ネットワークエラーが続いたため確認できませんでした', result[:error]
         assert_equal true, result[:should_retry]
         assert_equal 3, calls
       end
@@ -111,7 +121,7 @@ class UrlCheckerTest < ActiveSupport::TestCase
       result = UrlChecker.perform_check(URI.parse('https://example.com/timeout'))
 
       assert_nil result[:exists]
-      assert_equal 'Timeout', result[:error]
+      assert_equal 'タイムアウトしました', result[:error]
       assert_equal true, result[:should_retry]
     end
   end
@@ -121,7 +131,7 @@ class UrlCheckerTest < ActiveSupport::TestCase
       result = UrlChecker.perform_check(URI.parse('https://example.invalid/network'))
 
       assert_nil result[:exists]
-      assert_equal 'Network error', result[:error]
+      assert_equal 'ネットワークエラー', result[:error]
       assert_equal true, result[:should_retry]
     end
   end

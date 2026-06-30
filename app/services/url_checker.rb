@@ -10,7 +10,7 @@
 #   result = UrlChecker.check_url("https://example.com/page")
 #   # => { exists: true, status_code: 200 }
 #   # => { exists: false, status_code: 404 }
-#   # => { exists: nil, error: "Network error", should_retry: true }
+#   # => { exists: nil, error: "ネットワークエラー", should_retry: true }
 #
 # 処理内容:
 #   1. URLが空でないかチェック
@@ -35,7 +35,7 @@ class UrlChecker
   end
 
   def self.check_url(url, retries: MAX_RETRIES)
-    return { exists: false, error: "Blank URL" } if url.blank?
+    return { exists: false, error: "URLが空です" } if url.blank?
 
     uri = URI.parse(url)
     attempt = 0
@@ -56,10 +56,10 @@ class UrlChecker
 
     # 全てのリトライが失敗した場合
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :url, url:, retries:, reason: "retries_exhausted")
-    { exists: nil, error: "Network error after retries", should_retry: true }
+    { exists: nil, error: "ネットワークエラーが続いたため確認できませんでした", should_retry: true }
   rescue StandardError => e
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :url, url:, error: e.message)
-    { exists: nil, error: e.message, should_retry: true }
+    { exists: nil, error: Admin::ErrorMessage.user_facing(e.message), should_retry: true }
   end
 
   def self.perform_check(uri)
@@ -80,12 +80,12 @@ class UrlChecker
     end
   rescue Net::OpenTimeout, Net::ReadTimeout
     Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :timeout, resource: :url, url: uri)
-    { exists: nil, error: "Timeout", should_retry: true }
+    { exists: nil, error: "タイムアウトしました", should_retry: true }
   rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, SocketError => e
     Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :network_error, resource: :url, url: uri, error: e.message)
-    { exists: nil, error: "Network error", should_retry: true }
+    { exists: nil, error: "ネットワークエラー", should_retry: true }
   rescue Net::HTTPError => e
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :http_error, resource: :url, url: uri, error: e.message)
-    { exists: nil, error: "HTTP error", should_retry: false }
+    { exists: nil, error: "HTTPエラー", should_retry: false }
   end
 end

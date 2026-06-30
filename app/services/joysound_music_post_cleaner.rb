@@ -63,11 +63,11 @@ class JoysoundMusicPostCleaner
       @deleted_records << record_info(record)
       record.destroy! unless @dry_run
       @deleted_count += 1
-      action = @dry_run ? 'Would delete' : 'Deleted'
+      action = @dry_run ? 'would_delete' : 'delete'
       Admin::OperationLogger.log(level: :info, event: :db_update, action: action.parameterize(separator: "_"), resource: :joysound_music_post, id: record.id, title: record.title, artist: record.artist)
     end
   rescue StandardError => e
-    error_message = "Failed to process record ID #{record.id}: #{e.message}"
+    error_message = "ミュージックポストID #{record.id} の処理に失敗しました: #{e.message}"
     @errors << error_message
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :joysound_music_post, id: record.id, error: e.message)
   end

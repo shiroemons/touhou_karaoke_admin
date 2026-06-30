@@ -101,7 +101,7 @@ class DisplayArtistUrlValidator
 
     delete_record_if_applicable(record)
   rescue StandardError => e
-    error_message = "Failed to process DisplayArtist ID #{record.id}: #{e.message}"
+    error_message = "アーティストID #{record.id} の処理に失敗しました: #{e.message}"
     @errors << error_message
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :display_artist, id: record.id, error: e.message)
   end

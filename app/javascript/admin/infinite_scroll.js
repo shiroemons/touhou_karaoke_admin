@@ -23,7 +23,7 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
         },
       })
 
-      if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+      if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
       const payload = await response.json()
       rows.insertAdjacentHTML("beforeend", payload.html)

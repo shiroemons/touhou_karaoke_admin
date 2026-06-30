@@ -41,7 +41,13 @@ module Admin
       def fail!(id, message:)
         return unless valid_id?(id)
 
-        update!(id, state: 'failed', status: 'エラー', label: '処理中にエラーが発生しました', detail: message)
+        update!(
+          id,
+          state: 'failed',
+          status: 'エラー',
+          label: '処理中にエラーが発生しました',
+          detail: ErrorMessage.user_facing(message)
+        )
       end
 
       def read(id)

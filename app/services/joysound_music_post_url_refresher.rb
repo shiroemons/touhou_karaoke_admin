@@ -49,7 +49,7 @@ class JoysoundMusicPostUrlRefresher
       Admin::OperationLogger.log(level: :debug, event: :external_fetch, action: :keep, resource: :song, id: song.id, title: song.title)
     end
   rescue StandardError => e
-    error_message = "Error checking song #{song.id}: #{e.message}"
+    error_message = "楽曲ID #{song.id} のURL確認に失敗しました: #{e.message}"
     @errors << error_message
     error_reporter.add_error(type: :url_check, message: error_message, record: song, exception: e)
     Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :song, id: song.id, error: e.message)

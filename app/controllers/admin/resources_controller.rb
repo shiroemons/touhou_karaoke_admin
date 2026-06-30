@@ -121,10 +121,10 @@ module Admin
 
       redirect_back_or_to admin_resources_path(@resource), notice: result.message
     rescue OperationRunner::InputError, ArgumentError => e
-      redirect_back_or_to admin_resources_path(@resource), alert: e.message
+      redirect_back_or_to admin_resources_path(@resource), alert: Admin::ErrorMessage.user_facing(e.message, preserve_unknown: true)
     rescue StandardError => e
       Rails.logger.error(e)
-      redirect_back_or_to admin_resources_path(@resource), alert: "処理中にエラーが発生しました。#{e.message}"
+      redirect_back_or_to admin_resources_path(@resource), alert: Admin::ErrorMessage.user_facing(e.message)
     end
 
     def operation_progress
