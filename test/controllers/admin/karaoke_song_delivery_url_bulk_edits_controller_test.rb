@@ -20,6 +20,7 @@ module Admin
       assert_select "input[name=?][placeholder=?]", "songs[#{linked_song.id}][line_music_url]", 'https://music.line.me/webapp/track/...'
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
+      assert_select '.admin-bulk-apply-warning.alert.alert-warning', text: '反映は配信URLを更新するため、先に変更チェックで内容を確認してください。'
       assert_select '.admin-delivery-url-control-group h2', text: '絞り込み'
       assert_select '.admin-delivery-url-control-group h2', text: '並び替え'
       assert_select 'input[name="missing_url_columns[]"][value="youtube_url"][data-admin-auto-submit]'
