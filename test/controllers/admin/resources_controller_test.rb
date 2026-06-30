@@ -182,7 +182,7 @@ module Admin
       get admin_workflow_steps_path('dam')
 
       assert_response :success
-      assert_select '.admin-workflow-status', text: /実行状況/
+      assert_select '.admin-workflow-status[aria-live="polite"]', text: /実行状況/
       assert_select '[data-admin-workflow-status-label]', text: 'DAMを開始待ちです'
       assert_select '[data-admin-workflow-status-state]', text: 'ジョブ待機中'
       assert_select '[data-admin-workflow-status-current]', text: 'DAM候補一覧を取得'

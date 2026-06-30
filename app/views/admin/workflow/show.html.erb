@@ -41,7 +41,7 @@
     <% end %>
   </section>
 <% elsif @workflow_run.present? %>
-  <section class="admin-workflow-status admin-panel" data-admin-workflow-status>
+  <section class="admin-workflow-status admin-panel" aria-live="polite" data-admin-workflow-status>
     <div class="admin-section-heading">
       <h2>実行状況</h2>
       <p data-admin-workflow-status-label><%= @workflow_run[:label] %></p>
