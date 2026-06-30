@@ -831,6 +831,15 @@ module Admin
       assert_select 'form[data-turbo-confirm=?]', 'アーティスト「[DAM] 削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
     end
 
+    test 'show delete confirmation names the target record' do
+      artist = DisplayArtist.create!(karaoke_type: 'DAM', name: '詳細削除確認アーティスト', url: 'https://example.com/show-delete-confirmation')
+
+      get admin_display_artist_path(artist)
+
+      assert_response :success
+      assert_select 'form[data-turbo-confirm=?]', 'アーティスト「[DAM] 詳細削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
+    end
+
     test 'index uses infinite scroll by default' do
       30.times { |index| Circle.create!(name: "Infinite Circle #{index}") }
 
