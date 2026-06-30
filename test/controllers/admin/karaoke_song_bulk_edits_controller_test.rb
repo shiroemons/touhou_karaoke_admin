@@ -46,7 +46,7 @@ module Admin
 
       assert_response :success
       assert_select 'tbody tr', 0
-      assert_select '.admin-empty-state.alert p', text: '条件に一致する楽曲がありません'
+      assert_select '.admin-empty-state.alert[role="status"] p', text: '条件に一致する楽曲がありません'
       assert_select '.admin-empty-state.alert a[href=?]', admin_karaoke_song_bulk_edit_path, text: /条件をクリア/
     end
 
