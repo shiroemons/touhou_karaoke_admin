@@ -121,6 +121,7 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: '全体更新'
+      assert_select 'a[aria-label="運用ワークフローへ戻る"][href=?]', admin_workflow_path
       assert_select 'form[action=?]', admin_run_workflow_path('full')
       assert_select 'button.btn-warning[data-turbo-confirm=?]', '全体更新の自動実行を開始します。外部取得とDB更新を実行してよろしいですか？', text: /自動実行を開始/
       assert_select 'button[aria-label="全体更新の自動実行を開始"]'

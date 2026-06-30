@@ -4,7 +4,7 @@
     <p><%= @workflow.description %></p>
   </div>
   <div class="admin-workflow-header-actions">
-    <%= link_to admin_workflow_path, class: "admin-button btn btn-ghost" do %>
+    <%= link_to admin_workflow_path, class: "admin-button btn btn-ghost", aria: { label: "運用ワークフローへ戻る" } do %>
       <%= admin_icon(:back) %>
       <span>フロー一覧</span>
     <% end %>
