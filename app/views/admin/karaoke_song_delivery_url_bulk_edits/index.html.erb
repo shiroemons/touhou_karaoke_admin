@@ -20,6 +20,7 @@
     <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path, method: :get, class: "admin-query-panel admin-control-panel", data: { admin_filter_form: true } do |form| %>
       <div class="admin-search-row">
         <label class="admin-search-field input input-bordered">
+          <span class="admin-sr-only">キーワード</span>
           <%= admin_icon(:search) %>
           <%= form.search_field :q, value: @query, placeholder: "タイトル・アーティスト・曲番号・URL", class: "admin-input admin-input-plain" %>
         </label>
