@@ -16,6 +16,7 @@ module Admin
         assert_select 'th', text: column
       end
       assert_select 'form[data-admin-filter-form]'
+      assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'select[name="status"][data-admin-auto-submit]'
       assert_select "input[name=?]", "songs[#{missing_song.id}][original_songs]"
       assert_select "input[name=?][placeholder=?]", "songs[#{missing_song.id}][youtube_url]", 'https://www.youtube.com/watch?v=...'
