@@ -132,6 +132,7 @@ module Admin
       assert_select '.admin-workflow-step', text: /DAM楽曲URLから候補を追加/
       assert_select '.admin-workflow-step-progress', text: '未実行'
       assert_select 'button[data-admin-operation-trigger][data-admin-operation-key="fetch_dam_touhou_songs"]', text: /個別実行/
+      assert_select 'button[aria-label="DAM候補一覧を取得を個別実行"][data-admin-operation-trigger]'
     end
 
     test 'workflow common page excludes selection required actions' do

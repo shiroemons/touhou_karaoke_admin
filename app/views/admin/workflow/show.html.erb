@@ -125,7 +125,7 @@
               <span class="admin-workflow-action-tags"><%= step.cadence %> / <%= admin_operation_status_labels(operation).join(" / ") %></span>
               <span class="admin-workflow-step-progress" data-admin-workflow-step-progress><%= admin_workflow_step_status_label(step_payload, running: @workflow_run_id.present?, numbered: step.numbered) %></span>
             </span>
-            <%= button_tag type: :button, class: "admin-button btn btn-sm btn-outline", data: { admin_operation_trigger: true, admin_operation_resource: resource.key, admin_operation_key: operation.key, admin_operation_label: operation.label } do %>
+            <%= button_tag type: :button, class: "admin-button btn btn-sm btn-outline", aria: { label: "#{operation.label}を個別実行" }, data: { admin_operation_trigger: true, admin_operation_resource: resource.key, admin_operation_key: operation.key, admin_operation_label: operation.label } do %>
               <%= admin_icon(:action) %>
               <span>個別実行</span>
             <% end %>
