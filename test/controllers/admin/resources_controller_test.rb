@@ -965,6 +965,7 @@ module Admin
       assert_select '[data-admin-searchable-select-values][data-input-name="display_artist[circle_ids][]"]'
       assert_select '[data-admin-searchable-select-values] input[type="hidden"][name="display_artist[circle_ids][]"][value=?]', @circle.id.to_s
       assert_select 'button[aria-label="サークル紐づけを更新"]', text: /更新/
+      assert_select 'button[aria-label="サークル紐づけをキャンセル"][data-admin-association-dialog-close]', text: /キャンセル/
       assert_select '[data-admin-searchable-select-option]', text: @circle.name do
         assert_select 'input[type="checkbox"][name]', 0
         assert_select 'input[type="checkbox"][value=?][checked="checked"]', @circle.id.to_s
