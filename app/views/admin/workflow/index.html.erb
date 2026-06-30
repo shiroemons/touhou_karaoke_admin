@@ -3,7 +3,7 @@
     <h1>運用フロー</h1>
     <p>配信種別ごとに、操作内容から推定した実行順で整理しています</p>
   </div>
-  <%= link_to admin_workflow_steps_path("full"), class: "admin-button admin-button-primary btn btn-primary" do %>
+  <%= link_to admin_workflow_steps_path("full"), class: "admin-button admin-button-primary btn btn-primary", aria: { label: "全体更新のステップ実行を開く" } do %>
     <%= admin_icon(:workflow) %>
     <span>全体更新を開く</span>
   <% end %>

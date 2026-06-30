@@ -96,6 +96,7 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '運用フロー'
       assert_select '.admin-nav-link-active', text: /運用フロー/
+      assert_select 'a[aria-label="全体更新のステップ実行を開く"][href=?]', admin_workflow_steps_path('full')
       assert_select '.admin-workflow-group h2', text: 'DAM'
       assert_select '.admin-workflow-group h2', text: 'JOYSOUND'
       assert_select '.admin-workflow-group h2', text: 'JOYSOUND(うたスキ)'
