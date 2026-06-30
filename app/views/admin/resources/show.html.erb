@@ -148,7 +148,7 @@
             <%= admin_field_input(form, circle_field) %>
           </div>
           <div class="admin-form-actions">
-            <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary" do %>
+            <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", aria: { label: "サークル紐づけを更新" } do %>
               <%= admin_icon(:edit) %>
               <span>更新</span>
             <% end %>
