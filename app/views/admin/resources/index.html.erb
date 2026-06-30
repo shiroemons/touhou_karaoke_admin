@@ -137,7 +137,7 @@
 <%= render "operation_modal", resource: @resource, operations: @resource.operations %>
 
 <% if @view_mode == "paginated" %>
-  <nav class="admin-pagination">
+  <nav class="admin-pagination" aria-label="<%= @resource.label %>のページ移動">
     <% if @page > 1 %>
       <%= link_to admin_resources_path(@resource, admin_page_params(@page - 1)), class: "admin-button btn" do %>
         <%= admin_icon(:back) %>

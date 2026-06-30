@@ -777,7 +777,7 @@ module Admin
 
       assert_response :success
       assert_select 'tbody tr', 24
-      assert_select '.admin-pagination', text: %r{1 / 2}
+      assert_select '.admin-pagination[aria-label="サークルのページ移動"]', text: %r{1 / 2}
     end
 
     test 'index links operations to dedicated action pages' do
