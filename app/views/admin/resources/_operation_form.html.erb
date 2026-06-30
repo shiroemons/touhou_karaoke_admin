@@ -33,7 +33,7 @@
 
   <div class="admin-form-actions">
     <% if modal %>
-      <button type="button" class="admin-button btn" data-admin-operation-modal-cancel>キャンセル</button>
+      <button type="button" class="admin-button btn" aria-label="<%= operation.label %>をキャンセル" data-admin-operation-modal-cancel>キャンセル</button>
     <% end %>
     <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", disabled: submit_disabled, aria: { label: "#{operation.label}を実行" }, data: { admin_operation_submit: true } do %>
       <%= admin_icon(operation.inputs.any? { |input| input[:type] == :file } ? :upload : :action) %>

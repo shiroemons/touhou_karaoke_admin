@@ -799,6 +799,7 @@ module Admin
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selected-ids]'
       assert_select '[data-admin-operation-panel="export_songs"] .admin-operation-selection-summary.alert.alert-warning'
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selection-note]', text: '対象を選択してください。'
+      assert_select '[data-admin-operation-panel="export_songs"] button[aria-label="楽曲TSVをエクスポートをキャンセル"][data-admin-operation-modal-cancel]'
       assert_select '[data-admin-operation-panel="export_songs"] button[data-admin-operation-submit][disabled]'
       assert_select '.admin-display-settings .admin-operation-dropdown-wrap', false
       assert_select '.admin-table-controls .admin-table-display-settings'
