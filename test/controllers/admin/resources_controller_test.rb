@@ -122,6 +122,7 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '全体更新'
       assert_select 'form[action=?]', admin_run_workflow_path('full')
+      assert_select '.admin-workflow-run-warning.alert.alert-warning', text: '自動実行は外部取得とDB更新を順番に開始するため、対象フローを確認してから開始してください。'
       assert_select '.admin-workflow-parallel-note', text: /JOYSOUNDとDAMを並列実行/
       assert_select '.admin-workflow-step', text: /ミュージックポスト一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND候補一覧を取得/

@@ -18,6 +18,13 @@
   </div>
 </header>
 
+<% if @workflow.key != "common" && @active_workflow_run.blank? %>
+  <div class="admin-workflow-run-warning alert alert-warning">
+    <%= admin_icon(:action) %>
+    <span>自動実行は外部取得とDB更新を順番に開始するため、対象フローを確認してから開始してください。</span>
+  </div>
+<% end %>
+
 <% workflow_steps_by_key = (@workflow_run&.dig(:workflow, :steps) || []).index_by { |step| step[:key] } %>
 <% current_step = @workflow_run&.dig(:workflow, :current_step) %>
 <% result_steps = @workflow_run&.dig(:workflow, :result_steps) || [] %>
