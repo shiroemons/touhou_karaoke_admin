@@ -1281,6 +1281,7 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '上へ移動'
       assert_select 'form[data-admin-operation-form][data-admin-operation-action="MoveHigher"]'
+      assert_select 'button[aria-label="上へ移動を実行"][data-admin-operation-submit]'
     end
 
     test 'requires selected songs for selection-only export operation' do
