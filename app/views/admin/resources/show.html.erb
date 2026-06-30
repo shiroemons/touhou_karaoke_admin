@@ -101,7 +101,7 @@
               <span><%= number_with_delimiter(count) %> 件</span>
             </div>
             <% if @resource.key == :display_artist && association == :circles && policy(@record).update? %>
-              <button type="button" class="admin-button btn btn-sm" data-admin-association-dialog-trigger="display-artist-circles">
+              <button type="button" class="admin-button btn btn-sm" aria-label="<%= admin_record_title(@resource, @record) %>のサークルを紐づけ" data-admin-association-dialog-trigger="display-artist-circles">
                 <%= admin_icon(:edit) %>
                 <span>紐づけ</span>
               </button>

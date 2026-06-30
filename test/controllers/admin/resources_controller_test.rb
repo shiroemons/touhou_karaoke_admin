@@ -954,7 +954,7 @@ module Admin
       get admin_display_artist_path(@display_artist)
 
       assert_response :success
-      assert_select '.admin-related-section header button[data-admin-association-dialog-trigger="display-artist-circles"]', text: /紐づけ/
+      assert_select '.admin-related-section header button[aria-label="[DAM] ZUNのサークルを紐づけ"][data-admin-association-dialog-trigger="display-artist-circles"]', text: /紐づけ/
       assert_select 'dialog[aria-labelledby="admin-association-dialog-title-display-artist-circles"][data-admin-association-dialog="display-artist-circles"]'
       assert_select '#admin-association-dialog-title-display-artist-circles', text: 'サークルを紐づけ'
       assert_select '[data-admin-searchable-select]'
