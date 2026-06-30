@@ -140,7 +140,7 @@
         <span>反映は配信URLを更新するため、先に変更チェックで内容を確認してください。</span>
       </div>
       <div class="admin-header-actions">
-        <%= button_tag type: :submit, name: :mode, value: :preview, class: "admin-button admin-button-primary btn btn-primary" do %>
+        <%= button_tag type: :submit, name: :mode, value: :preview, class: "admin-button admin-button-primary btn btn-primary", aria: { label: "配信URL変更チェックを実行" } do %>
           <%= admin_icon(:search) %>
           <span>変更チェック</span>
         <% end %>
