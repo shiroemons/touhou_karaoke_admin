@@ -189,7 +189,7 @@
     </div>
 
     <% if @total_pages > 1 %>
-      <nav class="admin-pagination">
+      <nav class="admin-pagination" aria-label="カラオケ楽曲紐づけのページ移動">
         <% if @page > 1 %>
           <%= link_to admin_karaoke_song_bulk_edit_path(status: @status, q: @query, page: @page - 1), class: "admin-button btn" do %>
             <%= admin_icon(:back) %>

@@ -52,6 +52,16 @@ module Admin
       assert_select '.admin-empty-state.alert a[href=?]', admin_karaoke_song_bulk_edit_path, text: /条件をクリア/
     end
 
+    test 'labels pagination navigation' do
+      artist = create_display_artist(name: 'Bulk Pagination Artist')
+      101.times { |index| create_song(display_artist: artist, title: "Bulk Pagination Song #{index}") }
+
+      get admin_karaoke_song_bulk_edit_path
+
+      assert_response :success
+      assert_select '.admin-pagination[aria-label="カラオケ楽曲紐づけのページ移動"]'
+    end
+
     test 'returns original song options with minor title notation differences' do
       original_song = create_original_song(title: '最後の一人は慣れてるから　～ Stone Goddess')
 
