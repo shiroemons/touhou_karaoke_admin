@@ -46,7 +46,7 @@
           <p><%= group[:description] %></p>
         </div>
         <% unless group[:key] == "common" %>
-          <%= link_to admin_workflow_steps_path(group[:key]), class: "admin-workflow-run-link" do %>
+          <%= link_to admin_workflow_steps_path(group[:key]), class: "admin-workflow-run-link", aria: { label: "#{group[:label]}のステップ実行を開く" } do %>
             <span>ステップ実行</span>
             <%= admin_icon(:next) %>
           <% end %>

@@ -110,6 +110,7 @@ module Admin
       assert_select '.admin-workflow-action', text: /原曲未設定TSVをエクスポート/
       assert_select '.admin-workflow-action', { text: /楽曲TSVをエクスポート/, count: 0 }
       assert_select 'a.admin-workflow-run-link', text: /ステップ実行/
+      assert_select 'a.admin-workflow-run-link[aria-label="DAMのステップ実行を開く"][href=?]', admin_workflow_steps_path('dam')
       assert_select 'a.admin-workflow-action', false
       assert_select 'button.admin-workflow-action[data-admin-operation-trigger][data-admin-operation-resource="dam_song"][data-admin-operation-key="fetch_dam_touhou_songs"]'
       assert_select '.admin-workflow-action-number', text: '1'
