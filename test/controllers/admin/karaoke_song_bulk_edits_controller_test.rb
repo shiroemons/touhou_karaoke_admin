@@ -40,6 +40,15 @@ module Admin
       assert_includes payload.first.fetch('label'), original_song.title
     end
 
+    test 'shows empty state when no songs match filters' do
+      get admin_karaoke_song_bulk_edit_path, params: { q: '一致しない紐づけ検索語' }
+
+      assert_response :success
+      assert_select 'tbody tr', 0
+      assert_select '.admin-empty-state.alert p', text: '条件に一致する楽曲がありません'
+      assert_select '.admin-empty-state.alert a[href=?]', admin_karaoke_song_bulk_edit_path, text: /条件をクリア/
+    end
+
     test 'returns original song options with minor title notation differences' do
       original_song = create_original_song(title: '最後の一人は慣れてるから　～ Stone Goddess')
 
