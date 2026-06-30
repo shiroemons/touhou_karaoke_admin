@@ -109,7 +109,7 @@
     </tbody>
   </table>
   <% if @records.empty? %>
-    <div class="admin-empty-state alert">
+    <div class="admin-empty-state alert" role="status">
       <%= admin_icon(:search) %>
       <div>
         <p><%= admin_empty_index_title(@resource, @active_filters) %></p>
