@@ -840,6 +840,15 @@ module Admin
       assert_select 'form[data-turbo-confirm=?]', 'アーティスト「[DAM] 詳細削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
     end
 
+    test 'show uses inline empty states for missing related data' do
+      artist = DisplayArtist.create!(karaoke_type: 'DAM', name: '関連なしアーティスト', url: 'https://example.com/no-related')
+
+      get admin_display_artist_path(artist)
+
+      assert_response :success
+      assert_select '.admin-inline-empty-state.alert', text: '関連データはありません。'
+    end
+
     test 'index uses infinite scroll by default' do
       30.times { |index| Circle.create!(name: "Infinite Circle #{index}") }
 
