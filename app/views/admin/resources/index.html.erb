@@ -38,7 +38,7 @@
       <label class="admin-search-field input input-bordered">
         <span class="admin-sr-only">キーワード</span>
         <%= admin_icon(:search) %>
-        <%= form.search_field :q, value: params[:q], placeholder: "キーワード検索", class: "admin-input admin-input-plain" %>
+        <%= form.search_field :q, value: params[:q], placeholder: "キーワード検索", class: "admin-input admin-input-plain", aria: { label: "#{@resource.label}をキーワード検索" } %>
       </label>
       <%= button_tag type: :submit, class: "admin-button btn" do %>
         <%= admin_icon(:search) %>

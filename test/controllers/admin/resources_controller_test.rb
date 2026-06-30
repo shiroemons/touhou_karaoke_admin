@@ -837,6 +837,7 @@ module Admin
       get admin_songs_path, params: { q: '一致しない検索語' }
 
       assert_response :success
+      assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信曲をキーワード検索"]'
       assert_select 'tbody tr', 0
       assert_select '.admin-empty-state p', text: '条件に一致するデータがありません'
       assert_select '.admin-empty-state span', text: 'キーワードや絞り込み条件を見直すか、条件をクリアしてください。'
