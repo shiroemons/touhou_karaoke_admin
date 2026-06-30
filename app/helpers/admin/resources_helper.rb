@@ -61,6 +61,30 @@ module Admin
       Array(record.to_key).join('/')
     end
 
+    def admin_record_destroy_confirmation(resource, record)
+      title = admin_record_title(resource, record)
+
+      "#{resource.label}「#{title}」を削除します。この操作は取り消せません。削除してよろしいですか？"
+    end
+
+    def admin_filtered_index?(active_filters)
+      params[:q].present? || active_filters.present?
+    end
+
+    def admin_empty_index_title(resource, active_filters)
+      admin_filtered_index?(active_filters) ? '条件に一致するデータがありません' : "#{resource.label}はまだ登録されていません"
+    end
+
+    def admin_empty_index_description(resource, active_filters)
+      if admin_filtered_index?(active_filters)
+        'キーワードや絞り込み条件を見直すか、条件をクリアしてください。'
+      elsif policy(resource.model).create?
+        '新規作成から最初のデータを登録できます。'
+      else
+        '表示できるデータがありません。'
+      end
+    end
+
     def admin_association_records(record, association)
       Array(record.public_send(association))
     end

@@ -36,6 +36,7 @@
 
     <div class="admin-search-row">
       <label class="admin-search-field input input-bordered">
+        <span class="admin-sr-only">キーワード</span>
         <%= admin_icon(:search) %>
         <%= form.search_field :q, value: params[:q], placeholder: "キーワード検索", class: "admin-input admin-input-plain" %>
       </label>
@@ -107,6 +108,21 @@
       <%= render "rows" %>
     </tbody>
   </table>
+  <% if @records.empty? %>
+    <div class="admin-empty-state alert">
+      <%= admin_icon(:search) %>
+      <div>
+        <p><%= admin_empty_index_title(@resource, @active_filters) %></p>
+        <span><%= admin_empty_index_description(@resource, @active_filters) %></span>
+      </div>
+      <% if admin_filtered_index?(@active_filters) %>
+        <%= link_to admin_resources_path(@resource), class: "admin-button btn btn-ghost" do %>
+          <%= admin_icon(:clear) %>
+          <span>条件をクリア</span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
   <% unless @view_mode == "paginated" %>
     <div
       class="admin-infinite-scroll"

@@ -135,6 +135,17 @@ body[data-admin-navigation="loading"] .admin-main {
   opacity: 0.68;
 }
 
+.admin-sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
 .admin-index-content {
   display: flex;
   flex-direction: column;
@@ -2366,6 +2377,40 @@ body[data-admin-navigation="loading"] .admin-main {
   box-shadow: inset 4px 0 0 #f97316;
 }
 
+.admin-empty-state {
+  align-items: center;
+  background: #fbfdff;
+  border-top: 1px solid #e9f0f7;
+  color: color-mix(in oklab, var(--color-base-content) 66%, transparent);
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  min-height: 136px;
+  padding: 18px;
+  text-align: left;
+}
+
+.admin-empty-state > .admin-icon {
+  color: color-mix(in oklab, var(--color-primary) 72%, var(--color-base-content));
+  flex: 0 0 auto;
+  height: 24px;
+  width: 24px;
+}
+
+.admin-empty-state p {
+  color: var(--color-base-content);
+  font-weight: 800;
+  margin: 0 0 3px;
+}
+
+.admin-empty-state span {
+  font-size: 13px;
+}
+
+.admin-empty-state .admin-button {
+  margin-left: 4px;
+}
+
 .admin-updated-at {
   align-items: center;
   display: inline-flex;
@@ -2942,6 +2987,35 @@ th.admin-actions-column {
     display: grid;
   }
 
+  .admin-header-actions,
+  .admin-search-row,
+  .admin-form-actions {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .admin-header-actions .admin-button,
+  .admin-search-row .admin-button,
+  .admin-form-actions .admin-button {
+    inline-size: 100% !important;
+    justify-self: stretch;
+    width: 100% !important;
+  }
+
+  .admin-search-field,
+  .admin-input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-empty-state {
+    align-items: stretch;
+    display: grid;
+    justify-items: start;
+  }
+
   .admin-workflow-header-actions {
     width: 100%;
   }
@@ -3383,6 +3457,19 @@ th.admin-actions-column {
 
 .admin-form-row label {
   font-weight: 700;
+}
+
+.admin-form-row-invalid input,
+.admin-form-row-invalid select {
+  border-color: color-mix(in oklab, var(--color-error) 66%, var(--color-base-300));
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-error) 12%, transparent);
+}
+
+.admin-field-errors {
+  color: #7f1d1d;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .admin-searchable-select {

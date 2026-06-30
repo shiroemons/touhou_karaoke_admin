@@ -27,7 +27,7 @@
         <% end %>
       <% end %>
       <% if policy(record).destroy? %>
-        <%= button_to admin_resource_path(@resource, record), method: :delete, form: { data: { turbo_confirm: "削除しますか？" } }, class: "admin-link-button admin-icon-link", title: "削除" do %>
+        <%= button_to admin_resource_path(@resource, record), method: :delete, form: { data: { turbo_confirm: admin_record_destroy_confirmation(@resource, record) } }, class: "admin-link-button admin-icon-link", title: "削除" do %>
           <%= admin_icon(:delete) %>
           <span>削除</span>
         <% end %>

@@ -12,9 +12,22 @@
 
   <%= form_with model: [:admin, record], url: record.persisted? ? admin_resource_path(resource, record) : admin_resources_path(resource), class: "admin-form" do |form| %>
     <% resource.form_fields.each do |field| %>
-      <div class="admin-form-row">
+      <% field_errors = record.errors.full_messages_for(field.name) %>
+      <% field_error_id = "#{form.object_name}_#{field.name}_error" %>
+      <% field_error_class = case field.type
+                             when :select, :belongs_to_select
+                               "select-error"
+                             when :boolean
+                               "checkbox-error"
+                             else
+                               "input-error"
+                             end %>
+      <div class="admin-form-row <%= "admin-form-row-invalid" if field_errors.present? %>">
         <%= form.label field.name, field.label %>
-        <%= admin_field_input(form, field) %>
+        <%= admin_field_input(form, field, class: (field_error_class if field_errors.present?), aria: { invalid: field_errors.present?, describedby: (field_error_id if field_errors.present?) }) %>
+        <% if field_errors.present? %>
+          <p class="admin-field-errors label-text-alt text-error" id="<%= field_error_id %>"><%= field_errors.join("。") %></p>
+        <% end %>
       </div>
     <% end %>
 

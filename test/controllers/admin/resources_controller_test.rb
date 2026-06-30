@@ -812,6 +812,25 @@ module Admin
       assert_select '.admin-filter-active-count', text: '1件指定中'
     end
 
+    test 'index explains empty filtered results near the table' do
+      get admin_songs_path, params: { q: '一致しない検索語' }
+
+      assert_response :success
+      assert_select 'tbody tr', 0
+      assert_select '.admin-empty-state p', text: '条件に一致するデータがありません'
+      assert_select '.admin-empty-state span', text: 'キーワードや絞り込み条件を見直すか、条件をクリアしてください。'
+      assert_select '.admin-empty-state a[href=?]', admin_songs_path, text: /条件をクリア/
+    end
+
+    test 'row delete confirmation names the target record' do
+      artist = DisplayArtist.create!(karaoke_type: 'DAM', name: '削除確認アーティスト', url: 'https://example.com/delete-confirmation')
+
+      get admin_display_artists_path, params: { q: artist.name }
+
+      assert_response :success
+      assert_select 'form[data-turbo-confirm=?]', 'アーティスト「[DAM] 削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
+    end
+
     test 'index uses infinite scroll by default' do
       30.times { |index| Circle.create!(name: "Infinite Circle #{index}") }
 
@@ -864,6 +883,8 @@ module Admin
 
       assert_response :unprocessable_content
       assert_select '.admin-errors'
+      assert_select '.admin-form-row-invalid input[name="karaoke_delivery_model[name]"][aria-invalid="true"][aria-describedby="karaoke_delivery_model_name_error"]'
+      assert_select '#karaoke_delivery_model_name_error.admin-field-errors', text: /機種名/
     end
 
     test 'renders edit form for writable resource' do

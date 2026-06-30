@@ -1,21 +1,21 @@
 module Admin
   module FieldInputsHelper
-    def admin_field_input(form, field)
+    def admin_field_input(form, field, input_options = {})
       case field.type
       when :select
-        form.select(field.name, Array(field.options).map { |option| [option, option] }, { include_blank: true })
+        form.select(field.name, Array(field.options).map { |option| [option, option] }, { include_blank: true }, input_options)
       when :belongs_to_select
-        form.select(field.name, field_options(field), { include_blank: true })
+        form.select(field.name, field_options(field), { include_blank: true }, input_options)
       when :has_many_select
         admin_has_many_select_input(form, field)
       when :number
-        form.number_field(field.name)
+        form.number_field(field.name, input_options)
       when :boolean
-        form.check_box(field.name)
+        form.check_box(field.name, input_options)
       when :date
-        form.date_field(field.name)
+        form.date_field(field.name, input_options)
       else
-        form.text_field(field.name)
+        form.text_field(field.name, input_options)
       end
     end
 
