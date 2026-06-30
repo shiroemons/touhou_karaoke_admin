@@ -127,6 +127,7 @@ module Admin
       assert_select 'button[aria-label="全体更新の自動実行を開始"]'
       assert_select '.admin-workflow-run-warning.alert.alert-warning', text: '自動実行は外部取得とDB更新を順番に開始するため、対象フローを確認してから開始してください。'
       assert_select '.admin-workflow-parallel-note', text: /JOYSOUNDとDAMを並列実行/
+      assert_select 'ol[data-admin-workflow-step-list][aria-label="全体更新の実行ステップ"]'
       assert_select '.admin-workflow-step', text: /ミュージックポスト一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND候補一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND楽曲URLから候補を追加/

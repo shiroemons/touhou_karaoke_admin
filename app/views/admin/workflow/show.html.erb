@@ -101,7 +101,7 @@
     <p class="admin-workflow-parallel-note">全体更新では、JOYSOUND(うたスキ)完了後にJOYSOUNDとDAMを並列実行します。</p>
   <% end %>
 
-  <ol class="admin-workflow-step-list" data-admin-workflow-step-list>
+  <ol class="admin-workflow-step-list" aria-label="<%= @workflow.label %>の実行ステップ" data-admin-workflow-step-list>
     <% @workflow.stages.each do |stage| %>
       <% stage.branches.each do |branch| %>
         <% step_number = 0 %>
