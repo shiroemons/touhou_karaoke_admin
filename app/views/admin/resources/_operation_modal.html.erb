@@ -1,11 +1,12 @@
 <% modal_operations = operations.select { |operation| operation.scope == :collection } %>
 <% if modal_operations.present? %>
-  <dialog class="modal admin-operation-modal" data-admin-operation-modal data-admin-operation-resource="<%= resource.key %>">
+  <% modal_title_id = "admin-operation-modal-title-#{resource.key}" %>
+  <dialog class="modal admin-operation-modal" aria-labelledby="<%= modal_title_id %>" data-admin-operation-modal data-admin-operation-resource="<%= resource.key %>">
     <div class="modal-box admin-operation-modal-box">
       <div class="admin-operation-modal-header">
         <div>
           <span class="admin-operation-modal-resource"><%= resource.label %></span>
-          <h2 data-admin-operation-modal-title><%= modal_operations.first.label %></h2>
+          <h2 id="<%= modal_title_id %>" data-admin-operation-modal-title><%= modal_operations.first.label %></h2>
         </div>
         <button type="button" class="btn btn-sm btn-circle btn-ghost" aria-label="閉じる" data-admin-operation-modal-close><%= admin_icon(:clear) %></button>
       </div>
