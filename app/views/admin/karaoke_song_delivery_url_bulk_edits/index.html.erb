@@ -181,6 +181,19 @@
           <% end %>
         </tbody>
       </table>
+      <% if @songs.empty? %>
+        <div class="admin-empty-state alert">
+          <%= admin_icon(:search) %>
+          <div>
+            <p>条件に一致する楽曲がありません</p>
+            <span>キーワードやURL条件を見直すか、条件をクリアしてください。</span>
+          </div>
+          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path, class: "admin-button btn btn-ghost" do %>
+            <%= admin_icon(:clear) %>
+            <span>条件をクリア</span>
+          <% end %>
+        </div>
+      <% end %>
     </div>
 
     <% if @total_pages > 1 %>
