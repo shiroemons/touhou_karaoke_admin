@@ -277,7 +277,7 @@ module Admin
       get admin_workflow_steps_path('dam', run_id:)
 
       assert_response :success
-      assert_select '[data-admin-workflow-results]:not([hidden])'
+      assert_select '[data-admin-workflow-results][aria-live="polite"]:not([hidden])'
       assert_select '.admin-workflow-result-item', text: /DAM候補一覧を取得/
       assert_select '.admin-workflow-result-item', text: /DAM楽曲一覧 追加2件/
     end
