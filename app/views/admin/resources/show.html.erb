@@ -132,12 +132,12 @@
 <% if @resource.key == :display_artist && policy(@record).update? %>
   <% circle_field = @resource.fields.find { |field| field.name == :circle_ids } %>
   <% if circle_field %>
-    <dialog class="modal admin-association-dialog" data-admin-association-dialog="display-artist-circles">
+    <dialog class="modal admin-association-dialog" aria-labelledby="admin-association-dialog-title-display-artist-circles" data-admin-association-dialog="display-artist-circles">
       <div class="modal-box admin-association-dialog-box">
         <div class="admin-operation-modal-header">
           <div>
             <span class="admin-operation-modal-resource">関連データ</span>
-            <h2>サークルを紐づけ</h2>
+            <h2 id="admin-association-dialog-title-display-artist-circles">サークルを紐づけ</h2>
           </div>
           <button type="button" class="btn btn-sm btn-circle btn-ghost" aria-label="閉じる" data-admin-association-dialog-close><%= admin_icon(:clear) %></button>
         </div>

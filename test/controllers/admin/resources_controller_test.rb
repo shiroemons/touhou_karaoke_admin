@@ -955,7 +955,8 @@ module Admin
 
       assert_response :success
       assert_select '.admin-related-section header button[data-admin-association-dialog-trigger="display-artist-circles"]', text: /紐づけ/
-      assert_select 'dialog[data-admin-association-dialog="display-artist-circles"]'
+      assert_select 'dialog[aria-labelledby="admin-association-dialog-title-display-artist-circles"][data-admin-association-dialog="display-artist-circles"]'
+      assert_select '#admin-association-dialog-title-display-artist-circles', text: 'サークルを紐づけ'
       assert_select '[data-admin-searchable-select]'
       assert_select 'input[type="search"][data-admin-searchable-select-search][placeholder="サークルを検索"]'
       assert_select '[data-admin-searchable-select-chips]'
