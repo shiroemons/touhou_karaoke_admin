@@ -1062,7 +1062,7 @@ module Admin
       assert_select 'input[name="operation_fields[dam_song_url]"]'
       assert_select 'input[name="operation_progress_id"]', 1
       assert_select 'dialog[data-admin-operation-dialog]'
-      assert_select '[data-admin-operation-progress]'
+      assert_select '[data-admin-operation-progress][aria-live="polite"]'
       assert_select '[data-admin-operation-progressbar][aria-valuemin="0"][aria-valuemax="100"][aria-valuenow="0"]'
       assert_select '[data-admin-operation-progress-percent]', text: '0%'
       assert_select '[data-admin-operation-progress-elapsed]', text: '00:00'
