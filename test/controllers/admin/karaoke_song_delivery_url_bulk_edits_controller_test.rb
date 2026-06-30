@@ -71,6 +71,16 @@ module Admin
       assert_select '.admin-empty-state.alert a[href=?]', admin_karaoke_song_delivery_url_bulk_edit_path, text: /条件をクリア/
     end
 
+    test 'labels pagination navigation' do
+      artist = create_display_artist(name: 'Delivery Pagination Artist')
+      101.times { |index| create_song(display_artist: artist, title: "Delivery Pagination Song #{index}") }
+
+      get admin_karaoke_song_delivery_url_bulk_edit_path
+
+      assert_response :success
+      assert_select '.admin-pagination[aria-label="カラオケ配信URL編集のページ移動"]'
+    end
+
     test 'filters songs by karaoke type' do
       dam_artist = create_display_artist(karaoke_type: 'DAM', name: 'DAM Filter Artist')
       joysound_artist = create_display_artist(karaoke_type: 'JOYSOUND', name: 'JOYSOUND Filter Artist')

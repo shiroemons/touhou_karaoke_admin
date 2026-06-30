@@ -197,7 +197,7 @@
     </div>
 
     <% if @total_pages > 1 %>
-      <nav class="admin-pagination">
+      <nav class="admin-pagination" aria-label="カラオケ配信URL編集のページ移動">
         <% if @page > 1 %>
           <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page - 1), class: "admin-button btn" do %>
             <%= admin_icon(:back) %>
