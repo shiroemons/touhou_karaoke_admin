@@ -10,7 +10,7 @@
     <% end %>
     <% unless @workflow.key == "common" %>
       <% run_blocked = @active_workflow_run.present? %>
-      <%= button_to admin_run_workflow_path(@workflow.key), method: :post, class: "admin-button btn btn-warning", disabled: run_blocked, data: { turbo_confirm: "#{@workflow.label}の自動実行を開始します。外部取得とDB更新を実行してよろしいですか？" } do %>
+      <%= button_to admin_run_workflow_path(@workflow.key), method: :post, class: "admin-button btn btn-warning", disabled: run_blocked, aria: { label: "#{@workflow.label}の自動実行を開始" }, data: { turbo_confirm: "#{@workflow.label}の自動実行を開始します。外部取得とDB更新を実行してよろしいですか？" } do %>
         <%= admin_icon(:action) %>
         <span><%= run_blocked ? "自動実行中" : "自動実行を開始" %></span>
       <% end %>
