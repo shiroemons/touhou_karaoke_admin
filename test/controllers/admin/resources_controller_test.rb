@@ -169,6 +169,7 @@ module Admin
       assert_select '.admin-checkbox-field', text: /削除せず対象を確認する/
       assert_select 'input[type="checkbox"][name="operation_fields[export_tsv]"][checked="checked"]'
       assert_select '.admin-checkbox-field', text: /削除したアーティストをTSVで出力する/
+      assert_select '[data-admin-operation-confirm]', text: '実行する'
     end
 
     test 'workflow step page shows active run status' do
