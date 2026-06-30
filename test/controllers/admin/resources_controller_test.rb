@@ -1067,6 +1067,7 @@ module Admin
       assert_select 'input[name="operation_progress_id"]', 1
       assert_select 'dialog[data-admin-operation-dialog][aria-labelledby="admin-operation-confirm-title"]'
       assert_select '#admin-operation-confirm-title', text: 'アクションを実行しますか？'
+      assert_select '[data-admin-operation-dialog-message][aria-live="polite"]'
       assert_select '[data-admin-operation-progress][aria-live="polite"]'
       assert_select '[data-admin-operation-progressbar][aria-valuemin="0"][aria-valuemax="100"][aria-valuenow="0"]'
       assert_select '[data-admin-operation-progress-percent]', text: '0%'
