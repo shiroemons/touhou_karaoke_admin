@@ -17,6 +17,7 @@ module Admin
       end
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
+      assert_select 'input[type="search"][name="q"][aria-label="カラオケ楽曲紐づけをキーワード検索"]'
       assert_select 'select[name="status"][data-admin-auto-submit]'
       assert_select '.admin-bulk-apply-warning.alert.alert-warning', text: '反映はDBを更新するため、先に紐づけチェックで内容を確認してください。'
       assert_select 'button.btn-warning[data-turbo-confirm=?]', 'カラオケ楽曲の紐づけとURLをDBに反映します。チェック結果を確認済みですか？'
