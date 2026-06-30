@@ -7,7 +7,8 @@ module Admin
       'all' => 'すべて'
     }.freeze
 
-    helper_method :karaoke_song_bulk_edit_columns, :karaoke_song_bulk_edit_status_options
+    helper_method :karaoke_song_bulk_edit_columns, :karaoke_song_bulk_edit_column_labels, :karaoke_song_bulk_edit_column_label,
+                  :karaoke_song_bulk_edit_status_options
 
     def index
       authorize Song
@@ -120,6 +121,14 @@ module Admin
 
     def karaoke_song_bulk_edit_columns
       KaraokeSongBulkEditor::COLUMNS
+    end
+
+    def karaoke_song_bulk_edit_column_labels
+      KaraokeSongTsvColumns.labels(karaoke_song_bulk_edit_columns)
+    end
+
+    def karaoke_song_bulk_edit_column_label(column)
+      KaraokeSongTsvColumns.label(column)
     end
 
     def karaoke_song_bulk_edit_status_options

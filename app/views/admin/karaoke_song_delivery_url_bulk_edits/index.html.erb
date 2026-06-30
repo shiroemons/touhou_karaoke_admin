@@ -47,7 +47,7 @@
             <% karaoke_song_delivery_url_filter_columns.each do |column| %>
               <label class="admin-url-filter-option <%= "admin-url-filter-option-active" if @missing_url_columns.include?(column) %>">
                 <%= check_box_tag "missing_url_columns[]", column, @missing_url_columns.include?(column), class: "checkbox checkbox-sm", data: { admin_auto_submit: true } %>
-                <span><%= column %> 設定済みを非表示</span>
+                <span><%= karaoke_song_delivery_url_column_label(column) %> 設定済みを非表示</span>
               </label>
             <% end %>
           </div>
@@ -107,7 +107,7 @@
                   <ul>
                     <% row[:url_changes].each do |column, change| %>
                       <li>
-                        <code><%= column %></code>
+                        <span><%= karaoke_song_delivery_url_column_label(column) %></span>
                         <strong><%= change[:after].presence || "空に更新" %></strong>
                       </li>
                     <% end %>
@@ -127,7 +127,7 @@
         <%= admin_icon(:disclosure, class: "admin-filter-summary-icon") %>
       </summary>
       <div class="admin-bulk-tsv-body">
-        <%= text_area_tag :bulk_tsv, nil, class: "admin-bulk-tsv-input textarea textarea-bordered", rows: 5, placeholder: karaoke_song_delivery_url_bulk_edit_columns.join("\t") %>
+        <%= text_area_tag :bulk_tsv, nil, class: "admin-bulk-tsv-input textarea textarea-bordered", rows: 5, placeholder: karaoke_song_delivery_url_bulk_edit_column_labels.join("\t") %>
       </div>
     </details>
 
@@ -156,7 +156,7 @@
         <thead>
           <tr>
             <% karaoke_song_delivery_url_bulk_edit_columns.each do |column| %>
-              <th class="admin-table-field admin-table-field-<%= column.dasherize %>"><%= column %></th>
+              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" title="<%= column %>"><%= karaoke_song_delivery_url_column_label(column) %></th>
             <% end %>
           </tr>
         </thead>

@@ -12,7 +12,10 @@ module Admin
       assert_response :success
       assert_select 'h1', text: 'カラオケ配信URL編集'
       KaraokeSongDeliveryUrlBulkEditor::COLUMNS.each do |column|
-        assert_select 'th', text: column
+        assert_select 'th[title=?]', column, text: KaraokeSongTsvColumns.label(column)
+      end
+      assert_select 'textarea[name="bulk_tsv"]' do |elements|
+        assert_equal KaraokeSongTsvColumns.labels(KaraokeSongDeliveryUrlBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']
       end
       assert_select "input[name=?]", "songs[#{linked_song.id}][youtube_url]"
       assert_select "input[name=?]", "songs[#{linked_song.id}][line_music_url]"
@@ -49,7 +52,7 @@ module Admin
       assert_not_includes response.body, filled_youtube_song.title
       assert_includes response.body, filled_spotify_song.title
       assert_select 'input[name="missing_url_columns[]"][value="youtube_url"][checked]'
-      assert_select 'label.admin-url-filter-option-active', text: /youtube_url 設定済みを非表示/
+      assert_select 'label.admin-url-filter-option-active', text: /YouTube URL 設定済みを非表示/
 
       get admin_karaoke_song_delivery_url_bulk_edit_path, params: { missing_url_columns: %w[youtube_url spotify_url] }
 
@@ -159,7 +162,7 @@ module Admin
       assert_response :success
       assert_select 'h2', text: '配信URL更新チェック結果'
       assert_select '.admin-delivery-url-preview-row', text: /Controller Delivery URL Preview Song/
-      assert_select '.admin-delivery-url-preview-row code', text: /youtube_url/
+      assert_select '.admin-delivery-url-preview-row li span', text: /YouTube URL/
       assert_select '.admin-delivery-url-preview-row strong', text: %r{https://youtube.example/preview}
       assert_equal '', song.reload.youtube_url
     end
@@ -189,6 +192,31 @@ module Admin
       assert_equal 'https://music.apple.example/controller', song.reload.apple_music_url
       assert_equal 'https://open.spotify.example/controller', song.spotify_url
       assert_equal 'https://music.line.example/controller', song.line_music_url
+    end
+
+    test 'updates from pasted delivery url tsv with Japanese column labels' do
+      song = create_song(title: 'Controller Delivery URL Japanese TSV Song')
+      tsv = [
+        KaraokeSongTsvColumns.labels(KaraokeSongDeliveryUrlBulkEditor::COLUMNS).join("\t"),
+        [
+          song.id,
+          song.karaoke_type,
+          song.display_artist.name,
+          song.title,
+          '',
+          'https://youtube.example/japanese-header',
+          '',
+          '',
+          '',
+          '',
+          ''
+        ].join("\t")
+      ].join("\n")
+
+      post admin_karaoke_song_delivery_url_bulk_edit_path, params: { bulk_tsv: tsv }
+
+      assert_redirected_to admin_karaoke_song_delivery_url_bulk_edit_path
+      assert_equal 'https://youtube.example/japanese-header', song.reload.youtube_url
     end
 
     test 'redirects with errors when pasted tsv has unknown song id' do

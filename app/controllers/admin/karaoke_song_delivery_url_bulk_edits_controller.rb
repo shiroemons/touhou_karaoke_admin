@@ -1,6 +1,8 @@
 module Admin
   class KaraokeSongDeliveryUrlBulkEditsController < BaseController
     helper_method :karaoke_song_delivery_url_bulk_edit_columns,
+                  :karaoke_song_delivery_url_bulk_edit_column_labels,
+                  :karaoke_song_delivery_url_column_label,
                   :karaoke_song_delivery_url_filter_columns,
                   :karaoke_song_delivery_url_sort_options,
                   :karaoke_song_delivery_url_sort_direction_options,
@@ -63,6 +65,14 @@ module Admin
       KaraokeSongDeliveryUrlBulkEditor::COLUMNS
     end
 
+    def karaoke_song_delivery_url_bulk_edit_column_labels
+      KaraokeSongTsvColumns.labels(karaoke_song_delivery_url_bulk_edit_columns)
+    end
+
+    def karaoke_song_delivery_url_column_label(column)
+      KaraokeSongTsvColumns.label(column)
+    end
+
     def karaoke_song_delivery_url_filter_columns
       KaraokeSongDeliveryUrlBulkEditor::URL_COLUMNS
     end
@@ -73,12 +83,12 @@ module Admin
         'アーティスト名' => 'display_artist_name',
         'タイトル' => 'title',
         'カラオケ種別' => 'karaoke_type',
-        'youtube_url' => 'youtube_url',
-        'nicovideo_url' => 'nicovideo_url',
-        'apple_music_url' => 'apple_music_url',
-        'youtube_music_url' => 'youtube_music_url',
-        'spotify_url' => 'spotify_url',
-        'line_music_url' => 'line_music_url'
+        KaraokeSongTsvColumns.label('youtube_url') => 'youtube_url',
+        KaraokeSongTsvColumns.label('nicovideo_url') => 'nicovideo_url',
+        KaraokeSongTsvColumns.label('apple_music_url') => 'apple_music_url',
+        KaraokeSongTsvColumns.label('youtube_music_url') => 'youtube_music_url',
+        KaraokeSongTsvColumns.label('spotify_url') => 'spotify_url',
+        KaraokeSongTsvColumns.label('line_music_url') => 'line_music_url'
       }
     end
 

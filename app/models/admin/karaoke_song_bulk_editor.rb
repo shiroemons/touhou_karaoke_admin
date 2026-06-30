@@ -100,10 +100,13 @@ module Admin
 
     def parse_tsv_rows(tsv)
       table = CSV.parse(tsv.to_s, col_sep: "\t", headers: true, converters: nil, liberal_parsing: true)
-      missing_columns = COLUMNS - table.headers.compact
-      return Result.new(updated_count: 0, skipped_count: 0, errors: ["TSVの列が不足しています: #{missing_columns.join(', ')}"]) if missing_columns.present?
+      missing_columns = KaraokeSongTsvColumns.missing_columns(table.headers, COLUMNS)
+      if missing_columns.present?
+        missing_labels = KaraokeSongTsvColumns.labels(missing_columns).join(', ')
+        return Result.new(updated_count: 0, skipped_count: 0, errors: ["TSVの列が不足しています: #{missing_labels}"])
+      end
 
-      table.map { |row| row.to_h.slice(*COLUMNS) }
+      table.map { |row| KaraokeSongTsvColumns.normalized_row(row, COLUMNS) }
     end
 
     def update_rows(rows)

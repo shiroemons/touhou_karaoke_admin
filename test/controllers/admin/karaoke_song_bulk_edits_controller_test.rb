@@ -13,7 +13,10 @@ module Admin
       assert_response :success
       assert_select 'h1', text: 'カラオケ楽曲紐づけ'
       KaraokeSongBulkEditor::COLUMNS.each do |column|
-        assert_select 'th', text: column
+        assert_select 'th[title=?]', column, text: KaraokeSongTsvColumns.label(column)
+      end
+      assert_select 'textarea[name="bulk_tsv"]' do |elements|
+        assert_equal KaraokeSongTsvColumns.labels(KaraokeSongBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']
       end
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
@@ -204,6 +207,33 @@ module Admin
       assert_redirected_to admin_karaoke_song_bulk_edit_path(status: 'missing')
       assert_equal [original_song], song.reload.original_songs.to_a
       assert_equal 'https://music.apple.example/controller', song.apple_music_url
+    end
+
+    test 'updates from pasted tsv with Japanese column labels' do
+      song = create_song(title: 'Controller Japanese TSV Song')
+      original_song = create_original_song(title: 'Controller Japanese TSV Original')
+      tsv = [
+        KaraokeSongTsvColumns.labels(KaraokeSongBulkEditor::COLUMNS).join("\t"),
+        [
+          song.id,
+          song.karaoke_type,
+          song.display_artist.name,
+          song.title,
+          original_song.title,
+          'https://youtube.example/japanese-header',
+          '',
+          '',
+          '',
+          '',
+          ''
+        ].join("\t")
+      ].join("\n")
+
+      post admin_karaoke_song_bulk_edit_path, params: { bulk_tsv: tsv }
+
+      assert_redirected_to admin_karaoke_song_bulk_edit_path(status: 'missing')
+      assert_equal [original_song], song.reload.original_songs.to_a
+      assert_equal 'https://youtube.example/japanese-header', song.youtube_url
     end
 
     test 'redirects with errors when pasted tsv has unknown original song' do
