@@ -101,6 +101,10 @@
       <div class="admin-result-summary">
         <span>表示中 <strong><%= number_with_delimiter(@songs.size) %></strong> / <%= number_with_delimiter(@total_count) %> 件</span>
       </div>
+      <div class="admin-bulk-apply-warning alert alert-warning">
+        <%= admin_icon(:action) %>
+        <span>反映はDBを更新するため、先に紐づけチェックで内容を確認してください。</span>
+      </div>
       <div class="admin-header-actions">
         <%= button_tag type: :submit, name: :mode, value: :preview, class: "admin-button admin-button-primary btn btn-primary" do %>
           <%= admin_icon(:search) %>
