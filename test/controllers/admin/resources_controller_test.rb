@@ -115,6 +115,7 @@ module Admin
       assert_select 'button.admin-workflow-action[aria-label="DAM候補一覧を取得を個別実行"][data-admin-operation-trigger][data-admin-operation-resource="dam_song"][data-admin-operation-key="fetch_dam_touhou_songs"]'
       assert_select '.admin-workflow-action-number', text: '1'
       assert_select '.admin-workflow-metric', text: /期限切れ/
+      assert_select '.admin-workflow-metric[aria-label="期限切れを確認"]'
       assert_select '.admin-workflow-question-list li', text: /JOYSOUND\(うたスキ\) → JOYSOUND → DAM/
     end
 

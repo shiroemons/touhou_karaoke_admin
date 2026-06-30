@@ -78,7 +78,7 @@
 
       <div class="admin-workflow-metrics">
         <% group[:metrics].each do |metric| %>
-          <%= link_to metric[:path], class: "admin-workflow-metric" do %>
+          <%= link_to metric[:path], class: "admin-workflow-metric", aria: { label: "#{metric[:label]}を確認" } do %>
             <span><%= metric[:label] %></span>
             <strong><%= number_with_delimiter(metric[:value]) %></strong>
             <small><%= metric[:unit] %></small>
