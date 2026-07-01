@@ -35,11 +35,20 @@
     <% if modal %>
       <button type="button" class="admin-button btn" aria-label="<%= operation.label %>をキャンセル" data-admin-operation-modal-cancel>キャンセル</button>
     <% end %>
-    <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", disabled: submit_disabled, aria: { label: "#{operation.label}を実行" }, data: { admin_operation_submit: true } do %>
+    <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", disabled: submit_disabled, aria: { label: "#{operation.label}を実行", describedby: "admin-operation-submit-note-#{operation_progress_id}" }, data: { admin_operation_submit: true } do %>
       <%= admin_icon(operation.inputs.any? { |input| input[:type] == :file } ? :upload : :action) %>
       <span>実行</span>
     <% end %>
   </div>
+  <p class="admin-operation-submit-note" id="admin-operation-submit-note-<%= operation_progress_id %>" data-admin-operation-submit-note>
+    <% if selection_required %>
+      対象を選択すると実行できます。
+    <% elsif required_inputs.present? %>
+      必須項目を入力すると実行できます。
+    <% else %>
+      内容を確認して実行できます。
+    <% end %>
+  </p>
 
   <div class="admin-operation-progress" aria-live="polite" data-admin-operation-progress hidden>
     <div class="admin-operation-progress-header">

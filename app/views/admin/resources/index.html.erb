@@ -80,6 +80,20 @@
   <%= render "display_settings" %>
 </div>
 
+<% if selectable_collection_operations %>
+  <div class="admin-selection-toolbar alert alert-info" data-admin-selection-toolbar aria-live="polite">
+    <%= admin_icon(:select) %>
+    <div>
+      <strong><span data-admin-selection-count>0</span>件選択中</strong>
+      <span data-admin-selection-note>一括操作を実行するには、対象行を選択してください。</span>
+    </div>
+    <button type="button" class="admin-button btn btn-sm btn-ghost" data-admin-resource-selection-clear disabled>
+      <%= admin_icon(:clear) %>
+      <span>選択解除</span>
+    </button>
+  </div>
+<% end %>
+
 <div class="admin-table-wrap">
   <table class="admin-table admin-table-resource-<%= @resource.key.to_s.dasherize %> table table-zebra">
     <thead>

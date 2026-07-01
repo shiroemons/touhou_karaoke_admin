@@ -6,14 +6,25 @@ export const selectedAdminResourceIds = () =>
 export const updateAdminResourceSelectionState = ({ afterUpdate } = {}) => {
   const rowCheckboxes = Array.from(document.querySelectorAll(adminSelectors.resourceSelect))
   const selectedCount = rowCheckboxes.filter((input) => input.checked).length
+  const selectedCountLabel = selectedCount.toLocaleString()
 
   document.querySelectorAll(adminSelectors.resourceSelectAll).forEach((input) => {
     input.checked = rowCheckboxes.length > 0 && selectedCount === rowCheckboxes.length
     input.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length
   })
 
+  document.querySelectorAll(adminSelectors.selectionCount).forEach((item) => {
+    item.textContent = selectedCountLabel
+  })
+  document.querySelectorAll(adminSelectors.selectionNote).forEach((item) => {
+    item.textContent = selectedCount > 0 ? "選択した行を対象に一括操作できます。" : "一括操作を実行するには、対象行を選択してください。"
+  })
+  document.querySelectorAll(adminSelectors.resourceSelectionClear).forEach((button) => {
+    button.disabled = selectedCount === 0
+  })
+
   document.querySelectorAll(adminSelectors.operationSelectionCount).forEach((item) => {
-    item.textContent = selectedCount.toLocaleString()
+    item.textContent = selectedCountLabel
   })
   document.querySelectorAll(adminSelectors.operationForm).forEach((form) => {
     const note = form.querySelector(adminSelectors.operationSelectionNote)
@@ -41,6 +52,16 @@ export const setupAdminResourceSelection = ({ afterUpdate } = {}) => {
     }
 
     if (event.target.closest(adminSelectors.resourceSelect)) updateAdminResourceSelectionState({ afterUpdate })
+  })
+
+  content.addEventListener("click", (event) => {
+    const clearButton = event.target.closest(adminSelectors.resourceSelectionClear)
+    if (!clearButton) return
+
+    document.querySelectorAll(adminSelectors.resourceSelect).forEach((input) => {
+      input.checked = false
+    })
+    updateAdminResourceSelectionState({ afterUpdate })
   })
 
   updateAdminResourceSelectionState({ afterUpdate })

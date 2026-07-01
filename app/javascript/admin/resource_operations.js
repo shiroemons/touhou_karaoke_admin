@@ -26,9 +26,26 @@ const requestFailureMessage = (status) => `リクエストに失敗しました�
 const updateAdminOperationSubmitStates = () => {
   document.querySelectorAll(adminSelectors.operationForm).forEach((form) => {
     const submitButton = form.querySelector(adminSelectors.operationSubmit)
+    const submitNote = form.querySelector(adminSelectors.operationSubmitNote)
     if (!submitButton) return
 
-    submitButton.disabled = form.dataset.adminOperationBusy === "true" || !adminOperationFormReady(form)
+    const busy = form.dataset.adminOperationBusy === "true"
+    const selectionRequired = form.dataset.adminOperationSelectionRequired === "true"
+    const selectionReady = !selectionRequired || selectedAdminResourceIds().length > 0
+    const inputsReady = adminOperationRequiredInputsReady(form)
+    submitButton.disabled = busy || !selectionReady || !inputsReady
+
+    if (!submitNote) return
+
+    if (busy) {
+      submitNote.textContent = "処理中です。完了するまで待ってください。"
+    } else if (!selectionReady) {
+      submitNote.textContent = "対象を選択すると実行できます。"
+    } else if (!inputsReady) {
+      submitNote.textContent = "必須項目を入力すると実行できます。"
+    } else {
+      submitNote.textContent = "内容を確認して実行できます。"
+    }
   })
 }
 

@@ -28,6 +28,7 @@ module Admin
       next: 'arrow-right',
       disclosure: 'chevron-down',
       action: 'play',
+      select: 'list-check',
       upload: 'upload',
       download: 'download',
       infinite: 'list-plus',

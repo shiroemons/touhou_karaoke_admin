@@ -21,12 +21,17 @@ export const adminSelectors = {
   operationSelectionCount: "[data-admin-operation-selection-count]",
   operationSelectionNote: "[data-admin-operation-selection-note]",
   operationSelectedIds: "[data-admin-operation-selected-ids]",
+  operationSubmitNote: "[data-admin-operation-submit-note]",
   operationStep: "[data-admin-operation-step]",
   operationSubmit: "[data-admin-operation-submit]",
   operationTrigger: "[data-admin-operation-trigger]",
   resourceContent: "[data-admin-resource-content]",
+  resourceSelectionClear: "[data-admin-resource-selection-clear]",
   resourceSelect: "[data-admin-resource-select]",
   resourceSelectAll: "[data-admin-resource-select-all]",
+  selectionCount: "[data-admin-selection-count]",
+  selectionNote: "[data-admin-selection-note]",
+  selectionToolbar: "[data-admin-selection-toolbar]",
 }
 
 export const checkedResourceSelectSelector = `${adminSelectors.resourceSelect}:checked`

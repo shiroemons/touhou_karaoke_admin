@@ -798,6 +798,10 @@ module Admin
       assert_select '.admin-operation-guide-meta small', text: '選択必須'
       assert_select '.admin-operation-guide-meta small', { text: 'バックグラウンド', count: 0 }
       assert_select 'th.admin-select-column'
+      assert_select '.admin-selection-toolbar[aria-live="polite"]'
+      assert_select '.admin-selection-toolbar [data-admin-selection-count]', text: '0'
+      assert_select '.admin-selection-toolbar [data-admin-selection-note]', text: '一括操作を実行するには、対象行を選択してください。'
+      assert_select '.admin-selection-toolbar button[data-admin-resource-selection-clear][disabled]', text: /選択解除/
       assert_select 'input[data-admin-resource-select]', 1
       assert_select 'dialog[data-admin-operation-modal][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '#admin-operation-modal-title-song[data-admin-operation-modal-title]'
@@ -807,7 +811,8 @@ module Admin
       assert_select '[data-admin-operation-panel="export_songs"] .admin-operation-selection-summary.alert.alert-warning'
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selection-note]', text: '対象を選択してください。'
       assert_select '[data-admin-operation-panel="export_songs"] button[aria-label="楽曲TSVをエクスポートをキャンセル"][data-admin-operation-modal-cancel]'
-      assert_select '[data-admin-operation-panel="export_songs"] button[data-admin-operation-submit][disabled]'
+      assert_select '[data-admin-operation-panel="export_songs"] button[data-admin-operation-submit][disabled][aria-describedby]'
+      assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-submit-note]', text: '対象を選択すると実行できます。'
       assert_select '.admin-display-settings .admin-operation-dropdown-wrap', false
       assert_select '.admin-table-controls .admin-table-display-settings'
       assert_select 'a.admin-operation-guide-item[href=?][data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
