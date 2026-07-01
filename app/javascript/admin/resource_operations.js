@@ -58,6 +58,7 @@ const setupAdminOperationForms = () => {
     form.dataset.initialized = "true"
     const dialog = document.querySelector(adminSelectors.operationConfirmDialog)
     const dialogMessage = dialog?.querySelector(adminSelectors.operationDialogMessage)
+    const dialogTitle = dialog?.querySelector(adminSelectors.operationDialogTitle)
     const confirmButton = dialog?.querySelector(adminSelectors.operationConfirm)
     const cancelButton = dialog?.querySelector(adminSelectors.operationCancel)
     const inlineConfirmation = form.dataset.adminOperationInlineConfirmation === "true"
@@ -173,12 +174,22 @@ const setupAdminOperationForms = () => {
 
       event.preventDefault()
 
-      const message = form.dataset.confirmation || "アクションを実行します。よろしいですか？"
+      const operationLabel = form.dataset.adminOperationLabel || "アクション"
+      const resourceLabel = form.dataset.adminOperationResourceLabel || "対象"
+      const messageParts = [form.dataset.confirmation || `${operationLabel}を実行します。よろしいですか？`]
+      if (form.dataset.adminOperationSelection === "true") {
+        const selectedCount = selectedAdminResourceIds().length
+        messageParts.push(selectedCount > 0 ? `${resourceLabel}: 選択中 ${selectedCount.toLocaleString()}件` : `${resourceLabel}: 現在の検索・絞り込み結果全体`)
+      } else {
+        messageParts.push(`${resourceLabel}: この画面の対象`)
+      }
+      const message = messageParts.join("\n")
       if (!dialog?.showModal) {
         if (window.confirm(message)) submitConfirmed()
         return
       }
 
+      if (dialogTitle) dialogTitle.textContent = `${operationLabel}を実行しますか？`
       if (dialogMessage) dialogMessage.textContent = message
       dialog.showModal()
     })

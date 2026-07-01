@@ -4,6 +4,7 @@ export const adminSelectors = {
   operationConfirm: "[data-admin-operation-confirm]",
   operationConfirmDialog: "[data-admin-operation-confirm-dialog]",
   operationDialogMessage: "[data-admin-operation-dialog-message]",
+  operationDialogTitle: "[data-admin-operation-dialog-title]",
   operationForm: "[data-admin-operation-form]",
   operationModal: "[data-admin-operation-modal]",
   operationModalCancel: "[data-admin-operation-modal-cancel]",
