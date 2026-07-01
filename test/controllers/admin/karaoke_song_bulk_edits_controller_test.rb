@@ -26,6 +26,10 @@ module Admin
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ楽曲紐づけをキーワード検索"]'
       assert_select 'select[name="status"][aria-label="表示対象"][data-admin-auto-submit]'
+      assert_select 'select[name="per_page"][aria-label="1ページの表示件数"][data-admin-auto-submit] option[selected][value="25"]'
+      assert_select 'select[name="per_page"] option[value="25"]'
+      assert_select 'select[name="per_page"] option[value="50"]'
+      assert_select 'select[name="per_page"] option[value="100"]'
       assert_select '.admin-bulk-apply-warning.alert.alert-warning', text: '反映はDBを更新するため、先に紐づけチェックで内容を確認してください。'
       assert_select '#admin-karaoke-song-bulk-update-note', text: '反映はDBを更新するため、先に紐づけチェックで内容を確認してください。'
       assert_select 'button[aria-label="原曲紐づけチェックを実行"][name="mode"][value="preview"]'
@@ -67,10 +71,13 @@ module Admin
       artist = create_display_artist(name: 'Bulk Pagination Artist')
       101.times { |index| create_song(display_artist: artist, title: "Bulk Pagination Song #{index}") }
 
-      get admin_karaoke_song_bulk_edit_path
+      get admin_karaoke_song_bulk_edit_path, params: { per_page: 50 }
 
       assert_response :success
       assert_select '.admin-pagination[aria-label="カラオケ楽曲紐づけのページ移動"]'
+      assert_select 'select[name="per_page"] option[selected][value="50"]'
+      assert_select '.admin-result-summary', text: %r{表示中\s+50\s+/ .* 件}
+      assert_select 'a[href*="per_page=50"]', text: /次へ/
     end
 
     test 'returns original song options with minor title notation differences' do
@@ -143,7 +150,7 @@ module Admin
       song = create_song(title: 'Controller Bulk Song')
       original_song = create_original_song(title: 'Controller Bulk Original')
 
-      post admin_karaoke_song_bulk_edit_path, params: {
+      post admin_karaoke_song_bulk_edit_path(per_page: 50), params: {
         songs: {
           song.id => {
             original_songs: original_song.title,
@@ -157,7 +164,7 @@ module Admin
         }
       }
 
-      assert_redirected_to admin_karaoke_song_bulk_edit_path(status: 'missing')
+      assert_redirected_to admin_karaoke_song_bulk_edit_path(status: 'missing', per_page: 50)
       follow_redirect!
       assert_select '.admin-flash-notice', text: '更新が完了しました。更新件数: 1件、変更なし: 0件'
       assert_equal [original_song], song.reload.original_songs.to_a

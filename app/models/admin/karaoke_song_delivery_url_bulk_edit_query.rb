@@ -2,7 +2,7 @@
 
 module Admin
   class KaraokeSongDeliveryUrlBulkEditQuery
-    PER_PAGE = 100
+    PER_PAGE_OPTIONS = [25, 50, 100].freeze
     SORT_OPTIONS = {
       'created_at' => 'songs.created_at',
       'display_artist_name' => 'display_artists.name',
@@ -52,7 +52,8 @@ module Admin
     end
 
     def per_page
-      PER_PAGE
+      requested_per_page = scalar_param(:per_page).to_i
+      PER_PAGE_OPTIONS.include?(requested_per_page) ? requested_per_page : PER_PAGE_OPTIONS.first
     end
 
     def total_count
@@ -74,7 +75,8 @@ module Admin
         karaoke_type: karaoke_type.presence,
         sort: scalar_param(:sort).present? ? sort : nil,
         direction: scalar_param(:direction).present? ? direction : nil,
-        page: scalar_param(:page).presence
+        page: scalar_param(:page).presence,
+        per_page: scalar_param(:per_page).present? ? per_page : nil
       }.compact
     end
 

@@ -40,6 +40,10 @@ module Admin
       assert_select 'select[name="karaoke_type"][aria-label="配信種別"][data-admin-auto-submit]'
       assert_select 'select[name="sort"][aria-label="並び替え項目"][data-admin-auto-submit] option[selected][value="created_at"]'
       assert_select 'select[name="direction"][aria-label="並び順"][data-admin-auto-submit] option[selected][value="desc"]'
+      assert_select 'select[name="per_page"][aria-label="1ページの表示件数"][data-admin-auto-submit] option[selected][value="25"]'
+      assert_select 'select[name="per_page"] option[value="25"]'
+      assert_select 'select[name="per_page"] option[value="50"]'
+      assert_select 'select[name="per_page"] option[value="100"]'
       assert_includes response.body, linked_song.title
       assert_includes response.body, missing_song.title
       assert_includes response.body, 'Delivery URL Linked Original'
@@ -84,10 +88,13 @@ module Admin
       artist = create_display_artist(name: 'Delivery Pagination Artist')
       101.times { |index| create_song(display_artist: artist, title: "Delivery Pagination Song #{index}") }
 
-      get admin_karaoke_song_delivery_url_bulk_edit_path
+      get admin_karaoke_song_delivery_url_bulk_edit_path, params: { per_page: 50 }
 
       assert_response :success
       assert_select '.admin-pagination[aria-label="カラオケ配信URL編集のページ移動"]'
+      assert_select 'select[name="per_page"] option[selected][value="50"]'
+      assert_select '.admin-result-summary', text: %r{表示中\s+50\s+/ .* 件}
+      assert_select 'a[href*="per_page=50"]', text: /次へ/
     end
 
     test 'filters songs by karaoke type' do
@@ -126,7 +133,7 @@ module Admin
       original_song = create_original_song(title: 'Controller Delivery URL Original')
       song.original_songs << original_song
 
-      post admin_karaoke_song_delivery_url_bulk_edit_path(missing_url_columns: ['youtube_url']), params: {
+      post admin_karaoke_song_delivery_url_bulk_edit_path(missing_url_columns: ['youtube_url'], per_page: 50), params: {
         songs: {
           song.id => {
             youtube_url: 'https://youtube.example/controller',
@@ -139,7 +146,7 @@ module Admin
         }
       }
 
-      assert_redirected_to admin_karaoke_song_delivery_url_bulk_edit_path(missing_url_columns: ['youtube_url'])
+      assert_redirected_to admin_karaoke_song_delivery_url_bulk_edit_path(missing_url_columns: ['youtube_url'], per_page: 50)
       follow_redirect!
       assert_select '.admin-flash-notice', text: '更新が完了しました。更新件数: 1件、変更なし: 0件'
       assert_equal [original_song], song.reload.original_songs.to_a

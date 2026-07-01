@@ -17,12 +17,14 @@ module Admin
           karaoke_type: 'DAM',
           sort: 'title',
           direction: 'asc',
-          page: '1'
+          page: '1',
+          per_page: '50'
         },
         karaoke_type_options: ['DAM']
       )
 
       assert_equal [matching_song], query.songs.to_a
+      assert_equal 50, query.per_page
       assert_equal ['youtube_url'], query.missing_url_columns
       assert_equal 'DAM', query.karaoke_type
       assert_equal 'title', query.sort
@@ -34,7 +36,8 @@ module Admin
           karaoke_type: 'DAM',
           sort: 'title',
           direction: 'asc',
-          page: '1'
+          page: '1',
+          per_page: 50
         },
         query.index_params
       )
@@ -47,7 +50,8 @@ module Admin
           karaoke_type: 'UNKNOWN',
           sort: 'invalid',
           direction: 'sideways',
-          page: '-3'
+          page: '-3',
+          per_page: '999'
         },
         karaoke_type_options: ['DAM']
       )
@@ -56,6 +60,7 @@ module Admin
       assert_equal 'created_at', query.sort
       assert_equal 'desc', query.direction
       assert_equal 1, query.page
+      assert_equal 25, query.per_page
     end
   end
 end

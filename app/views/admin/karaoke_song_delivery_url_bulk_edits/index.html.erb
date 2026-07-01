@@ -70,11 +70,22 @@
                             data: { admin_auto_submit: true } %>
           </div>
         </section>
+        <section class="admin-delivery-url-control-group">
+          <h2>表示件数</h2>
+          <div class="admin-delivery-url-control-row">
+            <%= form.select :per_page,
+                            options_for_select(karaoke_song_delivery_url_per_page_options, @per_page),
+                            {},
+                            class: "admin-select select select-bordered",
+                            aria: { label: "1ページの表示件数" },
+                            data: { admin_auto_submit: true } %>
+          </div>
+        </section>
       </div>
     <% end %>
   </div>
 
-  <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
+  <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page, per_page: @per_page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
     <% update_disabled = @preview_result.blank? || @preview_result.errors.present? %>
     <% if @preview_result.present? %>
       <section class="admin-panel admin-original-song-preview">
@@ -211,14 +222,14 @@
     <% if @total_pages > 1 %>
       <nav class="admin-pagination" aria-label="カラオケ配信URL編集のページ移動">
         <% if @page > 1 %>
-          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page - 1), class: "admin-button btn" do %>
+          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page - 1, per_page: @per_page), class: "admin-button btn" do %>
             <%= admin_icon(:back) %>
             <span>前へ</span>
           <% end %>
         <% end %>
         <span><%= @page %> / <%= @total_pages %></span>
         <% if @page < @total_pages %>
-          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page + 1), class: "admin-button btn" do %>
+          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page + 1, per_page: @per_page), class: "admin-button btn" do %>
             <span>次へ</span>
             <%= admin_icon(:next) %>
           <% end %>

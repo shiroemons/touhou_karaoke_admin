@@ -6,6 +6,7 @@ module Admin
                   :karaoke_song_delivery_url_filter_columns,
                   :karaoke_song_delivery_url_sort_options,
                   :karaoke_song_delivery_url_sort_direction_options,
+                  :karaoke_song_delivery_url_per_page_options,
                   :karaoke_song_delivery_url_karaoke_type_options
 
     def index
@@ -97,6 +98,10 @@ module Admin
         '昇順' => 'asc',
         '降順' => 'desc'
       }
+    end
+
+    def karaoke_song_delivery_url_per_page_options
+      KaraokeSongDeliveryUrlBulkEditQuery::PER_PAGE_OPTIONS
     end
 
     def karaoke_song_delivery_url_karaoke_type_options

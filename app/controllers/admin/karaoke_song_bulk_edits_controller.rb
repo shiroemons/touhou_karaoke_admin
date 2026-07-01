@@ -1,6 +1,6 @@
 module Admin
   class KaraokeSongBulkEditsController < BaseController
-    PER_PAGE = 100
+    PER_PAGE_OPTIONS = [25, 50, 100].freeze
     STATUSES = {
       'missing' => '原曲未設定',
       'linked' => '原曲設定済み',
@@ -8,7 +8,7 @@ module Admin
     }.freeze
 
     helper_method :karaoke_song_bulk_edit_columns, :karaoke_song_bulk_edit_column_labels, :karaoke_song_bulk_edit_column_label,
-                  :karaoke_song_bulk_edit_status_options
+                  :karaoke_song_bulk_edit_status_options, :karaoke_song_bulk_edit_per_page_options
 
     def index
       authorize Song
@@ -65,7 +65,7 @@ module Admin
       @status = requested_status
       @query = params[:q].to_s.strip
       @page = [params[:page].to_i, 1].max
-      @per_page = PER_PAGE
+      @per_page = requested_per_page
       @original_song_titles = OriginalSong.non_duplicated.order(:title).pluck(:title)
 
       scope = filtered_scope
@@ -115,7 +115,8 @@ module Admin
       {
         status: requested_status,
         q: params[:q].presence,
-        page: params[:page].presence
+        page: params[:page].presence,
+        per_page: params[:per_page].present? ? requested_per_page : nil
       }.compact
     end
 
@@ -133,6 +134,18 @@ module Admin
 
     def karaoke_song_bulk_edit_status_options
       STATUSES
+    end
+
+    def karaoke_song_bulk_edit_per_page_options
+      PER_PAGE_OPTIONS
+    end
+
+    def requested_per_page
+      value = params[:per_page]
+      return PER_PAGE_OPTIONS.first if value.is_a?(Array) || value.is_a?(Hash) || value.is_a?(ActionController::Parameters)
+
+      requested = value.to_i
+      PER_PAGE_OPTIONS.include?(requested) ? requested : PER_PAGE_OPTIONS.first
     end
 
     def song_rows
