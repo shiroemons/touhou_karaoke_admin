@@ -1077,6 +1077,8 @@ module Admin
       assert_select 'form[data-admin-operation-form][data-admin-operation-action="FetchDamSong"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-label="DAM楽曲URLから候補を追加"][data-admin-operation-resource-label="DAM楽曲"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
+      assert_select '.admin-form-label-row label[for="operation_fields_dam_song_url"]', text: 'DAM楽曲URL'
+      assert_select '.admin-form-label-row .admin-form-requirement', text: '必須'
       assert_select 'input[name="operation_fields[dam_song_url]"]'
       assert_select 'input[name="operation_progress_id"]', 1
       assert_select 'dialog[data-admin-operation-dialog][aria-labelledby="admin-operation-confirm-title"]'

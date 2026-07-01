@@ -3502,8 +3502,27 @@ th.admin-actions-column {
   gap: 6px;
 }
 
+.admin-form-label-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
 .admin-form-row label {
   font-weight: 700;
+}
+
+.admin-form-requirement {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  color: #3730a3;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 4px 7px;
 }
 
 .admin-form-row-invalid input,

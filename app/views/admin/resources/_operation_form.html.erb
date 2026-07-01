@@ -15,8 +15,12 @@
   <% end %>
 
   <% operation.inputs.each do |input| %>
+    <% input_required = input.fetch(:required, true) %>
     <div class="admin-form-row">
-      <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
+      <div class="admin-form-label-row">
+        <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
+        <span class="admin-form-requirement"><%= input_required ? "必須" : "任意" %></span>
+      </div>
       <% if input[:type] == :file %>
         <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: "operation_fields_#{input[:name]}", class: "file-input file-input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
       <% elsif input[:type] == :checkbox %>
