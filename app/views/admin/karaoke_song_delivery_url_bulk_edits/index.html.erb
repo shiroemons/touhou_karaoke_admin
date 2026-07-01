@@ -41,6 +41,7 @@
                             options_for_select([["すべての種別", ""]] + karaoke_song_delivery_url_karaoke_type_options.map { |karaoke_type| [karaoke_type, karaoke_type] }, @karaoke_type),
                             {},
                             class: "admin-select select select-bordered",
+                            aria: { label: "配信種別" },
                             data: { admin_auto_submit: true } %>
           </div>
           <div class="admin-url-filter-grid">
@@ -59,11 +60,13 @@
                             options_for_select(karaoke_song_delivery_url_sort_options, @sort),
                             {},
                             class: "admin-select select select-bordered",
+                            aria: { label: "並び替え項目" },
                             data: { admin_auto_submit: true } %>
             <%= form.select :direction,
                             options_for_select(karaoke_song_delivery_url_sort_direction_options, @direction),
                             {},
                             class: "admin-select select select-bordered",
+                            aria: { label: "並び順" },
                             data: { admin_auto_submit: true } %>
           </div>
         </section>
