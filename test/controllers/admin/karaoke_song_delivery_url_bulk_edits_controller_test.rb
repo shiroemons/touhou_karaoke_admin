@@ -16,7 +16,10 @@ module Admin
       end
       assert_select 'textarea[name="bulk_tsv"]' do |elements|
         assert_equal KaraokeSongTsvColumns.labels(KaraokeSongDeliveryUrlBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']
+        assert_equal '配信URL TSV', elements.first['aria-label']
+        assert_equal 'admin-delivery-url-bulk-tsv-help', elements.first['aria-describedby']
       end
+      assert_select '#admin-delivery-url-bulk-tsv-help', text: 'TSVのヘッダー行とデータ行を貼り付けると、表示中の配信URL入力欄へ反映できます。'
       assert_select "input[name=?]", "songs[#{linked_song.id}][youtube_url]"
       assert_select "input[name=?]", "songs[#{linked_song.id}][line_music_url]"
       assert_select "input[name=?][placeholder=?]", "songs[#{linked_song.id}][youtube_url]", 'https://www.youtube.com/watch?v=...'

@@ -94,7 +94,8 @@
         <%= admin_icon(:disclosure, class: "admin-filter-summary-icon") %>
       </summary>
       <div class="admin-bulk-tsv-body">
-        <%= text_area_tag :bulk_tsv, nil, class: "admin-bulk-tsv-input textarea textarea-bordered", rows: 5, placeholder: karaoke_song_bulk_edit_column_labels.join("\t") %>
+        <p id="admin-karaoke-song-bulk-tsv-help" class="admin-form-help">TSVのヘッダー行とデータ行を貼り付けると、表示中の入力欄へ反映できます。</p>
+        <%= text_area_tag :bulk_tsv, nil, class: "admin-bulk-tsv-input textarea textarea-bordered", rows: 5, placeholder: karaoke_song_bulk_edit_column_labels.join("\t"), aria: { label: "原曲紐づけTSV", describedby: "admin-karaoke-song-bulk-tsv-help" } %>
       </div>
     </details>
 

@@ -18,7 +18,10 @@ module Admin
       end
       assert_select 'textarea[name="bulk_tsv"]' do |elements|
         assert_equal KaraokeSongTsvColumns.labels(KaraokeSongBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']
+        assert_equal '原曲紐づけTSV', elements.first['aria-label']
+        assert_equal 'admin-karaoke-song-bulk-tsv-help', elements.first['aria-describedby']
       end
+      assert_select '#admin-karaoke-song-bulk-tsv-help', text: 'TSVのヘッダー行とデータ行を貼り付けると、表示中の入力欄へ反映できます。'
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ楽曲紐づけをキーワード検索"]'

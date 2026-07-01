@@ -3525,6 +3525,13 @@ th.admin-actions-column {
   padding: 4px 7px;
 }
 
+.admin-form-help {
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+}
+
 .admin-form-row-invalid input,
 .admin-form-row-invalid select {
   border-color: color-mix(in oklab, var(--color-error) 66%, var(--color-base-300));
