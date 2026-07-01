@@ -787,6 +787,7 @@ module Admin
       get admin_songs_path
 
       assert_response :success
+      assert_select 'a.admin-nav-link-active[aria-current="page"]', text: /カラオケ配信曲/
       assert_select 'form.admin-inline-operation', false
       assert_select '.admin-operation-guide'
       assert_select '.admin-operation-guide-kicker', text: 'カラオケ配信曲'

@@ -18,15 +18,18 @@
       <nav class="admin-nav">
         <section class="admin-nav-group" aria-label="運用">
           <h2>運用</h2>
-          <%= link_to admin_workflow_path, class: ["admin-nav-link", ("admin-nav-link-active" if controller_path == "admin/workflow")] do %>
+          <% workflow_active = controller_path == "admin/workflow" %>
+          <%= link_to admin_workflow_path, class: ["admin-nav-link", ("admin-nav-link-active" if workflow_active)], aria: ({ current: "page" } if workflow_active) do %>
             <span class="admin-nav-icon"><%= admin_icon(:workflow) %></span>
             <span>運用フロー</span>
           <% end %>
-          <%= link_to admin_karaoke_song_bulk_edit_path, class: ["admin-nav-link", ("admin-nav-link-active" if controller_path == "admin/karaoke_song_bulk_edits")] do %>
+          <% karaoke_song_bulk_edit_active = controller_path == "admin/karaoke_song_bulk_edits" %>
+          <%= link_to admin_karaoke_song_bulk_edit_path, class: ["admin-nav-link", ("admin-nav-link-active" if karaoke_song_bulk_edit_active)], aria: ({ current: "page" } if karaoke_song_bulk_edit_active) do %>
             <span class="admin-nav-icon"><%= admin_icon(:table) %></span>
             <span>カラオケ楽曲紐づけ</span>
           <% end %>
-          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path, class: ["admin-nav-link", ("admin-nav-link-active" if controller_path == "admin/karaoke_song_delivery_url_bulk_edits")] do %>
+          <% karaoke_song_delivery_url_bulk_edit_active = controller_path == "admin/karaoke_song_delivery_url_bulk_edits" %>
+          <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path, class: ["admin-nav-link", ("admin-nav-link-active" if karaoke_song_delivery_url_bulk_edit_active)], aria: ({ current: "page" } if karaoke_song_delivery_url_bulk_edit_active) do %>
             <span class="admin-nav-icon"><%= admin_icon(:table) %></span>
             <span>カラオケ配信URL編集</span>
           <% end %>
@@ -35,7 +38,8 @@
           <section class="admin-nav-group" aria-label="<%= group_label %>">
             <h2><%= group_label %></h2>
             <% resources.each do |resource| %>
-              <%= link_to admin_resources_path(resource), class: ["admin-nav-link", ("admin-nav-link-active" if defined?(@resource) && @resource&.key == resource.key)] do %>
+              <% resource_active = defined?(@resource) && @resource&.key == resource.key %>
+              <%= link_to admin_resources_path(resource), class: ["admin-nav-link", ("admin-nav-link-active" if resource_active)], aria: ({ current: "page" } if resource_active) do %>
                 <span class="admin-nav-icon"><%= admin_resource_icon(resource) %></span>
                 <span><%= resource.label %></span>
               <% end %>
