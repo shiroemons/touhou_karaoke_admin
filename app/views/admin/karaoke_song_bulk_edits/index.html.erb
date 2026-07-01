@@ -163,6 +163,7 @@
                                        class: "admin-bulk-cell admin-bulk-original-songs admin-original-song-search input input-bordered",
                                        autocomplete: "off",
                                        placeholder: "原曲を検索",
+                                       aria: { label: "#{song.title}の原曲を検索" },
                                        data: { admin_original_song_search: true, admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: 0 } %>
                     <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
                   </div>
@@ -174,6 +175,7 @@
                                     song.public_send(column),
                                     class: "admin-bulk-cell input input-bordered",
                                     placeholder: karaoke_song_url_placeholder(column),
+                                    aria: { label: "#{song.title}の#{karaoke_song_bulk_edit_column_label(column)}" },
                                     data: { admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: column_index + 1 } %>
                 </td>
               <% end %>

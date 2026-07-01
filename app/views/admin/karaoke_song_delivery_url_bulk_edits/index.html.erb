@@ -185,6 +185,7 @@
                                     song.public_send(column),
                                     class: "admin-bulk-cell input input-bordered",
                                     placeholder: karaoke_song_url_placeholder(column),
+                                    aria: { label: "#{song.title}の#{karaoke_song_delivery_url_column_label(column)}" },
                                     data: { admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: column_index } %>
                 </td>
               <% end %>
