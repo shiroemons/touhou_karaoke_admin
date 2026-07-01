@@ -146,6 +146,36 @@ body[data-admin-navigation="loading"] .admin-main {
   width: 1px;
 }
 
+.admin-skip-link {
+  background: var(--color-base-100);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 36%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 18%);
+  color: var(--color-base-content);
+  font-weight: 700;
+  left: 16px;
+  opacity: 0;
+  padding: 10px 14px;
+  pointer-events: none;
+  position: fixed;
+  text-decoration: none;
+  top: 12px;
+  transform: translateY(-12px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  z-index: 1000;
+}
+
+.admin-skip-link:focus,
+.admin-skip-link:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 .admin-index-content {
   display: flex;
   flex-direction: column;

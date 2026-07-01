@@ -47,6 +47,8 @@ module Admin
       assert_select '.admin-dashboard-workflow', false
       assert_select 'a.admin-nav-link', text: /運用フロー/
       assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
+      assert_select 'a.admin-skip-link[href="#admin-main-content"]', text: '本文へスキップ'
+      assert_select 'main#admin-main-content.admin-main[tabindex="-1"][data-admin-page-content]'
       assert_select '.admin-dashboard-insight-group h3', text: 'データ状態'
       assert_select '.admin-dashboard-insight-group h3', text: 'マスタデータ'
       assert_select '.admin-dashboard-insight-group h3', text: 'ミュージックポスト'
