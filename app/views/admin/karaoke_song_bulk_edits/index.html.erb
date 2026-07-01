@@ -32,6 +32,7 @@
   </div>
 
   <%= form_with url: admin_karaoke_song_bulk_edit_path(status: @status, q: @query, page: @page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
+    <% update_disabled = @preview_result.blank? || @preview_result.errors.present? %>
     <% if @preview_result.present? %>
       <section class="admin-panel admin-original-song-preview">
         <div class="admin-dashboard-section-heading">
@@ -103,14 +104,20 @@
       </div>
       <div class="admin-bulk-apply-warning alert alert-warning">
         <%= admin_icon(:action) %>
-        <span>反映はDBを更新するため、先に紐づけチェックで内容を確認してください。</span>
+        <span id="admin-karaoke-song-bulk-update-note">
+          <% if update_disabled %>
+            反映はDBを更新するため、先に紐づけチェックで内容を確認してください。
+          <% else %>
+            チェック結果を確認済みです。反映すると表示中の入力内容でDBを更新します。
+          <% end %>
+        </span>
       </div>
       <div class="admin-header-actions">
         <%= button_tag type: :submit, name: :mode, value: :preview, class: "admin-button admin-button-primary btn btn-primary", aria: { label: "原曲紐づけチェックを実行" } do %>
           <%= admin_icon(:search) %>
           <span>紐づけチェック</span>
         <% end %>
-        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn btn-warning", aria: { label: "原曲紐づけとURLをDBに反映" }, data: { turbo_confirm: "カラオケ楽曲の紐づけとURLをDBに反映します。チェック結果を確認済みですか？" } do %>
+        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn btn-warning", disabled: update_disabled, aria: { label: "原曲紐づけとURLをDBに反映", describedby: "admin-karaoke-song-bulk-update-note" }, data: { turbo_confirm: "カラオケ楽曲の紐づけとURLをDBに反映します。チェック結果を確認済みですか？" } do %>
           <%= admin_icon(:action) %>
           <span>チェック結果を反映</span>
         <% end %>

@@ -25,9 +25,10 @@ module Admin
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信URL編集をキーワード検索"]'
       assert_select '.admin-bulk-apply-warning.alert.alert-warning', text: '反映は配信URLを更新するため、先に変更チェックで内容を確認してください。'
+      assert_select '#admin-delivery-url-bulk-update-note', text: '反映は配信URLを更新するため、先に変更チェックで内容を確認してください。'
       assert_select 'button[aria-label="配信URL変更チェックを実行"][name="mode"][value="preview"]'
       assert_select 'button.btn-warning[data-turbo-confirm=?]', '配信URLの変更をDBに反映します。変更チェック結果を確認済みですか？'
-      assert_select 'button[aria-label="配信URL変更をDBに反映"][name="mode"][value="update"]'
+      assert_select 'button[aria-label="配信URL変更をDBに反映"][aria-describedby="admin-delivery-url-bulk-update-note"][name="mode"][value="update"][disabled]'
       assert_select '.admin-delivery-url-control-group h2', text: '絞り込み'
       assert_select '.admin-delivery-url-control-group h2', text: '並び替え'
       assert_select 'input[name="missing_url_columns[]"][value="youtube_url"][data-admin-auto-submit]'
@@ -164,6 +165,8 @@ module Admin
       assert_select '.admin-delivery-url-preview-row', text: /Controller Delivery URL Preview Song/
       assert_select '.admin-delivery-url-preview-row li span', text: /YouTube URL/
       assert_select '.admin-delivery-url-preview-row strong', text: %r{https://youtube.example/preview}
+      assert_select '#admin-delivery-url-bulk-update-note', text: '変更チェック結果を確認済みです。反映すると表示中の配信URLでDBを更新します。'
+      assert_select 'button[aria-label="配信URL変更をDBに反映"][name="mode"][value="update"][disabled]', false
       assert_equal '', song.reload.youtube_url
     end
 

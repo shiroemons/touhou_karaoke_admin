@@ -72,6 +72,7 @@
   </div>
 
   <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
+    <% update_disabled = @preview_result.blank? || @preview_result.errors.present? %>
     <% if @preview_result.present? %>
       <section class="admin-panel admin-original-song-preview">
         <div class="admin-dashboard-section-heading">
@@ -137,14 +138,20 @@
       </div>
       <div class="admin-bulk-apply-warning alert alert-warning">
         <%= admin_icon(:action) %>
-        <span>反映は配信URLを更新するため、先に変更チェックで内容を確認してください。</span>
+        <span id="admin-delivery-url-bulk-update-note">
+          <% if update_disabled %>
+            反映は配信URLを更新するため、先に変更チェックで内容を確認してください。
+          <% else %>
+            変更チェック結果を確認済みです。反映すると表示中の配信URLでDBを更新します。
+          <% end %>
+        </span>
       </div>
       <div class="admin-header-actions">
         <%= button_tag type: :submit, name: :mode, value: :preview, class: "admin-button admin-button-primary btn btn-primary", aria: { label: "配信URL変更チェックを実行" } do %>
           <%= admin_icon(:search) %>
           <span>変更チェック</span>
         <% end %>
-        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn btn-warning", aria: { label: "配信URL変更をDBに反映" }, data: { turbo_confirm: "配信URLの変更をDBに反映します。変更チェック結果を確認済みですか？" } do %>
+        <%= button_tag type: :submit, name: :mode, value: :update, class: "admin-button btn btn-warning", disabled: update_disabled, aria: { label: "配信URL変更をDBに反映", describedby: "admin-delivery-url-bulk-update-note" }, data: { turbo_confirm: "配信URLの変更をDBに反映します。変更チェック結果を確認済みですか？" } do %>
           <%= admin_icon(:action) %>
           <span>チェック結果を反映</span>
         <% end %>

@@ -23,9 +23,10 @@ module Admin
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ楽曲紐づけをキーワード検索"]'
       assert_select 'select[name="status"][data-admin-auto-submit]'
       assert_select '.admin-bulk-apply-warning.alert.alert-warning', text: '反映はDBを更新するため、先に紐づけチェックで内容を確認してください。'
+      assert_select '#admin-karaoke-song-bulk-update-note', text: '反映はDBを更新するため、先に紐づけチェックで内容を確認してください。'
       assert_select 'button[aria-label="原曲紐づけチェックを実行"][name="mode"][value="preview"]'
       assert_select 'button.btn-warning[data-turbo-confirm=?]', 'カラオケ楽曲の紐づけとURLをDBに反映します。チェック結果を確認済みですか？'
-      assert_select 'button[aria-label="原曲紐づけとURLをDBに反映"][name="mode"][value="update"]'
+      assert_select 'button[aria-label="原曲紐づけとURLをDBに反映"][aria-describedby="admin-karaoke-song-bulk-update-note"][name="mode"][value="update"][disabled]'
       assert_select "input[name=?]", "songs[#{missing_song.id}][original_songs]"
       assert_select "input[name=?][placeholder=?]", "songs[#{missing_song.id}][youtube_url]", 'https://www.youtube.com/watch?v=...'
       assert_select "input[name=?][placeholder=?]", "songs[#{missing_song.id}][spotify_url]", 'https://open.spotify.com/track/...'
@@ -178,6 +179,8 @@ module Admin
       assert_select '.admin-original-song-preview-row li', text: /#{second_original_song.code}/
       assert_select '.admin-original-song-preview-row li', text: /Controller Preview First/
       assert_select '.admin-original-song-preview-row li', text: /Controller Preview Second/
+      assert_select '#admin-karaoke-song-bulk-update-note', text: 'チェック結果を確認済みです。反映すると表示中の入力内容でDBを更新します。'
+      assert_select 'button[aria-label="原曲紐づけとURLをDBに反映"][name="mode"][value="update"][disabled]', false
       assert_empty song.reload.original_songs
       assert_equal '', song.youtube_url
     end
