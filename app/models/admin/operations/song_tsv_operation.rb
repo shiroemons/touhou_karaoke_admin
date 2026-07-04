@@ -44,26 +44,28 @@ module Admin
         songs_by_id = fetch_songs_by_id(table)
         original_songs_by_title = fetch_original_songs_by_title(table)
 
-        table.each do |row|
-          song = songs_by_id[row[:id].to_s]
-          original_song_titles = row[:original_songs].to_s.split('/').compact_blank
+        ActiveRecord::Base.transaction do
+          table.each do |row|
+            song = songs_by_id[row[:id].to_s]
+            original_song_titles = row[:original_songs].to_s.split('/').compact_blank
 
-          if song.blank? || original_song_titles.blank?
-            skipped_count += 1
-            next
+            if song.blank? || original_song_titles.blank?
+              skipped_count += 1
+              next
+            end
+
+            song.original_songs = original_song_titles.flat_map { |title| original_songs_by_title[title] || [] }.uniq
+            song.assign_attributes(
+              youtube_url: row[:youtube_url].to_s,
+              nicovideo_url: row[:nicovideo_url].to_s,
+              apple_music_url: row[:apple_music_url].to_s,
+              youtube_music_url: row[:youtube_music_url].to_s,
+              spotify_url: row[:spotify_url].to_s,
+              line_music_url: row[:line_music_url].to_s
+            )
+            song.save!
+            imported_count += 1
           end
-
-          song.original_songs = original_song_titles.flat_map { |title| original_songs_by_title[title] || [] }.uniq
-          song.assign_attributes(
-            youtube_url: row[:youtube_url].to_s,
-            nicovideo_url: row[:nicovideo_url].to_s,
-            apple_music_url: row[:apple_music_url].to_s,
-            youtube_music_url: row[:youtube_music_url].to_s,
-            spotify_url: row[:spotify_url].to_s,
-            line_music_url: row[:line_music_url].to_s
-          )
-          song.save!
-          imported_count += 1
         end
 
         message("インポートが完了しました。更新件数: #{imported_count}件、スキップ件数: #{skipped_count}件")

@@ -7,6 +7,10 @@ module ParallelProcessor
   # デフォルト設定
   DEFAULT_BATCH_SIZE = 1000
   DEFAULT_PROCESS_COUNT = ENV.fetch('PARALLEL_PROCESS_COUNT', 7).to_i
+  # サーバー進捗表示付き処理（process_with_server_progress）専用のスレッド数。
+  # PARALLEL_PROCESS_COUNT とは独立させ、既定は1（逐次実行）にしている。
+  # スクレイパ/ブラウザがまだスレッド安全でないため、既定で並列化されないようにするため。
+  DEFAULT_PROGRESS_THREAD_COUNT = 1
 
   class_methods do
     # バッチ処理で並列実行を行う
@@ -69,7 +73,6 @@ module ParallelProcessor
 
     def process_with_server_progress(collection, progress:, label:, progress_options:)
       total_count = collection_total_count(collection)
-      processed_count = 0
       reporter = Admin::ProgressReporter.new(
         progress:,
         status: progress_options.fetch(:status, "処理中"),
@@ -78,11 +81,34 @@ module ParallelProcessor
       reporter.start(total: total_count)
       return if total_count.zero?
 
-      each_collection_record(collection) do |record|
-        yield(record)
-        processed_count += 1
-        reporter.advance(current: processed_count, total: total_count)
+      thread_count = progress_thread_count
+      processed_count = 0
+      mutex = Mutex.new
+      advance = lambda do
+        mutex.synchronize do
+          processed_count += 1
+          reporter.advance(current: processed_count, total: total_count)
+        end
       end
+
+      if thread_count > 1
+        # SCRAPING_THREAD_COUNT>1 で並列実行するには、yield されるブロック内の処理（スクレイパ/ブラウザ）が
+        # スレッド安全である必要がある。ブラウザ再利用のスレッド毎割り当てが未実装のため、既定値は1（逐次）。
+        records = collection.respond_to?(:to_a) ? collection.to_a : collection
+        Parallel.each(records, in_threads: thread_count) do |record|
+          yield(record)
+          advance.call
+        end
+      else
+        each_collection_record(collection) do |record|
+          yield(record)
+          advance.call
+        end
+      end
+    end
+
+    def progress_thread_count
+      ENV.fetch('SCRAPING_THREAD_COUNT', DEFAULT_PROGRESS_THREAD_COUNT).to_i
     end
 
     def collection_total_count(collection)

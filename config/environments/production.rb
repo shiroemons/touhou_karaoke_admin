@@ -40,13 +40,13 @@ Rails.application.configure do
 
   # Use the lowest log level to ensure availability of diagnostic information
   # when problems arise.
-  config.log_level = :debug
+  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info").to_sym
 
   # Prepend all log lines with the following tags.
   config.log_tags = [:request_id]
 
   # Use a different cache store in production.
-  # config.cache_store = :mem_cache_store
+  config.cache_store = :solid_cache_store
 
   # Use Solid Queue for durable background jobs without Redis/Sidekiq.
   config.active_job.queue_adapter = :solid_queue

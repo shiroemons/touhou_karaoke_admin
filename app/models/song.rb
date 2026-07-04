@@ -49,12 +49,6 @@ class Song < ApplicationRecord
     original_songs.all? { |original_song| original_song.title.in?(ORIGINAL_OR_OTHER_TITLES) } ? "オリジナル・その他" : "東方アレンジ"
   end
 
-  def self.not_set_original_song
-    includes(:display_artist, :original_songs).select do |song|
-      song if song.original_songs.blank?
-    end
-  end
-
   def self.fetch_joysound_song(url = nil)
     SongExternalSync.fetch_joysound_song(url)
   end
@@ -79,6 +73,7 @@ class Song < ApplicationRecord
     SongExternalSync.prioritized_joysound_music_posts
   end
 
+  # DEPRECATED: 実運用は JoysoundMusicPostManager 経由。将来削除候補。
   def self.refresh_joysound_music_post_song
     SongExternalSync.refresh_joysound_music_post_song
   end
@@ -103,6 +98,7 @@ class Song < ApplicationRecord
     update_dam_delivery_models(progress:)
   end
 
+  # DEPRECATED: 実運用は JoysoundMusicPostManager 経由。将来削除候補。
   def self.update_joysound_music_post_delivery_deadline_dates
     SongExternalSync.update_joysound_music_post_delivery_deadline_dates
   end

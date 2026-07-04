@@ -12,9 +12,11 @@ class JoysoundMusicPostPrioritizer
   private
 
   def unmatched_posts
-    unmatched_urls = JoysoundMusicPost.pluck(:joysound_url) - Song.music_post.pluck(:url)
+    matched_song_exists = Song.music_post
+                              .where(Song.arel_table[:url].eq(JoysoundMusicPost.arel_table[:joysound_url]))
+                              .arel.exists
 
-    JoysoundMusicPost.where(joysound_url: unmatched_urls)
+    JoysoundMusicPost.where.not(matched_song_exists)
   end
 
   def upcoming_posts
