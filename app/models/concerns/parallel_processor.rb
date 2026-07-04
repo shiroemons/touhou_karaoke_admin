@@ -8,9 +8,11 @@ module ParallelProcessor
   DEFAULT_BATCH_SIZE = 1000
   DEFAULT_PROCESS_COUNT = ENV.fetch('PARALLEL_PROCESS_COUNT', 7).to_i
   # サーバー進捗表示付き処理（process_with_server_progress）専用のスレッド数。
-  # PARALLEL_PROCESS_COUNT とは独立させ、既定は1（逐次実行）にしている。
-  # スクレイパ/ブラウザがまだスレッド安全でないため、既定で並列化されないようにするため。
-  DEFAULT_PROGRESS_THREAD_COUNT = 1
+  # PARALLEL_PROCESS_COUNT とは独立させている。
+  # スレッド毎のブラウザ割り当て・ブラウザ再利用・レート制御相当のクランプ・エラー継続を
+  # 実装済みのため、既定を3並列にしている。コネクションプールサイズ（RAILS_MAX_THREADS、既定5）を
+  # 超えないよう progress_thread_count でクランプする。SCRAPING_THREAD_COUNT 環境変数で上書き可能。
+  DEFAULT_PROGRESS_THREAD_COUNT = 3
   # continue_on_error: true 時、連続でこの件数だけ失敗が続いたら安全のため処理を打ち切る（既定値）。
   DEFAULT_CONSECUTIVE_FAILURE_LIMIT = 10
 
