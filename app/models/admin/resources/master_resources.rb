@@ -11,6 +11,7 @@ module Admin
           model: Original,
           label: '原作',
           title: :title,
+          includes: [{ original_songs: :original }],
           search: { title_cont: :q },
           filters: [
             exact_filter(:original_type, label: '種別', options: Original.original_types.keys.index_with(&:itself))
@@ -32,7 +33,7 @@ module Admin
           model: OriginalSong,
           label: '原曲',
           title: ->(record) { "[#{record.original&.short_title}] #{record.title}" },
-          includes: [:original],
+          includes: %i[original songs],
           order: { code: :asc },
           search: { title_cont: :q },
           filters: [
@@ -81,7 +82,7 @@ module Admin
           model: Circle,
           label: 'サークル',
           title: :name,
-          includes: [:display_artists],
+          includes: %i[display_artists songs],
           search: { name_cont: :q },
           filters: [
             association_presence_filter(:display_artists, label: 'アーティスト', association: :display_artists),

@@ -14,8 +14,13 @@ module Admin
       def read(id)
         progress = OperationProgress.read(id)
         workflow = detail_payload(progress[:detail])
-        workflow[:steps]&.each do |step|
-          step[:progress] = OperationProgress.read(step[:progress_id]) if step[:progress_id].present?
+        steps = workflow[:steps] || []
+        # ステップ数分 OperationProgress.read を繰り返すと N+1 になるため、
+        # progress_id を集めて一括取得してからメモリ上で突き合わせる。
+        step_progress_ids = steps.filter_map { |step| step[:progress_id].presence }
+        progress_by_step_id = OperationProgress.read_many(step_progress_ids)
+        steps.each do |step|
+          step[:progress] = progress_by_step_id[step[:progress_id]] if step[:progress_id].present?
           step[:detail] ||= step.dig(:progress, :detail) if step[:status] == 'completed'
         end
         workflow[:current_step] = current_step_payload(workflow[:steps])

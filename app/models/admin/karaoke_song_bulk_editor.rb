@@ -141,11 +141,12 @@ module Admin
 
     def build_updates(rows)
       errors = []
+      songs_by_id = fetch_songs_by_id(rows)
       updates = rows.filter_map.with_index(2) do |row, row_number|
         song_id = row['id'].to_s
         next if song_id.blank?
 
-        song = Song.includes(:original_songs).find_by(id: song_id)
+        song = songs_by_id[song_id]
         unless song
           errors << "#{row_number}行目: 楽曲ID #{song_id} が見つかりません。"
           next
@@ -160,6 +161,11 @@ module Admin
       end
 
       [updates, errors]
+    end
+
+    def fetch_songs_by_id(rows)
+      ids = rows.filter_map { |row| row['id'].to_s.presence }
+      Song.where(id: ids).includes(:original_songs).index_by { |song| song.id.to_s }
     end
 
     def preview_item(update)
@@ -314,6 +320,7 @@ module Admin
     def grouped_original_songs_by_normalized_title
       OriginalSong
         .non_duplicated
+        .includes(:original)
         .order(:code)
         .to_a
         .group_by { |original_song| normalize_original_song_title(original_song.title) }

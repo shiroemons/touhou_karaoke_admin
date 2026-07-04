@@ -40,6 +40,10 @@ Rails.application.configure do
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
 
+  # Detect N+1 queries and raise/log them via prosopite.
+  require 'prosopite/middleware/rack'
+  config.middleware.use(Prosopite::Middleware::Rack)
+
   # Debug mode disables concatenation and preprocessing of assets.
   # This option may cause significant delays in view rendering with a large
   # number of complex assets.

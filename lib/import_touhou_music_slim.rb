@@ -4,6 +4,9 @@ require 'csv'
 touhou_music_songs = CSV.table('tmp/touhou_music_slim.tsv', col_sep: "\t", converters: nil, liberal_parsing: true)
 total_count = touhou_music_songs.size
 
+apple_music_urls = touhou_music_songs.map { |row| row[:apple_music_track_url].to_s }.compact_blank.uniq
+songs_by_apple_music_url = Song.where(apple_music_url: apple_music_urls).group_by(&:apple_music_url)
+
 updated_count = 0
 not_found_count = 0
 
@@ -14,7 +17,7 @@ touhou_music_songs.each.with_index(1) do |row, i|
   next if apple_music_url.blank?
 
   # apple_music_urlで検索
-  songs = Song.where(apple_music_url: apple_music_url)
+  songs = songs_by_apple_music_url[apple_music_url] || []
 
   if songs.empty?
     not_found_count += 1

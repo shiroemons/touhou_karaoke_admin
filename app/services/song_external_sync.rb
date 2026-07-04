@@ -89,6 +89,7 @@ class SongExternalSync
     def update_joysound_music_post_delivery_deadline_dates
       music_post_songs = Song.music_post.includes(:song_with_joysound_utasuki)
                              .where.not(song_with_joysound_utasukis: { id: nil })
+      deadline_lookup = JoysoundMusicPost.pluck(:url, :delivery_deadline_on).to_h
 
       total_count = music_post_songs.count
       updated_count = 0
@@ -96,10 +97,10 @@ class SongExternalSync
       music_post_songs.each.with_index(1) do |song, index|
         Rails.logger.debug { "#{index}/#{total_count}: #{((index / total_count.to_f) * 100).floor}% #{song.title}" }
 
-        music_post = JoysoundMusicPost.find_by(url: song.song_with_joysound_utasuki.url)
+        deadline_on = deadline_lookup[song.song_with_joysound_utasuki.url]
 
-        if music_post && song.song_with_joysound_utasuki.delivery_deadline_date != music_post.delivery_deadline_on
-          song.song_with_joysound_utasuki.update!(delivery_deadline_date: music_post.delivery_deadline_on)
+        if deadline_on && song.song_with_joysound_utasuki.delivery_deadline_date != deadline_on
+          song.song_with_joysound_utasuki.update!(delivery_deadline_date: deadline_on)
           updated_count += 1
           Rails.logger.debug { "Updated delivery_deadline_date for: #{song.title}" }
         end

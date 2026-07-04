@@ -35,7 +35,7 @@ else
     puts "📋 #{name} (#{karaoke_type}) - #{models.size}件の重複"
 
     models.sort_by(&:created_at).each_with_index do |model, index|
-      songs_count = model.songs.count
+      songs_count = model.songs.size
       puts "  #{index + 1}. ID: #{model.id}"
       puts "     Order: #{model.order}"
       puts "     Created: #{model.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
@@ -45,12 +45,12 @@ else
     # 統合の提案
     oldest_model = models.min_by(&:created_at)
     newer_models = models - [oldest_model]
-    total_songs = models.sum { |model| model.songs.count }
+    total_songs = models.sum { |model| model.songs.size }
 
     puts "  💡 統合提案:"
-    puts "     保持: #{oldest_model.id} (最古, #{oldest_model.songs.count}楽曲)"
+    puts "     保持: #{oldest_model.id} (最古, #{oldest_model.songs.size}楽曲)"
     puts "     削除対象: #{newer_models.map(&:id).join(', ')}"
-    puts "     移行予定楽曲数: #{newer_models.sum { |model| model.songs.count }}件"
+    puts "     移行予定楽曲数: #{newer_models.sum { |model| model.songs.size }}件"
     puts "     統合後楽曲数: #{total_songs}件"
     puts ""
   end
