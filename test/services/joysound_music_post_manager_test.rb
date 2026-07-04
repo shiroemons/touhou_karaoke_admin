@@ -9,6 +9,32 @@ class JoysoundMusicPostManagerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'fetch_songs_with_progress wires a persistent JoysoundScraper worker_factory and worker_teardown into process_with_progress' do
+    captured = nil
+    original = JoysoundMusicPostManager.method(:process_with_progress)
+
+    # process_with_progress自体を丸ごとスタブする（呼び出し引数のみ捕捉し、ブロックは実行しない）ため、
+    # スクレイピング（実サイトへのアクセス）は一切発生しない。
+    JoysoundMusicPostManager.define_singleton_method(:process_with_progress) do |*_args, **kwargs, &_block|
+      captured = kwargs
+      nil
+    end
+
+    begin
+      JoysoundMusicPostManager.new.fetch_songs_with_progress
+    ensure
+      JoysoundMusicPostManager.define_singleton_method(:process_with_progress) do |*args, **kwargs, &block|
+        original.call(*args, **kwargs, &block)
+      end
+    end
+
+    assert_respond_to captured[:worker_factory], :call
+    assert_respond_to captured[:worker_teardown], :call
+
+    worker = captured[:worker_factory].call
+    assert_instance_of Scrapers::JoysoundScraper, worker
+  end
+
   test 'refresh_songs_efficiently deletes 404 songs and skips retryable network errors' do
     deleted_song = create_music_post_song(title: 'Deleted Music Post Song', url: 'https://example.com/music-post/deleted')
     skipped_song = create_music_post_song(title: 'Skipped Music Post Song', url: 'https://example.com/music-post/skipped')

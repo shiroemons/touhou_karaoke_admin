@@ -22,6 +22,7 @@ module Scrapers
           create_or_update_song(dam_song, song_info) if song_info[:title].present? && song_info[:title_reading].present? && song_info[:song_number].present?
         end
       end
+      track_browser_use
     rescue StandardError => e
       Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :song, id: dam_song.id, url: dam_song.url, karaoke_type:, error: e.message)
       raise

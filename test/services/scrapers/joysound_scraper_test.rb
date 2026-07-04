@@ -53,6 +53,10 @@ module Scrapers
       def visit(url)
         calls << [:visit, url]
       end
+
+      def persistent?
+        false
+      end
     end
 
     test 'extract_delivery_models keeps only JOYSOUND model chips' do

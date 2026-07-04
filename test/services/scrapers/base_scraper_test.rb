@@ -98,6 +98,24 @@ module Scrapers
       assert_equal [{ timeout: 10, process_timeout: 10 }, { persistent: false }], captured_args
     end
 
+    test 'track_browser_use is a no-op when the browser manager is not persistent' do
+      fake_manager = FakeBrowserManager.new(persistent: false)
+      scraper = TestScraper.new(browser_manager: fake_manager)
+
+      3.times { scraper.call_track_browser_use }
+
+      assert_equal 0, fake_manager.reset_session_calls
+      assert_equal 0, fake_manager.restart_calls
+    end
+
+    test 'track_browser_use is a no-op when the browser manager is nil' do
+      scraper = TestScraper.new(browser_manager: nil)
+
+      scraper.call_track_browser_use
+
+      assert_nil scraper.current_browser_manager
+    end
+
     test 'track_browser_use resets the session on every call without restarting under the limit' do
       original_max_uses = BaseScraper::SCRAPING_BROWSER_MAX_USES
       BaseScraper.send(:remove_const, :SCRAPING_BROWSER_MAX_USES)

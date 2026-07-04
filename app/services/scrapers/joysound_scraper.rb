@@ -46,6 +46,7 @@ module Scrapers
           scrape_artist_and_songs if should_scrape?(composer, url)
         end
       end
+      track_browser_use
     rescue StandardError => e
       Admin::OperationLogger.log(level: :error, event: :external_fetch, action: :error, resource: :song, url:, karaoke_type:, error: e.message)
       raise
@@ -68,6 +69,7 @@ module Scrapers
           end
         end
       end
+      track_browser_use
     rescue ActiveRecord::RecordInvalid => e
       error_details = if e.record.respond_to?(:errors)
                         e.record.errors.full_messages.join(", ")

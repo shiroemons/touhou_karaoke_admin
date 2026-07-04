@@ -35,6 +35,8 @@ module Scrapers
     # 永続ブラウザが再利用されている場合にのみ意味を持つ（非永続モードでは常に安全なno-op）
     # 呼び出し配線（各scrapeメソッド末尾など）は利用側で行う
     def track_browser_use
+      return unless @browser_manager&.persistent?
+
       @browser_manager.reset_session
       @browser_use_count += 1
 
