@@ -45,6 +45,7 @@ class SongExternalSync
       JoysoundMusicPostPrioritizer.call
     end
 
+    # DEPRECATED: 実運用は JoysoundMusicPostManager 経由。将来削除候補。
     def refresh_joysound_music_post_song
       browser_manager = BrowserManager.new
       total_count = Song.music_post.count
@@ -86,6 +87,7 @@ class SongExternalSync
       end
     end
 
+    # DEPRECATED: 実運用は JoysoundMusicPostManager 経由。将来削除候補。
     def update_joysound_music_post_delivery_deadline_dates
       music_post_songs = Song.music_post.includes(:song_with_joysound_utasuki)
                              .where.not(song_with_joysound_utasukis: { id: nil })
