@@ -59,11 +59,14 @@ class BrowserManager
   end
 
   # ページにアクセスして安定するまで待機
+  # ScrapingRateLimiter を通すことで、相手サイトへの実効QPSをスレッド数に依存させず一定に保つ
   def visit(url, wait_duration: 1.0)
     raise 'Browser not started' unless @browser
 
-    @browser.goto(url)
-    @browser.network.wait_for_idle(duration: wait_duration, timeout: @options[:timeout])
+    ScrapingRateLimiter.throttle(url) do
+      @browser.goto(url)
+      @browser.network.wait_for_idle(duration: wait_duration, timeout: @options[:timeout])
+    end
   end
 
   # CSSセレクタで要素を取得

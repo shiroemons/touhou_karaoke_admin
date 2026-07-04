@@ -177,6 +177,40 @@ class BrowserManagerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'visit routes the actual request through ScrapingRateLimiter.throttle' do
+    created = []
+    throttle_calls = []
+
+    with_stubbed_browser_new(created) do
+      with_stubbed_rate_limiter_throttle(throttle_calls, yields: true) do
+        manager = BrowserManager.new(persistent: true)
+        manager.with_browser { manager.visit('https://example.com', wait_duration: 2.0) }
+
+        browser = created.first
+        assert_equal ['https://example.com'], throttle_calls
+        assert_equal ['https://example.com'], browser.goto_calls
+        assert_equal [{ duration: 2.0, timeout: 10 }], browser.network.wait_for_idle_calls
+      end
+    end
+  end
+
+  test 'visit does not goto/wait_for_idle unless ScrapingRateLimiter.throttle yields' do
+    created = []
+    throttle_calls = []
+
+    with_stubbed_browser_new(created) do
+      with_stubbed_rate_limiter_throttle(throttle_calls, yields: false) do
+        manager = BrowserManager.new(persistent: true)
+        manager.with_browser { manager.visit('https://example.com') }
+
+        browser = created.first
+        assert_equal ['https://example.com'], throttle_calls
+        assert_empty browser.goto_calls
+        assert_empty browser.network.wait_for_idle_calls
+      end
+    end
+  end
+
   private
 
   def with_stubbed_browser_new(created_browsers)
@@ -188,6 +222,22 @@ class BrowserManagerTest < ActiveSupport::TestCase
   ensure
     Ferrum::Browser.define_singleton_method(:new) do |*args, **kwargs, &block|
       original_new.call(*args, **kwargs, &block)
+    end
+  end
+
+  # ScrapingRateLimiter.throttle をスタブし、visit が実際にそのブロック経由で
+  # goto/wait_for_idle を呼び出していることを検証できるようにする。
+  # yields: false の場合はブロックを呼ばず、goto等がthrottleの外側で呼ばれていないことを確認できる。
+  def with_stubbed_rate_limiter_throttle(recorded_urls, yields:)
+    original_throttle = ScrapingRateLimiter.method(:throttle)
+    ScrapingRateLimiter.define_singleton_method(:throttle) do |url, &block|
+      recorded_urls << url
+      block.call if yields
+    end
+    yield
+  ensure
+    ScrapingRateLimiter.define_singleton_method(:throttle) do |*args, **kwargs, &block|
+      original_throttle.call(*args, **kwargs, &block)
     end
   end
 end
