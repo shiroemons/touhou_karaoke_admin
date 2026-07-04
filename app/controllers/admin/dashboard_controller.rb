@@ -11,19 +11,85 @@ module Admin
 
     private
 
+    # 全スカラー集計を per-request メモ化 + cross-request 低レベルキャッシュの
+    # 二重構造で取得する。@dashboard_counts のメモ化により、1リクエスト内では
+    # cache.fetch は1回だけ呼ばれる (test 環境の :null_store でも計算は1回で済む)。
+    def dashboard_counts
+      @dashboard_counts ||= Rails.cache.fetch('admin:dashboard:v1', expires_in: 5.minutes) { compute_dashboard_counts }
+    end
+
+    # キャッシュに格納するのはプリミティブ値 (整数・文字列) と、それらの Hash/配列のみ。
+    # ResourceRegistry::Resource のような Data オブジェクトは Marshal 化できないため含めない。
+    def compute_dashboard_counts
+      service_counts = distribution_service_counts
+
+      {
+        karaoke_type_counts: Song.group(:karaoke_type).count,
+        distribution_service_counts: service_counts,
+        total_songs: service_counts[:total],
+        linked_songs: Song.touhou_arrange.count,
+        missing_original_songs: Song.missing_original_songs.count,
+        with_original_songs: Song.with_original_songs.count,
+        music_post_with_original_songs: Song.music_post.with_original_songs.count,
+        original_songs: OriginalSong.count,
+        display_artists: DisplayArtist.count,
+        circles: Circle.count,
+        originals: Original.count,
+        karaoke_delivery_models: KaraokeDeliveryModel.count,
+        joysound_music_posts: JoysoundMusicPost.count,
+        music_posts_active: JoysoundMusicPost.where(delivery_deadline_on: Date.current..).count,
+        music_posts_expired: JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count,
+        management_counts: management_counts
+      }
+    end
+
+    # 総楽曲数と各配信サービスの有無カウントを FILTER 句でまとめて1クエリで取得し、
+    # プリミティブな Hash に変換する。各 FILTER 条件は Song モデルの
+    # youtube/apple_music/youtube_music/spotify/line_music スコープ (where.not(col: ""))
+    # およびニコニコ動画の where.not(nicovideo_url: "") と完全に一致させている。
+    def distribution_service_counts
+      row = Song.select(
+        'COUNT(*) AS total',
+        "COUNT(*) FILTER (WHERE youtube_url <> '') AS youtube_count",
+        "COUNT(*) FILTER (WHERE nicovideo_url <> '') AS nicovideo_count",
+        "COUNT(*) FILTER (WHERE apple_music_url <> '') AS apple_music_count",
+        "COUNT(*) FILTER (WHERE youtube_music_url <> '') AS youtube_music_count",
+        "COUNT(*) FILTER (WHERE spotify_url <> '') AS spotify_count",
+        "COUNT(*) FILTER (WHERE line_music_url <> '') AS line_music_count"
+      ).take
+
+      {
+        total: row.total.to_i,
+        youtube: row.youtube_count.to_i,
+        nicovideo: row.nicovideo_count.to_i,
+        apple_music: row.apple_music_count.to_i,
+        youtube_music: row.youtube_music_count.to_i,
+        spotify: row.spotify_count.to_i,
+        line_music: row.line_music_count.to_i
+      }
+    end
+
+    # navigation_groups の全リソースについて { resource.key => count } を1つの Hash にまとめる。
+    # navigation_groups はキーを index_by してから delete するためリソースキーは全体で一意。
+    def management_counts
+      ResourceRegistry.navigation_groups.each_with_object({}) do |(_label, resources), counts|
+        resources.each { |resource| counts[resource.key] = resource.model.count }
+      end
+    end
+
     def dashboard_summary
-      total = total_songs
-      linked_songs = Song.touhou_arrange.count
-      missing_songs = missing_original_songs_count
+      counts = dashboard_counts
+      total = counts[:total_songs]
+      linked_songs = counts[:linked_songs]
 
       {
         total_songs: total,
         linked_songs:,
-        missing_songs:,
+        missing_songs: counts[:missing_original_songs],
         linked_rate: percentage(linked_songs, total),
-        original_songs: original_songs_count,
-        display_artists: display_artists_count,
-        circles: circles_count
+        original_songs: counts[:original_songs],
+        display_artists: counts[:display_artists],
+        circles: counts[:circles]
       }
     end
 
@@ -37,20 +103,21 @@ module Admin
     end
 
     def distribution_metrics
-      by_type = karaoke_type_counts
-      service_counts = distribution_service_counts
-      total = service_counts.total
+      counts = dashboard_counts
+      by_type = counts[:karaoke_type_counts]
+      service_counts = counts[:distribution_service_counts]
+      total = service_counts[:total]
 
       [
         distribution_metric('DAM', by_type.fetch('DAM', 0), total, 'dam'),
         distribution_metric('JOYSOUND', by_type.fetch('JOYSOUND', 0), total, 'joysound'),
         distribution_metric('ミュージックポスト', by_type.fetch('JOYSOUND(うたスキ)', 0), total, 'music-post'),
-        distribution_metric('YouTube', service_counts.youtube_count, total, 'youtube'),
-        distribution_metric('ニコニコ動画', service_counts.nicovideo_count, total, 'nicovideo'),
-        distribution_metric('Apple Music', service_counts.apple_music_count, total, 'apple'),
-        distribution_metric('YouTube Music', service_counts.youtube_music_count, total, 'youtube-music'),
-        distribution_metric('Spotify', service_counts.spotify_count, total, 'spotify'),
-        distribution_metric('LINE MUSIC', service_counts.line_music_count, total, 'line-music')
+        distribution_metric('YouTube', service_counts[:youtube], total, 'youtube'),
+        distribution_metric('ニコニコ動画', service_counts[:nicovideo], total, 'nicovideo'),
+        distribution_metric('Apple Music', service_counts[:apple_music], total, 'apple'),
+        distribution_metric('YouTube Music', service_counts[:youtube_music], total, 'youtube-music'),
+        distribution_metric('Spotify', service_counts[:spotify], total, 'spotify'),
+        distribution_metric('LINE MUSIC', service_counts[:line_music], total, 'line-music')
       ]
     end
 
@@ -58,51 +125,11 @@ module Admin
       { label:, value:, total:, key:, percentage: percentage(value, total) }
     end
 
-    # 種別分布 (DAM / JOYSOUND / ミュージックポスト) を1クエリで取得する。
-    def karaoke_type_counts
-      @karaoke_type_counts ||= Song.group(:karaoke_type).count
-    end
-
-    # 総楽曲数と各配信サービスの有無カウントを FILTER 句でまとめて1クエリで取得する。
-    # 各 FILTER 条件は Song モデルの youtube/apple_music/youtube_music/spotify/line_music
-    # スコープ (where.not(col: "")) およびニコニコ動画の where.not(nicovideo_url: "") と
-    # 完全に一致させている。
-    def distribution_service_counts
-      @distribution_service_counts ||= Song.select(
-        'COUNT(*) AS total',
-        "COUNT(*) FILTER (WHERE youtube_url <> '') AS youtube_count",
-        "COUNT(*) FILTER (WHERE nicovideo_url <> '') AS nicovideo_count",
-        "COUNT(*) FILTER (WHERE apple_music_url <> '') AS apple_music_count",
-        "COUNT(*) FILTER (WHERE youtube_music_url <> '') AS youtube_music_count",
-        "COUNT(*) FILTER (WHERE spotify_url <> '') AS spotify_count",
-        "COUNT(*) FILTER (WHERE line_music_url <> '') AS line_music_count"
-      ).take
-    end
-
-    # dashboard_summary と insight_groups で共有する母数。同一リクエスト内での重複発行を避ける。
-    def total_songs
-      @total_songs ||= distribution_service_counts.total
-    end
-
-    def missing_original_songs_count
-      @missing_original_songs_count ||= Song.missing_original_songs.count
-    end
-
-    def original_songs_count
-      @original_songs_count ||= OriginalSong.count
-    end
-
-    def display_artists_count
-      @display_artists_count ||= DisplayArtist.count
-    end
-
-    def circles_count
-      @circles_count ||= Circle.count
-    end
-
     def management_groups
+      counts = dashboard_counts[:management_counts]
+
       ResourceRegistry.navigation_groups.map do |label, resources|
-        items = resources.map { |resource| { resource:, count: resource.model.count } }
+        items = resources.map { |resource| { resource:, count: counts.fetch(resource.key) } }
         primary = resources.find { |resource| resource.key == primary_management_resource_key(label) } || resources.first
 
         {
@@ -174,36 +201,38 @@ module Admin
     end
 
     def insight_groups
+      counts = dashboard_counts
+
       [
         {
           label: 'データ状態',
           description: '楽曲と原曲の紐付け状況',
           metrics: [
-            metric('総楽曲数', total_songs, '曲', admin_songs_path),
-            metric('原曲紐付け済み', Song.with_original_songs.count, '曲', admin_songs_path(filters: { original_link: 'linked' })),
-            metric('原曲未紐付け', missing_original_songs_count, '曲', admin_songs_path(filters: { original_link: 'missing' }))
+            metric('総楽曲数', counts[:total_songs], '曲', admin_songs_path),
+            metric('原曲紐付け済み', counts[:with_original_songs], '曲', admin_songs_path(filters: { original_link: 'linked' })),
+            metric('原曲未紐付け', counts[:missing_original_songs], '曲', admin_songs_path(filters: { original_link: 'missing' }))
           ]
         },
         {
           label: 'マスタデータ',
           description: '検索・紐付けに使う基礎データ',
           metrics: [
-            metric('原作', Original.count, '件', admin_originals_path),
-            metric('原曲', original_songs_count, '曲', admin_original_songs_path),
-            metric('サークル', circles_count, '件', admin_circles_path),
-            metric('アーティスト', display_artists_count, '件', admin_display_artists_path),
-            metric('配信機種', KaraokeDeliveryModel.count, '件', admin_karaoke_delivery_models_path)
+            metric('原作', counts[:originals], '件', admin_originals_path),
+            metric('原曲', counts[:original_songs], '曲', admin_original_songs_path),
+            metric('サークル', counts[:circles], '件', admin_circles_path),
+            metric('アーティスト', counts[:display_artists], '件', admin_display_artists_path),
+            metric('配信機種', counts[:karaoke_delivery_models], '件', admin_karaoke_delivery_models_path)
           ]
         },
         {
           label: 'ミュージックポスト',
           description: '取得済みデータと配信期限',
           metrics: [
-            metric('配信曲', karaoke_type_counts.fetch('JOYSOUND(うたスキ)', 0), '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post' })),
-            metric('原曲紐付け済み', Song.music_post.with_original_songs.count, '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post', original_link: 'linked' })),
-            metric('取得済み', JoysoundMusicPost.count, '件', admin_joysound_music_posts_path),
-            metric('期限内', JoysoundMusicPost.where(delivery_deadline_on: Date.current..).count, '件', admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'active' })),
-            metric('期限切れ', JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count, '件', admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'expired' }))
+            metric('配信曲', counts[:karaoke_type_counts].fetch('JOYSOUND(うたスキ)', 0), '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post' })),
+            metric('原曲紐付け済み', counts[:music_post_with_original_songs], '曲', admin_songs_path(filters: { karaoke_type: 'joysound_music_post', original_link: 'linked' })),
+            metric('取得済み', counts[:joysound_music_posts], '件', admin_joysound_music_posts_path),
+            metric('期限内', counts[:music_posts_active], '件', admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'active' })),
+            metric('期限切れ', counts[:music_posts_expired], '件', admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'expired' }))
           ]
         }
       ]

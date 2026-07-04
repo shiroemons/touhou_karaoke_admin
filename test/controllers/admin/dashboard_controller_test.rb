@@ -151,7 +151,61 @@ module Admin
       assert_equal 1, missing_original_songs_queries.size, "expected missing_original_songs to be memoized, got: #{missing_original_songs_queries}"
     end
 
+    test 'dashboard counts are served from cache on subsequent requests' do
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        first_sql = capture_sql { get admin_root_path }
+        assert_response :success
+
+        # 初回リクエストで集計クエリが発行され、キャッシュへ書き込まれる。
+        assert_equal 1, count_matching(first_sql, 'GROUP BY "songs"."karaoke_type"')
+        assert_equal 1, count_matching(first_sql, 'COUNT(*) FILTER')
+
+        second_sql = capture_sql { get admin_root_path }
+        assert_response :success
+
+        # 2回目はキャッシュヒットのため COUNT 系集計クエリが再発行されない。
+        assert_equal 0, count_matching(second_sql, 'GROUP BY "songs"."karaoke_type"')
+        assert_equal 0, count_matching(second_sql, 'COUNT(*) FILTER')
+      end
+    end
+
+    test 'cached counts match individually computed values' do
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        get admin_root_path
+        assert_response :success
+
+        cached = Rails.cache.fetch('admin:dashboard:v1')
+        assert_equal Song.count, cached.fetch(:total_songs)
+        assert_equal Song.touhou_arrange.count, cached.fetch(:linked_songs)
+        assert_equal Song.missing_original_songs.count, cached.fetch(:missing_original_songs)
+        assert_equal Song.with_original_songs.count, cached.fetch(:with_original_songs)
+        assert_equal Song.music_post.with_original_songs.count, cached.fetch(:music_post_with_original_songs)
+        assert_equal OriginalSong.count, cached.fetch(:original_songs)
+        assert_equal DisplayArtist.count, cached.fetch(:display_artists)
+        assert_equal Circle.count, cached.fetch(:circles)
+        assert_equal Original.count, cached.fetch(:originals)
+        assert_equal KaraokeDeliveryModel.count, cached.fetch(:karaoke_delivery_models)
+        assert_equal JoysoundMusicPost.count, cached.fetch(:joysound_music_posts)
+        assert_equal Song.count, cached.fetch(:distribution_service_counts).fetch(:total)
+        assert_equal Song.youtube.count, cached.fetch(:distribution_service_counts).fetch(:youtube)
+        assert_equal Song.group(:karaoke_type).count, cached.fetch(:karaoke_type_counts)
+      end
+    end
+
     private
+
+    def count_matching(statements, fragment)
+      statements.count { |statement| statement.include?(fragment) }
+    end
+
+    def with_cache_store(store)
+      original = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original
+    end
 
     def distribution_metrics_from_response
       controller.send(:distribution_metrics).index_by { |metric| metric.fetch(:key) }
