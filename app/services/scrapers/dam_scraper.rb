@@ -5,16 +5,16 @@ module Scrapers
   class DamScraper < BaseScraper
     # DAM楽曲ページをスクレイピング
     def scrape_song_page(dam_song)
-      # Ferrum::TimeoutErrorが発生したら即座にブラウザをリセット
+      # リトライ対象エラー（DeadBrowserError等含む）発生時は即座にブラウザをリセット
       with_retry(
         max_retries: 3,
-        errors: [Ferrum::TimeoutError],
         on_retry: lambda do |error, retry_count|
           Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :browser, error: error.class, retry_count:, max_retries: 3)
           reset_browser_manager(timeout: 10, process_timeout: 10)
         end
       ) do
         browser_manager.with_browser do |_browser|
+          browser_manager.clear_network_traffic
           browser_manager.visit(dam_song.url)
 
           song_info = extract_song_info
@@ -32,10 +32,9 @@ module Scrapers
       # 並列処理での競合を避けるため、各ワーカーで新しいブラウザインスタンスを作成
       local_browser_manager = BrowserManager.new
 
-      # Ferrum::TimeoutErrorが発生したら即座にブラウザをリセット
+      # リトライ対象エラー（DeadBrowserError等含む）発生時は即座にブラウザをリセット
       with_retry(
         max_retries: 3,
-        errors: [Ferrum::TimeoutError],
         on_retry: lambda do |error, retry_count|
           Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :browser, error: error.class, retry_count:, max_retries: 3)
           local_browser_manager = BrowserManager.new
