@@ -4,10 +4,19 @@ module Scrapers
   class BaseScraper
     include Retryable
 
+    # 永続ブラウザを再生成するまでに許容する処理件数（メモリ・キャッシュ肥大対策）
+    SCRAPING_BROWSER_MAX_USES = ENV.fetch('SCRAPING_BROWSER_MAX_USES', 50).to_i
+
     def initialize(browser_manager: BrowserManager.new, delivery_model_manager: DeliveryModelManager.instance)
       @browser_manager = browser_manager
       @delivery_model_manager = delivery_model_manager
+      @browser_use_count = 0
       load_selectors
+    end
+
+    # 永続ブラウザを終了する（ワーカープールの後始末用）
+    def shutdown
+      @browser_manager&.close
     end
 
     protected
@@ -19,7 +28,22 @@ module Scrapers
     end
 
     def reset_browser_manager(timeout: 10, process_timeout: 10)
-      @browser_manager = BrowserManager.new(timeout:, process_timeout:)
+      @browser_manager = BrowserManager.new({ timeout:, process_timeout: }, persistent: @browser_manager&.persistent?)
+    end
+
+    # 処理件数をカウントし、上限に達したらChromeプロセスごと作り直す
+    # 永続ブラウザが再利用されている場合にのみ意味を持つ（非永続モードでは常に安全なno-op）
+    # 呼び出し配線（各scrapeメソッド末尾など）は利用側で行う
+    def track_browser_use
+      return unless @browser_manager&.persistent?
+
+      @browser_manager.reset_session
+      @browser_use_count += 1
+
+      return unless @browser_use_count >= SCRAPING_BROWSER_MAX_USES
+
+      @browser_manager.restart
+      @browser_use_count = 0
     end
 
     def save_song(song_attrs)

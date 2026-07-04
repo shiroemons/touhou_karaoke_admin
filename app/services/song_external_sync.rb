@@ -8,16 +8,24 @@ class SongExternalSync
     end
 
     def fetch_joysound_songs(progress: nil)
-      scraper = Scrapers::JoysoundScraper.new
       joysound_songs = JoysoundSong.all
       existing_joysound_keys = Song.where(karaoke_type: "JOYSOUND").pluck(:title, :url).to_set
 
-      Song.process_with_progress(joysound_songs, label: "JOYSOUND楽曲", progress:, progress_options: { status: "JOYSOUND楽曲取得中", label: "JOYSOUND楽曲詳細を取得しています" }) do |record|
+      Song.process_with_progress(
+        joysound_songs,
+        label: "JOYSOUND楽曲",
+        progress:,
+        progress_options: { status: "JOYSOUND楽曲取得中", label: "JOYSOUND楽曲詳細を取得しています" },
+        worker_factory: -> { Scrapers::JoysoundScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
+        worker_teardown: ->(w) { w.shutdown },
+        continue_on_error: true
+      ) do |record, scraper|
         title = record.display_title.split("／").first
         scraper.scrape_song_page(record.url) unless existing_joysound_keys.include?([title, record.url])
       end
 
       existing_joysound_urls = Song.where(karaoke_type: "JOYSOUND").pluck(:url).to_set
+      allowlist_scraper = Scrapers::JoysoundScraper.new
 
       Constants::Karaoke::JOYSOUND_ALLOWLIST.each.with_index(1) do |url, index|
         next if existing_joysound_urls.include?(url)
@@ -31,15 +39,20 @@ class SongExternalSync
           current: index,
           total: Constants::Karaoke::JOYSOUND_ALLOWLIST.count
         )
-        scraper.scrape_song_page(url)
+        allowlist_scraper.scrape_song_page(url)
       end
     end
 
     def fetch_joysound_music_post_song
-      scraper = Scrapers::JoysoundScraper.new
       prioritized_posts = JoysoundMusicPostPrioritizer.call
 
-      Song.process_with_progress(prioritized_posts, label: "ミュージックポスト") do |record|
+      Song.process_with_progress(
+        prioritized_posts,
+        label: "ミュージックポスト",
+        worker_factory: -> { Scrapers::JoysoundScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
+        worker_teardown: ->(w) { w.shutdown },
+        continue_on_error: true
+      ) do |record, scraper|
         scraper.scrape_music_post_page(record)
       end
     end
@@ -70,11 +83,18 @@ class SongExternalSync
     end
 
     def fetch_dam_songs(progress: nil)
-      scraper = Scrapers::DamScraper.new
       dam_songs = DamSong.order(created_at: :desc)
       existing_dam_urls = Song.where(karaoke_type: "DAM").pluck(:url).to_set
 
-      Song.process_with_progress(dam_songs, label: "DAM楽曲", progress:, progress_options: { status: "DAM楽曲取得中", label: "DAM楽曲詳細を取得しています" }) do |record|
+      Song.process_with_progress(
+        dam_songs,
+        label: "DAM楽曲",
+        progress:,
+        progress_options: { status: "DAM楽曲取得中", label: "DAM楽曲詳細を取得しています" },
+        worker_factory: -> { Scrapers::DamScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
+        worker_teardown: ->(w) { w.shutdown },
+        continue_on_error: true
+      ) do |record, scraper|
         next if existing_dam_urls.include?(record.url)
 
         scraper.scrape_song_page(record)
@@ -82,10 +102,16 @@ class SongExternalSync
     end
 
     def update_dam_delivery_models(progress: nil)
-      scraper = Scrapers::DamScraper.new
       dam_songs = Song.dam.includes(:karaoke_delivery_models)
 
-      Song.process_with_progress(dam_songs, label: "DAM配信機種更新", progress:, progress_options: { status: "DAM配信機種更新中", label: "DAM配信機種を更新しています" }) do |song|
+      Song.process_with_progress(
+        dam_songs,
+        label: "DAM配信機種更新",
+        progress:,
+        progress_options: { status: "DAM配信機種更新中", label: "DAM配信機種を更新しています" },
+        worker_factory: -> { Scrapers::DamScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
+        worker_teardown: ->(w) { w.shutdown }
+      ) do |song, scraper|
         scraper.update_delivery_models(song)
       end
     end

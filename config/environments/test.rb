@@ -37,4 +37,11 @@ Rails.application.configure do
 
   # Raises error for missing translations.
   # config.action_view.raise_on_missing_translations = true
+
+  # ParallelProcessor の既定スレッド数(3)を明示的に上書きしない限り、テストでは逐次実行(1)にする。
+  # test/models/concerns/parallel_processor_test.rb 等の「既定」を前提にしたテストが、
+  # 意図せず並列パスに乗って非決定的にならないようにするため。
+  # 並列パスを検証するテストは各テスト内で ENV['SCRAPING_THREAD_COUNT'] を明示的に上書きしており、
+  # この既定値には依存しない。
+  ENV['SCRAPING_THREAD_COUNT'] ||= '1'
 end
