@@ -17,6 +17,8 @@ gem 'bootsnap', '>= 1.4.2', require: false
 group :development, :test do
   gem 'byebug', platforms: %i[mri windows]
   gem 'dotenv-rails'
+  gem 'pg_query'
+  gem 'prosopite'
 end
 
 group :development do

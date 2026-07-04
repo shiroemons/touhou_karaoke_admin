@@ -13,6 +13,10 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
+    # Detect N+1 queries during tests via prosopite.
+    setup { Prosopite.scan }
+    teardown { Prosopite.finish }
+
     # Add more helper methods to be used by all tests here...
     def assert_policy_permits(policy, *actions)
       actions.each do |action|
