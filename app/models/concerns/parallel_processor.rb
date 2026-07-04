@@ -55,10 +55,12 @@ module ParallelProcessor
     # @param collection [Array, ActiveRecord::Relation] 処理対象のコレクション
     # @param label [String] ログに表示するラベル
     # @param options [Hash] オプション（batch_size, process_count）
-    # @yield [record] 各レコードに対する処理
-    def process_with_progress(collection, label: nil, progress: nil, progress_options: {}, **, &)
+    # @param worker_factory [Proc, nil] スレッド毎の専用ワーカーを生成するProc（例: -> { Scraper.new }）
+    # @param worker_teardown [Proc, nil] worker_factoryが生成したワーカーを後始末するProc
+    # @yield [record, worker] 各レコードに対する処理（workerはworker_factory未指定ならnil）
+    def process_with_progress(collection, label: nil, progress: nil, progress_options: {}, worker_factory: nil, worker_teardown: nil, **, &)
       if progress
-        process_with_server_progress(collection, progress:, label:, progress_options:, &)
+        process_with_server_progress(collection, progress:, label:, progress_options:, worker_factory:, worker_teardown:, &)
         return
       end
 
@@ -71,7 +73,7 @@ module ParallelProcessor
 
     private
 
-    def process_with_server_progress(collection, progress:, label:, progress_options:)
+    def process_with_server_progress(collection, progress:, label:, progress_options:, worker_factory: nil, worker_teardown: nil, &)
       total_count = collection_total_count(collection)
       reporter = Admin::ProgressReporter.new(
         progress:,
@@ -91,24 +93,51 @@ module ParallelProcessor
         end
       end
 
-      if thread_count > 1
-        # SCRAPING_THREAD_COUNT>1 で並列実行するには、yield されるブロック内の処理（スクレイパ/ブラウザ）が
-        # スレッド安全である必要がある。ブラウザ再利用のスレッド毎割り当てが未実装のため、既定値は1（逐次）。
-        records = collection.respond_to?(:to_a) ? collection.to_a : collection
-        Parallel.each(records, in_threads: thread_count) do |record|
-          yield(record)
-          advance.call
+      pool = WorkerPool.new(worker_factory, worker_teardown)
+      begin
+        if thread_count > 1
+          process_in_parallel_batches(collection, thread_count:, pool:, advance:, &)
+        else
+          each_collection_record(collection) do |record|
+            yield(record, pool.worker_for_current_thread)
+            advance.call
+          end
         end
-      else
-        each_collection_record(collection) do |record|
-          yield(record)
+      ensure
+        pool.shutdown
+      end
+    end
+
+    # 並列分岐: バッチ単位で読み出し、バッチ内をスレッドで並列処理する。
+    # collectionを一括でto_aせず、メモリ使用量をバッチサイズに抑える。
+    def process_in_parallel_batches(collection, thread_count:, pool:, advance:)
+      each_parallel_batch(collection) do |batch|
+        Parallel.each(batch, in_threads: thread_count) do |record|
+          Rails.application.executor.wrap do
+            ActiveRecord::Base.connection_pool.with_connection do
+              yield(record, pool.worker_for_current_thread)
+            end
+          end
           advance.call
         end
       end
     end
 
+    # collectionをバッチ単位（DEFAULT_BATCH_SIZE件ずつ）でyieldする。
+    # ActiveRecord::Relationはfind_in_batchesで、それ以外はeach_sliceでバッチ化する。
+    def each_parallel_batch(collection, &)
+      if collection.respond_to?(:find_in_batches)
+        collection.find_in_batches(batch_size: DEFAULT_BATCH_SIZE, &)
+      else
+        collection.each_slice(DEFAULT_BATCH_SIZE, &)
+      end
+    end
+
+    # SCRAPING_THREAD_COUNTで指定されたスレッド数を、ActiveRecordのコネクションプールサイズで
+    # 上限クランプする（ActiveRecord::ConnectionTimeoutError防止）。最低1は保証する。
     def progress_thread_count
-      ENV.fetch('SCRAPING_THREAD_COUNT', DEFAULT_PROGRESS_THREAD_COUNT).to_i
+      configured_count = ENV.fetch('SCRAPING_THREAD_COUNT', DEFAULT_PROGRESS_THREAD_COUNT).to_i
+      configured_count.clamp(1, ActiveRecord::Base.connection_pool.size)
     end
 
     def collection_total_count(collection)

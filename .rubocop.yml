@@ -57,6 +57,8 @@ Metrics/ModuleLength:
     - app/models/concerns/parallel_processor.rb
 
 # 指数バックオフ用の引数(base_delay/max_delay/jitter)追加でパラメータ数が増えたため許容
+# スレッド毎ワーカー(worker_factory/worker_teardown)追加でパラメータ数が増えたため許容
 Metrics/ParameterLists:
   Exclude:
     - app/models/concerns/retryable.rb
+    - app/models/concerns/parallel_processor.rb
