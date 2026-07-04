@@ -10,14 +10,17 @@ class SongExternalSync
     def fetch_joysound_songs(progress: nil)
       scraper = Scrapers::JoysoundScraper.new
       joysound_songs = JoysoundSong.all
+      existing_joysound_keys = Song.where(karaoke_type: "JOYSOUND").pluck(:title, :url).to_set
 
       Song.process_with_progress(joysound_songs, label: "JOYSOUND楽曲", progress:, progress_options: { status: "JOYSOUND楽曲取得中", label: "JOYSOUND楽曲詳細を取得しています" }) do |record|
         title = record.display_title.split("／").first
-        scraper.scrape_song_page(record.url) unless Song.exists?(title:, url: record.url, karaoke_type: "JOYSOUND")
+        scraper.scrape_song_page(record.url) unless existing_joysound_keys.include?([title, record.url])
       end
 
+      existing_joysound_urls = Song.where(karaoke_type: "JOYSOUND").pluck(:url).to_set
+
       Constants::Karaoke::JOYSOUND_ALLOWLIST.each.with_index(1) do |url, index|
-        next if Song.exists?(url:, karaoke_type: "JOYSOUND")
+        next if existing_joysound_urls.include?(url)
 
         Admin::ProgressReporter.report(
           progress:,
@@ -69,10 +72,10 @@ class SongExternalSync
     def fetch_dam_songs(progress: nil)
       scraper = Scrapers::DamScraper.new
       dam_songs = DamSong.order(created_at: :desc)
+      existing_dam_urls = Song.where(karaoke_type: "DAM").pluck(:url).to_set
 
       Song.process_with_progress(dam_songs, label: "DAM楽曲", progress:, progress_options: { status: "DAM楽曲取得中", label: "DAM楽曲詳細を取得しています" }) do |record|
-        song = Song.includes(:song_with_dam_ouchikaraoke).find_by(karaoke_type: "DAM", url: record.url)
-        next if song.present?
+        next if existing_dam_urls.include?(record.url)
 
         scraper.scrape_song_page(record)
       end

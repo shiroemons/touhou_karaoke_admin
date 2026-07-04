@@ -9,6 +9,7 @@ class DamArtistUrl < ApplicationRecord
   def self.fetch_dam_artist(progress: nil)
     records = DamArtistUrl.all
     total_count = records.count
+    pending_urls = DisplayArtist.where(karaoke_type: "DAM", name_reading: "").pluck(:url).to_set
     records.find_each.with_index(1) do |dau, index|
       progress&.call(
         percentage: progress_percentage(index - 1, total_count),
@@ -18,7 +19,7 @@ class DamArtistUrl < ApplicationRecord
         current: index - 1,
         total: total_count
       )
-      dam_artist_page_parser(dau.url) if DisplayArtist.exists?(karaoke_type: "DAM", url: dau.url, name_reading: "")
+      dam_artist_page_parser(dau.url) if pending_urls.include?(dau.url)
       progress&.call(
         percentage: progress_percentage(index, total_count),
         status: "DAMアーティスト取得中",
