@@ -46,7 +46,7 @@ Rails.application.configure do
   config.log_tags = [:request_id]
 
   # Use a different cache store in production.
-  # config.cache_store = :mem_cache_store
+  config.cache_store = :solid_cache_store
 
   # Use Solid Queue for durable background jobs without Redis/Sidekiq.
   config.active_job.queue_adapter = :solid_queue
