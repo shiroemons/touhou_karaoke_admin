@@ -50,3 +50,8 @@ Rails/SkipsModelValidations:
 Style/SignalException:
   Exclude:
     - app/avo/actions/*
+
+# 逐次/並列(SCRAPING_THREAD_COUNT)両対応にした分だけ行数が増えたため許容
+Metrics/ModuleLength:
+  Exclude:
+    - app/models/concerns/parallel_processor.rb
