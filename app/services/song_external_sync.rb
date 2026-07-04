@@ -17,7 +17,8 @@ class SongExternalSync
         progress:,
         progress_options: { status: "JOYSOUND楽曲取得中", label: "JOYSOUND楽曲詳細を取得しています" },
         worker_factory: -> { Scrapers::JoysoundScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
-        worker_teardown: ->(w) { w.shutdown }
+        worker_teardown: ->(w) { w.shutdown },
+        continue_on_error: true
       ) do |record, scraper|
         title = record.display_title.split("／").first
         scraper.scrape_song_page(record.url) unless existing_joysound_keys.include?([title, record.url])
@@ -49,7 +50,8 @@ class SongExternalSync
         prioritized_posts,
         label: "ミュージックポスト",
         worker_factory: -> { Scrapers::JoysoundScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
-        worker_teardown: ->(w) { w.shutdown }
+        worker_teardown: ->(w) { w.shutdown },
+        continue_on_error: true
       ) do |record, scraper|
         scraper.scrape_music_post_page(record)
       end
@@ -90,7 +92,8 @@ class SongExternalSync
         progress:,
         progress_options: { status: "DAM楽曲取得中", label: "DAM楽曲詳細を取得しています" },
         worker_factory: -> { Scrapers::DamScraper.new(browser_manager: BrowserManager.new(persistent: true)) },
-        worker_teardown: ->(w) { w.shutdown }
+        worker_teardown: ->(w) { w.shutdown },
+        continue_on_error: true
       ) do |record, scraper|
         next if existing_dam_urls.include?(record.url)
 

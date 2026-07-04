@@ -18,6 +18,7 @@ class ParallelProcessorTest < ActiveSupport::TestCase
 
   teardown do
     ENV.delete('SCRAPING_THREAD_COUNT')
+    ENV.delete('SCRAPING_CONSECUTIVE_FAILURE_LIMIT')
   end
 
   test '既定（スレッド数1）では各要素を順序通りに1回ずつ処理し、進捗の最終currentが要素数と一致する' do
@@ -186,5 +187,91 @@ class ParallelProcessorTest < ActiveSupport::TestCase
     end
 
     assert_equal 1, teardown_calls.size
+  end
+
+  test 'continue_on_error: false（既定）ではブロックが例外を投げると従来通り伝播する' do
+    error = assert_raises(RuntimeError) do
+      DummyProcessor.process_with_progress([1, 2, 3], progress: ->(**_attrs) {}) do |record|
+        raise 'boom' if record == 2
+      end
+    end
+
+    assert_equal 'boom', error.message
+  end
+
+  test 'continue_on_error: trueでは一部レコードが例外を投げても全レコードが処理試行され、例外は伝播せず失敗が集約される（逐次）' do
+    records = [1, 2, 3, 4, 5]
+    processed = []
+
+    result = DummyProcessor.process_with_progress(records, progress: ->(**_attrs) {}, continue_on_error: true) do |record|
+      raise "boom #{record}" if [2, 4].include?(record)
+
+      processed << record
+    end
+
+    assert_equal [1, 3, 5], processed
+    assert_equal 2, result[:failed_count]
+    assert_equal 2, result[:failures].size
+    assert_not result[:stopped]
+  end
+
+  test 'continue_on_error: trueでは一部レコードが例外を投げても全レコードが処理試行され、例外は伝播せず失敗が集約される（並列）' do
+    ENV['SCRAPING_THREAD_COUNT'] = '3'
+    records = (1..20).to_a
+    mutex = Mutex.new
+    processed = []
+
+    result = DummyProcessor.process_with_progress(records, progress: ->(**_attrs) {}, continue_on_error: true) do |record|
+      raise "boom #{record}" if (record % 5).zero?
+
+      mutex.synchronize { processed << record }
+    end
+
+    assert_equal 16, processed.size
+    assert_equal 4, result[:failed_count]
+    assert_not result[:stopped]
+  end
+
+  test '連続失敗が閾値に達すると早期終了し、以降のレコードは処理されない（逐次）' do
+    ENV['SCRAPING_CONSECUTIVE_FAILURE_LIMIT'] = '3'
+    records = (1..10).to_a
+    processed = []
+
+    result = DummyProcessor.process_with_progress(records, progress: ->(**_attrs) {}, continue_on_error: true) do |record|
+      processed << record
+      raise "boom #{record}"
+    end
+
+    assert_equal [1, 2, 3], processed
+    assert_equal 3, result[:failed_count]
+    assert result[:stopped]
+  end
+
+  test '並列実行でも連続失敗が閾値に達するとstoppedが立つ（非決定的なため停止したことのみ確認する）' do
+    ENV['SCRAPING_THREAD_COUNT'] = '2'
+    ENV['SCRAPING_CONSECUTIVE_FAILURE_LIMIT'] = '2'
+    records = (1..20).to_a
+
+    result = DummyProcessor.process_with_progress(records, progress: ->(**_attrs) {}, continue_on_error: true) do |_record|
+      raise 'boom'
+    end
+
+    assert result[:stopped]
+    assert_operator result[:failed_count], :<=, records.size
+  end
+
+  test '成功が挟まると連続失敗カウンタがリセットされ、閾値に達しても早期終了しない' do
+    ENV['SCRAPING_CONSECUTIVE_FAILURE_LIMIT'] = '2'
+    records = (1..6).to_a
+    processed = []
+
+    result = DummyProcessor.process_with_progress(records, progress: ->(**_attrs) {}, continue_on_error: true) do |record|
+      processed << record
+      raise "boom #{record}" if record.odd?
+    end
+
+    assert_equal records, processed
+    assert_equal 3, result[:failed_count]
+    assert_not result[:stopped]
   end
 end
