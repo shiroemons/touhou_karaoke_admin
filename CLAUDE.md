@@ -13,9 +13,8 @@ http://localhost:3000 でアクセス可能。
 
 ## 技術スタック
 
-- Ruby 3.4.4 / Rails 8.0.2 / PostgreSQL 18
+- Ruby 4.0.5 / Rails 8.1 / PostgreSQL 18
 - devbox (Nix ベース開発環境)
-- Avo (管理画面)
 - Algolia (検索)
 - Ferrum (Webスクレイピング)
 
@@ -33,10 +32,11 @@ http://localhost:3000 でアクセス可能。
 
 - **DAM**: `DamArtistUrl`, `DamSong` モデル経由
 - **JOYSOUND**: `JoysoundSong`, `JoysoundMusicPost` モデル経由
-- Avo アクション: `app/avo/actions/`
+- 操作: `app/models/admin/operations/`
 
 ## 管理画面
 
-Avo でルートパス (`/`) にマウント。
-- リソース: `app/avo/resources/`
-- コントローラー: `app/controllers/avo/`
+独自の管理画面フレームワークをルートパス (`/`) にマウント。
+- リソース定義: `app/models/admin/resources/`（`Admin::ResourceRegistry` に登録）
+- コントローラー: `app/controllers/admin/`（一覧表示は `Admin::ResourcesController` + `Admin::ResourceIndexQuery`）
+- 操作: `app/models/admin/operations/`
