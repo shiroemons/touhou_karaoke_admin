@@ -40,8 +40,12 @@ module Admin
         imported_count = 0
         skipped_count = 0
 
-        CSV.table(uploaded_file.path, col_sep: "\t", converters: nil, liberal_parsing: true).each do |row|
-          song = Song.find_by(id: row[:id])
+        table = CSV.table(uploaded_file.path, col_sep: "\t", converters: nil, liberal_parsing: true)
+        songs_by_id = fetch_songs_by_id(table)
+        original_songs_by_title = fetch_original_songs_by_title(table)
+
+        table.each do |row|
+          song = songs_by_id[row[:id].to_s]
           original_song_titles = row[:original_songs].to_s.split('/').compact_blank
 
           if song.blank? || original_song_titles.blank?
@@ -49,7 +53,7 @@ module Admin
             next
           end
 
-          song.original_songs = OriginalSong.where(title: original_song_titles, is_duplicate: false)
+          song.original_songs = original_song_titles.flat_map { |title| original_songs_by_title[title] || [] }.uniq
           song.assign_attributes(
             youtube_url: row[:youtube_url].to_s,
             nicovideo_url: row[:nicovideo_url].to_s,
@@ -68,6 +72,16 @@ module Admin
       private
 
       attr_reader :operation, :params, :scope
+
+      def fetch_songs_by_id(table)
+        ids = table.filter_map { |row| row[:id].to_s.presence }
+        Song.where(id: ids).index_by { |song| song.id.to_s }
+      end
+
+      def fetch_original_songs_by_title(table)
+        titles = table.flat_map { |row| row[:original_songs].to_s.split('/').compact_blank }.uniq
+        OriginalSong.where(title: titles, is_duplicate: false).group_by(&:title)
+      end
 
       def operation_scope
         ids = selected_ids

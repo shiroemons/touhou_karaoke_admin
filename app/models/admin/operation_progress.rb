@@ -59,6 +59,16 @@ module Admin
         Rails.cache.read(cache_key(id)) || memory_store[id] || payload(state: 'pending', percentage: 0, status: '待機中', label: '処理を開始しています...', detail: nil)
       end
 
+      # 複数の progress_id をまとめて取得する。呼び出し元がループで read(id) を
+      # 繰り返すと id ごとに SELECT が発生し N+1 になるため、事前に一括取得する。
+      def read_many(ids)
+        ids = Array(ids).compact.uniq
+        return {} if ids.blank?
+
+        records_by_id = Record.where(id: ids.select { |id| valid_id?(id) }).index_by(&:id)
+        ids.index_with { |id| records_by_id[id] ? record_payload(records_by_id[id]) : read(id) }
+      end
+
       def prune_older_than!(time)
         expired_ids = Record.where(updated_at: ...time).pluck(:id)
         deleted_count = Record.where(id: expired_ids).delete_all

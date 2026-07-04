@@ -16,19 +16,26 @@ class JoysoundSong < ApplicationRecord
   def self.add_delivery_model
     smartphone_service = KaraokeDeliveryModel.find_by(karaoke_type: "JOYSOUND", name: "スマホサービス")
     home_karaoke = KaraokeDeliveryModel.find_by(karaoke_type: "JOYSOUND", name: "家庭用カラオケ")
-    enabled_smartphone_service.each do |js|
+
+    attach_delivery_model(enabled_smartphone_service, smartphone_service)
+    attach_delivery_model(enabled_home_karaoke, home_karaoke)
+  end
+
+  def self.attach_delivery_model(joysound_songs, delivery_model)
+    titles = joysound_songs.map { |js| js.display_title.split("／").first }
+    urls = joysound_songs.map(&:url)
+    songs_by_title_and_url = Song.where(karaoke_type: "JOYSOUND", title: titles, url: urls)
+                                 .includes(:karaoke_delivery_models)
+                                 .index_by { |song| [song.title, song.url] }
+
+    joysound_songs.each do |js|
       title = js.display_title.split("／").first
       url = js.url
-      song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
-      song.karaoke_delivery_models << smartphone_service if song.present? && !song.karaoke_delivery_models&.include?(smartphone_service)
-    end
-    enabled_home_karaoke.each do |js|
-      title = js.display_title.split("／").first
-      url = js.url
-      song = Song.find_by(title:, url:, karaoke_type: "JOYSOUND")
-      song.karaoke_delivery_models << home_karaoke if song.present? && !song.karaoke_delivery_models&.include?(home_karaoke)
+      song = songs_by_title_and_url[[title, url]]
+      song.karaoke_delivery_models << delivery_model if song.present? && !song.karaoke_delivery_models&.include?(delivery_model)
     end
   end
+  private_class_method :attach_delivery_model
 
   def self.fetch_joysound_touhou_songs(progress: nil)
     Scrapers::JoysoundSongScraper.new.fetch_touhou_songs(progress:)

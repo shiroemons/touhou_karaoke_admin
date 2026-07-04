@@ -54,7 +54,14 @@ module Admin
       ).run
 
       assert_equal '上へ移動を実行しました。', result.message
-      assert_operator second.reload.order, :<, first.reload.order
+
+      # first/second という異なる2レコードをそれぞれ reload しているだけであり、
+      # OperationRunner#run（move_higher の実行）自体にN+1は存在しない。
+      # ただし同一形状のSELECTが2回発行されるため、Prosopiteがこれを誤ってN+1と検知してしまう。
+      # そのため検証目的の reload のみ Prosopite の計測対象から除外する。
+      Prosopite.pause do
+        assert_operator second.reload.order, :<, first.reload.order
+      end
     end
 
     test 'imports tsv rows and skips missing songs or original titles' do

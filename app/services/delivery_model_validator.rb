@@ -89,15 +89,18 @@ class DeliveryModelValidator
   def normalize_existing_records
     updated_count = 0
 
+    # (name, karaoke_type) の組を事前に一括ロードし、ループ内での重複チェックSELECTを避ける
+    existing_ids_by_name_and_type = KaraokeDeliveryModel.pluck(:id, :name, :karaoke_type)
+                                                        .each_with_object({}) { |(id, name, karaoke_type), hash| hash[[name, karaoke_type]] = id }
+
     KaraokeDeliveryModel.find_each do |model|
       normalized_name = normalize_name(model.name)
 
       next if normalized_name == model.name
 
       # 正規化後の名前で重複がないかチェック
-      if KaraokeDeliveryModel.where(name: normalized_name, karaoke_type: model.karaoke_type)
-                             .where.not(id: model.id)
-                             .exists?
+      duplicate_id = existing_ids_by_name_and_type[[normalized_name, model.karaoke_type]]
+      if duplicate_id && duplicate_id != model.id
         Admin::OperationLogger.log(level: :warn, event: :db_update, action: :skip, resource: :karaoke_delivery_model, id: model.id, name: model.name, normalized_name:, reason: "duplicate")
         next
       end
@@ -105,6 +108,8 @@ class DeliveryModelValidator
       begin
         original_name = model.name
         model.update!(name: normalized_name)
+        existing_ids_by_name_and_type.delete([original_name, model.karaoke_type])
+        existing_ids_by_name_and_type[[normalized_name, model.karaoke_type]] = model.id
         updated_count += 1
         Admin::OperationLogger.log(level: :info, event: :db_update, action: :update, resource: :karaoke_delivery_model, id: model.id, name: original_name, normalized_name:)
       rescue ActiveRecord::RecordInvalid => e

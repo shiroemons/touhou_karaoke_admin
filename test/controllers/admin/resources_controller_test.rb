@@ -290,13 +290,13 @@ module Admin
 
     test 'all resources render index and show pages' do
       resource_records.each do |resource, record|
-        get admin_resources_path(resource)
+        with_request_scoped_prosopite_scan { get admin_resources_path(resource) }
 
         assert_response :success, "#{resource.key} index should render"
         assert_select 'tbody tr td:not(.admin-actions-column)', { minimum: 1 }, "#{resource.key} index should render data cells"
         assert_select 'tbody tr[data-admin-row-href]', { minimum: 1 }, "#{resource.key} index rows should link to show pages"
 
-        get admin_resource_path(resource, record)
+        with_request_scoped_prosopite_scan { get admin_resource_path(resource, record) }
 
         assert_response :success, "#{resource.key} show should render"
       end
@@ -304,8 +304,8 @@ module Admin
 
     test 'all resource indexes stay within bounded query counts' do
       resource_records.each_key do |resource|
-        sql = capture_sql do
-          get admin_resources_path(resource), params: { per_page: 24 }
+        sql = with_request_scoped_prosopite_scan do
+          capture_sql { get admin_resources_path(resource), params: { per_page: 24 } }
         end
 
         assert_response :success, "#{resource.key} index should render"
@@ -1568,6 +1568,21 @@ module Admin
       klass.define_singleton_method(method_name) do |*args, **kwargs, &block|
         original.call(*args, **kwargs, &block)
       end
+    end
+
+    # test/test_helper.rb wraps Prosopite.scan/finish around the whole test method, but the
+    # tests above deliberately issue many independent page requests in a single test. Without
+    # this, Prosopite treats those unrelated requests as one N+1 because they share an
+    # identical query shape (e.g. the same ChangeLog lookup for different records). Re-scoping
+    # each request to its own scan window mirrors Prosopite::Middleware::Rack, which already
+    # scopes real traffic per request in development (config/environments/development.rb), so
+    # this only affects detection granularity in this test, not application behavior.
+    def with_request_scoped_prosopite_scan
+      Prosopite.finish
+      Prosopite.scan
+      yield
+    ensure
+      Prosopite.finish
     end
 
     def capture_sql

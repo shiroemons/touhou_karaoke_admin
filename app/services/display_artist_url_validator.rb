@@ -47,12 +47,12 @@ class DisplayArtistUrlValidator
   end
 
   def validate_all
-    records_with_urls = DisplayArtist.where.not(url: ['', nil])
+    records_with_urls = DisplayArtist.where.not(url: ['', nil]).includes(:songs)
     total_count = records_with_urls.count
 
     Rails.logger.info("DisplayArtistUrlValidator: Starting validation of #{total_count} records")
 
-    records_with_urls.find_each do |record|
+    records_with_urls.each do |record|
       report_progress(total_count)
       @checked_count += 1
       log_progress(total_count)
@@ -122,7 +122,7 @@ class DisplayArtistUrlValidator
       action = @dry_run ? 'would_delete' : 'delete'
       Admin::OperationLogger.log(level: :info, event: :db_update, action:, resource: :display_artist, id: record.id, name: record.name)
     else
-      Admin::OperationLogger.log(level: :info, event: :db_update, action: :skip, resource: :display_artist, id: record.id, name: record.name, reason: "has_songs", songs_count: record.songs.count)
+      Admin::OperationLogger.log(level: :info, event: :db_update, action: :skip, resource: :display_artist, id: record.id, name: record.name, reason: "has_songs", songs_count: record.songs.size)
     end
   end
 

@@ -188,6 +188,9 @@ module Admin
                when ['Circle', :songs]
                  circle_song_counts(record_ids)
                else
+                 # 新しい count_association を追加する場合は、上記のように group count で
+                 # 特殊ケース化するか、resource の includes で対象の関連を preload すること。
+                 # どちらも行わないと、レコードごとに関連を取得する N+1 が発生する。
                  @records.index_with { |record| record.public_send(association).size }
                end
 

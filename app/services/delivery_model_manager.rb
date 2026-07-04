@@ -40,28 +40,36 @@ class DeliveryModelManager
     return id if id
 
     # キャッシュになければデータベースから再度検索（他プロセスが作成した可能性）
+    # ダブルチェックロッキングによる1件ずつの取得・作成は、複数スレッドからの
+    # 同時作成を防ぐために本質的に逐次実行が必要であり、事前の一括ロードに
+    # 置き換えられない。ここでのSELECT/INSERTはProsopite.pauseでN+1検知の対象外にする。
     @mutex.synchronize do
-      # 再度キャッシュを確認（ダブルチェックロッキング）
-      id = get_id_without_refresh(normalized_name, karaoke_type)
-      return id if id
+      Prosopite.pause do
+        # 再度キャッシュを確認（ダブルチェックロッキング）
+        id = get_id_without_refresh(normalized_name, karaoke_type)
+        next id if id
 
-      # バリデーターを使用して安全に取得または作成
-      model = validator.find_or_create_safely(normalized_name, karaoke_type)
+        # バリデーターを使用して安全に取得または作成
+        model = validator.find_or_create_safely(normalized_name, karaoke_type)
 
-      if model
-        @cache[[normalized_name, karaoke_type]] = model.id
-        # 元の名前もキャッシュに追加（正規化前の名前での検索を高速化）
-        @cache[[name, karaoke_type]] = model.id if name != normalized_name
-        model.id
-      else
-        Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :karaoke_delivery_model, name: normalized_name, karaoke_type:, reason: "create_failed")
-        nil
+        if model
+          @cache[[normalized_name, karaoke_type]] = model.id
+          # 元の名前もキャッシュに追加（正規化前の名前での検索を高速化）
+          @cache[[name, karaoke_type]] = model.id if name != normalized_name
+          model.id
+        else
+          Admin::OperationLogger.log(level: :error, event: :db_update, action: :error, resource: :karaoke_delivery_model, name: normalized_name, karaoke_type:, reason: "create_failed")
+          nil
+        end
       end
     end
   end
 
   # 複数の配信機種を一括で取得または作成
   def find_or_create_ids(names, karaoke_type)
+    # キャッシュに無い名前をまとめて検索し、ループ内での逐次SELECTを避ける
+    preload_ids(names, karaoke_type)
+
     names.map { |name| find_or_create_id(name, karaoke_type) }
   end
 
@@ -98,6 +106,24 @@ class DeliveryModelManager
   end
 
   private
+
+  # キャッシュに無い名前の配信機種をまとめて検索し、キャッシュに書き込む
+  # （find_or_create_ids のループ内で1件ずつSELECTしないようにするための事前ロード）
+  def preload_ids(names, karaoke_type)
+    ensure_cache_fresh
+
+    validator = DeliveryModelValidator.new
+    normalized_names = names.filter_map { |name| validator.normalize_name(name) }.uniq
+    missing_names = normalized_names.reject { |name| get_id_without_refresh(name, karaoke_type) }
+    return if missing_names.empty?
+
+    found_ids = KaraokeDeliveryModel.where(name: missing_names, karaoke_type:).pluck(:name, :id)
+    return if found_ids.empty?
+
+    @mutex.synchronize do
+      found_ids.each { |name, id| @cache[[name, karaoke_type]] = id }
+    end
+  end
 
   # キャッシュリフレッシュなしでIDを取得
   def get_id_without_refresh(name, karaoke_type)

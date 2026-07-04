@@ -11,7 +11,7 @@ module Admin
           model: DisplayArtist,
           label: 'アーティスト',
           title: ->(record) { "[#{record.karaoke_type}] #{record.name}" },
-          includes: %i[circles songs],
+          includes: %i[circles songs dam_songs],
           order: { created_at: :desc },
           search: { name_cont: :q },
           filters: [

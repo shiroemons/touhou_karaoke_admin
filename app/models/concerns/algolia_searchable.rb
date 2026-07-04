@@ -1,6 +1,12 @@
 module AlgoliaSearchable
   extend ActiveSupport::Concern
 
+  # NOTE: このモジュールは現在どのモデルにも include されておらず未使用（実際のインデックス処理は
+  # lib/export_songs.rb 経由で行われている）。将来モデルへ include して `Model.reindex` を実行する
+  # 場合は、lib/export_songs.rb と同等の eager load
+  # (`includes(:karaoke_delivery_models, :song_with_dam_ouchikaraoke, :song_with_joysound_utasuki,
+  # display_artist: :circles, original_songs: [:original])`) を必ず行うこと。
+  # さもないと reindex 時に各レコードごとに関連を取得する典型的な N+1 が発生する。
   included do
     include AlgoliaSearch
 
