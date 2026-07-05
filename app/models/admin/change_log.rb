@@ -28,11 +28,20 @@ module Admin
         record_event!(resource:, record:, actor_name:, event: 'create', changes: record.previous_changes)
       end
 
-      def record_update!(resource:, record:, actor_name:)
-        changes = visible_changes(resource, record.previous_changes)
-        return if changes.blank?
+      def record_update!(resource:, record:, actor_name:, extra_changed_fields: {})
+        changed_fields = visible_changes(resource, record.previous_changes).merge(extra_changed_fields)
+        return if changed_fields.blank?
 
-        record_event!(resource:, record:, actor_name:, event: 'update', changes: record.previous_changes)
+        create!(
+          resource_key: resource.key.to_s,
+          resource_label: resource.label,
+          record_type: record.class.name,
+          record_id: record_identifier(record),
+          record_title: record_title(resource, record),
+          event: 'update',
+          changed_fields:,
+          actor_name:
+        )
       end
 
       def record_destroy!(resource:, record:, actor_name:)

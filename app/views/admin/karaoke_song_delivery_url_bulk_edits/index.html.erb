@@ -193,7 +193,7 @@
               <% Admin::KaraokeSongDeliveryUrlBulkEditor::URL_COLUMNS.each_with_index do |column, column_index| %>
                 <td>
                   <%= url_field_tag "songs[#{song.id}][#{column}]",
-                                    song.public_send(column),
+                                    karaoke_song_delivery_url_submitted_field(song, column),
                                     class: "admin-bulk-cell input input-bordered",
                                     placeholder: karaoke_song_url_placeholder(column),
                                     aria: { label: "#{song.title}の#{karaoke_song_delivery_url_column_label(column)}" },

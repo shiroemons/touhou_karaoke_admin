@@ -192,6 +192,30 @@ test("setOriginalSongPickerText resolves selected items and renders candidates f
   assert.equal(fixture.options.children[0].dataset.adminOriginalSongCandidateFor, "紅楼?")
 })
 
+test("setOriginalSongPickerText appends to existing selection when append is true", async () => {
+  const fixture = buildPicker({ initialValue: "既存曲" })
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      items: [
+        { exists: true, title: "新しい曲" },
+      ],
+    }),
+  })
+
+  await setOriginalSongPickerText(fixture.search, "新しい曲", { append: true })
+
+  assert.equal(fixture.search.value, "")
+  assert.equal(fixture.valueInput.value, "既存曲/新しい曲")
+  assert.deepEqual(fixture.chips.children.map((chip) => chip.textContent), ["既存曲", "新しい曲"])
+  assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "valid"])
+})
+
 test("setOriginalSongPickerText marks text invalid when resolve fails", async () => {
   const fixture = buildPicker()
   const errors = []

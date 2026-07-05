@@ -88,6 +88,25 @@ module Admin
       }
     end
 
+    def update_original_songs_for(song, text)
+      errors = []
+      original_songs = resolve_original_songs(text.to_s, 1, errors)
+      return Result.new(updated_count: 0, skipped_count: 0, errors: errors.map { |error| error.sub(/\A1行目: /, '') }) if errors.present?
+
+      before_codes = song.original_songs.map(&:code).sort
+      before_titles = song.original_songs.map(&:title)
+      song.original_songs = original_songs
+      return Result.new(updated_count: 0, skipped_count: 1, errors: []) if before_codes == song.original_songs.map(&:code).sort
+
+      original_songs_change = original_songs_change_log_field(changed: true, before_titles:, after_titles: song.original_songs.map(&:title))
+
+      Song.transaction do
+        song.save!
+        ChangeLog.record_update!(resource: song_resource, record: song, actor_name:, extra_changed_fields: original_songs_change)
+      end
+      Result.new(updated_count: 1, skipped_count: 0, errors: [])
+    end
+
     private
 
     attr_reader :actor_name, :song_resource
@@ -199,15 +218,35 @@ module Admin
 
     def update_applied?(update)
       song = update.fetch(:song)
-      before_original_song_codes = song.original_songs.map(&:code).sort
+      before_codes = song.original_songs.map(&:code).sort
+      before_titles = song.original_songs.map(&:title)
       song.original_songs = update.fetch(:original_songs)
       song.assign_attributes(update.fetch(:attributes))
-      original_songs_changed = before_original_song_codes != song.original_songs.map(&:code).sort
+      original_songs_changed = before_codes != song.original_songs.map(&:code).sort
       return false unless original_songs_changed || song.changed?
 
+      original_songs_change = original_songs_change_log_field(
+        changed: original_songs_changed, before_titles:, after_titles: song.original_songs.map(&:title)
+      )
+
       song.save!
-      ChangeLog.record_update!(resource: song_resource, record: song, actor_name:)
+      ChangeLog.record_update!(resource: song_resource, record: song, actor_name:, extra_changed_fields: original_songs_change)
       true
+    end
+
+    # `original_songs` is a has_many :through association, so reassigning it never touches Song's
+    # own columns and ChangeLog.record_update! would otherwise see a blank `previous_changes` and
+    # skip logging. Build the before/after titles explicitly so the link change is still recorded.
+    def original_songs_change_log_field(changed:, before_titles:, after_titles:)
+      return {} unless changed
+
+      {
+        'original_songs' => {
+          label: '原曲',
+          before: before_titles.join('/').presence,
+          after: after_titles.join('/').presence
+        }
+      }
     end
 
     def normalized_url_attributes(row)

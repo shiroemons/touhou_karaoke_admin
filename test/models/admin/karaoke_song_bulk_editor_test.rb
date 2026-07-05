@@ -24,6 +24,24 @@ module Admin
       assert_equal 'https://youtube.example/watch', song.youtube_url
     end
 
+    test 'records a change log from a bulk edit that only changes the linked original song' do
+      song = create_song
+      original_song = create_original_song(title: 'Bulk Original Only Change')
+
+      assert_difference -> { Admin::ChangeLog.count }, 1 do
+        result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_from_form_rows(
+          song.id => { 'original_songs' => original_song.title }
+        )
+
+        assert_empty result.errors
+        assert_equal 1, result.updated_count
+        assert_equal 0, result.skipped_count
+      end
+
+      assert_equal [original_song], song.reload.original_songs.to_a
+      assert_equal 'update', Admin::ChangeLog.last.event
+    end
+
     test 'updates rows from exported tsv columns' do
       song = create_song(title: 'TSV Bulk Song')
       original_song = create_original_song(title: 'TSV Bulk Original')
@@ -295,6 +313,86 @@ module Admin
       assert_equal ['youtube_url'], result.rows.first.fetch(:changed_url_columns)
       assert_empty song.reload.original_songs
       assert_equal '', song.youtube_url
+    end
+
+    test 'update_original_songs_for links a song to a resolved original song and records a change log' do
+      song = create_song(youtube_url: 'https://youtube.example/keep')
+      original_song = create_original_song(title: 'Individual Link Original')
+
+      assert_difference -> { Admin::ChangeLog.count }, 1 do
+        result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_original_songs_for(song, original_song.title)
+
+        assert_empty result.errors
+        assert_equal 1, result.updated_count
+        assert_equal 0, result.skipped_count
+      end
+
+      assert_equal [original_song], song.reload.original_songs.to_a
+      assert_equal 'https://youtube.example/keep', song.youtube_url
+      assert_equal 'update', Admin::ChangeLog.last.event
+    end
+
+    test 'update_original_songs_for skips saving when the requested original songs are unchanged' do
+      original_song = create_original_song(title: 'Unchanged Individual Original')
+      song = create_song
+      song.original_songs = [original_song]
+
+      assert_no_difference -> { Admin::ChangeLog.count } do
+        result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_original_songs_for(song, original_song.title)
+
+        assert_empty result.errors
+        assert_equal 0, result.updated_count
+        assert_equal 1, result.skipped_count
+      end
+
+      assert_equal [original_song], song.reload.original_songs.to_a
+    end
+
+    test 'update_original_songs_for returns errors and does not change links for an unknown title' do
+      original_song = create_original_song(title: 'Known Individual Original')
+      song = create_song
+      song.original_songs = [original_song]
+
+      assert_no_difference -> { Admin::ChangeLog.count } do
+        result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_original_songs_for(song, 'Missing Individual Original')
+
+        assert_equal 1, result.errors.size
+        assert_match(/Missing Individual Original/, result.errors.first)
+        assert_equal 0, result.updated_count
+        assert_equal 0, result.skipped_count
+      end
+
+      assert_equal [original_song], song.reload.original_songs.to_a
+    end
+
+    test 'update_original_songs_for adds an additional original song alongside an existing one' do
+      existing_original_song = create_original_song(title: 'Existing Individual Original')
+      additional_original_song = create_original_song(title: 'Additional Individual Original')
+      song = create_song
+      song.original_songs = [existing_original_song]
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_original_songs_for(
+        song, "#{existing_original_song.title}/#{additional_original_song.title}"
+      )
+
+      assert_empty result.errors
+      assert_equal 1, result.updated_count
+      assert_equal [existing_original_song.code, additional_original_song.code].sort, song.reload.original_songs.map(&:code).sort
+    end
+
+    test 'update_original_songs_for does not touch delivery url columns' do
+      song = create_song(
+        youtube_url: 'https://youtube.example/untouched',
+        nicovideo_url: 'https://nicovideo.example/untouched'
+      )
+      original_song = create_original_song(title: 'URL Preserving Individual Original')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_original_songs_for(song, original_song.title)
+
+      assert_empty result.errors
+      song.reload
+      assert_equal 'https://youtube.example/untouched', song.youtube_url
+      assert_equal 'https://nicovideo.example/untouched', song.nicovideo_url
     end
   end
 end

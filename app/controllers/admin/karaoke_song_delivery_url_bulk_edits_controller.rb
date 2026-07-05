@@ -7,7 +7,8 @@ module Admin
                   :karaoke_song_delivery_url_sort_options,
                   :karaoke_song_delivery_url_sort_direction_options,
                   :karaoke_song_delivery_url_per_page_options,
-                  :karaoke_song_delivery_url_karaoke_type_options
+                  :karaoke_song_delivery_url_karaoke_type_options,
+                  :karaoke_song_delivery_url_submitted_field
 
     def index
       authorize Song
@@ -18,10 +19,11 @@ module Admin
       authorize Song, preview_request? ? :index? : :update?
 
       if preview_request?
+        @submitted_rows = bulk_tsv.present? ? {} : song_rows
         @preview_result = if bulk_tsv.present?
                             editor.preview_from_tsv(bulk_tsv)
                           else
-                            editor.preview_from_form_rows(song_rows)
+                            editor.preview_from_form_rows(@submitted_rows)
                           end
         load_index
         flash.now[:alert] = @preview_result.errors.join("\n") if @preview_result.errors.present?
@@ -106,6 +108,11 @@ module Admin
 
     def karaoke_song_delivery_url_karaoke_type_options
       @karaoke_song_delivery_url_karaoke_type_options ||= Song.distinct.order(:karaoke_type).pluck(:karaoke_type).compact_blank
+    end
+
+    def karaoke_song_delivery_url_submitted_field(song, column)
+      row = @submitted_rows && @submitted_rows[song.id.to_s]
+      row&.key?(column) ? row[column].to_s : song.public_send(column).to_s
     end
 
     def song_rows
