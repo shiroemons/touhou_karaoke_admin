@@ -14,7 +14,7 @@
     "@playwright/cli": "^0.1.13",
     "@tailwindcss/cli": "^4",
     "daisyui": "^5.5.19",
-    "esbuild": "^0.25.5",
+    "esbuild": "^0.28.1",
     "lucide-static": "^1.14.0",
     "tailwindcss": "^4"
   },
