@@ -333,6 +333,68 @@ def rjust_display(str, width)
 end
 
 # ============================================================
+# Unicode罫線テーブル描画ヘルパー
+# ============================================================
+
+# テーブルのセルを表現する（テキストと任意の着色関数）
+# @param text [String] セルの表示テキスト（着色前の素の文字列）
+# @param color [Proc, nil] パディング後の文字列に適用する着色関数（例: ->(s) { Colors.red(s) }）
+def table_cell(text, color: nil, plain: nil)
+  text = text.to_s
+  { text: text, color: color, plain: (plain || text).to_s }
+end
+
+# 罫線ボーダー行を1本組み立てる
+# @param left [String] 左端の罫線文字
+# @param mid [String] 列区切りの罫線文字
+# @param right [String] 右端の罫線文字
+# @param col_widths [Array<Integer>] 各列の内容表示幅
+def build_border_line(left, mid, right, col_widths)
+  segments = col_widths.map { |width| "─" * (width + 2) }
+  "#{left}#{segments.join(mid)}#{right}"
+end
+
+# テーブルのデータ行を1本組み立てる（パディングは着色前の素の文字列に対して行う）
+# @param cells [Array<Hash>] table_cell で作成したセルの配列
+# @param col_widths [Array<Integer>] 各列の内容表示幅
+# @param aligns [Array<Symbol>] 各列の寄せ（:left または :right）
+def build_table_row(cells, col_widths, aligns)
+  formatted_cells = cells.each_with_index.map do |cell, i|
+    pad = " " * [col_widths[i] - display_width(cell[:plain]), 0].max
+    body = aligns[i] == :right ? "#{pad}#{cell[:text]}" : "#{cell[:text]}#{pad}"
+    body = cell[:color].call(body) if cell[:color]
+    " #{body} "
+  end
+  "│#{formatted_cells.join('│')}│"
+end
+
+# Unicode罫線による外枠付きテーブルを描画する
+# @param headers [Array<String>] ヘッダーの各列文字列
+# @param rows [Array<Array<Hash>>] table_cell で作成したセルの配列（行の配列）
+# @param aligns [Array<Symbol>] 各列の寄せ（:left または :right）
+# @param separator_before_rows [Array<Integer>] この行の前に区切り線を挿入する（rows のインデックス, 0始まり）
+def print_box_table(headers:, rows:, aligns:, separator_before_rows: [])
+  header_cells = headers.map { |header| table_cell(header) }
+  col_widths = Array.new(headers.size) do |i|
+    plains = [header_cells[i][:plain]] + rows.map { |row| row[i][:plain] }
+    plains.map { |plain| display_width(plain) }.max
+  end
+
+  header_separator = build_border_line("├", "┼", "┤", col_widths)
+
+  puts build_border_line("┌", "┬", "┐", col_widths)
+  puts build_table_row(header_cells, col_widths, aligns)
+  puts header_separator
+
+  rows.each_with_index do |row, index|
+    puts header_separator if separator_before_rows.include?(index)
+    puts build_table_row(row, col_widths, aligns)
+  end
+
+  puts build_border_line("└", "┴", "┘", col_widths)
+end
+
+# ============================================================
 # 差分表示用の値フォーマット（ハッシュ形式を統一）
 # ============================================================
 def format_value(value)
@@ -397,6 +459,50 @@ def format_diff(diff)
     format_array_diff(label, old_val, new_val)
   else
     format_scalar_diff(label, old_val, new_val)
+  end
+end
+
+# ============================================================
+# 更新diffをカード表示用の行配列に整形
+# @param diff [Hash] { path:, old:, new: } 形式の差分
+# @param label_width [Integer] フィールドラベルの揃え幅（表示幅ベース）
+# @return [Array<String>] 着色済みの出力行（インデント込み）
+# ============================================================
+def format_update_diff_lines(diff, label_width)
+  old_val = diff[:old]
+  new_val = diff[:new]
+  label = field_to_label(diff[:path])
+  colored_label = Colors.cyan(ljust_display(label, label_width))
+
+  if old_val.is_a?(Array) && new_val.is_a?(Array)
+    added = extract_keys(new_val) - extract_keys(old_val)
+    removed = extract_keys(old_val) - extract_keys(new_val)
+
+    lines = []
+    lines << "  #{Colors.green('＋')} #{colored_label}  #{Colors.green(added.join(', '))}" if added.any?
+    lines << "  #{Colors.red('－')} #{colored_label}  #{Colors.red(removed.join(', '))}" if removed.any?
+    lines << "  #{Colors.cyan('～')} #{colored_label}  (順序変更のみ)" if lines.empty?
+    lines
+  else
+    old_str = format_card_value(old_val)
+    new_str = format_card_value(new_val)
+    [
+      "  #{Colors.yellow('✎')} #{colored_label}  #{old_str} →",
+      "     #{Colors.green(new_str)}"
+    ]
+  end
+end
+
+# ============================================================
+# カード表示用のスカラー値整形（文字列・nil はクォートなし）
+# @param value [Object] 差分の値
+# @return [String] 表示用文字列
+# ============================================================
+def format_card_value(value)
+  case value
+  when String then value
+  when nil then "nil"
+  else format_value(value)
   end
 end
 
@@ -650,12 +756,21 @@ def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged
   puts Colors.bold("=== Algolia アップロード Dry-Run レポート ===")
   puts ""
   puts Colors.bold("サマリー")
-  puts "  ローカル JSON (更新対象): #{local_count} 件"
-  puts "  Algolia (全件): #{algolia_count} 件"
-  puts ""
-  puts "  新規追加: #{Colors.green("#{new_records.size} 件")}"
-  puts "  更新: #{Colors.yellow("#{updated_records.size} 件")}"
-  puts "  変更なし: #{Colors.gray("#{unchanged_records.size} 件")}"
+
+  summary_rows = [
+    [table_cell("ローカル JSON (更新対象)"), table_cell(local_count.to_s)],
+    [table_cell("Algolia (全件)"), table_cell(algolia_count.to_s)],
+    [table_cell("新規追加"), table_cell(new_records.size.to_s, color: ->(s) { Colors.green(s) })],
+    [table_cell("更新"), table_cell(updated_records.size.to_s, color: ->(s) { Colors.yellow(s) })],
+    [table_cell("変更なし"), table_cell(unchanged_records.size.to_s, color: ->(s) { Colors.gray(s) })]
+  ]
+
+  print_box_table(
+    headers: %w[項目 件数],
+    rows: summary_rows,
+    aligns: %i[left right],
+    separator_before_rows: [2]
+  )
   puts ""
 
   # URL削除を集計（警告用）
@@ -671,53 +786,44 @@ def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged
 
     puts Colors.bold("=== 更新内容の内訳 ===")
 
-    # 表のカラム幅を計算（表示幅ベース）
-    header_label = "フィールド名"
-    field_labels = sorted_fields.map { |f, _| field_to_label(f) }
-    max_display_width = [
-      field_labels.map { |l| display_width(l) }.max || 0,
-      display_width(header_label),
-      display_width("合計")
-    ].max
-    separator = "  #{'-' * max_display_width}|------|------|------|------"
-
-    puts "  #{ljust_display(header_label, max_display_width)} | 件数 | 追加 | 更新 | 削除"
-    puts separator
-
     total_all = 0
     total_additions = 0
     total_updates = 0
     total_deletions = 0
 
-    sorted_fields.each do |field, stats|
+    field_rows = sorted_fields.map do |field, stats|
       label = field_to_label(field)
       total_all += stats[:total]
       total_additions += stats[:additions]
       total_updates += stats[:updates]
       total_deletions += stats[:deletions]
 
-      total_str = rjust_display(stats[:total].to_s, 4)
-      add_str = rjust_display(stats[:additions].to_s, 4)
-      upd_str = rjust_display(stats[:updates].to_s, 4)
-      del_str = if stats[:deletions].positive?
-                  Colors.red(rjust_display(stats[:deletions].to_s, 4))
-                else
-                  rjust_display(stats[:deletions].to_s, 4)
-                end
+      del_color = stats[:deletions].positive? ? ->(s) { Colors.red(s) } : nil
 
-      puts "  #{ljust_display(label, max_display_width)} | #{total_str} | #{add_str} | #{upd_str} | #{del_str}"
+      [
+        table_cell(label),
+        table_cell(stats[:total].to_s),
+        table_cell(stats[:additions].to_s),
+        table_cell(stats[:updates].to_s),
+        table_cell(stats[:deletions].to_s, color: del_color)
+      ]
     end
 
-    puts separator
-    total_all_str = rjust_display(total_all.to_s, 4)
-    total_add_str = rjust_display(total_additions.to_s, 4)
-    total_upd_str = rjust_display(total_updates.to_s, 4)
-    total_del_str = if total_deletions.positive?
-                      Colors.red(rjust_display(total_deletions.to_s, 4))
-                    else
-                      rjust_display(total_deletions.to_s, 4)
-                    end
-    puts "  #{ljust_display('合計', max_display_width)} | #{total_all_str} | #{total_add_str} | #{total_upd_str} | #{total_del_str}"
+    total_del_color = total_deletions.positive? ? ->(s) { Colors.red(s) } : nil
+    field_rows << [
+      table_cell("合計"),
+      table_cell(total_all.to_s),
+      table_cell(total_additions.to_s),
+      table_cell(total_updates.to_s),
+      table_cell(total_deletions.to_s, color: total_del_color)
+    ]
+
+    print_box_table(
+      headers: %w[フィールド名 件数 追加 更新 削除],
+      rows: field_rows,
+      aligns: %i[left right right right right],
+      separator_before_rows: [field_rows.size - 1]
+    )
 
     # URL削除がある場合は警告を表示
     if url_deletion_count.positive?
@@ -729,42 +835,50 @@ def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged
 
   if new_records.any?
     puts Colors.bold("--- 新規追加 (#{new_records.size}件) ---")
-    new_records.each do |record|
-      puts "  #{Colors.green('[NEW]')} #{record['title']}"
-      puts "        ID: #{record['objectID']}"
-      puts "        URL: #{record['url']}"
-      if verbose
-        puts "        karaoke_type: #{record['karaoke_type']}"
-        puts "        song_number: #{record['song_number']}" if record["song_number"]
-      end
-    end
     puts ""
+
+    new_records.each do |record|
+      title_line = "#{Colors.green('●')} #{record['title']}"
+      if verbose
+        meta = [record["karaoke_type"], record["song_number"]].compact_blank
+        title_line += "  #{meta.join(' · ')}" if meta.any?
+      end
+      puts title_line
+      puts "  #{record['url']}"
+      puts "  #{Colors.gray(record['objectID'])}"
+      puts ""
+    end
   end
 
   if updated_records.any?
     puts Colors.bold("--- 更新 (#{updated_records.size}件) ---")
+    puts ""
+
     updated_records.each do |record|
-      puts "  #{Colors.yellow('[UPD]')} #{record['title']}"
-      puts "        ID: #{record['objectID']}"
+      puts "#{Colors.yellow('●')} #{record['title']}"
+
+      labels = record["differences"].map { |diff| field_to_label(diff[:path]) }
       if verbose
+        label_width = labels.map { |label| display_width(label) }.max || 0
         record["differences"].each do |diff|
-          puts format_diff(diff)
+          format_update_diff_lines(diff, label_width).each { |line| puts line }
         end
       else
-        paths = record["differences"].map { |d| Colors.cyan(d[:path]) }.join(", ")
-        puts "        変更フィールド: #{paths}"
+        puts "  変更フィールド: #{Colors.cyan(labels.join(', '))}"
       end
+      puts ""
     end
-    puts ""
   end
 
   if show_unchanged && unchanged_records.any?
     puts Colors.bold("--- 変更なし (#{unchanged_records.size}件) ---")
-    unchanged_records.each do |record|
-      puts "  #{Colors.gray('[---]')} #{record['title']}"
-      puts "        ID: #{record['objectID']}"
-    end
     puts ""
+
+    unchanged_records.each do |record|
+      puts "#{Colors.gray('·')} #{Colors.gray(record['title'])}"
+      puts "  #{Colors.gray(record['objectID'])}"
+      puts ""
+    end
   end
 
   # URL削除警告がある場合、詳細を出力
@@ -774,12 +888,11 @@ def output_text(local_count:, algolia_count:, results:, verbose:, show_unchanged
     puts Colors.red("以下のURLフィールドが削除されます。DBレコード消失の可能性があります。")
     puts ""
 
-    # 個別詳細
     url_deletions.each do |deletion|
-      puts "    #{Colors.red('[DEL]')} #{deletion[:title]}"
-      puts "          ID: #{deletion[:id]}"
-      puts "          フィールド: #{field_to_label(deletion[:field])}"
-      puts "          旧値: #{deletion[:old_value].inspect}"
+      label = field_to_label(deletion[:field])
+      puts Colors.red("⚠ #{deletion[:title]}   [#{label}]")
+      puts "  #{Colors.red("旧値 #{deletion[:old_value]}")}"
+      puts "  #{Colors.gray(deletion[:id])}"
       puts ""
     end
   end
