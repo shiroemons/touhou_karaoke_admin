@@ -591,9 +591,9 @@ lightningcss@1.32.0:
     lightningcss-win32-x64-msvc "1.32.0"
 
 lucide-static@^1.14.0:
-  version "1.14.0"
-  resolved "https://registry.yarnpkg.com/lucide-static/-/lucide-static-1.14.0.tgz#6be0a0c2d1f655ee580544e45135cbef45523143"
-  integrity sha512-QnAHXC1nk8IXRBmO5ee9JcPiKEVeqf06tKF0bZipxlV++bwUVqvvliC3KA+beDg2lod+WXYIhHde5pQRHkUmqA==
+  version "1.23.0"
+  resolved "https://registry.yarnpkg.com/lucide-static/-/lucide-static-1.23.0.tgz#ba2ff1ff7ee3cedc3b1f61b76f08b512e1f4a0d3"
+  integrity sha512-V4tqLEHfvsptGaAZMD8sFJKeGsz2nTAU0+ctxTX3afao/5bs+mhrvvGDmvQmyI7YhQwpIFodZmnkPTMYyGzH4Q==
 
 magic-string@^0.30.21:
   version "0.30.21"
