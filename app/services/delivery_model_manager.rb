@@ -44,7 +44,7 @@ class DeliveryModelManager
     # 同時作成を防ぐために本質的に逐次実行が必要であり、事前の一括ロードに
     # 置き換えられない。ここでのSELECT/INSERTはProsopite.pauseでN+1検知の対象外にする。
     @mutex.synchronize do
-      Prosopite.pause do
+      NPlusOneDetection.pause do
         # 再度キャッシュを確認（ダブルチェックロッキング）
         id = get_id_without_refresh(normalized_name, karaoke_type)
         next id if id

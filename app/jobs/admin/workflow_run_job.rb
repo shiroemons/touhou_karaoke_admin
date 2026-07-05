@@ -60,11 +60,12 @@ module Admin
       step_key = "#{stage.key}:#{branch.key}:#{step.key}"
       max_attempts = repeatable_step?(step, operation) ? operation.max_attempts : 1
       attempt = 0
+      child_progress_id = nil
 
       # ワークフローのステップは仕様上1件ずつ逐次実行され、ステップごとに自身の進捗行を
       # 更新する(mark_step!/update_detail!)。これは複数レコードをまとめて扱えない
       # 独立した書き込みであり N+1 の是正対象ではないため、検出を一時停止する。
-      Prosopite.pause do
+      NPlusOneDetection.pause do
         loop do
           attempt += 1
           child_progress_id = SecureRandom.uuid
