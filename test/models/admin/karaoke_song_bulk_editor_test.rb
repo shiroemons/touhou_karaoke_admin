@@ -24,6 +24,24 @@ module Admin
       assert_equal 'https://youtube.example/watch', song.youtube_url
     end
 
+    test 'records a change log from a bulk edit that only changes the linked original song' do
+      song = create_song
+      original_song = create_original_song(title: 'Bulk Original Only Change')
+
+      assert_difference -> { Admin::ChangeLog.count }, 1 do
+        result = KaraokeSongBulkEditor.new(actor_name: '管理者').update_from_form_rows(
+          song.id => { 'original_songs' => original_song.title }
+        )
+
+        assert_empty result.errors
+        assert_equal 1, result.updated_count
+        assert_equal 0, result.skipped_count
+      end
+
+      assert_equal [original_song], song.reload.original_songs.to_a
+      assert_equal 'update', Admin::ChangeLog.last.event
+    end
+
     test 'updates rows from exported tsv columns' do
       song = create_song(title: 'TSV Bulk Song')
       original_song = create_original_song(title: 'TSV Bulk Original')
