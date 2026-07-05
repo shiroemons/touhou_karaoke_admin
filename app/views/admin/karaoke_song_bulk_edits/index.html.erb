@@ -146,8 +146,8 @@
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
               <td><%= song.karaoke_type %></td>
-              <td class="admin-table-field-display-artist-name"><%= song.display_artist.name %></td>
-              <td title="<%= song.title %>"><%= link_to song.title, admin_song_path(song) %></td>
+              <td class="admin-table-field-display-artist-name" data-admin-copy-text="<%= song.display_artist.name %>"><%= song.display_artist.name %></td>
+              <td title="<%= song.title %>"><%= link_to song.title, admin_song_path(song), data: { admin_copy_text: song.title } %></td>
               <td>
                 <div
                   class="admin-original-song-picker"
