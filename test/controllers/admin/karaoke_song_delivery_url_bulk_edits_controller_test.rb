@@ -182,6 +182,28 @@ module Admin
       assert_equal '', song.reload.youtube_url
     end
 
+    test 'preview shows submitted youtube url instead of existing db value' do
+      song = create_song(title: 'Controller Delivery URL Preview Submitted Song', youtube_url: 'https://youtube.example/existing-db-value')
+
+      post admin_karaoke_song_delivery_url_bulk_edit_path, params: {
+        mode: 'preview',
+        songs: {
+          song.id => {
+            youtube_url: 'https://youtube.example/preview-submitted',
+            nicovideo_url: '',
+            apple_music_url: '',
+            youtube_music_url: '',
+            spotify_url: '',
+            line_music_url: ''
+          }
+        }
+      }
+
+      assert_response :success
+      assert_select 'input[name=?][value=?]', "songs[#{song.id}][youtube_url]", 'https://youtube.example/preview-submitted'
+      assert_equal 'https://youtube.example/existing-db-value', song.reload.youtube_url
+    end
+
     test 'updates from pasted delivery url tsv' do
       song = create_song(title: 'Controller Delivery URL TSV Song')
       tsv = [

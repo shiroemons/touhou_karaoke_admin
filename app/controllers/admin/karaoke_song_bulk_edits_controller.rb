@@ -8,7 +8,8 @@ module Admin
     }.freeze
 
     helper_method :karaoke_song_bulk_edit_columns, :karaoke_song_bulk_edit_column_labels, :karaoke_song_bulk_edit_column_label,
-                  :karaoke_song_bulk_edit_status_options, :karaoke_song_bulk_edit_per_page_options
+                  :karaoke_song_bulk_edit_status_options, :karaoke_song_bulk_edit_per_page_options,
+                  :karaoke_song_bulk_edit_submitted_field, :karaoke_song_bulk_edit_original_song_field
 
     def index
       authorize Song
@@ -35,10 +36,11 @@ module Admin
       authorize Song, preview_request? ? :index? : :update?
 
       if preview_request?
+        @submitted_rows = bulk_tsv.present? ? {} : song_rows
         @preview_result = if bulk_tsv.present?
                             KaraokeSongBulkEditor.new(actor_name: current_user.name).preview_from_tsv(bulk_tsv)
                           else
-                            KaraokeSongBulkEditor.new(actor_name: current_user.name).preview_from_form_rows(song_rows)
+                            KaraokeSongBulkEditor.new(actor_name: current_user.name).preview_from_form_rows(@submitted_rows)
                           end
         load_index
         flash.now[:alert] = @preview_result.errors.join("\n") if @preview_result.errors.present?
@@ -138,6 +140,16 @@ module Admin
 
     def karaoke_song_bulk_edit_per_page_options
       PER_PAGE_OPTIONS
+    end
+
+    def karaoke_song_bulk_edit_submitted_field(song, column)
+      row = @submitted_rows && @submitted_rows[song.id.to_s]
+      row&.key?(column) ? row[column].to_s : song.public_send(column).to_s
+    end
+
+    def karaoke_song_bulk_edit_original_song_field(song)
+      row = @submitted_rows && @submitted_rows[song.id.to_s]
+      row&.key?('original_songs') ? row['original_songs'].to_s : song.original_songs.map(&:title).join('/')
     end
 
     def requested_per_page

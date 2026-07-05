@@ -199,6 +199,47 @@ module Admin
       assert_equal '', song.youtube_url
     end
 
+    test 'preview retains submitted original song and youtube url values in rendered fields' do
+      song = create_song(title: 'Controller Preview Retains Song')
+      first_original_song = create_original_song(title: 'Controller Preview Retains First')
+      second_original_song = create_original_song(title: 'Controller Preview Retains Second')
+
+      post admin_karaoke_song_bulk_edit_path, params: {
+        mode: 'preview',
+        songs: {
+          song.id => {
+            original_songs: "#{first_original_song.title}/#{second_original_song.title}",
+            youtube_url: 'https://youtube.example/preview-retained'
+          }
+        }
+      }
+
+      assert_response :success
+      assert_select 'input[name=?][value=?]', "songs[#{song.id}][original_songs]", "#{first_original_song.title}/#{second_original_song.title}"
+      assert_select 'input[name=?][value=?]', "songs[#{song.id}][youtube_url]", 'https://youtube.example/preview-retained'
+    end
+
+    test 'preview shows submitted original song value instead of previously linked db value' do
+      song = create_song(title: 'Controller Preview Already Linked Song', youtube_url: 'https://youtube.example/existing-before-clear')
+      song.original_songs << create_original_song(title: 'Controller Preview Existing Original')
+      replacement_original_song = create_original_song(title: 'Controller Preview Replacement Original')
+
+      post admin_karaoke_song_bulk_edit_path, params: {
+        mode: 'preview',
+        status: 'all',
+        songs: {
+          song.id => {
+            original_songs: replacement_original_song.title,
+            youtube_url: ''
+          }
+        }
+      }
+
+      assert_response :success
+      assert_select 'input[name=?][value=?]', "songs[#{song.id}][original_songs]", replacement_original_song.title
+      assert_select 'input[name=?][value=?]', "songs[#{song.id}][youtube_url]", ''
+    end
+
     test 'updates from pasted export tsv' do
       song = create_song(title: 'Controller TSV Song')
       original_song = create_original_song(title: 'Controller TSV Original')
