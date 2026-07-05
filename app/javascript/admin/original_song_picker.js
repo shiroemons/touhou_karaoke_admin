@@ -133,7 +133,7 @@ const resolveOriginalSongText = async (picker, text) => {
   return response.json()
 }
 
-export const setOriginalSongPickerText = async (searchInput, text) => {
+export const setOriginalSongPickerText = async (searchInput, text, { append = false } = {}) => {
   const picker = searchInput.closest("[data-admin-original-song-picker]")
   if (!picker) {
     searchInput.value = text
@@ -145,7 +145,8 @@ export const setOriginalSongPickerText = async (searchInput, text) => {
     const items = payload.items?.length
       ? payload.items.map((item) => ({ title: item.title, status: item.exists ? "valid" : "invalid" }))
       : [{ title: text, status: payload.titles?.length ? "valid" : "invalid" }]
-    updateOriginalSongPickerValue(picker, items)
+    const nextItems = append ? [...selectedOriginalSongItems(picker), ...items] : items
+    updateOriginalSongPickerValue(picker, nextItems)
     const selectedTitles = new Set(selectedOriginalSongTitles(picker))
     const candidates = (payload.items || []).flatMap((item) => (
       item.exists ? [] : (item.candidates || []).map((candidate) => ({
@@ -163,7 +164,8 @@ export const setOriginalSongPickerText = async (searchInput, text) => {
     }
   } catch (error) {
     console.error(error)
-    updateOriginalSongPickerValue(picker, [{ title: text, status: "invalid" }])
+    const invalidItem = { title: text, status: "invalid" }
+    updateOriginalSongPickerValue(picker, append ? [...selectedOriginalSongItems(picker), invalidItem] : [invalidItem])
     hideOriginalSongOptions(picker)
   } finally {
     searchInput.value = ""
@@ -271,7 +273,7 @@ export const setupAdminOriginalSongPickers = () => {
       }
 
       const text = event.target.value.trim()
-      if (text) setOriginalSongPickerText(event.target, text)
+      if (text) setOriginalSongPickerText(event.target, text, { append: true })
     })
 
     picker.querySelector("[data-admin-original-song-search]")?.addEventListener("paste", (event) => {
@@ -279,7 +281,7 @@ export const setupAdminOriginalSongPickers = () => {
       if (!text || text.includes("\t") || text.includes("\n")) return
 
       event.preventDefault()
-      setOriginalSongPickerText(event.target, text)
+      setOriginalSongPickerText(event.target, text, { append: true })
     })
   })
 }
