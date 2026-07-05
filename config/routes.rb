@@ -26,6 +26,7 @@ Rails.application.routes.draw do
       get :operation, on: :collection
       post :operation, on: :collection
       get :operation_progress, on: :collection
+      patch :original_songs, on: :member
     end
     resources :display_artists do
       get :operation, on: :collection

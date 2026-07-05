@@ -106,6 +106,12 @@
                 <span>紐づけ</span>
               </button>
             <% end %>
+            <% if @resource.key == :song && association == :original_songs && policy(@record).update? %>
+              <button type="button" class="admin-button btn btn-sm" aria-label="<%= admin_record_title(@resource, @record) %>の原曲を紐づけ" data-admin-association-dialog-trigger="song-original-songs">
+                <%= admin_icon(:edit) %>
+                <span>紐づけ</span>
+              </button>
+            <% end %>
           </header>
           <% if records.present? %>
             <ul class="admin-related-list">
@@ -164,4 +170,54 @@
       </form>
     </dialog>
   <% end %>
+<% end %>
+
+<% if @resource.key == :song && policy(@record).update? %>
+  <dialog class="modal admin-association-dialog" aria-labelledby="admin-association-dialog-title-song-original-songs" data-admin-association-dialog="song-original-songs">
+    <div class="modal-box admin-association-dialog-box">
+      <div class="admin-operation-modal-header">
+        <div>
+          <span class="admin-operation-modal-resource">関連データ</span>
+          <h2 id="admin-association-dialog-title-song-original-songs">原曲を紐づけ</h2>
+        </div>
+        <button type="button" class="btn btn-sm btn-circle btn-ghost" aria-label="閉じる" data-admin-association-dialog-close><%= admin_icon(:clear) %></button>
+      </div>
+
+      <%= form_with url: original_songs_admin_song_path(@record), method: :patch, class: "admin-form admin-association-dialog-form" do %>
+        <div
+          class="admin-original-song-picker"
+          data-admin-original-song-picker
+          data-options-url="<%= admin_karaoke_song_bulk_edit_original_song_options_path %>"
+          data-resolve-url="<%= admin_karaoke_song_bulk_edit_resolve_original_songs_path %>">
+          <%= hidden_field_tag :original_songs,
+                               @record.original_songs.map(&:title).join('/'),
+                               data: { admin_original_song_value: true } %>
+          <div class="admin-original-song-chips" data-admin-original-song-chips></div>
+          <div class="admin-original-song-search-wrap">
+            <%= text_field_tag nil,
+                               nil,
+                               class: "admin-bulk-cell admin-original-song-search input input-bordered",
+                               autocomplete: "off",
+                               placeholder: "原曲を検索",
+                               aria: { label: "#{admin_record_title(@resource, @record)}の原曲を検索" },
+                               data: { admin_original_song_search: true } %>
+            <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
+          </div>
+        </div>
+        <div class="admin-form-actions">
+          <%= button_tag type: :submit, class: "admin-button admin-button-primary btn btn-primary", aria: { label: "原曲紐づけを更新" } do %>
+            <%= admin_icon(:edit) %>
+            <span>更新</span>
+          <% end %>
+          <button type="button" class="admin-button btn" aria-label="原曲紐づけをキャンセル" data-admin-association-dialog-close>
+            <%= admin_icon(:clear) %>
+            <span>キャンセル</span>
+          </button>
+        </div>
+      <% end %>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button type="submit">閉じる</button>
+    </form>
+  </dialog>
 <% end %>

@@ -88,6 +88,34 @@ module Admin
       }
     end
 
+    def update_original_songs_for(song, text)
+      errors = []
+      original_songs = resolve_original_songs(text.to_s, 1, errors)
+      return Result.new(updated_count: 0, skipped_count: 0, errors: errors.map { |error| error.sub(/\A1行目: /, '') }) if errors.present?
+
+      before_codes = song.original_songs.map(&:code).sort
+      before_titles = song.original_songs.map(&:title)
+      song.original_songs = original_songs
+      return Result.new(updated_count: 0, skipped_count: 1, errors: []) if before_codes == song.original_songs.map(&:code).sort
+
+      # `original_songs` is a has_many :through association, so reassigning it never touches Song's
+      # own columns and ChangeLog.record_update! would otherwise see a blank `previous_changes` and
+      # skip logging. Pass the before/after titles explicitly so the link change is still recorded.
+      original_songs_change = {
+        'original_songs' => {
+          label: '原曲',
+          before: before_titles.join('/').presence,
+          after: song.original_songs.map(&:title).join('/').presence
+        }
+      }
+
+      Song.transaction do
+        song.save!
+        ChangeLog.record_update!(resource: song_resource, record: song, actor_name:, extra_changed_fields: original_songs_change)
+      end
+      Result.new(updated_count: 1, skipped_count: 0, errors: [])
+    end
+
     private
 
     attr_reader :actor_name, :song_resource
