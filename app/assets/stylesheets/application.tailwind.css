@@ -2893,11 +2893,11 @@ body[data-admin-navigation="loading"] .admin-main {
 }
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-id {
-  width: 272px;
+  width: 104px;
 }
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-karaoke-type {
-  width: 138px;
+  width: 180px;
 }
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-display-artist-name {
@@ -2935,6 +2935,25 @@ body[data-admin-navigation="loading"] .admin-main {
 
 .admin-table-karaoke-song-bulk-edit code {
   font-size: 12px;
+}
+
+.admin-karaoke-song-original-linking .admin-table-karaoke-song-bulk-edit th,
+.admin-karaoke-song-original-linking .admin-table-karaoke-song-bulk-edit td {
+  padding: 2px 8px;
+}
+
+.admin-karaoke-song-original-linking .admin-bulk-cell {
+  height: 28px;
+  min-height: 28px;
+}
+
+.admin-karaoke-song-original-linking .admin-original-song-picker {
+  gap: 2px;
+}
+
+.admin-karaoke-song-original-linking .admin-original-song-chip {
+  font-size: 11px;
+  padding: 2px 6px;
 }
 
 .admin-bulk-cell {
@@ -4020,7 +4039,6 @@ th.admin-actions-column {
 
 .admin-copy-toast {
   border-radius: 8px;
-  bottom: 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   font-size: 0.875rem;
   font-weight: 600;
@@ -4028,6 +4046,7 @@ th.admin-actions-column {
   padding: 10px 16px;
   pointer-events: none;
   position: fixed;
+  top: 72px;
   transform: translateX(-50%);
   z-index: 1000;
 }
