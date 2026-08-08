@@ -86,7 +86,15 @@ module Admin
           search: { name_cont: :q },
           filters: [
             association_presence_filter(:display_artists, label: 'アーティスト', association: :display_artists),
-            association_presence_filter(:songs, label: '曲', association: :songs)
+            association_presence_filter(:songs, label: '曲', association: :songs),
+            filter(:deletion_candidate, label: '削除候補', type: :radio, options: { only: '削除候補' }) do |scope, value|
+              case value
+              when 'only'
+                scope.deletion_candidates
+              else
+                scope
+              end
+            end
           ],
           fields: [
             field(:name, label: 'サークル名', sortable: true, link: true),

@@ -19,7 +19,7 @@
 | 関連 ID | `dam_songs(display_artist_id)`, `songs(display_artist_id)`, `original_songs(original_code)`, 各 join table の単体外部キー |
 | 管理画面の配信種別絞り込み | `songs(karaoke_type, created_at)`, `display_artists(karaoke_type, name)` |
 | 表示順 | `karaoke_delivery_models(order)` |
-| 既存 unique 制約 | `karaoke_delivery_models(name, karaoke_type)`, `songs_karaoke_delivery_models(song_id, karaoke_delivery_model_id)` |
+| 既存 unique 制約 | `circles(name)`, `karaoke_delivery_models(name, karaoke_type)`, `songs_karaoke_delivery_models(song_id, karaoke_delivery_model_id)` |
 
 ## 追加候補
 
@@ -33,6 +33,7 @@
 
 | 対象 | 内容 |
 | --- | --- |
+| `circles(name)` | 2026-08-08 に重複事前チェック付き unique index を追加した。 |
 | `display_artists_circles(display_artist_id, circle_id)` | 2026-06-30 に事前重複チェック付き unique index を追加した。 |
 | `songs_original_songs(song_id, original_song_code)` | 2026-06-30 に事前重複チェック付き unique index を追加した。 |
 | `dam_artist_urls(url)` | 2026-06-30 に重複行を手動確認・整理した後、事前重複チェック付き unique index を追加した。 |

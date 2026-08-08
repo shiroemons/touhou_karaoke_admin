@@ -51,5 +51,10 @@ module DataIntegrity
 
       assert_empty results
     end
+
+    test 'includes circle names in the default duplicate checks' do
+      assert_includes DuplicateFinder::DEFAULT_CHECKS,
+                      DuplicateFinder::Check.new(table: 'circles', columns: %w[name])
+    end
   end
 end

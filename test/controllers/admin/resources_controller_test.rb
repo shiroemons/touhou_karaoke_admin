@@ -368,6 +368,30 @@ module Admin
       assert_select 'td', { text: '検索対象外', count: 0 }
     end
 
+    test 'filters circles by deletion candidates' do
+      candidate = Circle.create!(name: '削除候補サークル')
+      linked_circle = Circle.create!(name: '削除対象外サークル')
+      linked_circle.display_artists << create_display_artist
+
+      get admin_circles_path, params: { filters: { deletion_candidate: 'only' } }
+
+      assert_response :success
+      assert_select 'tbody tr', 1
+      assert_select 'td', text: candidate.name
+      assert_select 'td', { text: linked_circle.name, count: 0 }
+      assert_select 'input[type="radio"][name="filters[deletion_candidate]"][value="only"][checked="checked"]'
+    end
+
+    test 'shows delete confirmation for empty circles in the index' do
+      circle = Circle.create!(name: '一覧削除確認サークル')
+
+      get admin_circles_path, params: { q: circle.name }
+
+      assert_response :success
+      assert_select 'form[data-admin-delete-confirmation=?]', 'サークル「一覧削除確認サークル」を削除します。この操作は取り消せません。削除してよろしいですか？'
+      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog]'
+    end
+
     test 'filters index independently from keyword search' do
       DisplayArtist.create!(karaoke_type: 'JOYSOUND', name: 'JOYSOUND Artist', url: 'https://example.com/joysound-artist')
 
@@ -868,7 +892,7 @@ module Admin
       get admin_display_artists_path, params: { q: artist.name }
 
       assert_response :success
-      assert_select 'form[data-turbo-confirm=?]', 'アーティスト「[DAM] 削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
+      assert_select 'form[data-admin-delete-confirmation=?]', 'アーティスト「[DAM] 削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
     end
 
     test 'show delete confirmation names the target record' do
@@ -877,7 +901,7 @@ module Admin
       get admin_display_artist_path(artist)
 
       assert_response :success
-      assert_select 'form[data-turbo-confirm=?]', 'アーティスト「[DAM] 詳細削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
+      assert_select 'form[data-admin-delete-confirmation=?]', 'アーティスト「[DAM] 詳細削除確認アーティスト」を削除します。この操作は取り消せません。削除してよろしいですか？'
     end
 
     test 'show uses inline empty states for missing related data' do
@@ -932,6 +956,15 @@ module Admin
       assert_redirected_to admin_circle_path(Circle.order(:created_at).last)
       assert_equal 'create', Admin::ChangeLog.last.event
       assert_equal 'サークル', Admin::ChangeLog.last.resource_label
+    end
+
+    test 'does not create a circle with a duplicate name' do
+      assert_no_difference -> { Circle.count } do
+        post admin_circles_path, params: { circle: { name: @circle.name } }
+      end
+
+      assert_response :unprocessable_content
+      assert_select '.admin-errors', text: /すでに存在します|has already been taken/
     end
 
     test 'returns to form on validation error' do
@@ -1066,6 +1099,36 @@ module Admin
       end
 
       assert_redirected_to admin_display_artists_path
+    end
+
+    test 'destroys empty circle when policy allows it' do
+      circle = Circle.create!(name: '削除可能サークル')
+
+      assert_difference -> { Circle.count }, -1 do
+        delete admin_circle_path(circle)
+      end
+
+      assert_redirected_to admin_circles_path
+    end
+
+    test 'shows delete confirmation for empty circles on the show page' do
+      circle = Circle.create!(name: '詳細削除確認サークル')
+
+      get admin_circle_path(circle)
+
+      assert_response :success
+      assert_select 'form[data-admin-delete-confirmation=?]', 'サークル「詳細削除確認サークル」を削除します。この操作は取り消せません。削除してよろしいですか？'
+      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog]'
+    end
+
+    test 'does not destroy circle with associated data' do
+      assert_no_difference -> { Circle.count } do
+        delete admin_circle_path(@circle)
+      end
+
+      assert_redirected_to admin_root_path
+      follow_redirect!
+      assert_select '.admin-flash-alert', text: 'この操作を実行する権限がありません。'
     end
 
     test 'denies access when policy does not allow the action' do

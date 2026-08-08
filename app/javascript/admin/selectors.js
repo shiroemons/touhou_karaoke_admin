@@ -1,5 +1,10 @@
 export const adminSelectors = {
   csrfToken: "meta[name='csrf-token']",
+  deleteConfirmation: "[data-admin-delete-confirmation]",
+  deleteConfirmationCancel: "[data-admin-delete-confirmation-cancel]",
+  deleteConfirmationConfirm: "[data-admin-delete-confirmation-confirm]",
+  deleteConfirmationDialog: "[data-admin-delete-confirmation-dialog]",
+  deleteConfirmationMessage: "[data-admin-delete-confirmation-message]",
   operationCancel: "[data-admin-operation-cancel]",
   operationConfirm: "[data-admin-operation-confirm]",
   operationConfirmDialog: "[data-admin-operation-confirm-dialog]",

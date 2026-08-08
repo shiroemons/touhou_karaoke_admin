@@ -2499,9 +2499,14 @@ body[data-admin-navigation="loading"] .admin-main {
 }
 
 .admin-button-danger {
-  background: var(--color-error);
-  border-color: var(--color-error);
-  color: var(--color-error-content);
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+.admin-button-danger:hover {
+  background: #991b1b;
+  border-color: #991b1b;
 }
 
 .admin-table-wrap {

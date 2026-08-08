@@ -6,6 +6,7 @@ module DataIntegrity
     Result = Data.define(:table, :columns, :rows)
 
     DEFAULT_CHECKS = [
+      Check.new(table: 'circles', columns: %w[name]),
       Check.new(table: 'dam_artist_urls', columns: %w[url]),
       Check.new(table: 'dam_songs', columns: %w[url]),
       Check.new(table: 'display_artists_circles', columns: %w[display_artist_id circle_id]),

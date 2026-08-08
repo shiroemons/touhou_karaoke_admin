@@ -5,6 +5,19 @@ class CirclePolicyTest < ActiveSupport::TestCase
     assert_policy_permits CirclePolicy.new(nil, Object.new), :index?, :show?, :create?, :update?
   end
 
+  test 'permits destroying circles without artists or songs' do
+    circle = Circle.create!(name: '削除可能サークル')
+
+    assert CirclePolicy.new(nil, circle).destroy?
+  end
+
+  test 'forbids destroying circles with artists or songs' do
+    circle = Circle.create!(name: '削除不可サークル')
+    circle.display_artists << create_display_artist
+
+    assert_not CirclePolicy.new(nil, circle).destroy?
+  end
+
   test "forbids nested association actions" do
     assert_policy_forbids(
       CirclePolicy.new(nil, Object.new),

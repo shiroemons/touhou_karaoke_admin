@@ -15,6 +15,10 @@ class CirclePolicy < ApplicationPolicy
     true
   end
 
+  def destroy?
+    record.deletion_candidate?
+  end
+
   def attach_display_artists?
     false
   end

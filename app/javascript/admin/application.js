@@ -2,6 +2,7 @@
 import "@rails/ujs"
 import Rails from "@rails/ujs"
 import { setupAdminBulkEditControls } from "./bulk_edit_controls"
+import { setupAdminDeleteConfirmations } from "./delete_confirmation"
 import { setupAdminFlash, showAdminFlash } from "./flash"
 import { setupAdminInfiniteScroll } from "./infinite_scroll"
 import { setupAdminFilterForms, setupAdminNavigation } from "./navigation"
@@ -11,6 +12,7 @@ import { setupAdminWorkflowRunner } from "./workflow_runner"
 Rails.start()
 
 document.addEventListener("DOMContentLoaded", setupAdminFlash)
+document.addEventListener("DOMContentLoaded", setupAdminDeleteConfirmations)
 document.addEventListener("DOMContentLoaded", () => setupAdminInfiniteScroll({ updateSelectionState: updateAdminResourceSelectionState }))
 document.addEventListener("DOMContentLoaded", setupAdminBulkEditControls)
 document.addEventListener("DOMContentLoaded", () => setupAdminNavigation({ setupPageBehaviors: setupAdminPageBehaviors }))
