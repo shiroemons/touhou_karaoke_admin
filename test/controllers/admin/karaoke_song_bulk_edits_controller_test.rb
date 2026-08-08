@@ -21,7 +21,8 @@ module Admin
         assert_equal '原曲紐づけTSV', elements.first['aria-label']
         assert_equal 'admin-karaoke-song-bulk-tsv-help', elements.first['aria-describedby']
       end
-      assert_select '#admin-karaoke-song-bulk-tsv-help', text: 'TSVのヘッダー行とデータ行を貼り付けると、表示中の入力欄へ反映できます。'
+      assert_select '#admin-karaoke-song-bulk-tsv-help', text: /TSVのヘッダー行とデータ行を貼り付けると、表示中の入力欄へ反映できます。/
+      assert_select '#admin-karaoke-song-bulk-tsv-help', text: /Shiftキーを押しながら貼り付けると、各レコードへ展開します。/
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ楽曲紐づけをキーワード検索"]'
@@ -112,6 +113,20 @@ module Admin
       assert_response :success
       payload = response.parsed_body
       assert_equal [master_spark.title, dream_battle.title], payload.fetch('titles')
+      assert_empty payload.fetch('errors')
+    end
+
+    test 'resolves newline separated original song text for picker' do
+      first_original_song = create_original_song(title: '改行貼り付け原曲1')
+      second_original_song = create_original_song(title: '改行貼り付け原曲2')
+
+      post admin_karaoke_song_bulk_edit_resolve_original_songs_path,
+           params: { text: "#{first_original_song.title}\n#{second_original_song.title}" },
+           as: :json
+
+      assert_response :success
+      payload = response.parsed_body
+      assert_equal [first_original_song.title, second_original_song.title], payload.fetch('titles')
       assert_empty payload.fetch('errors')
     end
 

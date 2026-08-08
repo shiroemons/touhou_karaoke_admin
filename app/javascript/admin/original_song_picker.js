@@ -60,6 +60,16 @@ const addOriginalSongTitle = (picker, title) => {
   updateOriginalSongPickerValue(picker, [...selectedOriginalSongItems(picker), { title, status: "valid" }])
 }
 
+const isStructuredOriginalSongPaste = (text) => /[\t\r\n]/.test(text)
+
+const normalizeOriginalSongPasteText = (text) => text
+  .replace(/\r\n/g, "\n")
+  .replace(/\r/g, "\n")
+  .split("\n")
+  .map((row) => row.split("\t", 1)[0].trim())
+  .filter(Boolean)
+  .join("\n")
+
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
 let activeOriginalSongPicker
 
@@ -278,10 +288,15 @@ export const setupAdminOriginalSongPickers = () => {
 
     picker.querySelector("[data-admin-original-song-search]")?.addEventListener("paste", (event) => {
       const text = event.clipboardData?.getData("text")
-      if (!text || text.includes("\t") || text.includes("\n")) return
+      if (!text) return
+      if (event.shiftKey && isStructuredOriginalSongPaste(text)) return
+
+      const normalizedText = normalizeOriginalSongPasteText(text)
+      if (!normalizedText) return
 
       event.preventDefault()
-      setOriginalSongPickerText(event.target, text, { append: true })
+      event.stopPropagation()
+      return setOriginalSongPickerText(event.target, normalizedText, { append: true })
     })
   })
 }

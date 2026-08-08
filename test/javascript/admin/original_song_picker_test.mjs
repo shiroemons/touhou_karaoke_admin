@@ -37,7 +37,7 @@ class FakeElement {
   }
 
   dispatch(type, event = {}) {
-    ;(this.eventListeners[type] || []).forEach((callback) => callback({ target: this, ...event }))
+    return Promise.all((this.eventListeners[type] || []).map((callback) => callback({ target: this, ...event })))
   }
 
   dispatchEvent(event) {
@@ -214,6 +214,65 @@ test("setOriginalSongPickerText appends to existing selection when append is tru
   assert.equal(fixture.valueInput.value, "既存曲/新しい曲")
   assert.deepEqual(fixture.chips.children.map((chip) => chip.textContent), ["既存曲", "新しい曲"])
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "valid"])
+})
+
+test("normal multiline paste appends all original songs to the focused picker", async () => {
+  const fixture = buildPicker({ initialValue: "既存曲" })
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async (_url, options) => {
+    assert.equal(JSON.parse(options.body).text, "新しい曲\n別の曲")
+    return {
+      ok: true,
+      json: async () => ({
+        items: [
+          { exists: true, title: "新しい曲" },
+          { exists: true, title: "別の曲" },
+        ],
+      }),
+    }
+  }
+
+  let prevented = false
+  let stopped = false
+  await fixture.search.dispatch("paste", {
+    clipboardData: { getData: () => "新しい曲\n別の曲\n" },
+    preventDefault: () => { prevented = true },
+    stopPropagation: () => { stopped = true },
+  })
+
+  assert.equal(prevented, true)
+  assert.equal(stopped, true)
+  assert.equal(fixture.valueInput.value, "既存曲/新しい曲/別の曲")
+  assert.deepEqual(fixture.chips.children.map((chip) => chip.textContent), ["既存曲", "新しい曲", "別の曲"])
+})
+
+test("shift multiline paste is left for the bulk table handler", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  let fetchCalls = 0
+  globalThis.fetch = async () => {
+    fetchCalls += 1
+    return { ok: true, json: async () => ({ items: [] }) }
+  }
+
+  let prevented = false
+  let stopped = false
+  await fixture.search.dispatch("paste", {
+    clipboardData: { getData: () => "1曲目\n2曲目" },
+    shiftKey: true,
+    preventDefault: () => { prevented = true },
+    stopPropagation: () => { stopped = true },
+  })
+
+  assert.equal(prevented, false)
+  assert.equal(stopped, false)
+  assert.equal(fetchCalls, 0)
 })
 
 test("setOriginalSongPickerText marks text invalid when resolve fails", async () => {

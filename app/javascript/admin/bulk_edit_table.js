@@ -10,7 +10,9 @@ export const setupAdminBulkEditTables = () => {
       if (!target) return
 
       const text = event.clipboardData?.getData("text")
-      if (!text || (!text.includes("\t") && !text.includes("\n"))) return
+      if (!text || !/[\t\r\n]/.test(text)) return
+
+      if (target.dataset.adminOriginalSongSearch === "true" && !event.shiftKey) return
 
       event.preventDefault()
       const startRow = Number(target.dataset.adminBulkRow)

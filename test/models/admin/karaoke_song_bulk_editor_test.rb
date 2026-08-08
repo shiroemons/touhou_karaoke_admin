@@ -249,6 +249,23 @@ module Admin
       assert_empty song.reload.original_songs
     end
 
+    test 'resolves newline separated original song text for one song' do
+      song = create_song
+      first_original_song = create_original_song(title: '改行貼り付け原曲1')
+      second_original_song = create_original_song(title: '改行貼り付け原曲2')
+
+      result = KaraokeSongBulkEditor.new(actor_name: '管理者').preview_from_form_rows(
+        song.id => {
+          'original_songs' => "#{first_original_song.title}\r\n#{second_original_song.title}"
+        }
+      )
+
+      assert_empty result.errors
+      resolved_titles = result.rows.first.fetch(:original_songs).map { |item| item.fetch(:title) }
+      assert_equal [first_original_song.title, second_original_song.title], resolved_titles
+      assert_empty song.reload.original_songs
+    end
+
     test 'searches original song options with normalized title notation' do
       original_song = create_original_song(title: '最後の一人は慣れてるから　～ Stone Goddess')
 

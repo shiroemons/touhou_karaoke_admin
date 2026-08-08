@@ -161,6 +161,7 @@ test("setupAdminBulkEditTables delegates original song cells to picker resolver"
   table.dispatch("paste", {
     clipboardData: { getData: () => "赤より紅い夢\t表示名" },
     preventDefault: () => {},
+    shiftKey: true,
     target: originalSongCell,
   })
 
@@ -168,4 +169,28 @@ test("setupAdminBulkEditTables delegates original song cells to picker resolver"
   assert.equal(originalSongPickerCalls[0].element, originalSongCell)
   assert.equal(originalSongPickerCalls[0].value, "赤より紅い夢")
   assert.equal(table.querySelector('[data-admin-bulk-cell][data-admin-bulk-row="0"][data-admin-bulk-column-index="1"]').value, "表示名")
+})
+
+test("setupAdminBulkEditTables does not distribute original song rows without Shift", () => {
+  const table = buildTable()
+  const originalSongCell = table.querySelector(
+    '[data-admin-bulk-cell][data-admin-bulk-row="0"][data-admin-bulk-column-index="0"]'
+  )
+  originalSongCell.dataset.adminOriginalSongSearch = "true"
+  globalThis.document = {
+    querySelectorAll: (selector) => (
+      selector === "[data-admin-bulk-edit-table]" ? [table] : []
+    ),
+  }
+
+  setupAdminBulkEditTables()
+  let prevented = false
+  table.dispatch("paste", {
+    clipboardData: { getData: () => "1曲目\n2曲目" },
+    preventDefault: () => { prevented = true },
+    target: originalSongCell,
+  })
+
+  assert.equal(prevented, false)
+  assert.equal(originalSongPickerCalls.length, 0)
 })

@@ -299,9 +299,14 @@ module Admin
     def original_song_queries(text)
       normalized_text = text.to_s.strip.sub(/\A原曲[:：]\s*/, '')
       return [] if normalized_text.blank?
-      return [normalized_text] if known_original_song_title?(normalized_text)
 
-      split_original_song_queries(normalized_text)
+      normalized_text.split(/\r\n|\r|\n/).flat_map do |line|
+        line = line.strip
+        next [] if line.blank?
+        next [line] if known_original_song_title?(line)
+
+        split_original_song_queries(line)
+      end
     end
 
     def split_original_song_queries(text)
