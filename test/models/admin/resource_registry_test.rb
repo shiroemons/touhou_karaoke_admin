@@ -46,6 +46,13 @@ module Admin
       assert_equal grouped_resources.map(&:key).uniq, grouped_resources.map(&:key)
     end
 
+    test 'promotes karaoke songs into the main navigation group' do
+      groups = ResourceRegistry.navigation_groups.to_h
+
+      assert_equal [ResourceRegistry.fetch(:song)], groups.fetch('メイン')
+      assert_not_includes groups.fetch('配信管理'), ResourceRegistry.fetch(:song)
+    end
+
     test 'configured resources expose required attributes' do
       ResourceRegistry.all.each do |key, resource|
         assert_equal key, resource.key

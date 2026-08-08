@@ -74,8 +74,9 @@ module Admin
     OPERATION_DESCRIPTIONS = OperationDescriptions::ALL
 
     NAVIGATION_GROUPS = {
+      'メイン' => %i[song],
       '作品マスタ' => %i[original original_song],
-      '配信管理' => %i[circle display_artist song karaoke_delivery_model],
+      '配信管理' => %i[circle display_artist karaoke_delivery_model],
       'DAM' => %i[dam_song dam_artist_url],
       'JOYSOUND' => %i[joysound_song joysound_music_post]
     }.freeze

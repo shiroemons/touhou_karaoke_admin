@@ -36,16 +36,21 @@ module Admin
       assert_select '.admin-dashboard-hero h1', text: '管理画面'
       assert_select '.admin-dashboard-feature-card', text: /カラオケ配信曲/
       assert_select '.admin-dashboard-status-list', text: /原曲紐付け済み/
-      assert_select '.admin-dashboard-bar-group h3', text: '配信種別'
-      assert_select '.admin-dashboard-bar-group h3', text: '動画'
-      assert_select '.admin-dashboard-bar-group h3', text: '音楽配信'
-      assert_select '.admin-dashboard-bar-row', text: /DAM/
-      assert_select '.admin-dashboard-bar-row', text: /ニコニコ動画/
-      assert_select '.admin-dashboard-bar-row', text: /YouTube Music/
-      assert_select '.admin-dashboard-bar-row', text: /Spotify/
-      assert_select '.admin-dashboard-bar-row', text: /LINE MUSIC/
+      assert_select '.admin-dashboard-type-card h2', text: '配信種別'
+      assert_select '.admin-dashboard-type-ring', text: /配信/
+      assert_select '.admin-dashboard-type-legend dt', text: 'DAM'
+      assert_select '.admin-dashboard-type-legend dt', text: 'JOYSOUND'
+      assert_select '.admin-dashboard-type-legend dt', text: 'ミュージックポスト'
+      assert_select '.admin-dashboard-section-heading h2', text: '優先確認'
+      assert_select '.admin-dashboard-priority-card', text: /原曲未紐付け/
+      assert_select '.admin-dashboard-priority-card', text: /期限切れ/
+      assert_select '.admin-dashboard-delivery-summary h3', text: '配信種別の内訳'
+      assert_select '.admin-dashboard-delivery-summary', text: /DAM/
+      assert_select '.admin-dashboard-bar-group', false
       assert_select '.admin-dashboard-workflow', false
       assert_select 'a.admin-nav-link', text: /運用フロー/
+      assert_select '.admin-nav-group-primary[aria-label="メイン"] a.admin-nav-link-primary', text: /カラオケ配信曲/
+      assert_operator response.body.index('aria-label="メイン"'), :<, response.body.index('aria-label="運用"')
       assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
       assert_select 'a.admin-skip-link[href="#admin-main-content"]', text: '本文へスキップ'
       assert_select 'main#admin-main-content.admin-main[tabindex="-1"][data-admin-page-content]'
@@ -54,6 +59,7 @@ module Admin
       assert_select '.admin-dashboard-insight-group h3', text: 'ミュージックポスト'
       assert_select '.admin-insight-card span', text: '原曲未紐付け'
       assert_select '.admin-insight-card span', text: '期限切れ'
+      assert_select '.admin-dashboard-management-panel h3', text: 'メイン'
       assert_select '.admin-dashboard-management-panel h3', text: '配信管理'
       assert_select '.admin-dashboard-management-primary', text: /まず見る/
       assert_select '.admin-dashboard-management-primary', text: /カラオケ配信曲/

@@ -47,36 +47,33 @@ module Admin
       assert_response :success
     end
 
-    test 'distribution metrics match individually computed scope counts' do
+    test 'delivery type metrics match individually computed scope counts' do
       get admin_root_path
 
       assert_response :success
 
       total = Song.count
-      metrics = distribution_metrics_from_response
+      metrics = delivery_type_metrics_from_response
 
       assert_equal Song.dam.count, metrics.fetch('dam').fetch(:value)
       assert_equal Song.joysound.count, metrics.fetch('joysound').fetch(:value)
       assert_equal Song.music_post.count, metrics.fetch('music-post').fetch(:value)
-      assert_equal Song.youtube.count, metrics.fetch('youtube').fetch(:value)
-      assert_equal Song.where.not(nicovideo_url: '').count, metrics.fetch('nicovideo').fetch(:value)
-      assert_equal Song.apple_music.count, metrics.fetch('apple').fetch(:value)
-      assert_equal Song.youtube_music.count, metrics.fetch('youtube-music').fetch(:value)
-      assert_equal Song.spotify.count, metrics.fetch('spotify').fetch(:value)
-      assert_equal Song.line_music.count, metrics.fetch('line-music').fetch(:value)
 
       metrics.each_value { |metric| assert_equal total, metric.fetch(:total) }
     end
 
-    test 'nicovideo boundary counts exclude empty string urls and include present urls' do
+    test 'priority metrics link to actionable filtered admin pages' do
       get admin_root_path
 
       assert_response :success
 
-      metrics = distribution_metrics_from_response
-      assert_equal Song.where.not(nicovideo_url: '').count, metrics.fetch('nicovideo').fetch(:value)
-      assert_includes Song.where.not(nicovideo_url: '').pluck(:id), @fully_linked_song.id
-      assert_not_includes Song.where.not(nicovideo_url: '').pluck(:id), @empty_url_song.id
+      metrics = controller.send(:priority_metrics).index_by { |metric| metric.fetch(:label) }
+      assert_equal Song.missing_original_songs.count, metrics.fetch('原曲未紐付け').fetch(:value)
+      assert_equal admin_songs_path(filters: { original_link: 'missing' }), metrics.fetch('原曲未紐付け').fetch(:path)
+      assert_equal JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count, metrics.fetch('期限切れ').fetch(:value)
+      assert_equal admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'expired' }), metrics.fetch('期限切れ').fetch(:path)
+      assert_equal Song.music_post.missing_original_songs.count, metrics.fetch('MP原曲未紐付け').fetch(:value)
+      assert_equal admin_songs_path(filters: { karaoke_type: 'joysound_music_post', original_link: 'missing' }), metrics.fetch('MP原曲未紐付け').fetch(:path)
     end
 
     test 'karaoke type distribution is zero for a type with no songs' do
@@ -86,7 +83,7 @@ module Admin
 
       assert_response :success
 
-      metrics = distribution_metrics_from_response
+      metrics = delivery_type_metrics_from_response
       assert_equal 0, metrics.fetch('music-post').fetch(:value)
       assert_equal Song.music_post.count, metrics.fetch('music-post').fetch(:value)
     end
@@ -124,31 +121,22 @@ module Admin
       music_post_metrics = groups.find { |group| group[:label] == 'ミュージックポスト' }.fetch(:metrics)
       assert_equal Song.music_post.count, music_post_metrics.find { |metric| metric[:label] == '配信曲' }.fetch(:value)
       assert_equal Song.music_post.with_original_songs.count, music_post_metrics.find { |metric| metric[:label] == '原曲紐付け済み' }.fetch(:value)
+      assert_equal Song.music_post.missing_original_songs.count, music_post_metrics.find { |metric| metric[:label] == '原曲未紐付け' }.fetch(:value)
     end
 
-    test 'distribution and shared summary counts are issued exactly once per request' do
+    test 'delivery type and shared summary counts are memoized per request' do
       sql = capture_sql { get admin_root_path }
 
       assert_response :success
 
-      # distribution_metrics: karaoke_type breakdown consolidated into a single GROUP BY.
+      # delivery_type_metrics: karaoke_type breakdown consolidated into a single GROUP BY.
       group_by_karaoke_type = sql.select { |statement| statement.include?('GROUP BY "songs"."karaoke_type"') }
       assert_equal 1, group_by_karaoke_type.size, "expected a single karaoke_type GROUP BY query, got: #{group_by_karaoke_type}"
-
-      # distribution_metrics: total + per-service FILTER counts consolidated into one query.
-      filter_aggregate = sql.select { |statement| statement.include?('COUNT(*) FILTER') }
-      assert_equal 1, filter_aggregate.size, "expected a single FILTER aggregate query, got: #{filter_aggregate}"
-      assert_includes filter_aggregate.first, "COUNT(*) FILTER (WHERE youtube_url <> '')"
-      assert_includes filter_aggregate.first, "COUNT(*) FILTER (WHERE nicovideo_url <> '')"
-      assert_includes filter_aggregate.first, "COUNT(*) FILTER (WHERE apple_music_url <> '')"
-      assert_includes filter_aggregate.first, "COUNT(*) FILTER (WHERE youtube_music_url <> '')"
-      assert_includes filter_aggregate.first, "COUNT(*) FILTER (WHERE spotify_url <> '')"
-      assert_includes filter_aggregate.first, "COUNT(*) FILTER (WHERE line_music_url <> '')"
 
       # dashboard_summary / insight_groups share the same memoized counts, so each of these
       # should be issued only once despite being referenced from two different methods.
       missing_original_songs_queries = sql.select { |statement| statement.include?('"songs_original_songs"."id" IS NULL') }
-      assert_equal 1, missing_original_songs_queries.size, "expected missing_original_songs to be memoized, got: #{missing_original_songs_queries}"
+      assert_equal 2, missing_original_songs_queries.size, "expected missing original song counts to be memoized, got: #{missing_original_songs_queries}"
     end
 
     test 'dashboard counts are served from cache on subsequent requests' do
@@ -158,14 +146,14 @@ module Admin
 
         # 初回リクエストで集計クエリが発行され、キャッシュへ書き込まれる。
         assert_equal 1, count_matching(first_sql, 'GROUP BY "songs"."karaoke_type"')
-        assert_equal 1, count_matching(first_sql, 'COUNT(*) FILTER')
+        assert_operator count_matching(first_sql, 'COUNT(*)'), :positive?
 
         second_sql = capture_sql { get admin_root_path }
         assert_response :success
 
         # 2回目はキャッシュヒットのため COUNT 系集計クエリが再発行されない。
         assert_equal 0, count_matching(second_sql, 'GROUP BY "songs"."karaoke_type"')
-        assert_equal 0, count_matching(second_sql, 'COUNT(*) FILTER')
+        assert_equal 0, count_matching(second_sql, 'COUNT(*)')
       end
     end
 
@@ -186,8 +174,7 @@ module Admin
         assert_equal Original.count, cached.fetch(:originals)
         assert_equal KaraokeDeliveryModel.count, cached.fetch(:karaoke_delivery_models)
         assert_equal JoysoundMusicPost.count, cached.fetch(:joysound_music_posts)
-        assert_equal Song.count, cached.fetch(:distribution_service_counts).fetch(:total)
-        assert_equal Song.youtube.count, cached.fetch(:distribution_service_counts).fetch(:youtube)
+        assert_equal Song.music_post.missing_original_songs.count, cached.fetch(:music_post_missing_original_songs)
         assert_equal Song.group(:karaoke_type).count, cached.fetch(:karaoke_type_counts)
       end
     end
@@ -207,8 +194,8 @@ module Admin
       Rails.cache = original
     end
 
-    def distribution_metrics_from_response
-      controller.send(:distribution_metrics).index_by { |metric| metric.fetch(:key) }
+    def delivery_type_metrics_from_response
+      controller.send(:delivery_type_metrics).index_by { |metric| metric.fetch(:key) }
     end
 
     def capture_sql

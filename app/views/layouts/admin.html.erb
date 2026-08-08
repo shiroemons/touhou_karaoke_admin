@@ -17,6 +17,19 @@
         <span>東方カラオケ管理</span>
       <% end %>
       <nav class="admin-nav">
+        <% main_navigation_groups, other_navigation_groups = admin_navigation_groups.partition { |group_label, _resources| group_label == "メイン" } %>
+        <% main_navigation_groups.each do |group_label, resources| %>
+          <section class="admin-nav-group admin-nav-group-primary" aria-label="<%= group_label %>">
+            <h2><%= group_label %></h2>
+            <% resources.each do |resource| %>
+              <% resource_active = defined?(@resource) && @resource&.key == resource.key %>
+              <%= link_to admin_resources_path(resource), class: ["admin-nav-link", "admin-nav-link-primary", ("admin-nav-link-active" if resource_active)], aria: ({ current: "page" } if resource_active) do %>
+                <span class="admin-nav-icon"><%= admin_resource_icon(resource) %></span>
+                <span><%= resource.label %></span>
+              <% end %>
+            <% end %>
+          </section>
+        <% end %>
         <section class="admin-nav-group" aria-label="運用">
           <h2>運用</h2>
           <% workflow_active = controller_path == "admin/workflow" %>
@@ -35,7 +48,7 @@
             <span>カラオケ配信URL編集</span>
           <% end %>
         </section>
-        <% admin_navigation_groups.each do |group_label, resources| %>
+        <% other_navigation_groups.each do |group_label, resources| %>
           <section class="admin-nav-group" aria-label="<%= group_label %>">
             <h2><%= group_label %></h2>
             <% resources.each do |resource| %>

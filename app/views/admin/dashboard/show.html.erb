@@ -38,6 +38,29 @@
       </div>
     </div>
   </aside>
+
+  <aside class="admin-dashboard-type-card">
+    <div class="admin-dashboard-section-heading">
+      <div>
+        <h2>配信種別</h2>
+        <p>DAM / JOYSOUND / うたスキ</p>
+      </div>
+    </div>
+    <div class="admin-dashboard-type-chart" style="--dam-end: <%= @delivery_type_chart[:dam_end] %>; --joysound-end: <%= @delivery_type_chart[:joysound_end] %>">
+      <div class="admin-dashboard-type-ring" aria-hidden="true">
+        <strong>配信</strong>
+        <span>種別</span>
+      </div>
+      <dl class="admin-dashboard-type-legend" aria-label="配信種別の内訳">
+        <% @delivery_type_chart[:metrics].each do |metric| %>
+          <div class="admin-dashboard-type-legend-<%= metric[:key] %>">
+            <dt><%= metric[:label] %></dt>
+            <dd><%= number_with_delimiter(metric[:value]) %> 曲</dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+  </aside>
 </header>
 
 <section class="admin-dashboard-overview" aria-label="主要データ">
@@ -64,39 +87,43 @@
 </section>
 
 <div class="admin-dashboard-main-grid">
-  <section class="admin-dashboard-panel admin-dashboard-graph-panel" aria-labelledby="admin-dashboard-distribution">
+  <section class="admin-dashboard-panel admin-dashboard-priority-panel" aria-labelledby="admin-dashboard-priority">
     <div class="admin-dashboard-section-heading">
       <div>
-        <h2 id="admin-dashboard-distribution">配信状況</h2>
-        <p>楽曲データの構成</p>
+        <h2 id="admin-dashboard-priority">優先確認</h2>
+        <p>次に確認したいデータ状態</p>
       </div>
       <%= link_to admin_songs_path, class: "admin-dashboard-panel-link" do %>
-        <span>一覧へ</span>
+        <span>配信曲へ</span>
         <%= admin_icon(:next) %>
       <% end %>
     </div>
 
-    <div class="admin-dashboard-bars">
-      <% @distribution_groups.each do |group| %>
-        <section class="admin-dashboard-bar-group">
-          <h3><%= group[:label] %></h3>
-          <div>
-            <% group[:metrics].each do |metric| %>
-              <div class="admin-dashboard-bar-row admin-dashboard-bar-<%= metric[:key] %>">
-                <div class="admin-dashboard-bar-label">
-                  <span><%= metric[:label] %></span>
-                  <strong><%= number_with_delimiter(metric[:value]) %></strong>
-                </div>
-                <div class="admin-dashboard-bar-track" aria-hidden="true">
-                  <span style="width: <%= metric[:percentage] %>%"></span>
-                </div>
-                <small><%= metric[:percentage] %>%</small>
-              </div>
-            <% end %>
+    <div class="admin-dashboard-priority-grid">
+      <% @priority_metrics.each do |metric| %>
+        <%= link_to metric[:path], class: ["admin-dashboard-priority-card", "admin-dashboard-priority-card-#{metric[:tone]}"] do %>
+          <span><%= metric[:label] %></span>
+          <div class="admin-dashboard-priority-value">
+            <strong><%= number_with_delimiter(metric[:value]) %></strong>
+            <small><%= metric[:unit] %></small>
           </div>
-        </section>
+          <p><%= metric[:description] %></p>
+        <% end %>
       <% end %>
     </div>
+
+    <section class="admin-dashboard-delivery-summary" aria-labelledby="admin-dashboard-delivery-summary">
+      <h3 id="admin-dashboard-delivery-summary">配信種別の内訳</h3>
+      <div>
+        <% @delivery_type_metrics.each do |metric| %>
+          <span>
+            <strong><%= metric[:label] %></strong>
+            <%= number_with_delimiter(metric[:value]) %> 曲
+            <small><%= metric[:percentage] %>%</small>
+          </span>
+        <% end %>
+      </div>
+    </section>
   </section>
 
   <section class="admin-dashboard-panel admin-dashboard-actions-panel" aria-labelledby="admin-dashboard-actions">
@@ -123,33 +150,33 @@
       <% end %>
     </div>
   </section>
-</div>
 
-<section class="admin-dashboard-section" aria-labelledby="admin-dashboard-insights">
-  <div class="admin-dashboard-section-heading">
-    <div>
-      <h2 id="admin-dashboard-insights">データ確認</h2>
-      <p>運用で確認したい状態</p>
+  <section class="admin-dashboard-section admin-dashboard-data-section" aria-labelledby="admin-dashboard-insights">
+    <div class="admin-dashboard-section-heading">
+      <div>
+        <h2 id="admin-dashboard-insights">データ確認</h2>
+        <p>運用で確認したい状態</p>
+      </div>
     </div>
-  </div>
-  <div class="admin-dashboard-insights">
-    <% @insight_groups.each do |group| %>
-      <section class="admin-dashboard-insight-group" aria-labelledby="admin-dashboard-<%= group[:label].parameterize %>">
-        <h3 id="admin-dashboard-<%= group[:label].parameterize %>"><%= group[:label] %></h3>
-        <p><%= group[:description] %></p>
-        <div class="admin-insight-grid">
-          <% group[:metrics].each do |metric| %>
-            <%= link_to metric[:path], class: "admin-insight-card" do %>
-              <span><%= metric[:label] %></span>
-              <strong><%= number_with_delimiter(metric[:value]) %></strong>
-              <small><%= metric[:unit] %></small>
+    <div class="admin-dashboard-insights">
+      <% @insight_groups.each do |group| %>
+        <section class="admin-dashboard-insight-group" aria-labelledby="admin-dashboard-<%= group[:label].parameterize %>">
+          <h3 id="admin-dashboard-<%= group[:label].parameterize %>"><%= group[:label] %></h3>
+          <p><%= group[:description] %></p>
+          <div class="admin-insight-grid">
+            <% group[:metrics].each do |metric| %>
+              <%= link_to metric[:path], class: "admin-insight-card" do %>
+                <span><%= metric[:label] %></span>
+                <strong><%= number_with_delimiter(metric[:value]) %></strong>
+                <small><%= metric[:unit] %></small>
+              <% end %>
             <% end %>
-          <% end %>
-        </div>
-      </section>
-    <% end %>
-  </div>
-</section>
+          </div>
+        </section>
+      <% end %>
+    </div>
+  </section>
+</div>
 
 <section class="admin-dashboard-section" aria-labelledby="admin-dashboard-resources">
   <div class="admin-dashboard-section-heading">
