@@ -1,5 +1,5 @@
 <% selectable_collection_operations = @resource.operations.any? { |operation| operation.scope == :collection && operation.selection != :none } %>
-<div class="admin-index-content" data-admin-resource-content>
+<div class="admin-index-content" data-admin-resource-content tabindex="-1">
 <header class="admin-page-header">
   <div>
     <h1><%= @resource.label %></h1>
@@ -74,7 +74,7 @@
 </div>
 
 <div class="admin-table-controls">
-  <div class="admin-result-summary" data-admin-result-summary data-total-count="<%= @total_count %>">
+  <div class="admin-result-summary" data-admin-result-summary data-total-count="<%= @total_count %>" role="status" aria-live="polite" aria-atomic="true">
     <span>表示中 <strong data-admin-visible-count><%= number_with_delimiter(@records.size) %></strong> / <%= number_with_delimiter(@total_count) %> 件</span>
   </div>
   <%= render "display_settings" %>

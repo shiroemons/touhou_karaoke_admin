@@ -65,12 +65,37 @@ const browserUrl = (url) => {
 
 let adminResourceContentController
 
+const describeResourceContentFocus = (element, content) => {
+  if (!element || !content?.contains?.(element)) return null
+
+  return {
+    id: element.id || "",
+    name: element.name || "",
+    type: element.type || "",
+  }
+}
+
+const restoreResourceContentFocus = (descriptor) => {
+  if (!descriptor) return
+
+  const content = document.querySelector("[data-admin-resource-content]")
+  const candidates = Array.from(content?.querySelectorAll?.("[id], [name]") || [])
+  const focusTarget = candidates.find((element) => {
+    if (descriptor.id && element.id === descriptor.id) return true
+    return descriptor.name && element.name === descriptor.name && (!descriptor.type || element.type === descriptor.type)
+  })
+
+  focusTarget?.focus?.({ preventScroll: true })
+  if (!focusTarget) content?.focus?.({ preventScroll: true })
+}
+
 export const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
   if (adminResourceContentController) adminResourceContentController.abort()
 
   const controller = new AbortController()
   adminResourceContentController = controller
   const currentContent = document.querySelector("[data-admin-resource-content]")
+  const focusDescriptor = describeResourceContentFocus(document.activeElement, currentContent)
   currentContent?.setAttribute("aria-busy", "true")
 
   try {
@@ -90,6 +115,7 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
     currentContent.outerHTML = payload.html
     if (pushState) window.history.pushState({}, "", browserUrl(url))
     setupPageBehaviors()
+    restoreResourceContentFocus(focusDescriptor)
   } finally {
     if (adminResourceContentController === controller) {
       currentContent?.removeAttribute("aria-busy")
