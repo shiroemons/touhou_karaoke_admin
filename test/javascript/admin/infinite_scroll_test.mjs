@@ -216,24 +216,41 @@ test("infinite scroll rejects a non-advancing next URL", async () => {
   }
 })
 
-test("infinite scroll disconnects the previous observer when content is replaced", () => {
+test("infinite scroll aborts stale requests when content is replaced", async () => {
   const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
   const firstFixture = buildFixture()
+  let resolveFetch
+  let requestSignal
+
+  globalThis.fetch = (_url, options) => {
+    requestSignal = options.signal
+    return new Promise((resolve) => {
+      resolveFetch = resolve
+    })
+  }
 
   globalThis.document = firstFixture.document
-  setupAdminInfiniteScroll()
-  const firstObserver = firstFixture.observer()
-
-  const secondFixture = buildFixture()
-  globalThis.document = secondFixture.document
-
   try {
+    setupAdminInfiniteScroll()
+    const firstObserver = firstFixture.observer()
+    firstObserver.callback([{ isIntersecting: true }])
+
+    const secondFixture = buildFixture()
+    globalThis.document = secondFixture.document
+
     setupAdminInfiniteScroll()
 
     assert.equal(firstObserver.disconnected, true)
+    assert.equal(requestSignal.aborted, true)
     assert.equal(secondFixture.observer().disconnected, false)
+
+    resolveFetch({ ok: true, json: async () => ({ html: "<tr></tr>", next_url: null }) })
+    await waitForAsyncWork()
+    assert.deepEqual(firstFixture.rows.insertedHtml, [])
   } finally {
     globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
     delete globalThis.IntersectionObserver
   }
 })

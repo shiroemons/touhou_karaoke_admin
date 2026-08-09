@@ -40,14 +40,18 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
   const status = sentinel.querySelector("[data-admin-infinite-scroll-status]")
   const retryButton = sentinel.querySelector("[data-admin-infinite-scroll-retry]")
   let loading = false
+  let requestController
+  const isCurrentSentinel = () => adminInfiniteScrollSentinel === sentinel
 
   const loadNextPage = async () => {
     const nextUrl = sentinel.dataset.nextUrl
-    if (loading || !nextUrl) return
+    if (loading || !nextUrl || !isCurrentSentinel()) return
 
     loading = true
     sentinel.setAttribute("aria-busy", "true")
     if (status) status.textContent = "読み込み中..."
+    const controller = typeof AbortController === "function" ? new AbortController() : undefined
+    requestController = controller
 
     try {
       const response = await fetch(nextUrl, {
@@ -55,11 +59,13 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
           Accept: "application/json",
           "X-Requested-With": "XMLHttpRequest",
         },
+        signal: controller?.signal,
       })
 
       if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
       const payload = await response.json()
+      if (!isCurrentSentinel()) return
       validateAdminInfiniteScrollPayload(payload, nextUrl)
       const followingUrl = payload.next_url || ""
       rows.insertAdjacentHTML("beforeend", payload.html)
@@ -70,12 +76,15 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
       const visibleCount = document.querySelector("[data-admin-visible-count]")
       if (visibleCount) visibleCount.textContent = rows.querySelectorAll("tr").length.toLocaleString()
       if (status) status.textContent = followingUrl ? "さらに読み込みます" : "すべて読み込みました"
-    } catch {
+    } catch (error) {
+      if (error?.name === "AbortError" || !isCurrentSentinel()) return
+
       if (status) status.textContent = "読み込みに失敗しました。再試行してください。"
       if (retryButton) retryButton.hidden = false
     } finally {
       sentinel.setAttribute("aria-busy", "false")
       loading = false
+      if (requestController === controller) requestController = undefined
     }
   }
 
@@ -90,6 +99,8 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
 
   observer.observe(sentinel)
   adminInfiniteScrollCleanup = () => {
+    requestController?.abort()
+    requestController = undefined
     observer.disconnect?.()
     if (adminInfiniteScrollSentinel === sentinel) adminInfiniteScrollSentinel = undefined
   }
