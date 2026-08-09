@@ -4,7 +4,7 @@ import { test } from "node:test"
 
 const source = await readFile(new URL("../../../app/javascript/admin/navigation.js", import.meta.url), "utf8")
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
-const { replaceAdminResourceContent } = await import(moduleUrl)
+const { replaceAdminPage, replaceAdminResourceContent } = await import(moduleUrl)
 
 class FakeContent {
   constructor({ children = [], containedElements = [], onReplace = null } = {}) {
@@ -144,5 +144,48 @@ test("resource content navigation restores focus to the replaced form control", 
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
     globalThis.window = originalWindow
+  }
+})
+
+test("full page navigation focuses the new main content", () => {
+  const originalDocument = globalThis.document
+  const originalWindow = globalThis.window
+  const originalDOMParser = globalThis.DOMParser
+  const nextContent = new FakeContent()
+  const currentContent = new FakeContent()
+  let currentPageContent = currentContent
+  const nextDocument = {
+    querySelector: () => null,
+    title: "新しいページ",
+  }
+
+  currentContent.replaceWith = (replacement) => {
+    assert.equal(replacement, nextContent)
+    currentPageContent = replacement
+  }
+  nextContent.scrollTo = () => {}
+  globalThis.document = {
+    title: "現在のページ",
+    querySelector: (selector) => selector === "[data-admin-page-content]" ? currentPageContent : null,
+  }
+  globalThis.window = {
+    history: { pushState: () => {} },
+    location: { origin: "http://example.test" },
+  }
+  globalThis.DOMParser = class DOMParser {
+    parseFromString() {
+      return nextDocument
+    }
+  }
+  nextDocument.querySelector = (selector) => selector === "[data-admin-page-content]" ? nextContent : null
+
+  try {
+    replaceAdminPage("<html>new</html>", "/admin/songs")
+
+    assert.equal(nextContent.focused, true)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.window = originalWindow
+    globalThis.DOMParser = originalDOMParser
   }
 })

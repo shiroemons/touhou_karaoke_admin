@@ -191,7 +191,7 @@ const isAsyncAdminPageLink = (link, event) => {
   return url.origin === window.location.origin && url.pathname.startsWith("/admin/")
 }
 
-const replaceAdminPage = (html, url, { pushState = true } = {}) => {
+export const replaceAdminPage = (html, url, { pushState = true } = {}) => {
   const nextDocument = new DOMParser().parseFromString(html, "text/html")
   const nextContent = nextDocument.querySelector("[data-admin-page-content]")
   const currentContent = document.querySelector("[data-admin-page-content]")
@@ -207,8 +207,9 @@ const replaceAdminPage = (html, url, { pushState = true } = {}) => {
   if (pushState) window.history.pushState({}, "", adminPageUrl(url))
 
   const pageContent = document.querySelector("[data-admin-page-content]")
-  pageContent?.scrollTo({ top: 0, left: 0 })
+  pageContent?.scrollTo?.({ top: 0, left: 0 })
   setupPageBehaviors()
+  pageContent?.focus?.({ preventScroll: true })
 }
 
 const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
