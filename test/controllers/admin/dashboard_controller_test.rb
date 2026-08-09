@@ -95,11 +95,25 @@ module Admin
 
       summary = controller.send(:dashboard_summary)
       assert_equal Song.count, summary.fetch(:total_songs)
-      assert_equal Song.touhou_arrange.count, summary.fetch(:linked_songs)
+      assert_equal Song.with_original_songs.count, summary.fetch(:linked_songs)
       assert_equal Song.missing_original_songs.count, summary.fetch(:missing_songs)
       assert_equal OriginalSong.count, summary.fetch(:original_songs)
       assert_equal DisplayArtist.count, summary.fetch(:display_artists)
       assert_equal Circle.count, summary.fetch(:circles)
+    end
+
+    test 'dashboard linked metric includes original and other categories' do
+      original_category_song = create_song(display_artist: @dam_artist, karaoke_type: 'DAM')
+      original_category_song.original_songs << create_original_song(title: 'オリジナル')
+
+      get admin_root_path
+
+      assert_response :success
+
+      summary = controller.send(:dashboard_summary)
+      assert_not_includes Song.touhou_arrange.pluck(:id), original_category_song.id
+      assert_equal Song.with_original_songs.count, summary.fetch(:linked_songs)
+      assert_equal summary.fetch(:linked_songs), summary.fetch(:total_songs) - summary.fetch(:missing_songs)
     end
 
     test 'insight groups match individually computed counts' do
@@ -162,9 +176,9 @@ module Admin
         get admin_root_path
         assert_response :success
 
-        cached = Rails.cache.fetch('admin:dashboard:v1')
+        cached = Rails.cache.fetch('admin:dashboard:v2')
         assert_equal Song.count, cached.fetch(:total_songs)
-        assert_equal Song.touhou_arrange.count, cached.fetch(:linked_songs)
+        assert_equal Song.with_original_songs.count, cached.fetch(:linked_songs)
         assert_equal Song.missing_original_songs.count, cached.fetch(:missing_original_songs)
         assert_equal Song.with_original_songs.count, cached.fetch(:with_original_songs)
         assert_equal Song.music_post.with_original_songs.count, cached.fetch(:music_post_with_original_songs)

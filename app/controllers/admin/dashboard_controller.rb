@@ -17,18 +17,20 @@ module Admin
     # 二重構造で取得する。@dashboard_counts のメモ化により、1リクエスト内では
     # cache.fetch は1回だけ呼ばれる (test 環境の :null_store でも計算は1回で済む)。
     def dashboard_counts
-      @dashboard_counts ||= Rails.cache.fetch('admin:dashboard:v1', expires_in: 5.minutes) { compute_dashboard_counts }
+      @dashboard_counts ||= Rails.cache.fetch('admin:dashboard:v2', expires_in: 5.minutes) { compute_dashboard_counts }
     end
 
     # キャッシュに格納するのはプリミティブ値 (整数・文字列) と、それらの Hash/配列のみ。
     # ResourceRegistry::Resource のような Data オブジェクトは Marshal 化できないため含めない。
     def compute_dashboard_counts
+      linked_songs = Song.with_original_songs.count
+
       {
         karaoke_type_counts: Song.group(:karaoke_type).count,
         total_songs: Song.count,
-        linked_songs: Song.touhou_arrange.count,
+        linked_songs:,
         missing_original_songs: Song.missing_original_songs.count,
-        with_original_songs: Song.with_original_songs.count,
+        with_original_songs: linked_songs,
         music_post_with_original_songs: Song.music_post.with_original_songs.count,
         music_post_missing_original_songs: Song.music_post.missing_original_songs.count,
         original_songs: OriginalSong.count,
