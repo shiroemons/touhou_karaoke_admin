@@ -70,6 +70,7 @@ const setupAdminOperationForms = () => {
     const modalCancelButton = form.querySelector(adminSelectors.operationModalCancel)
     const submitButton = form.querySelector(adminSelectors.operationSubmit)
     const progress = form.querySelector(adminSelectors.operationProgress)
+    const progressAnnouncement = form.querySelector(adminSelectors.operationProgressAnnouncement)
     const progressLabel = form.querySelector(adminSelectors.operationProgressLabel)
     const progressPercent = form.querySelector(adminSelectors.operationProgressPercent)
     const progressStatus = form.querySelector(adminSelectors.operationProgressStatus)
@@ -84,6 +85,7 @@ const setupAdminOperationForms = () => {
       form,
       operationModal,
       progress,
+      progressAnnouncement,
       progressLabel,
       progressPercent,
       progressStatus,

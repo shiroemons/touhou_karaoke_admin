@@ -16,6 +16,7 @@ export class AdminOperationProgress {
     form,
     operationModal,
     progress,
+    progressAnnouncement,
     progressLabel,
     progressPercent,
     progressStatus,
@@ -33,6 +34,7 @@ export class AdminOperationProgress {
     this.form = form
     this.operationModal = operationModal
     this.progress = progress
+    this.progressAnnouncement = progressAnnouncement
     this.progressLabel = progressLabel
     this.progressPercent = progressPercent
     this.progressStatus = progressStatus
@@ -199,6 +201,10 @@ export class AdminOperationProgress {
     if (this.progressLabel && label) this.progressLabel.textContent = label
     if (this.progressPercent) this.progressPercent.textContent = `${normalizedValue}%`
     if (this.progressStatus) this.progressStatus.textContent = status
+    if (this.progressAnnouncement) {
+      const announcement = [status, label].filter(Boolean).join("。")
+      if (this.progressAnnouncement.textContent !== announcement) this.progressAnnouncement.textContent = announcement
+    }
     if (this.progressbar) {
       this.progressbar.setAttribute("aria-valuenow", normalizedValue.toString())
       this.progressbar.setAttribute("aria-valuetext", `${status} ${normalizedValue}%`)

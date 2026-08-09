@@ -17,6 +17,7 @@ export const adminSelectors = {
   operationModalTitle: "[data-admin-operation-modal-title]",
   operationPanel: "[data-admin-operation-panel]",
   operationProgress: "[data-admin-operation-progress]",
+  operationProgressAnnouncement: "[data-admin-operation-progress-announcement]",
   operationProgressBar: "[data-admin-operation-progress-bar]",
   operationProgressElapsed: "[data-admin-operation-progress-elapsed]",
   operationProgressLabel: "[data-admin-operation-progress-label]",
