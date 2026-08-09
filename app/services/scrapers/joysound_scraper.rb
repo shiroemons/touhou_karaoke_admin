@@ -34,6 +34,15 @@ module Scrapers
 
     DELIVERY_MODEL_MORE_BUTTON_SELECTOR = '#song-distribution [data-testid="card-information"] button'
 
+    def initialize(
+      browser_manager: BrowserManager.new,
+      delivery_model_manager: DeliveryModelManager.instance,
+      display_artist_resolver: JoysoundDisplayArtistResolver.new
+    )
+      @display_artist_resolver = display_artist_resolver
+      super(browser_manager:, delivery_model_manager:)
+    end
+
     # JOYSOUNDの楽曲ページをスクレイピング
     def scrape_song_page(url)
       with_retry do
@@ -113,20 +122,14 @@ module Scrapers
       artist_name = info.fetch("歌手名")
       artist_url = absolute_joysound_url(artist_el&.attribute("href").to_s)
 
-      display_artist = DisplayArtist.find_or_create_by!(
-        name: artist_name,
-        karaoke_type: "JOYSOUND",
-        url: artist_url
-      )
-
       expand_delivery_model_sections
 
       browser_manager.find_all(@selectors['song_detail']['songs']).each do |song_el|
-        create_song_from_element(song_el, display_artist, browser_manager.current_url)
+        create_song_from_element(song_el, artist_name:, artist_url:, page_url: browser_manager.current_url)
       end
     end
 
-    def create_song_from_element(element, display_artist, page_url)
+    def create_song_from_element(element, artist_name:, artist_url:, page_url:)
       title = element.at_css(@selectors['song_detail']['song_title'])&.inner_text&.strip
       song_number = element.inner_text[/曲番号:\s*([0-9]+)/, 1].to_s
       return if title.blank?
@@ -134,12 +137,9 @@ module Scrapers
       delivery_models = extract_delivery_models(element)
       kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND")
 
-      song = Song.find_or_create_by!(
-        title:,
-        display_artist:,
-        song_number:,
-        karaoke_type: "JOYSOUND",
-        url: page_url
+      song = find_or_create_song(
+        song_attributes: { title:, song_number:, karaoke_type: "JOYSOUND", url: page_url },
+        artist_attributes: { name: artist_name, url: artist_url }
       )
 
       # karaoke_delivery_model_idsの更新を安全に行う
@@ -202,31 +202,23 @@ module Scrapers
       artist_name = info.fetch("歌手名")
       artist_url = absolute_joysound_url(artist_el&.attribute("href").to_s)
 
-      display_artist = DisplayArtist.find_or_create_by!(
-        name: artist_name,
-        karaoke_type: "JOYSOUND(うたスキ)",
-        url: artist_url
-      )
-
       expand_delivery_model_sections
 
       browser_manager.find_all(@selectors['song_detail']['songs']).each do |block|
-        create_music_post_song(block, display_artist, joysound_music_post)
+        create_music_post_song(block, artist_name:, artist_url:, joysound_music_post:)
       end
     end
 
-    def create_music_post_song(block, display_artist, joysound_music_post)
+    def create_music_post_song(block, artist_name:, artist_url:, joysound_music_post:)
       title = block.at_css(@selectors['song_detail']['song_title'])&.inner_text&.strip
       return if title.blank?
 
       delivery_models = extract_delivery_models(block)
       kdm = find_or_create_delivery_model_ids(delivery_models, "JOYSOUND(うたスキ)")
 
-      song = Song.find_or_create_by!(
-        title:,
-        display_artist:,
-        karaoke_type: "JOYSOUND(うたスキ)",
-        url: browser_manager.current_url
+      song = find_or_create_song(
+        song_attributes: { title:, karaoke_type: "JOYSOUND(うたスキ)", url: browser_manager.current_url },
+        artist_attributes: { name: artist_name, url: artist_url }
       )
 
       # karaoke_delivery_model_idsの更新を安全に行う
@@ -240,17 +232,99 @@ module Scrapers
     end
 
     def update_song_with_joysound_utasuki(song, joysound_music_post)
-      if song.song_with_joysound_utasuki.blank?
-        song.create_song_with_joysound_utasuki(
-          delivery_deadline_date: joysound_music_post.delivery_deadline_on,
-          url: joysound_music_post.url
-        )
-      elsif song.song_with_joysound_utasuki.delivery_deadline_date != joysound_music_post.delivery_deadline_on
-        song.song_with_joysound_utasuki.update!(
-          delivery_deadline_date: joysound_music_post.delivery_deadline_on
-        )
+      detail = song.song_with_joysound_utasuki
+
+      if detail.blank?
+        detail_with_same_url = SongWithJoysoundUtasuki.find_by(url: joysound_music_post.url)
+        if detail_with_same_url && detail_with_same_url.song_id != song.id
+          raise SongWithJoysoundUtasuki::Conflict,
+                "Music Post URLが別の曲に紐づいています: #{joysound_music_post.url}"
+        end
+
+        detail = SongWithJoysoundUtasuki.create_or_find_by!(url: joysound_music_post.url) do |record|
+          record.song = song
+          record.delivery_deadline_date = joysound_music_post.delivery_deadline_on
+        end
+
+        if detail.song_id != song.id
+          raise SongWithJoysoundUtasuki::Conflict,
+                "Music Post URLが別の曲に紐づいています: #{joysound_music_post.url}"
+        end
       end
+
+      return if detail.delivery_deadline_date == joysound_music_post.delivery_deadline_on
+
+      detail.update!(delivery_deadline_date: joysound_music_post.delivery_deadline_on)
     end
+
+    def find_or_create_song(song_attributes:, artist_attributes:)
+      title = song_attributes.fetch(:title)
+      karaoke_type = song_attributes.fetch(:karaoke_type)
+      url = song_attributes.fetch(:url)
+      song_number = song_attributes.fetch(:song_number, "")
+      artist_name = artist_attributes.fetch(:name)
+      artist_url = artist_attributes.fetch(:url)
+      raise ArgumentError, 'JOYSOUND楽曲URLが空です' if url.blank?
+
+      existing_song = Song.find_by(karaoke_type:, url:, title:)
+      if existing_song
+        resolve_display_artist(
+          name: artist_name,
+          karaoke_type:,
+          url: artist_url,
+          existing_song:
+        )
+        update_song_number(existing_song, song_number)
+        return existing_song
+      end
+
+      display_artist = resolve_display_artist(name: artist_name, karaoke_type:, url: artist_url)
+      song = Song.create_or_find_by!(karaoke_type:, url:, title:) do |record|
+        record.display_artist = display_artist
+        record.song_number = song_number
+      end
+
+      # 並列実行中に別ワーカーが先に作成した場合も、既存曲を正として再解決する。
+      if song.display_artist_id != display_artist.id
+        resolve_display_artist(
+          name: artist_name,
+          karaoke_type:,
+          url: artist_url,
+          existing_song: song
+        )
+        destroy_orphan_display_artist(display_artist)
+      end
+      update_song_number(song, song_number)
+      song
+    end
+
+    def resolve_display_artist(name:, karaoke_type:, url:, existing_song: nil)
+      display_artist_resolver.resolve(name:, karaoke_type:, url:, existing_song:)
+    end
+
+    def update_song_number(song, song_number)
+      return if song_number.blank? || song.song_number == song_number
+
+      song.update!(song_number:)
+    end
+
+    def destroy_orphan_display_artist(display_artist)
+      display_artist.reload
+      return unless display_artist.songs.none? && display_artist.dam_songs.none? && display_artist.circles.none?
+
+      display_artist.destroy!
+      Admin::OperationLogger.log(
+        level: :info,
+        event: :db_update,
+        action: :delete,
+        resource: :display_artist,
+        id: display_artist.id,
+        name: display_artist.name,
+        reason: :concurrent_duplicate_resolution
+      )
+    end
+
+    attr_reader :display_artist_resolver
 
     def update_delivery_models(song, new_delivery_model_ids)
       ActiveRecord::Base.transaction do

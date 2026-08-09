@@ -24,6 +24,12 @@ module Scrapers
       end
     end
 
+    StaticUrlChecker = Struct.new(:responses) do
+      def check_url(url)
+        responses.fetch(url)
+      end
+    end
+
     class ForbiddenBrowserManager
       def method_missing(method_name, ...)
         raise "HTTP-only parser must not use browser manager ##{method_name}"
@@ -153,6 +159,57 @@ module Scrapers
         :clear_network_traffic,
         [:visit, 'https://www.joysound.com/web/search/song/1']
       ], browser_manager.calls
+    end
+
+    test 'reuses an existing song when only the artist url changed' do
+      karaoke_type = 'JOYSOUND(うたスキ)'
+      old_artist_url = 'https://example.com/joysound/artists/old'
+      new_artist_url = 'https://example.com/joysound/artists/new'
+      song_url = 'https://example.com/joysound/songs/existing'
+      artist = create_display_artist(karaoke_type:, name: '既存曲アーティスト', url: old_artist_url)
+      existing_song = create_song(display_artist: artist, karaoke_type:, title: '既存曲', url: song_url)
+      resolver = JoysoundDisplayArtistResolver.new(
+        url_checker: StaticUrlChecker.new(
+          {
+            old_artist_url => { exists: false, status_code: 404, should_retry: false },
+            new_artist_url => { exists: true, status_code: 200, should_retry: false }
+          }
+        )
+      )
+      scraper = JoysoundScraper.new(display_artist_resolver: resolver, browser_manager: ForbiddenBrowserManager.new)
+
+      result = scraper.send(
+        :find_or_create_song,
+        song_attributes: { title: existing_song.title, karaoke_type:, url: song_url, song_number: '12345' },
+        artist_attributes: { name: artist.name, url: new_artist_url }
+      )
+
+      assert_equal existing_song.id, result.id
+      assert_equal 1, Song.where(karaoke_type:, url: song_url, title: existing_song.title).count
+      assert_equal '12345', existing_song.reload.song_number
+      assert_equal new_artist_url, artist.reload.url
+    end
+
+    test 'raises when a Music Post URL belongs to another song' do
+      karaoke_type = 'JOYSOUND(うたスキ)'
+      other_song = create_song(karaoke_type:, display_artist: create_display_artist(karaoke_type:))
+      music_post_url = 'https://example.com/music-post/already-linked'
+      SongWithJoysoundUtasuki.create!(song: other_song, url: music_post_url, delivery_deadline_date: Date.current)
+      song = create_song(karaoke_type:, display_artist: create_display_artist(karaoke_type:))
+      music_post = JoysoundMusicPost.create!(
+        title: 'URL競合Music Post',
+        artist: 'テストアーティスト',
+        producer: 'producer',
+        delivery_deadline_on: Date.current,
+        url: music_post_url
+      )
+      scraper = JoysoundScraper.new(browser_manager: ForbiddenBrowserManager.new)
+
+      assert_raises(SongWithJoysoundUtasuki::Conflict) do
+        scraper.send(:update_song_with_joysound_utasuki, song, music_post)
+      end
+
+      assert_nil song.reload.song_with_joysound_utasuki
     end
   end
 end

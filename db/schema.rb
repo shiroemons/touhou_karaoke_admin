@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_08_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_09_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -181,7 +181,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_08_230000) do
     t.uuid "song_id", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
-    t.index ["song_id"], name: "index_song_with_joysound_utasukis_on_song_id"
+    t.index ["song_id"], name: "index_song_with_joysound_utasukis_on_song_id", unique: true
+    t.index ["url"], name: "index_song_with_joysound_utasukis_on_url", unique: true
   end
 
   create_table "songs", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -202,7 +203,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_08_230000) do
     t.index ["created_at"], name: "index_songs_on_created_at"
     t.index ["display_artist_id"], name: "index_songs_on_display_artist_id"
     t.index ["karaoke_type", "created_at"], name: "index_songs_on_karaoke_type_and_created_at"
-    t.index ["karaoke_type", "url", "title"], name: "index_songs_on_karaoke_type_and_url_and_title"
+    t.index ["karaoke_type", "url", "title"], name: "index_songs_on_karaoke_type_and_url_and_title", unique: true, where: "((url)::text <> ''::text)"
   end
 
   create_table "songs_karaoke_delivery_models", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|

@@ -12,6 +12,8 @@ class Song < ApplicationRecord
 
   belongs_to :display_artist
 
+  validates :url, uniqueness: { scope: %i[karaoke_type title] }, allow_blank: true
+
   ORIGINAL_OR_OTHER_TITLES = %w[オリジナル その他].freeze
 
   scope :missing_original_songs, -> { where.missing(:songs_original_songs) }

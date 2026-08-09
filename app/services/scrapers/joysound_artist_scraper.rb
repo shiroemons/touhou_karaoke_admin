@@ -4,8 +4,12 @@ module Scrapers
   class JoysoundArtistScraper
     ARTIST_READING_SELECTOR = "#jp-cmp-main > section:nth-child(2) > header > div.jp-cmp-h1-003-title > h1 > span"
 
-    def initialize(browser_manager_factory: BrowserManager.method(:new))
+    def initialize(
+      browser_manager_factory: BrowserManager.method(:new),
+      display_artist_resolver: JoysoundDisplayArtistResolver.new
+    )
       @browser_manager_factory = browser_manager_factory
+      @display_artist_resolver = display_artist_resolver
     end
 
     def fetch_artist_readings(progress: nil)
@@ -83,7 +87,7 @@ module Scrapers
 
     private
 
-    attr_reader :browser_manager_factory
+    attr_reader :browser_manager_factory, :display_artist_resolver
 
     def with_browser(options, &)
       browser_manager_factory.call(options).with_browser(&)
@@ -133,6 +137,9 @@ module Scrapers
           Admin::OperationLogger.log(level: :warn, event: :external_fetch, action: :retry, resource: :display_artist, name: artist, retry_count: rescue_count, max_retries: 3, error: e.message)
           retry
         end
+      rescue JoysoundDisplayArtistResolver::Conflict => e
+        Admin::OperationLogger.log(level: :error, event: :db_update, action: :skip, resource: :display_artist, name: artist, error: e.message)
+        error_artist << artist
       end
     end
 
@@ -148,13 +155,16 @@ module Scrapers
       return unless artist_link
 
       artist_url = self.class.absolute_joysound_url(artist_link.attribute("href").to_s)
-      display_artist = DisplayArtist.find_or_initialize_by(name: artist, karaoke_type: "JOYSOUND(うたスキ)")
-      return unless display_artist.new_record? || display_artist.url != artist_url || display_artist.name_reading.blank?
 
       browser.goto(artist_url)
       browser.network.wait_for_idle(duration: 1.0)
+      resolution = display_artist_resolver.resolve(
+        name: artist,
+        karaoke_type: "JOYSOUND(うたスキ)",
+        url: browser.current_url
+      )
+      display_artist = resolution.artist
       display_artist.name_reading = self.class.name_reading(browser, artist)
-      display_artist.url = browser.current_url
       display_artist.save!
     end
   end
