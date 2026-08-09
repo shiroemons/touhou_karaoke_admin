@@ -40,6 +40,8 @@ module Admin
       assert_select '.admin-delivery-url-control-group h2', text: '絞り込み'
       assert_select '.admin-delivery-url-control-group h2', text: '並び替え'
       assert_select 'input[name="missing_url_columns[]"][value="youtube_url"][data-admin-auto-submit]'
+      missing_url_column_ids = css_select('input[name="missing_url_columns[]"]').filter_map { |element| element['id'] }
+      assert_equal missing_url_column_ids.uniq, missing_url_column_ids
       assert_select 'select[name="karaoke_type"][aria-label="配信種別"][data-admin-auto-submit]'
       assert_select 'select[name="sort"][aria-label="並び替え項目"][data-admin-auto-submit] option[selected][value="created_at"]'
       assert_select 'select[name="direction"][aria-label="並び順"][data-admin-auto-submit] option[selected][value="desc"]'

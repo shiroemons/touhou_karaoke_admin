@@ -47,7 +47,7 @@
           <div class="admin-url-filter-grid">
             <% karaoke_song_delivery_url_filter_columns.each do |column| %>
               <label class="admin-url-filter-option <%= "admin-url-filter-option-active" if @missing_url_columns.include?(column) %>">
-                <%= check_box_tag "missing_url_columns[]", column, @missing_url_columns.include?(column), class: "checkbox checkbox-sm", data: { admin_auto_submit: true } %>
+                <%= check_box_tag "missing_url_columns[]", column, @missing_url_columns.include?(column), id: "admin-missing-url-column-#{column.dasherize}", class: "checkbox checkbox-sm", data: { admin_auto_submit: true } %>
                 <span><%= karaoke_song_delivery_url_column_label(column) %> 設定済みを非表示</span>
               </label>
             <% end %>
