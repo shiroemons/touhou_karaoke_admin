@@ -931,6 +931,12 @@ module Admin
       assert_select '.admin-operation-guide h2', text: '運用アクション'
       assert_select '.admin-operation-guide-group h3', text: 'TSV入出力'
       assert_select '.admin-operation-guide-group h3', { text: '外部取得', count: 0 }
+      operation_groups = css_select('.admin-operation-guide-group')
+      operation_groups.each do |group|
+        heading_id = group['aria-labelledby']
+        assert heading_id.present?
+        assert_select "##{heading_id}", text: group.at_css('h3').text
+      end
       assert_select '.admin-operation-guide-item[data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', text: '楽曲TSVをエクスポート'
       assert_select '.admin-operation-guide-cta', text: /対象を選択して実行/
       assert_select '.admin-operation-guide-meta small', text: '選択必須'
