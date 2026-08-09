@@ -708,7 +708,7 @@ module Admin
       get admin_original_songs_path
 
       assert_response :success
-      assert_select 'select[name="filters[original_type]"]'
+      assert_select 'select[name="filters[original_type]"][aria-label="原作種別"]'
     end
 
     test 'filters original resources by enum values' do

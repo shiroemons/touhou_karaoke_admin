@@ -34,6 +34,7 @@ module Admin
                  options_for_select(filter.options.map { |value, label| [label, value] }, active_value),
                  include_blank: 'すべて',
                  class: 'admin-select select select-bordered',
+                 aria: { label: filter.label },
                  data: { admin_auto_submit: true }
     end
 
