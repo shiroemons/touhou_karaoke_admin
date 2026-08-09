@@ -30,6 +30,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
     let pollInFlight = false
     let pollTimer
     let pollingStopped = false
+    let pollController
     let pagehideHandler
 
     const removePagehideHandler = () => {
@@ -130,6 +131,10 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         window.clearTimeout(pollTimer)
         pollTimer = undefined
       }
+      if (pollController) {
+        pollController.abort()
+        pollController = undefined
+      }
       removePagehideHandler()
     }
 
@@ -141,12 +146,15 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       }
 
       pollInFlight = true
+      const controller = typeof AbortController === "function" ? new AbortController() : undefined
+      pollController = controller
       try {
         const response = await fetch(runner.dataset.adminWorkflowProgressUrl, {
           headers: {
             Accept: "application/json",
             "X-Requested-With": "XMLHttpRequest",
           },
+          signal: controller?.signal,
         })
         if (!response.ok) {
           const error = new Error(`運用フロー進捗の取得に失敗しました（HTTP ${response.status}）。`)
@@ -174,7 +182,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         }
         if (payload.state === "completed" || payload.state === "failed") stopPolling()
       } catch (error) {
-        if (pollingStopped || !runnerIsMounted()) {
+        if (error?.name === "AbortError" || pollingStopped || !runnerIsMounted()) {
           stopPolling()
           return
         }
@@ -209,6 +217,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
           current: "再接続待ち",
         })
       } finally {
+        if (pollController === controller) pollController = undefined
         pollInFlight = false
         if (pollingStopped) return
 

@@ -267,3 +267,59 @@ test("workflow runner stops polling after its runner is detached", async () => {
     globalThis.window = originalWindow
   }
 })
+
+test("workflow runner aborts an in-flight poll when the page is hidden", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const pagehideHandlers = new Set()
+  let resolveResponse
+  let requestOptions
+  const scheduled = []
+
+  globalThis.fetch = (_url, options) => {
+    requestOptions = options
+    return new Promise((resolve) => {
+      resolveResponse = resolve
+    })
+  }
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") pagehideHandlers.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") pagehideHandlers.delete(handler)
+    },
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.ok(requestOptions.signal)
+    assert.equal(pagehideHandlers.size, 1)
+    pagehideHandlers.values().next().value()
+    assert.equal(requestOptions.signal.aborted, true)
+    assert.equal(pagehideHandlers.size, 0)
+
+    resolveResponse({
+      ok: true,
+      json: async () => ({ state: "running", workflow: { steps: [] } }),
+    })
+    await waitForPoll()
+
+    assert.equal(fixture.statusState.textContent, "")
+    assert.equal(scheduled.length, 0)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
