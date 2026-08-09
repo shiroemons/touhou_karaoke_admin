@@ -53,7 +53,7 @@ module Admin
       assert_operator response.body.index('aria-label="メイン"'), :<, response.body.index('aria-label="運用"')
       assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
       assert_select 'a.admin-skip-link[href="#admin-main-content"]', text: '本文へスキップ'
-      assert_select 'main#admin-main-content.admin-main[tabindex="-1"][data-admin-page-content]'
+      assert_select 'main#admin-main-content.admin-main[aria-busy="false"][tabindex="-1"][data-admin-page-content]'
       assert_select '.admin-dashboard-insight-group h3', text: 'データ状態'
       assert_select '.admin-dashboard-insight-group h3', text: 'マスタデータ'
       assert_select '.admin-dashboard-insight-group h3', text: 'ミュージックポスト'
@@ -201,7 +201,7 @@ module Admin
       view_mode_ids = css_select('input[name="view_mode"]').filter_map { |node| node['id'] }
       assert_equal view_mode_ids.length, view_mode_ids.uniq.length
       assert_select '[data-admin-infinite-scroll-retry][hidden]', 1
-      assert_select '[data-admin-resource-content][tabindex="-1"]'
+      assert_select '[data-admin-resource-content][aria-busy="false"][tabindex="-1"]'
       assert_select '.admin-result-summary[role="status"][aria-live="polite"][aria-atomic="true"]'
     end
 

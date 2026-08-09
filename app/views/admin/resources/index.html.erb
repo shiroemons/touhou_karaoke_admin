@@ -1,5 +1,5 @@
 <% selectable_collection_operations = @resource.operations.any? { |operation| operation.scope == :collection && operation.selection != :none } %>
-<div class="admin-index-content" data-admin-resource-content tabindex="-1">
+<div class="admin-index-content" data-admin-resource-content aria-busy="false" tabindex="-1">
 <header class="admin-page-header">
   <div>
     <h1><%= @resource.label %></h1>

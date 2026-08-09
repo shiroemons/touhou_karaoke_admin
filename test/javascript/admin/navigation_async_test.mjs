@@ -86,7 +86,7 @@ test("resource content navigation aborts stale requests and preserves the latest
     await secondRequestPromise
 
     assert.equal(content.outerHTML, "<main>new</main>")
-    assert.equal(content.attributes["aria-busy"], undefined)
+    assert.equal(content.attributes["aria-busy"], "false")
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
@@ -158,7 +158,7 @@ test("resource content navigation keeps the current content for a malformed resp
       /一覧データの形式が不正です。/
     )
     assert.equal(content.outerHTML, "<main>initial</main>")
-    assert.equal(content.attributes["aria-busy"], undefined)
+    assert.equal(content.attributes["aria-busy"], "false")
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch

@@ -127,7 +127,7 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
     restoreResourceContentFocus(focusDescriptor)
   } finally {
     if (adminResourceContentController === controller) {
-      currentContent?.removeAttribute("aria-busy")
+      currentContent?.setAttribute("aria-busy", "false")
       adminResourceContentController = undefined
     }
   }
@@ -245,7 +245,7 @@ const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
   } finally {
     if (adminPageNavigationController === controller) {
       delete document.body.dataset.adminNavigation
-      document.querySelector("[data-admin-page-content]")?.removeAttribute("aria-busy")
+      document.querySelector("[data-admin-page-content]")?.setAttribute("aria-busy", "false")
       adminPageNavigationController = undefined
     }
   }
