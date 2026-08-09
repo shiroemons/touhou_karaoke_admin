@@ -366,6 +366,43 @@ test("setOriginalSongPickerText marks text invalid when resolve fails", async ()
   assert.equal(errors.length, 1)
 })
 
+test("setOriginalSongPickerText exposes an actionable error after a timeout", async () => {
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const originalConsoleError = console.error
+  const fixture = buildPicker()
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "resolve-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  console.error = () => {}
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+
+  try {
+    const request = setOriginalSongPickerText(fixture.search, "応答しない原曲")
+    for (let attempt = 0; attempt < 5 && !timeoutCallback; attempt += 1) await Promise.resolve()
+    assert.ok(timeoutCallback)
+    timeoutCallback()
+    await request
+
+    assert.equal(fixture.valueInput.value, "応答しない原曲")
+    assert.equal(fixture.chips.children[0].dataset.adminOriginalSongStatus, "invalid")
+    assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+    assert.equal(clearedTimeout, "resolve-timeout")
+  } finally {
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+    console.error = originalConsoleError
+  }
+})
+
 test("original song search exposes an actionable error when options cannot be loaded", async () => {
   const fixture = buildPicker()
   globalThis.document.querySelectorAll = (selector) => (

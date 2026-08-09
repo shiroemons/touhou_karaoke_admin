@@ -87,7 +87,7 @@ const ORIGINAL_SONG_OPTIONS_TIMEOUT_MS = 15000
 let activeOriginalSongPicker
 const originalSongPickerResolveQueues = new WeakMap()
 
-const createOriginalSongOptionsTimeout = (controller, timeoutMs = ORIGINAL_SONG_OPTIONS_TIMEOUT_MS) => {
+const createOriginalSongRequestTimeout = (controller, timeoutMs = ORIGINAL_SONG_OPTIONS_TIMEOUT_MS) => {
   const setTimeoutFunction = globalThis.setTimeout
   const clearTimeoutFunction = globalThis.clearTimeout
   if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
@@ -181,20 +181,31 @@ const renderOriginalSongOptions = (picker, optionsPayload) => {
 }
 
 const resolveOriginalSongText = async (picker, text) => {
-  const response = await fetch(picker.dataset.resolveUrl, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || "",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    body: JSON.stringify({ text }),
-  })
-  if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+  const controller = typeof AbortController === "function" ? new AbortController() : undefined
+  const requestTimeout = controller ? createOriginalSongRequestTimeout(controller) : undefined
 
-  return response.json()
+  try {
+    const response = await fetch(picker.dataset.resolveUrl, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || "",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify({ text }),
+      signal: controller?.signal,
+    })
+    if (requestTimeout?.timedOut()) throw new Error("原曲候補の解決がタイムアウトしました。")
+    if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+
+    const payload = await response.json()
+    if (requestTimeout?.timedOut()) throw new Error("原曲候補の解決がタイムアウトしました。")
+    return payload
+  } finally {
+    requestTimeout?.clear()
+  }
 }
 
 const enqueueOriginalSongResolve = (picker, text) => {
@@ -319,7 +330,7 @@ export const setupAdminOriginalSongPickers = () => {
       }
 
       searchController = new AbortController()
-      const requestTimeout = createOriginalSongOptionsTimeout(searchController)
+      const requestTimeout = createOriginalSongRequestTimeout(searchController)
       updateOriginalSongPickerStatus(picker, "候補を検索しています...")
       try {
         const url = new URL(picker.dataset.optionsUrl, window.location.origin)
