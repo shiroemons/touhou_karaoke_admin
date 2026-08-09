@@ -4,7 +4,7 @@ import { test } from "node:test"
 
 const source = await readFile(new URL("../../../app/javascript/admin/navigation.js", import.meta.url), "utf8")
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
-const { replaceAdminPage, replaceAdminResourceContent } = await import(moduleUrl)
+const { fetchAndReplaceAdminPage, replaceAdminPage, replaceAdminResourceContent } = await import(moduleUrl)
 
 class FakeContent {
   constructor({ children = [], containedElements = [], onReplace = null } = {}) {
@@ -163,6 +163,77 @@ test("resource content navigation keeps the current content for a malformed resp
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
     globalThis.window = originalWindow
+  }
+})
+
+test("full page navigation ignores a stale response even when abort is ignored", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const originalDOMParser = globalThis.DOMParser
+  const currentContent = new FakeContent()
+  let currentPageContent = currentContent
+  let resolveFirstResponseText
+  const requests = []
+
+  currentContent.replaceWith = (replacement) => {
+    currentPageContent = replacement
+  }
+  globalThis.document = {
+    body: { dataset: {} },
+    title: "現在のページ",
+    querySelector: (selector) => selector === "[data-admin-page-content]" ? currentPageContent : null,
+  }
+  globalThis.window = {
+    location: { origin: "http://example.test" },
+    history: { pushState: () => {} },
+  }
+  globalThis.DOMParser = class DOMParser {
+    parseFromString(html) {
+      const nextContent = new FakeContent()
+      nextContent.scrollTo = () => {}
+      const nextDocument = {
+        title: html.includes("new") ? "新しいページ" : "古いページ",
+        querySelector: (selector) => selector === "[data-admin-page-content]" ? nextContent : null,
+      }
+      return nextDocument
+    }
+  }
+  globalThis.fetch = (url, options) => new Promise((resolve) => {
+    requests.push({ options, resolve, url })
+  })
+
+  try {
+    const firstNavigation = fetchAndReplaceAdminPage("/admin/songs?query=old")
+    requests[0].resolve({
+      ok: true,
+      text: () => new Promise((resolve) => {
+        resolveFirstResponseText = resolve
+      }),
+      url: "http://example.test/admin/songs?query=old",
+    })
+    await Promise.resolve()
+
+    const secondNavigation = fetchAndReplaceAdminPage("/admin/songs?query=new")
+    assert.equal(requests[0].options.signal.aborted, true)
+
+    resolveFirstResponseText("<html>old</html>")
+    await firstNavigation
+    assert.equal(currentPageContent, currentContent)
+
+    requests[1].resolve({
+      ok: true,
+      text: async () => "<html>new</html>",
+      url: "http://example.test/admin/songs?query=new",
+    })
+    await secondNavigation
+    assert.notEqual(currentPageContent, currentContent)
+    assert.equal(globalThis.document.title, "新しいページ")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+    globalThis.DOMParser = originalDOMParser
   }
 })
 

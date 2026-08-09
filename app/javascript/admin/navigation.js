@@ -225,7 +225,7 @@ export const replaceAdminPage = (html, url, { pushState = true } = {}) => {
   pageContent?.focus?.({ preventScroll: true })
 }
 
-const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
+export const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
   if (adminPageNavigationController) adminPageNavigationController.abort()
 
   const controller = new AbortController()
@@ -243,9 +243,13 @@ const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
       signal: controller.signal,
     })
 
+    if (adminPageNavigationController !== controller) return
     if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
-    replaceAdminPage(await response.text(), response.url, { pushState })
+    const html = await response.text()
+    if (adminPageNavigationController !== controller) return
+
+    replaceAdminPage(html, response.url, { pushState })
   } finally {
     if (adminPageNavigationController === controller) {
       delete document.body.dataset.adminNavigation
