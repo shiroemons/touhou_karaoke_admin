@@ -108,7 +108,7 @@
         <% end %>
         <% @resource.index_fields.each do |field| %>
           <% sort_order = field.sortable ? admin_sort_order(field) : nil %>
-          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>" scope="col" <%= tag.attributes(aria: { sort: sort_order }) if sort_order %>>
+          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>" scope="col" <%= tag.attributes(aria: { sort: sort_order || "none" }) if field.sortable %>>
             <% if field.sortable %>
               <%= admin_sort_link(@resource, field) %>
             <% else %>

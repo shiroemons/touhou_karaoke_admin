@@ -204,6 +204,9 @@ module Admin
       assert_select '[data-admin-infinite-scroll-retry][hidden]', 1
       assert_select '[data-admin-resource-content][aria-busy="false"][tabindex="-1"]'
       assert_select '.admin-result-summary[role="status"][aria-live="polite"][aria-atomic="true"]'
+      assert_select 'th.admin-table-field-karaoke-type[aria-sort="none"]'
+      assert_select 'th.admin-table-field-title[aria-sort="ascending"]'
+      assert_select 'th.admin-table-field-updated-at[aria-sort="none"]'
     end
 
     test 'workflow dry run controls are individually associated with their labels' do
