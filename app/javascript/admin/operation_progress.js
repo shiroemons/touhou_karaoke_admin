@@ -3,6 +3,24 @@ const DEFAULT_PROGRESS_LABEL = "外部サイトから取得・保存していま
 const POLL_INTERVAL_MS = 1200
 const MAX_POLL_RETRIES = 3
 const MAX_POLL_DELAY_MS = 10000
+const OPERATION_PROGRESS_TIMEOUT_MS = 15000
+
+const createOperationProgressTimeout = (controller, timeoutMs = OPERATION_PROGRESS_TIMEOUT_MS) => {
+  const setTimeoutFunction = globalThis.setTimeout
+  const clearTimeoutFunction = globalThis.clearTimeout
+  if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
+
+  let timedOut = false
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
 
 const normalizeProgressValue = (value) => {
   const numericValue = Number(value)
@@ -276,12 +294,13 @@ export class AdminOperationProgress {
 
     this.pollController?.abort()
     const pollSequence = ++this.pollSequence
-    const controller = typeof AbortController === "function" ? new AbortController() : undefined
-    this.pollController = controller
     const poll = async () => {
       if (this.phase === "finished" || this.phase === "failed" || this.pollInFlight) return
 
       this.pollInFlight = true
+      const controller = typeof AbortController === "function" ? new AbortController() : undefined
+      this.pollController = controller
+      const requestTimeout = controller ? createOperationProgressTimeout(controller) : undefined
       try {
         const response = await fetch(this.progressUrl, {
           headers: {
@@ -298,11 +317,12 @@ export class AdminOperationProgress {
         }
 
         const payload = await response.json()
+        if (requestTimeout?.timedOut()) throw new Error("処理状態の取得がタイムアウトしました。")
         if (this.pollSequence !== pollSequence) return
         this.pollFailureCount = 0
         this.applyServerProgress(payload)
       } catch (error) {
-        if (error?.name === "AbortError" || this.pollSequence !== pollSequence) return
+        if ((error?.name === "AbortError" && !requestTimeout?.timedOut()) || this.pollSequence !== pollSequence) return
 
         if (error?.status === 404) {
           this.fail("処理状態が見つかりません。再実行するか、画面を再読み込みしてください。")
@@ -319,6 +339,8 @@ export class AdminOperationProgress {
         this.lastLabel = `進捗を確認できません。${this.pollFailureCount}/${MAX_POLL_RETRIES}回目の再試行を待っています...`
         this.update(this.lastServerPercentage, this.lastStatus, this.lastLabel)
       } finally {
+        requestTimeout?.clear()
+        if (this.pollController === controller) this.pollController = undefined
         if (this.pollSequence !== pollSequence) return
         this.pollInFlight = false
         if (this.phase === "finished" || this.phase === "failed") return

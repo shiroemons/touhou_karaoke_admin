@@ -390,3 +390,49 @@ test("AdminOperationProgress retries transient polling failures with backoff", a
     globalThis.window = originalWindow
   }
 })
+
+test("AdminOperationProgress retries after a progress request timeout", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const scheduled = []
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "request-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+  globalThis.window = {
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    timeoutCallback()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(progressStatus.textContent, "再試行中")
+    assert.match(progressLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1200)
+    assert.equal(clearedTimeout, "request-timeout")
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+  }
+})
