@@ -145,6 +145,10 @@ module Admin
       assert_select '.admin-workflow-run-warning.alert.alert-warning', text: '自動実行は外部取得とDB更新を順番に開始するため、対象フローを確認してから開始してください。'
       assert_select '.admin-workflow-parallel-note', text: /JOYSOUNDとDAMを並列実行/
       assert_select 'ol[data-admin-workflow-step-list][aria-label="全体更新の実行ステップ"]'
+      assert_select '[data-admin-workflow-runner][aria-labelledby="admin-workflow-runner-heading"] h2#admin-workflow-runner-heading', text: 'ステップ実行'
+      detail_group_heading_ids = css_select('.admin-workflow-detail-group[aria-labelledby]').pluck('aria-labelledby')
+      assert_equal detail_group_heading_ids.length, detail_group_heading_ids.uniq.length
+      detail_group_heading_ids.each { |heading_id| assert_select "##{heading_id}", 1 }
       assert_select '.admin-workflow-step', text: /ミュージックポスト一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND候補一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND楽曲URLから候補を追加/
@@ -249,6 +253,7 @@ module Admin
 
       assert_response :success
       assert_select '.admin-workflow-status[role="status"][aria-live="polite"][aria-atomic="false"]', text: /実行状況/
+      assert_select '.admin-workflow-status[aria-labelledby="admin-workflow-status-heading"] h2#admin-workflow-status-heading', text: '実行状況'
       assert_select '[data-admin-workflow-status-label]', text: 'DAMを開始待ちです'
       assert_select '[data-admin-workflow-status-state]', text: 'ジョブ待機中'
       assert_select '[data-admin-workflow-status-current]', text: 'DAM候補一覧を取得'
@@ -314,6 +319,7 @@ module Admin
 
       assert_response :success
       assert_select '.admin-workflow-status.alert.alert-warning', text: /重複実行を避けるため/
+      assert_select '.admin-workflow-status[aria-labelledby="admin-workflow-status-heading"] h2#admin-workflow-status-heading', text: '実行状況'
       assert_select 'a[href=?]', admin_workflow_steps_path('full', run_id:), text: /実行中の状況を見る/
     end
 
@@ -365,6 +371,7 @@ module Admin
 
       assert_response :success
       assert_select '[data-admin-workflow-results][role="status"][aria-live="polite"][aria-atomic="true"]:not([hidden])'
+      assert_select '[data-admin-workflow-results][aria-labelledby="admin-workflow-results-heading"] h2#admin-workflow-results-heading', text: '実行結果'
       assert_select '.admin-workflow-result-item', text: /DAM候補一覧を取得/
       assert_select '.admin-workflow-result-item', text: /DAM楽曲一覧 追加2件/
     end
