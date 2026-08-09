@@ -227,6 +227,22 @@ test("selecting an original song candidate returns focus to the search field", a
   assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
 })
 
+test("removing an original song chip returns focus to the search field", async () => {
+  const fixture = buildPicker({ initialValue: "削除対象" })
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+
+  fixture.search.focused = false
+  await fixture.picker.dispatch("click", { target: fixture.chips.children[0] })
+
+  assert.equal(fixture.valueInput.value, "")
+  assert.equal(fixture.chips.children.length, 0)
+  assert.equal(fixture.search.focused, true)
+  assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
+})
+
 test("setOriginalSongPickerText appends to existing selection when append is true", async () => {
   const fixture = buildPicker({ initialValue: "既存曲" })
   globalThis.document.querySelectorAll = (selector) => (

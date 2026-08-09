@@ -156,6 +156,10 @@ const hideOriginalSongOptions = (picker) => {
   if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
 }
 
+const focusOriginalSongPickerSearch = (picker) => {
+  picker.querySelector("[data-admin-original-song-search]")?.focus?.({ preventScroll: true })
+}
+
 const renderOriginalSongOptions = (picker, optionsPayload) => {
   if (!originalSongPickerIsMounted(picker)) return
 
@@ -302,6 +306,7 @@ export const setupAdminOriginalSongPickers = () => {
           picker,
           selectedOriginalSongItems(picker).filter((item) => item.title !== removeTitle)
         )
+        focusOriginalSongPickerSearch(picker)
         return
       }
 
@@ -317,8 +322,8 @@ export const setupAdminOriginalSongPickers = () => {
       const searchInput = picker.querySelector("[data-admin-original-song-search]")
       if (searchInput) {
         searchInput.value = ""
-        searchInput.focus?.({ preventScroll: true })
       }
+      focusOriginalSongPickerSearch(picker)
       hideOriginalSongOptions(picker)
       updateOriginalSongPickerStatus(picker, "原曲を追加しました。")
     })
