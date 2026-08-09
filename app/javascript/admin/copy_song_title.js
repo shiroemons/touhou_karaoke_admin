@@ -11,6 +11,10 @@ const showCopyToast = (message, type) => {
 
   copyToast.className = `admin-copy-toast admin-copy-toast-${type}`
   copyToast.textContent = message
+  const isError = type === "alert"
+  copyToast.setAttribute("role", isError ? "alert" : "status")
+  copyToast.setAttribute("aria-live", isError ? "assertive" : "polite")
+  copyToast.setAttribute("aria-atomic", "true")
 
   if (copyToastTimer) window.clearTimeout(copyToastTimer)
   copyToastTimer = window.setTimeout(() => {

@@ -26,6 +26,9 @@ module Admin
       assert_select "input[name=?][placeholder=?]", "songs[#{linked_song.id}][line_music_url]", 'https://music.line.me/webapp/track/...'
       assert_select "input[name=?][aria-label=?]", "songs[#{linked_song.id}][youtube_url]", "#{linked_song.title}のYouTube URL"
       assert_select "input[name=?][aria-label=?]", "songs[#{linked_song.id}][line_music_url]", "#{linked_song.title}のLINE MUSIC URL"
+      assert_select 'button.admin-copy-button[data-admin-copy-text=?][aria-label=?]', linked_song.display_artist.name, "#{linked_song.display_artist.name}をコピー"
+      assert_select 'a[data-admin-copy-text]', count: 0
+      assert_select 'a[href=?]', admin_song_path(linked_song), text: linked_song.title
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信URL編集をキーワード検索"]'

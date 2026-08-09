@@ -2967,8 +2967,55 @@ body[data-admin-navigation="loading"] .admin-main {
   overflow-wrap: anywhere;
 }
 
-[data-admin-copy-text] {
+.admin-copy-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--color-primary);
   cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.admin-copy-button > span:not(.admin-sr-only) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-copy-button .admin-icon {
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
+.admin-copy-button:hover,
+.admin-copy-button:focus-visible {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  border-color: color-mix(in oklab, var(--color-primary) 28%, transparent);
+}
+
+.admin-title-copy-cell {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-title-copy-cell > a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-copy-button-icon {
+  flex: 0 0 auto;
+  padding: 6px;
 }
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-title {

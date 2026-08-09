@@ -42,6 +42,9 @@ module Admin
       assert_select "input[aria-label=?][placeholder=?]", "#{missing_song.title}の原曲を検索", '原曲を検索'
       assert_select "input[name=?][aria-label=?]", "songs[#{missing_song.id}][youtube_url]", "#{missing_song.title}のYouTube URL"
       assert_select "input[name=?][aria-label=?]", "songs[#{missing_song.id}][spotify_url]", "#{missing_song.title}のSpotify URL"
+      assert_select 'button.admin-copy-button[data-admin-copy-text=?][aria-label=?]', missing_song.display_artist.name, "#{missing_song.display_artist.name}をコピー"
+      assert_select 'a[data-admin-copy-text]', count: 0
+      assert_select 'a[href=?]', admin_song_path(missing_song), text: missing_song.title
       assert_select '[data-admin-original-song-picker]'
       assert_select '[data-admin-original-song-search]'
       assert_select '[data-admin-original-song-picker-status][role="status"][aria-live="polite"][aria-atomic="true"]'

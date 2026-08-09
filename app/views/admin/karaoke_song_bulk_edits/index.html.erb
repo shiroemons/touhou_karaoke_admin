@@ -146,8 +146,21 @@
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
               <td><%= song.karaoke_type %></td>
-              <td class="admin-table-field-display-artist-name" data-admin-copy-text="<%= song.display_artist.name %>"><%= song.display_artist.name %></td>
-              <td title="<%= song.title %>"><%= link_to song.title, admin_song_path(song), data: { admin_copy_text: song.title } %></td>
+              <td class="admin-table-field-display-artist-name">
+                <button type="button" class="admin-copy-button" data-admin-copy-text="<%= song.display_artist.name %>" aria-label="<%= song.display_artist.name %>をコピー" title="アーティスト名をコピー">
+                  <span><%= song.display_artist.name %></span>
+                  <%= admin_icon(:copy) %>
+                </button>
+              </td>
+              <td title="<%= song.title %>">
+                <div class="admin-title-copy-cell">
+                  <%= link_to song.title, admin_song_path(song) %>
+                  <button type="button" class="admin-copy-button admin-copy-button-icon" data-admin-copy-text="<%= song.title %>" aria-label="<%= song.title %>をコピー" title="タイトルをコピー">
+                    <%= admin_icon(:copy) %>
+                    <span class="admin-sr-only">コピー</span>
+                  </button>
+                </div>
+              </td>
               <td>
                 <div
                   class="admin-original-song-picker"
