@@ -96,6 +96,7 @@
 
 <div class="admin-table-wrap" tabindex="0" role="region" aria-label="<%= @resource.label %>一覧">
   <table class="admin-table admin-table-resource-<%= @resource.key.to_s.dasherize %> table table-zebra">
+    <caption class="admin-sr-only"><%= @resource.label %>一覧</caption>
     <thead>
       <tr>
         <% if selectable_collection_operations %>

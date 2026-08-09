@@ -12,6 +12,7 @@ module Admin
       assert_response :success
       assert_select 'h1', text: 'カラオケ配信URL編集'
       assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ配信URL編集一覧"]'
+      assert_select 'table.admin-table-karaoke-delivery-url-bulk-edit caption.admin-sr-only', text: 'カラオケ配信URL編集一覧'
       KaraokeSongDeliveryUrlBulkEditor::COLUMNS.each do |column|
         assert_select 'th[scope="col"][title=?]', column, text: KaraokeSongTsvColumns.label(column)
       end
