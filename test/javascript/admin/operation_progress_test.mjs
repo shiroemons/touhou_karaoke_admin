@@ -155,6 +155,28 @@ test("AdminOperationProgress.applyServerProgress handles failed server state", (
   assert.equal(progressBar.classList.has("admin-operation-progress-bar-active"), false)
 })
 
+test("AdminOperationProgress clamps invalid progress values", () => {
+  const { progress, progressBar, progressPercent, progressbar } = buildProgress()
+
+  progress.applyServerProgress({
+    state: "running",
+    percentage: 999,
+    status: "実行中",
+    label: "処理中です",
+  })
+
+  assert.equal(progress.lastServerPercentage, 100)
+  assert.equal(progressPercent.textContent, "100%")
+  assert.equal(progressbar.attributes["aria-valuenow"], "100")
+  assert.equal(progressBar.style.width, "100%")
+
+  progress.update(Number.NaN, "確認中", "入力を確認しています")
+
+  assert.equal(progressPercent.textContent, "0%")
+  assert.equal(progressbar.attributes["aria-valuenow"], "0")
+  assert.equal(progressBar.style.width, "0%")
+})
+
 test("AdminOperationProgress releases timers and pagehide handlers between runs", () => {
   const originalWindow = globalThis.window
   const listeners = new Set()

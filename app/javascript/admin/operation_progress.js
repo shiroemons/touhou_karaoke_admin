@@ -4,6 +4,13 @@ const POLL_INTERVAL_MS = 1200
 const MAX_POLL_RETRIES = 3
 const MAX_POLL_DELAY_MS = 10000
 
+const normalizeProgressValue = (value) => {
+  const numericValue = Number(value)
+  if (!Number.isFinite(numericValue)) return 0
+
+  return Math.max(0, Math.min(100, numericValue))
+}
+
 const elapsedTime = (startedAt) => {
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
   const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, "0")
@@ -98,8 +105,9 @@ export class AdminOperationProgress {
     this.lastLabel = label
 
     if (Number.isFinite(percentage)) {
-      this.hasServerProgress = payload.state !== "pending" || percentage > 0
-      this.lastServerPercentage = Math.max(this.lastServerPercentage, percentage)
+      const normalizedPercentage = normalizeProgressValue(percentage)
+      this.hasServerProgress = payload.state !== "pending" || normalizedPercentage > 0
+      this.lastServerPercentage = Math.max(this.lastServerPercentage, normalizedPercentage)
       this.update(this.lastServerPercentage, status, label)
     } else {
       this.update(this.lastServerPercentage, status, label)
@@ -248,7 +256,7 @@ export class AdminOperationProgress {
   }
 
   update(value, status, label) {
-    const normalizedValue = Math.max(0, Math.min(100, value))
+    const normalizedValue = normalizeProgressValue(value)
     if (this.progressLabel && label) this.progressLabel.textContent = label
     if (this.progressPercent) this.progressPercent.textContent = `${normalizedValue}%`
     if (this.progressStatus) this.progressStatus.textContent = status
