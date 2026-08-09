@@ -16,6 +16,7 @@ module Admin
       if result.errors.present?
         redirect_to admin_resource_path(@resource, @record), alert: result.errors.join("\n")
       else
+        DashboardCache.invalidate! if result.updated_count.positive?
         notice = result.updated_count.positive? ? '原曲紐づけを更新しました。' : '変更はありませんでした。'
         redirect_to admin_resource_path(@resource, @record), notice:
       end

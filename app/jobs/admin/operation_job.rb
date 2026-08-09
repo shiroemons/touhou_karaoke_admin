@@ -5,6 +5,7 @@ module Admin
     queue_as :admin_operations
 
     def perform(resource_key:, operation_key:, record_id:, params:, actor_name: nil)
+      operation_started = false
       resource = ResourceRegistry.fetch(resource_key)
       operation = resource.operations.find { |item| item.key == operation_key } ||
                   raise(ArgumentError, '指定されたアクションは見つかりません。')
@@ -20,6 +21,7 @@ module Admin
         "target_scope=#{target_scope} actor=#{actor} #{params_summary}"
       )
 
+      operation_started = true
       OperationRunner.new(
         resource:,
         operation:,
@@ -37,6 +39,8 @@ module Admin
       OperationProgress.fail!(params[:operation_progress_id] || params['operation_progress_id'], message: e.message) if params.is_a?(Hash)
       Rails.logger.error(e.full_message)
       raise
+    ensure
+      DashboardCache.invalidate! if operation_started
     end
 
     private

@@ -24,8 +24,14 @@ module Admin
       song = create_song(youtube_url: 'https://youtube.example/keep')
       original_song = create_original_song(title: 'Controller Link Original')
 
-      assert_difference -> { Admin::ChangeLog.count }, 1 do
-        patch original_songs_admin_song_path(song), params: { original_songs: original_song.title }
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+
+        assert_difference -> { Admin::ChangeLog.count }, 1 do
+          patch original_songs_admin_song_path(song), params: { original_songs: original_song.title }
+        end
+
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
       end
 
       assert_redirected_to admin_song_path(song)
@@ -59,6 +65,17 @@ module Admin
       follow_redirect!
       assert_select '.admin-flash-alert', text: /Missing Controller Original/
       assert_empty song.reload.original_songs
+    end
+
+    private
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
     end
   end
 end

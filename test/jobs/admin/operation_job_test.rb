@@ -72,6 +72,24 @@ module Admin
       end
     end
 
+    test 'invalidates dashboard cache after an operation finishes' do
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+
+        stub_operation_runner do
+          OperationJob.perform_now(
+            resource_key: 'dam_song',
+            operation_key: 'fetch_dam_touhou_songs',
+            record_id: nil,
+            actor_name: 'Admin tester',
+            params: { operation: 'fetch_dam_touhou_songs', operation_progress_id: SecureRandom.uuid }
+          )
+        end
+
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     private
 
     def with_logger(logger)
@@ -95,6 +113,15 @@ module Admin
       yield
     ensure
       OperationRunner.define_singleton_method(:new, original_new)
+    end
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
     end
   end
 end

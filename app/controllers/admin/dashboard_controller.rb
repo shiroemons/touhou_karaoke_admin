@@ -1,7 +1,7 @@
 module Admin
   class DashboardController < BaseController
-    DASHBOARD_CACHE_KEY = 'admin:dashboard:v3'.freeze
-    DASHBOARD_CACHE_TTL = 5.minutes
+    DASHBOARD_CACHE_KEY = DashboardCache::KEY
+    DASHBOARD_CACHE_TTL = DashboardCache::TTL
 
     def show
       @resources = admin_resources
@@ -16,7 +16,7 @@ module Admin
     end
 
     def refresh
-      Rails.cache.delete(DASHBOARD_CACHE_KEY)
+      DashboardCache.invalidate!
       redirect_to admin_root_path, notice: I18n.t('admin.dashboard_refreshed')
     end
 
@@ -29,13 +29,13 @@ module Admin
       @dashboard_counts ||= if params[:refresh].to_s == '1'
                               refresh_dashboard_counts
                             else
-                              Rails.cache.fetch(DASHBOARD_CACHE_KEY, expires_in: DASHBOARD_CACHE_TTL) { compute_dashboard_counts }
+                              DashboardCache.fetch { compute_dashboard_counts }
                             end
     end
 
     def refresh_dashboard_counts
       counts = compute_dashboard_counts
-      Rails.cache.write(DASHBOARD_CACHE_KEY, counts, expires_in: DASHBOARD_CACHE_TTL)
+      DashboardCache.write(counts)
       counts
     end
 

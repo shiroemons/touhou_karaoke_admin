@@ -1022,6 +1022,27 @@ module Admin
       assert_equal 'サークル', Admin::ChangeLog.last.resource_label
     end
 
+    test 'resource writes invalidate dashboard counts' do
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+
+        post admin_circles_path, params: { circle: { name: '集計無効化サークル' } }
+        assert_redirected_to admin_circle_path(Circle.order(:created_at).last)
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        patch admin_song_path(@song), params: { song: { youtube_url: 'https://youtube.example/cache-invalidation' } }
+        assert_redirected_to admin_song_path(@song)
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+
+        artist = DisplayArtist.create!(karaoke_type: 'DAM', name: '集計無効化削除', url: 'https://example.com/cache-invalidation')
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        delete admin_display_artist_path(artist)
+        assert_redirected_to admin_display_artists_path
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     test 'does not create a circle with a duplicate name' do
       assert_no_difference -> { Circle.count } do
         post admin_circles_path, params: { circle: { name: @circle.name } }
@@ -1673,6 +1694,15 @@ module Admin
     end
 
     private
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
+    end
 
     def operation_index(resource_key, handler)
       ResourceRegistry.fetch(resource_key).operations.index { |operation| operation.handler == handler }

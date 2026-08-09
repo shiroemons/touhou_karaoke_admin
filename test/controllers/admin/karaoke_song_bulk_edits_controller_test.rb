@@ -186,6 +186,21 @@ module Admin
       assert_equal 'https://youtube.example/controller', song.youtube_url
     end
 
+    test 'bulk updates invalidate dashboard counts' do
+      song = create_song(title: 'Controller Bulk Cache Song')
+      original_song = create_original_song(title: 'Controller Bulk Cache Original')
+
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        post admin_karaoke_song_bulk_edit_path, params: {
+          songs: { song.id => { original_songs: original_song.title, youtube_url: 'https://youtube.example/cache' } }
+        }
+
+        assert_redirected_to admin_karaoke_song_bulk_edit_path(status: 'missing')
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     test 'previews multiple original song links without updating records' do
       song = create_song(title: 'Controller Preview Song')
       first_original_song = create_original_song(title: 'Controller Preview First')
@@ -335,6 +350,17 @@ module Admin
       assert_select '.admin-flash-alert', /Unknown Controller Original/
       assert_empty song.reload.original_songs
       assert_equal '', song.youtube_url
+    end
+
+    private
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
     end
   end
 end
