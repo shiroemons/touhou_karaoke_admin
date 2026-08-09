@@ -7,7 +7,8 @@ class FakeClassList {
 }
 
 class FakeElement {
-  constructor({ checked = false, dataset = {}, hidden = false, textContent = "", value = "" } = {}) {
+  constructor({ attributes = {}, checked = false, dataset = {}, hidden = false, textContent = "", value = "" } = {}) {
+    this.attributes = attributes
     this.checked = checked
     this.children = []
     this.classList = new FakeClassList()
@@ -51,6 +52,14 @@ class FakeElement {
 
   replaceChildren() {
     this.children = []
+  }
+
+  getAttribute(name) {
+    return this.attributes[name]
+  }
+
+  setAttribute(name, value) {
+    this.attributes[name] = value
   }
 }
 
@@ -96,8 +105,10 @@ const buildSearchableSelect = () => {
     chips,
     container,
     options,
+    option: firstOption.option,
     search,
     secondCheckbox: secondOption.checkbox,
+    secondOption: secondOption.option,
     status,
     values,
   }
@@ -148,8 +159,11 @@ test("setupAdminSearchableSelects initializes status chips and checked options",
   setupAdminSearchableSelects()
 
   assert.equal(fixture.container.dataset.adminSearchableSelectInitialized, "true")
+  assert.equal(fixture.search.getAttribute("aria-expanded"), "false")
   assert.equal(fixture.status.textContent, "選択中 1件 / 表示 2件")
   assert.equal(fixture.checkbox.checked, true)
+  assert.equal(fixture.option.getAttribute("aria-selected"), "true")
+  assert.equal(fixture.secondOption.getAttribute("aria-selected"), "false")
   assert.equal(fixture.values.children.length, 1)
   assert.equal(fixture.chips.children.length, 1)
   assert.equal(fixture.chips.children[0].textContent, "Alpha Circle")
@@ -167,6 +181,7 @@ test("search input filters visible options and checkbox change writes hidden val
   fixture.container.dispatch("input", fixture.search)
 
   assert.equal(fixture.options.hidden, false)
+  assert.equal(fixture.search.getAttribute("aria-expanded"), "true")
   assert.equal(fixture.status.textContent, "選択中 1件 / 表示 1件")
   assert.equal(fixture.options.children[0].hidden, true)
   assert.equal(fixture.options.children[1].hidden, false)
@@ -177,4 +192,25 @@ test("search input filters visible options and checkbox change writes hidden val
   assert.equal(fixture.values.children.length, 2)
   assert.deepEqual(fixture.values.children.map((input) => input.value), ["circle-1", "circle-2"])
   assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.getAttribute("aria-expanded"), "false")
+  assert.equal(fixture.option.getAttribute("aria-selected"), "true")
+  assert.equal(fixture.secondOption.getAttribute("aria-selected"), "true")
+})
+
+test("Escape closes the candidate list and resets the expanded state", () => {
+  const fixture = buildSearchableSelect()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-searchable-select]" ? [fixture.container] : []
+  )
+
+  setupAdminSearchableSelects()
+  fixture.search.dispatch("focus")
+  assert.equal(fixture.options.hidden, false)
+  assert.equal(fixture.search.getAttribute("aria-expanded"), "true")
+
+  fixture.container.dispatch("keydown", fixture.search)
+
+  assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.getAttribute("aria-expanded"), "false")
+  assert.equal(fixture.search.blurred, true)
 })

@@ -21,24 +21,35 @@ module Admin
 
     def admin_has_many_select_input(form, field)
       selected_values = Array(form.object.public_send(field.name)).map(&:to_s)
-      content_tag(:div, class: 'admin-searchable-select', data: { admin_searchable_select: true }) do
+      select_id = sanitize_to_id("admin_searchable_select_#{form.object_name}_#{field.name}")
+      search_id = "#{select_id}-search"
+      options_id = "#{select_id}-options"
+      status_id = "#{select_id}-status"
+
+      content_tag(:div, id: select_id, class: 'admin-searchable-select', data: { admin_searchable_select: true }) do
         safe_join(
           [
-            hidden_field_tag("#{form.object_name}[#{field.name}][]", ''),
+            hidden_field_tag("#{form.object_name}[#{field.name}][]", '', id: nil),
             admin_has_many_select_values(form, field, selected_values),
             form.search_field(
               :"#{field.name}_search",
               name: nil,
-              id: nil,
               placeholder: "#{field.label}を検索",
               autocomplete: 'off',
               class: 'admin-input admin-searchable-select-search',
               data: { admin_searchable_select_search: true },
-              aria: { label: "#{field.label}を検索" }
+              id: search_id,
+              aria: {
+                label: "#{field.label}を検索",
+                controls: options_id,
+                expanded: false,
+                haspopup: 'listbox',
+                describedby: status_id
+              }
             ),
             content_tag(:div, '', class: 'admin-searchable-select-chips', data: { admin_searchable_select_chips: true }),
-            admin_has_many_select_options(field, selected_values),
-            content_tag(:p, '', class: 'admin-searchable-select-status', data: { admin_searchable_select_status: true })
+            admin_has_many_select_options(field, selected_values, options_id),
+            content_tag(:p, '', id: status_id, class: 'admin-searchable-select-status', role: 'status', aria: { live: 'polite', atomic: true }, data: { admin_searchable_select_status: true })
           ]
         )
       end
@@ -46,12 +57,12 @@ module Admin
 
     def admin_has_many_select_values(form, field, selected_values)
       content_tag(:div, hidden: true, data: { admin_searchable_select_values: true, input_name: "#{form.object_name}[#{field.name}][]" }) do
-        safe_join(selected_values.map { |value| hidden_field_tag("#{form.object_name}[#{field.name}][]", value, data: { admin_searchable_select_value: true }) })
+        safe_join(selected_values.map { |value| hidden_field_tag("#{form.object_name}[#{field.name}][]", value, id: nil, data: { admin_searchable_select_value: true }) })
       end
     end
 
-    def admin_has_many_select_options(field, selected_values)
-      content_tag(:div, class: 'admin-searchable-select-options', role: 'listbox', hidden: true, aria: { multiselectable: true }, data: { admin_searchable_select_options: true }) do
+    def admin_has_many_select_options(field, selected_values, options_id)
+      content_tag(:div, id: options_id, class: 'admin-searchable-select-options', role: 'listbox', hidden: true, aria: { label: "#{field.label}の候補", multiselectable: true }, data: { admin_searchable_select_options: true }) do
         safe_join(
           ordered_has_many_options(field, selected_values).map do |label, value|
             admin_has_many_select_option(label, value, selected_values.include?(value.to_s))
@@ -61,7 +72,7 @@ module Admin
     end
 
     def admin_has_many_select_option(label, value, checked)
-      content_tag(:label, class: 'admin-searchable-select-option', role: 'option', data: { admin_searchable_select_option: true, searchable_text: label }) do
+      content_tag(:label, class: 'admin-searchable-select-option', role: 'option', aria: { selected: checked }, data: { admin_searchable_select_option: true, searchable_text: label }) do
         safe_join(
           [
             tag.input(**admin_has_many_select_checkbox_attributes(value, checked)),

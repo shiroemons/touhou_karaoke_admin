@@ -1093,19 +1093,24 @@ module Admin
       assert_select 'dialog[aria-labelledby="admin-association-dialog-title-display-artist-circles"][data-admin-association-dialog="display-artist-circles"]'
       assert_select '#admin-association-dialog-title-display-artist-circles', text: 'サークルを紐づけ'
       assert_select '[data-admin-searchable-select]'
-      assert_select 'input[type="search"][data-admin-searchable-select-search][placeholder="サークルを検索"]'
+      assert_select 'input[type="search"][data-admin-searchable-select-search][id="admin_searchable_select_display_artist_circle_ids-search"][placeholder="サークルを検索"][aria-controls="admin_searchable_select_display_artist_circle_ids-options"][aria-expanded="false"][aria-haspopup="listbox"][aria-describedby="admin_searchable_select_display_artist_circle_ids-status"]'
       assert_select '[data-admin-searchable-select-chips]'
-      assert_select '[data-admin-searchable-select-options][hidden="hidden"]'
+      assert_select '[data-admin-searchable-select-options][id="admin_searchable_select_display_artist_circle_ids-options"][role="listbox"][aria-label="サークルの候補"][aria-multiselectable="true"][hidden="hidden"]'
+      assert_select 'p#admin_searchable_select_display_artist_circle_ids-status[data-admin-searchable-select-status][role="status"][aria-live="polite"][aria-atomic="true"]'
       assert_select 'input[type="hidden"][name="display_artist[circle_ids][]"][value=""]'
       assert_select '[data-admin-searchable-select-values][data-input-name="display_artist[circle_ids][]"]'
       assert_select '[data-admin-searchable-select-values] input[type="hidden"][name="display_artist[circle_ids][]"][value=?]', @circle.id.to_s
+      ids = css_select('[id]').filter_map { |element| element['id'] }
+      assert_equal ids.uniq, ids
       assert_select 'button[aria-label="サークル紐づけを更新"]', text: /更新/
       assert_select 'button[aria-label="サークル紐づけをキャンセル"][data-admin-association-dialog-close]', text: /キャンセル/
       assert_select '[data-admin-searchable-select-option]', text: @circle.name do
+        assert_select '[aria-selected="true"]'
         assert_select 'input[type="checkbox"][name]', 0
         assert_select 'input[type="checkbox"][value=?][checked="checked"]', @circle.id.to_s
       end
       assert_select '[data-admin-searchable-select-option]', text: other_circle.name do
+        assert_select '[aria-selected="false"]'
         assert_select 'input[type="checkbox"][name]', 0
         assert_select 'input[type="checkbox"][value=?]', other_circle.id.to_s
       end

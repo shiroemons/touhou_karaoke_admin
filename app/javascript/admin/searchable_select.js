@@ -1,15 +1,20 @@
 const searchableSelectText = (value) => value.toString().normalize("NFKC").toLowerCase()
 
-const showAdminSearchableSelect = (container) => {
+const setAdminSearchableSelectExpanded = (container, expanded) => {
+  const search = container.querySelector("[data-admin-searchable-select-search]")
   const list = container.querySelector("[data-admin-searchable-select-options]")
-  if (list) list.hidden = false
+  if (search) search.setAttribute("aria-expanded", expanded.toString())
+  if (list) list.hidden = !expanded
+}
+
+const showAdminSearchableSelect = (container) => {
+  setAdminSearchableSelectExpanded(container, true)
 }
 
 const hideAdminSearchableSelect = (container) => {
   const search = container.querySelector("[data-admin-searchable-select-search]")
-  const list = container.querySelector("[data-admin-searchable-select-options]")
   if (search) search.value = ""
-  if (list) list.hidden = true
+  setAdminSearchableSelectExpanded(container, false)
   updateAdminSearchableSelect(container)
 }
 
@@ -39,6 +44,7 @@ const syncAdminSearchableSelectCheckboxes = (container) => {
   const selectedValues = new Set(adminSearchableSelectValues(container))
   container.querySelectorAll("[data-admin-searchable-select-checkbox]").forEach((checkbox) => {
     checkbox.checked = selectedValues.has(checkbox.value)
+    checkbox.closest("[data-admin-searchable-select-option]")?.setAttribute("aria-selected", checkbox.checked.toString())
   })
 }
 
@@ -87,6 +93,9 @@ export const setupAdminSearchableSelects = () => {
     if (container.dataset.adminSearchableSelectInitialized === "true") return
 
     container.dataset.adminSearchableSelectInitialized = "true"
+    const search = container.querySelector("[data-admin-searchable-select-search]")
+    const list = container.querySelector("[data-admin-searchable-select-options]")
+    if (search) search.setAttribute("aria-expanded", (list?.hidden === false).toString())
     container.querySelector("[data-admin-searchable-select-search]")?.addEventListener("focus", () => {
       showAdminSearchableSelect(container)
       updateAdminSearchableSelect(container)
