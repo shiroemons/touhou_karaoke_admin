@@ -188,6 +188,7 @@ const setupAdminOperationForms = () => {
       }
 
       event.preventDefault()
+      if (dialog?.open) return
 
       const operationLabel = form.dataset.adminOperationLabel || "アクション"
       const resourceLabel = form.dataset.adminOperationResourceLabel || "対象"

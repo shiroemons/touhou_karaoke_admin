@@ -10,7 +10,8 @@ const moduleSource = source
   )
   .replace(
     /^import \{[\s\S]*?\} from "\.\/resource_selection"\nconst rememberAdminDialogFocus = \(\) => \{\}\nimport \{ setupAdminOperationModal \} from "\.\/operation_modal"\nimport \{ AdminOperationProgress \} from "\.\/operation_progress"\nimport \{ adminSelectors \} from "\.\/selectors"\n/m,
-    `const selectedAdminResourceIds = () => []
+    `const rememberAdminDialogFocus = () => {}
+const selectedAdminResourceIds = () => []
 const setupAdminResourceSelection = () => {}
 const updateResourceSelectionState = () => {}
 const setupAdminOperationModal = () => {}
@@ -121,6 +122,46 @@ class FakeForm {
   }
 }
 
+class FakeButton {
+  constructor() {
+    this.eventListeners = {}
+  }
+
+  addEventListener(type, callback) {
+    this.eventListeners[type] ||= []
+    this.eventListeners[type].push(callback)
+  }
+}
+
+class FakeDialog {
+  constructor() {
+    this.open = false
+    this.showModalCalls = 0
+    this.message = { textContent: "" }
+    this.title = { textContent: "" }
+    this.confirmButton = new FakeButton()
+    this.cancelButton = new FakeButton()
+  }
+
+  querySelector(selector) {
+    return {
+      "[data-admin-operation-dialog-message]": this.message,
+      "[data-admin-operation-dialog-title]": this.title,
+      "[data-admin-operation-confirm]": this.confirmButton,
+      "[data-admin-operation-cancel]": this.cancelButton,
+    }[selector] || null
+  }
+
+  showModal() {
+    this.showModalCalls += 1
+    this.open = true
+  }
+
+  close() {
+    this.open = false
+  }
+}
+
 const waitForAsyncWork = () => new Promise((resolve) => setImmediate(resolve))
 
 test("busy async operation forms reject duplicate submit events", () => {
@@ -140,6 +181,32 @@ test("busy async operation forms reject duplicate submit events", () => {
     assert.equal(event.defaultPrevented, true)
     assert.equal(form.eventListeners.submit.length, 1)
     assert.equal(form.submitButton.disabled, true)
+  } finally {
+    globalThis.document = originalDocument
+  }
+})
+
+test("confirmation dialog ignores a duplicate submit while open", () => {
+  const originalDocument = globalThis.document
+  const form = new FakeForm()
+  const dialog = new FakeDialog()
+  form.dataset.adminOperationAsync = "false"
+  form.dataset.adminOperationInlineConfirmation = "false"
+  globalThis.document = {
+    querySelector: (selector) => (selector === "[data-admin-operation-confirm-dialog]" ? dialog : null),
+    querySelectorAll: (selector) => (selector === "[data-admin-operation-form]" ? [form] : []),
+  }
+
+  try {
+    setupAdminResourceOperations()
+    const firstEvent = form.dispatchSubmit()
+    const secondEvent = form.dispatchSubmit()
+
+    assert.equal(firstEvent.defaultPrevented, true)
+    assert.equal(secondEvent.defaultPrevented, true)
+    assert.equal(dialog.open, true)
+    assert.equal(dialog.showModalCalls, 1)
+    assert.match(dialog.message.textContent, /アクションを実行します/)
   } finally {
     globalThis.document = originalDocument
   }
