@@ -53,9 +53,9 @@ module Admin
       end
     end
 
-    def admin_has_many_select_search_id(form, field)
-      admin_has_many_select_ids(form, field)[:search]
-    end
+    def admin_has_many_select_search_id(form, field) = admin_has_many_select_ids(form, field)[:search]
+
+    def admin_form_field_focus_id(form, field) = field.type == :has_many_select ? admin_has_many_select_search_id(form, field) : "#{form.object_name}_#{field.name}"
 
     def admin_has_many_select_ids(form, field)
       select_id = sanitize_to_id("admin_searchable_select_#{form.object_name}_#{field.name}")

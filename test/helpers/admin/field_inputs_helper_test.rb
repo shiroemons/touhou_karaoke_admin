@@ -30,5 +30,29 @@ module Admin
       assert_equal 'input-error', input_options[:class]
       assert_equal({ invalid: true, describedby: 'display_artist_circle_ids_error' }, input_options[:aria])
     end
+
+    test 'has many select error links target its searchable input' do
+      record = DisplayArtist.new
+      field = Field.new(:circle_ids, 'サークル', :has_many_select, [['上海アリス幻樂団', 1]])
+      focus_id = nil
+
+      form_with model: record, url: '/admin/display_artists/1' do |form|
+        focus_id = admin_form_field_focus_id(form, field)
+      end
+
+      assert_equal 'admin_searchable_select_display_artist_circle_ids-search', focus_id
+    end
+
+    test 'regular field error links target the model field input' do
+      record = DisplayArtist.new
+      field = Field.new(:name, 'アーティスト名', :text, [])
+      focus_id = nil
+
+      form_with model: record, url: '/admin/display_artists/1' do |form|
+        focus_id = admin_form_field_focus_id(form, field)
+      end
+
+      assert_equal 'display_artist_name', focus_id
+    end
   end
 end

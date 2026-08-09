@@ -8,7 +8,7 @@
             <% error_field = resource.form_fields.find { |field| field.name.to_sym == error.attribute.to_sym } %>
             <li>
               <% if error_field %>
-                <%= link_to error.full_message, "##{form.object_name}_#{error_field.name}" %>
+                <%= link_to error.full_message, "##{admin_form_field_focus_id(form, error_field)}" %>
               <% else %>
                 <%= error.full_message %>
               <% end %>
