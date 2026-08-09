@@ -141,7 +141,11 @@ const isAsyncAdminLink = (link) => {
   return url.origin === window.location.origin && url.pathname.startsWith("/admin/")
 }
 
-const setupAdminAsyncIndex = () => {
+export const setupAdminAsyncIndex = () => {
+  if (document.documentElement.dataset.adminAsyncIndexInitialized === "true") return
+
+  document.documentElement.dataset.adminAsyncIndexInitialized = "true"
+
   document.addEventListener("click", (event) => {
     const link = event.target.closest("a")
     if (!isAsyncAdminLink(link)) return

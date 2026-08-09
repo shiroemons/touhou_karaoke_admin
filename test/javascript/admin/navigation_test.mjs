@@ -4,7 +4,7 @@ import { test } from "node:test"
 
 const source = await readFile(new URL("../../../app/javascript/admin/navigation.js", import.meta.url), "utf8")
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
-const { setupAdminMobileNavigation } = await import(moduleUrl)
+const { setupAdminAsyncIndex, setupAdminMobileNavigation } = await import(moduleUrl)
 
 class FakeElement {
   constructor({ dataset = {}, closestResults = {}, queryResults = {} } = {}) {
@@ -112,4 +112,29 @@ test("mobile navigation setup is idempotent", () => {
 
   assert.equal(fixture.document.eventListeners.click.length, 1)
   assert.equal(fixture.document.eventListeners.keydown.length, 1)
+})
+
+test("async index setup is idempotent", () => {
+  const originalDocument = globalThis.document
+  const document = {
+    documentElement: { dataset: {} },
+    eventListeners: {},
+    addEventListener(type, callback) {
+      this.eventListeners[type] ||= []
+      this.eventListeners[type].push(callback)
+    },
+  }
+
+  globalThis.document = document
+
+  try {
+    setupAdminAsyncIndex()
+    setupAdminAsyncIndex()
+
+    assert.equal(document.eventListeners.click.length, 1)
+    assert.equal(document.eventListeners.submit.length, 1)
+    assert.equal(document.documentElement.dataset.adminAsyncIndexInitialized, "true")
+  } finally {
+    globalThis.document = originalDocument
+  }
 })
