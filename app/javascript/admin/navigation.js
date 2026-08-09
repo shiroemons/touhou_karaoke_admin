@@ -4,6 +4,8 @@ const mobileNavigationToggleSelector = "[data-admin-mobile-navigation-toggle]"
 const mobileNavigationToggleLabelSelector = "[data-admin-mobile-navigation-toggle-label]"
 const mobileNavigationOpenSelector = ".admin-sidebar[data-admin-mobile-navigation-open=\"true\"]"
 
+export const isAdminAbortError = (error) => error?.name === "AbortError"
+
 const setAdminMobileNavigationOpen = (sidebar, open) => {
   sidebar.dataset.adminMobileNavigationOpen = open.toString()
 
@@ -152,7 +154,7 @@ export const setupAdminAsyncIndex = () => {
 
     event.preventDefault()
     replaceAdminResourceContent(link.href).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.href = link.href
@@ -170,7 +172,7 @@ export const setupAdminAsyncIndex = () => {
     })
 
     replaceAdminResourceContent(url).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       form.submit()
@@ -269,7 +271,7 @@ const setupAdminPageNavigation = () => {
 
     event.preventDefault()
     fetchAndReplaceAdminPage(link.href).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.href = link.href
@@ -278,7 +280,7 @@ const setupAdminPageNavigation = () => {
 
   window.addEventListener("popstate", () => {
     fetchAndReplaceAdminPage(window.location.href, { pushState: false }).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.reload()
@@ -303,7 +305,7 @@ const setupAdminClickableRows = () => {
 
     event.preventDefault()
     fetchAndReplaceAdminPage(row.dataset.adminRowHref).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.href = row.dataset.adminRowHref

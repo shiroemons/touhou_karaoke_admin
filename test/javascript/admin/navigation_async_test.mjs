@@ -4,7 +4,13 @@ import { test } from "node:test"
 
 const source = await readFile(new URL("../../../app/javascript/admin/navigation.js", import.meta.url), "utf8")
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
-const { fetchAndReplaceAdminPage, replaceAdminPage, replaceAdminResourceContent } = await import(moduleUrl)
+const { fetchAndReplaceAdminPage, isAdminAbortError, replaceAdminPage, replaceAdminResourceContent } = await import(moduleUrl)
+
+test("abort error detection tolerates non-error rejection values", () => {
+  assert.equal(isAdminAbortError(null), false)
+  assert.equal(isAdminAbortError("aborted"), false)
+  assert.equal(isAdminAbortError({ name: "AbortError" }), true)
+})
 
 class FakeContent {
   constructor({ children = [], containedElements = [], onReplace = null } = {}) {
