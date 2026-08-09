@@ -1,6 +1,7 @@
 const POLL_INTERVAL_MS = 1500
 const MAX_POLL_RETRIES = 3
 const MAX_POLL_DELAY_MS = 10000
+const WORKFLOW_STEP_STATUSES = new Set(["pending", "running", "completed", "failed", "manual"])
 
 const normalizedCount = (value) => {
   const parsed = Number(value)
@@ -8,6 +9,8 @@ const normalizedCount = (value) => {
 }
 
 const normalizedPercentage = (value) => Math.min(100, normalizedCount(value))
+
+const normalizedStepStatus = (status) => WORKFLOW_STEP_STATUSES.has(status) ? status : "unknown"
 
 export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
   document.querySelectorAll("[data-admin-workflow-runner]").forEach((runner) => {
@@ -65,7 +68,8 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       const item = stepItems.find((candidate) => candidate.dataset.adminWorkflowStep === step.key)
       if (!item) return
 
-      item.dataset.adminWorkflowStatus = step.status
+      const status = normalizedStepStatus(step.status)
+      item.dataset.adminWorkflowStatus = status
       const progress = item.querySelector("[data-admin-workflow-step-progress]")
       const childProgress = step.progress || {}
       const labels = {
@@ -74,10 +78,11 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         completed: childProgress.detail || "完了",
         failed: step.error || childProgress.detail || "失敗",
         manual: "個別実行のみ",
+        unknown: "状態不明",
       }
       if (progress) {
-        progress.textContent = labels[step.status] || step.status
-        if (step.status === "running") progress.textContent += ` ${normalizedPercentage(childProgress.percentage)}%`
+        progress.textContent = labels[status]
+        if (status === "running") progress.textContent += ` ${normalizedPercentage(childProgress.percentage)}%`
       }
     }
 

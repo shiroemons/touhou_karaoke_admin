@@ -7,7 +7,8 @@ const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("b
 const { setupAdminWorkflowRunner } = await import(moduleUrl)
 
 class FakeElement {
-  constructor({ dataset = {}, queryResults = {} } = {}) {
+  constructor({ children = [], dataset = {}, queryResults = {} } = {}) {
+    this.children = children
     this.dataset = dataset
     this.queryResults = queryResults
     this.textContent = ""
@@ -20,12 +21,13 @@ class FakeElement {
   }
 
   querySelectorAll() {
-    return []
+    return this.children
   }
 }
 
-const buildFixture = ({ progressUrl = "/admin/workflow/dam/progress?run_id=run" } = {}) => {
+const buildFixture = ({ progressUrl = "/admin/workflow/dam/progress?run_id=run", steps = [] } = {}) => {
   const runner = new FakeElement({
+    children: steps,
     dataset: {
       adminWorkflowRunId: "run",
       adminWorkflowProgressUrl: progressUrl,
@@ -211,6 +213,45 @@ test("workflow runner normalizes malformed progress numbers", async () => {
 
     assert.equal(fixture.statusPercent.textContent, "0%")
     assert.equal(fixture.statusCount.textContent, "3 / 3")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("workflow runner labels unknown step statuses safely", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const stepProgress = new FakeElement()
+  const step = new FakeElement({
+    dataset: { adminWorkflowStep: "stage:branch:step" },
+    queryResults: { "[data-admin-workflow-step-progress]": stepProgress },
+  })
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      state: "running",
+      workflow: {
+        steps: [{ key: "stage:branch:step", status: "unexpected-status" }],
+      },
+    }),
+  })
+  globalThis.window = {
+    setTimeout: () => "poll",
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture({ steps: [step] })
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(step.dataset.adminWorkflowStatus, "unknown")
+    assert.equal(stepProgress.textContent, "状態不明")
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
