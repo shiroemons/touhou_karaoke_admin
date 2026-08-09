@@ -192,7 +192,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
           return
         }
 
-        if (error.status === 404) {
+        if (error?.status === 404) {
           applyConnectionState({
             state: "unknown",
             status: "状態不明",

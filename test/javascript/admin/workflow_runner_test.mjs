@@ -150,6 +150,39 @@ test("workflow runner retries transient failures with bounded backoff", async ()
   }
 })
 
+test("workflow runner retries an invalid rejection value safely", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const scheduled = []
+
+  globalThis.fetch = async () => {
+    throw null
+  }
+  globalThis.window = {
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(fixture.statusState.textContent, "再試行中")
+    assert.match(fixture.statusLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1500)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
 test("workflow runner retries a malformed progress payload", async () => {
   const originalDocument = globalThis.document
   const originalFetch = globalThis.fetch
