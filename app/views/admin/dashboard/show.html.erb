@@ -141,9 +141,10 @@
     </div>
 
     <div class="admin-dashboard-action-groups">
-      <% @quick_operation_groups.each do |group| %>
-        <section class="admin-dashboard-action-group">
-          <h3><%= group[:label] %></h3>
+      <% @quick_operation_groups.each_with_index do |group, index| %>
+        <% heading_id = "admin-dashboard-action-group-#{index}" %>
+        <section class="admin-dashboard-action-group" aria-labelledby="<%= heading_id %>">
+          <h3 id="<%= heading_id %>"><%= group[:label] %></h3>
           <div>
             <% group[:operations].each do |item| %>
               <%= link_to admin_resource_collection_operation_path(item[:resource], item[:operation].key), class: "admin-dashboard-action-link" do %>
@@ -194,12 +195,13 @@
   </div>
 
   <div class="admin-dashboard-management-grid">
-    <% @management_groups.each do |group| %>
-      <section class="admin-dashboard-management-panel">
+    <% @management_groups.each_with_index do |group, index| %>
+      <% heading_id = "admin-dashboard-management-group-#{index}" %>
+      <section class="admin-dashboard-management-panel" aria-labelledby="<%= heading_id %>">
         <header>
           <div class="admin-dashboard-management-icon"><%= admin_icon(group[:icon]) %></div>
           <div>
-            <h3><%= group[:label] %></h3>
+            <h3 id="<%= heading_id %>"><%= group[:label] %></h3>
             <p><%= group[:description] %></p>
           </div>
           <span><%= number_with_delimiter(group[:total_count]) %> 件</span>

@@ -55,6 +55,11 @@ module Admin
       assert_select '.admin-nav-group-primary[aria-label="メイン"] a.admin-nav-link-primary', text: /カラオケ配信曲/
       assert_operator response.body.index('aria-label="メイン"'), :<, response.body.index('aria-label="運用"')
       assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
+      css_select('.admin-dashboard-action-group, .admin-dashboard-management-panel').each do |section|
+        heading_id = section['aria-labelledby']
+        assert heading_id.present?
+        assert_select "##{heading_id}", text: section.at_css('h3').text
+      end
       assert_select 'a.admin-skip-link[href="#admin-main-content"]', text: '本文へスキップ'
       assert_select 'main#admin-main-content.admin-main[aria-busy="false"][tabindex="-1"][data-admin-page-content]'
       assert_select '.admin-dashboard-insight-group h3', text: 'データ状態'
