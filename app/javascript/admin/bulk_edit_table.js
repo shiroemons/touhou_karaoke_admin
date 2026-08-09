@@ -1,5 +1,10 @@
 import { setOriginalSongPickerText } from "./original_song_picker"
 
+const parseBulkEditCoordinate = (value) => {
+  const coordinate = Number(value)
+  return Number.isInteger(coordinate) && coordinate >= 0 ? coordinate : null
+}
+
 export const setupAdminBulkEditTables = () => {
   document.querySelectorAll("[data-admin-bulk-edit-table]").forEach((table) => {
     if (table.dataset.adminBulkEditInitialized === "true") return
@@ -14,11 +19,15 @@ export const setupAdminBulkEditTables = () => {
 
       if (target.dataset.adminOriginalSongSearch === "true" && !event.shiftKey) return
 
-      event.preventDefault()
-      const startRow = Number(target.dataset.adminBulkRow)
-      const startColumn = Number(target.dataset.adminBulkColumnIndex)
+      const startRow = parseBulkEditCoordinate(target.dataset.adminBulkRow)
+      const startColumn = parseBulkEditCoordinate(target.dataset.adminBulkColumnIndex)
+      if (startRow === null || startColumn === null) return
+
       const pastedRows = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
       if (pastedRows[pastedRows.length - 1] === "") pastedRows.pop()
+      if (pastedRows.length === 0) return
+
+      event.preventDefault()
 
       pastedRows.forEach((rowText, rowOffset) => {
         rowText.split("\t").forEach((value, columnOffset) => {
