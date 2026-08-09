@@ -239,7 +239,7 @@ module Admin
       get admin_workflow_steps_path('dam')
 
       assert_response :success
-      assert_select '.admin-workflow-status[aria-live="polite"]', text: /実行状況/
+      assert_select '.admin-workflow-status[role="status"][aria-live="polite"][aria-atomic="false"]', text: /実行状況/
       assert_select '[data-admin-workflow-status-label]', text: 'DAMを開始待ちです'
       assert_select '[data-admin-workflow-status-state]', text: 'ジョブ待機中'
       assert_select '[data-admin-workflow-status-current]', text: 'DAM候補一覧を取得'
@@ -355,7 +355,7 @@ module Admin
       get admin_workflow_steps_path('dam', run_id:)
 
       assert_response :success
-      assert_select '[data-admin-workflow-results][aria-live="polite"]:not([hidden])'
+      assert_select '[data-admin-workflow-results][role="status"][aria-live="polite"][aria-atomic="true"]:not([hidden])'
       assert_select '.admin-workflow-result-item', text: /DAM候補一覧を取得/
       assert_select '.admin-workflow-result-item', text: /DAM楽曲一覧 追加2件/
     end

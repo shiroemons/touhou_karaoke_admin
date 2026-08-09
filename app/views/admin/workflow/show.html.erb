@@ -41,7 +41,7 @@
     <% end %>
   </section>
 <% elsif @workflow_run.present? %>
-  <section class="admin-workflow-status admin-panel" aria-live="polite" data-admin-workflow-status>
+  <section class="admin-workflow-status admin-panel" role="status" aria-live="polite" aria-atomic="false" data-admin-workflow-status>
     <div class="admin-section-heading">
       <h2>実行状況</h2>
       <p data-admin-workflow-status-label><%= @workflow_run[:label] %></p>
@@ -68,7 +68,7 @@
 <% end %>
 
 <% if @workflow_run.present? %>
-  <section class="admin-workflow-results admin-panel" aria-live="polite" data-admin-workflow-results <%= "hidden" if result_steps.blank? %>>
+  <section class="admin-workflow-results admin-panel" role="status" aria-live="polite" aria-atomic="true" data-admin-workflow-results <%= "hidden" if result_steps.blank? %>>
     <div class="admin-section-heading">
       <h2>実行結果</h2>
       <p>完了したステップごとの追加・更新・削除件数です。</p>
