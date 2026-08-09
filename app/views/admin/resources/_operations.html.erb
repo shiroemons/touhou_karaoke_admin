@@ -41,9 +41,9 @@
       </div>
     </details>
   <% else %>
-    <section class="admin-panel admin-operations">
+    <section class="admin-panel admin-operations" aria-labelledby="admin-operations-heading-<%= resource.key %>">
       <div class="admin-operations-heading">
-        <h2>操作</h2>
+        <h2 id="admin-operations-heading-<%= resource.key %>">操作</h2>
         <p>目的別に選択できます</p>
       </div>
       <div class="admin-operation-groups">

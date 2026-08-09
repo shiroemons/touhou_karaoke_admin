@@ -459,6 +459,13 @@ module Admin
       assert_select '.admin-detail-identity code', text: @original_song.code
     end
 
+    test 'member operation panel is labelled by its heading' do
+      get admin_karaoke_delivery_model_path(@delivery_model)
+
+      assert_response :success
+      assert_select '.admin-operations[aria-labelledby="admin-operations-heading-karaoke_delivery_model"] h2#admin-operations-heading-karaoke_delivery_model', text: '操作'
+    end
+
     test 'search filters index by allowed columns' do
       Circle.create!(name: '検索対象外')
 
