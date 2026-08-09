@@ -1292,6 +1292,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'DAM楽曲URLから候補を追加'
+      assert_select 'section[aria-labelledby="admin-operation-description-heading"] h2#admin-operation-description-heading', text: '説明'
+      assert_select 'section[aria-labelledby="admin-operation-execution-heading"] h2#admin-operation-execution-heading', text: '実行'
       assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
       assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
       assert_select '.admin-operation-description a[href=?][target="_blank"][rel="noopener"][aria-label=?]',
