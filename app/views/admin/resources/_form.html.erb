@@ -30,7 +30,7 @@
                                "input-error"
                              end %>
       <div class="admin-form-row <%= "admin-form-row-invalid" if field_errors.present? %>">
-        <%= form.label field.name, field.label %>
+        <%= form.label field.name, field.label, for: (admin_has_many_select_search_id(form, field) if field.type == :has_many_select) %>
         <%= admin_field_input(form, field, class: (field_error_class if field_errors.present?), aria: { invalid: field_errors.present?, describedby: (field_error_id if field_errors.present?) }) %>
         <% if field_errors.present? %>
           <p class="admin-field-errors label-text-alt text-error" id="<%= field_error_id %>"><%= field_errors.join("。") %></p>

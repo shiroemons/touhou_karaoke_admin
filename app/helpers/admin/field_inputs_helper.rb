@@ -21,12 +21,9 @@ module Admin
 
     def admin_has_many_select_input(form, field)
       selected_values = Array(form.object.public_send(field.name)).map(&:to_s)
-      select_id = sanitize_to_id("admin_searchable_select_#{form.object_name}_#{field.name}")
-      search_id = "#{select_id}-search"
-      options_id = "#{select_id}-options"
-      status_id = "#{select_id}-status"
+      select_ids = admin_has_many_select_ids(form, field)
 
-      content_tag(:div, id: select_id, class: 'admin-searchable-select', data: { admin_searchable_select: true }) do
+      content_tag(:div, id: select_ids[:select], class: 'admin-searchable-select', data: { admin_searchable_select: true }) do
         safe_join(
           [
             hidden_field_tag("#{form.object_name}[#{field.name}][]", '', id: nil),
@@ -38,21 +35,35 @@ module Admin
               autocomplete: 'off',
               class: 'admin-input admin-searchable-select-search',
               data: { admin_searchable_select_search: true },
-              id: search_id,
+              id: select_ids[:search],
               aria: {
                 label: "#{field.label}を検索",
-                controls: options_id,
+                controls: select_ids[:options],
                 expanded: false,
                 haspopup: 'listbox',
-                describedby: status_id
+                describedby: select_ids[:status]
               }
             ),
             content_tag(:div, '', class: 'admin-searchable-select-chips', data: { admin_searchable_select_chips: true }),
-            admin_has_many_select_options(field, selected_values, options_id),
-            content_tag(:p, '', id: status_id, class: 'admin-searchable-select-status', role: 'status', aria: { live: 'polite', atomic: true }, data: { admin_searchable_select_status: true })
+            admin_has_many_select_options(field, selected_values, select_ids[:options]),
+            content_tag(:p, '', id: select_ids[:status], class: 'admin-searchable-select-status', role: 'status', aria: { live: 'polite', atomic: true }, data: { admin_searchable_select_status: true })
           ]
         )
       end
+    end
+
+    def admin_has_many_select_search_id(form, field)
+      admin_has_many_select_ids(form, field)[:search]
+    end
+
+    def admin_has_many_select_ids(form, field)
+      select_id = sanitize_to_id("admin_searchable_select_#{form.object_name}_#{field.name}")
+      {
+        select: select_id,
+        search: "#{select_id}-search",
+        options: "#{select_id}-options",
+        status: "#{select_id}-status"
+      }
     end
 
     def admin_has_many_select_values(form, field, selected_values)

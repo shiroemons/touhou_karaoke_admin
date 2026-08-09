@@ -150,7 +150,7 @@
 
         <%= form_with model: [:admin, @record], url: admin_resource_path(@resource, @record), method: :patch, class: "admin-form admin-association-dialog-form" do |form| %>
           <div class="admin-form-row">
-            <%= form.label circle_field.name, circle_field.label %>
+            <%= form.label circle_field.name, circle_field.label, for: admin_has_many_select_search_id(form, circle_field) %>
             <%= admin_field_input(form, circle_field) %>
           </div>
           <div class="admin-form-actions">
