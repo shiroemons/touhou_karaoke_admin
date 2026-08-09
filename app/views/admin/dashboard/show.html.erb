@@ -165,9 +165,10 @@
       </div>
     </div>
     <div class="admin-dashboard-insights">
-      <% @insight_groups.each do |group| %>
-        <section class="admin-dashboard-insight-group" aria-labelledby="admin-dashboard-<%= group[:label].parameterize %>">
-          <h3 id="admin-dashboard-<%= group[:label].parameterize %>"><%= group[:label] %></h3>
+      <% @insight_groups.each_with_index do |group, index| %>
+        <% heading_id = "admin-dashboard-insight-group-#{index}" %>
+        <section class="admin-dashboard-insight-group" aria-labelledby="<%= heading_id %>">
+          <h3 id="<%= heading_id %>"><%= group[:label] %></h3>
           <p><%= group[:description] %></p>
           <div class="admin-insight-grid">
             <% group[:metrics].each do |metric| %>

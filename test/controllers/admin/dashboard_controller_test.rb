@@ -49,6 +49,16 @@ module Admin
       assert_select 'form[action=?][method="post"] button[aria-label="ダッシュボードを再集計"]', admin_dashboard_refresh_path, text: '再集計'
     end
 
+    test 'dashboard insight headings have unique accessible ids' do
+      get admin_root_path
+
+      assert_response :success
+
+      heading_ids = css_select('.admin-dashboard-insight-group[aria-labelledby]').pluck('aria-labelledby')
+      assert_equal heading_ids.length, heading_ids.uniq.length
+      heading_ids.each { |heading_id| assert_select "##{heading_id}", 1 }
+    end
+
     test 'delivery type metrics match individually computed scope counts' do
       get admin_root_path
 
