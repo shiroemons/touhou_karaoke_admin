@@ -14,7 +14,7 @@ module Admin
       assert_select 'h1', text: 'カラオケ楽曲紐づけ'
       assert_select 'a.admin-nav-link-active[aria-current="page"]', text: /カラオケ楽曲紐づけ/
       KaraokeSongBulkEditor::COLUMNS.each do |column|
-        assert_select 'th[title=?]', column, text: KaraokeSongTsvColumns.label(column)
+        assert_select 'th[scope="col"][title=?]', column, text: KaraokeSongTsvColumns.label(column)
       end
       assert_select 'textarea[name="bulk_tsv"]' do |elements|
         assert_equal KaraokeSongTsvColumns.labels(KaraokeSongBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']

@@ -137,7 +137,7 @@
         <thead>
           <tr>
             <% karaoke_song_bulk_edit_columns.each do |column| %>
-              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" title="<%= column %>"><%= karaoke_song_bulk_edit_column_label(column) %></th>
+              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" scope="col" title="<%= column %>"><%= karaoke_song_bulk_edit_column_label(column) %></th>
             <% end %>
           </tr>
         </thead>

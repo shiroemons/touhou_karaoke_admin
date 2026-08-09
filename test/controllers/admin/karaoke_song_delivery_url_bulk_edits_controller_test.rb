@@ -12,7 +12,7 @@ module Admin
       assert_response :success
       assert_select 'h1', text: 'カラオケ配信URL編集'
       KaraokeSongDeliveryUrlBulkEditor::COLUMNS.each do |column|
-        assert_select 'th[title=?]', column, text: KaraokeSongTsvColumns.label(column)
+        assert_select 'th[scope="col"][title=?]', column, text: KaraokeSongTsvColumns.label(column)
       end
       assert_select 'textarea[name="bulk_tsv"]' do |elements|
         assert_equal KaraokeSongTsvColumns.labels(KaraokeSongDeliveryUrlBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']

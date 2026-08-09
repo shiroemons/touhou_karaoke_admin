@@ -597,6 +597,7 @@ module Admin
 
       assert_response :success
       assert_select 'table.admin-table-resource-song'
+      assert_select 'table.admin-table-resource-song thead th[scope="col"]', minimum: 1
       assert_select 'thead th:nth-child(2)', text: 'カラオケ種別'
       assert_select 'thead th.admin-table-field-karaoke-type'
       assert_select 'thead th:nth-child(3)', text: 'タイトル'

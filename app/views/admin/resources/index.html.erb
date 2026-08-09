@@ -99,7 +99,7 @@
     <thead>
       <tr>
         <% if selectable_collection_operations %>
-          <th class="admin-select-column admin-table-field">
+          <th class="admin-select-column admin-table-field" scope="col">
             <label class="admin-row-select-all">
               <%= check_box_tag "select_all_#{@resource.key}", "1", false, class: "checkbox checkbox-sm", data: { admin_resource_select_all: true }, aria: { label: "表示中の#{@resource.label}を選択", checked: "false" } %>
               <span>選択</span>
@@ -108,7 +108,7 @@
         <% end %>
         <% @resource.index_fields.each do |field| %>
           <% sort_order = field.sortable ? admin_sort_order(field) : nil %>
-          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>" <%= tag.attributes(aria: { sort: sort_order }) if sort_order %>>
+          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>" scope="col" <%= tag.attributes(aria: { sort: sort_order }) if sort_order %>>
             <% if field.sortable %>
               <%= admin_sort_link(@resource, field) %>
             <% else %>
@@ -116,7 +116,7 @@
             <% end %>
           </th>
         <% end %>
-        <th class="admin-actions-column admin-table-field admin-table-field-actions">操作</th>
+        <th class="admin-actions-column admin-table-field admin-table-field-actions" scope="col">操作</th>
       </tr>
     </thead>
     <tbody id="admin-resource-rows">
