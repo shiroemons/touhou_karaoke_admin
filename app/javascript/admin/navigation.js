@@ -4,8 +4,24 @@ const mobileNavigationToggleSelector = "[data-admin-mobile-navigation-toggle]"
 const mobileNavigationToggleLabelSelector = "[data-admin-mobile-navigation-toggle-label]"
 const mobileNavigationFirstLinkSelector = ".admin-nav-link"
 const mobileNavigationOpenSelector = ".admin-sidebar[data-admin-mobile-navigation-open=\"true\"]"
+const ADMIN_REQUEST_TIMEOUT_MS = 15000
 
 export const isAdminAbortError = (error) => error?.name === "AbortError"
+
+export const createAdminRequestTimeout = (controller, timeoutMs = ADMIN_REQUEST_TIMEOUT_MS) => {
+  let timedOut = false
+  const setTimeoutFunction = window.setTimeout || globalThis.setTimeout
+  const clearTimeoutFunction = window.clearTimeout || globalThis.clearTimeout
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
 
 const setAdminMobileNavigationOpen = (sidebar, open) => {
   sidebar.dataset.adminMobileNavigationOpen = open.toString()
@@ -107,6 +123,7 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
 
   const controller = new AbortController()
   adminResourceContentController = controller
+  const requestTimeout = createAdminRequestTimeout(controller)
   const currentContent = document.querySelector("[data-admin-resource-content]")
   const focusDescriptor = describeResourceContentFocus(document.activeElement, currentContent)
   currentContent?.setAttribute("aria-busy", "true")
@@ -130,7 +147,12 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
     if (pushState) window.history.pushState({}, "", browserUrl(url))
     setupPageBehaviors()
     restoreResourceContentFocus(focusDescriptor)
+  } catch (error) {
+    if (requestTimeout.timedOut()) throw new Error("一覧の読み込みがタイムアウトしました。画面を再読み込みしてください。")
+
+    throw error
   } finally {
+    requestTimeout.clear()
     if (adminResourceContentController === controller) {
       currentContent?.setAttribute("aria-busy", "false")
       adminResourceContentController = undefined
@@ -235,6 +257,7 @@ export const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) =
 
   const controller = new AbortController()
   adminPageNavigationController = controller
+  const requestTimeout = createAdminRequestTimeout(controller)
   document.body.dataset.adminNavigation = "loading"
   document.querySelector("[data-admin-page-content]")?.setAttribute("aria-busy", "true")
 
@@ -255,7 +278,12 @@ export const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) =
     if (adminPageNavigationController !== controller) return
 
     replaceAdminPage(html, response.url, { pushState })
+  } catch (error) {
+    if (requestTimeout.timedOut()) throw new Error("画面の読み込みがタイムアウトしました。再読み込みしてください。")
+
+    throw error
   } finally {
+    requestTimeout.clear()
     if (adminPageNavigationController === controller) {
       delete document.body.dataset.adminNavigation
       document.querySelector("[data-admin-page-content]")?.setAttribute("aria-busy", "false")

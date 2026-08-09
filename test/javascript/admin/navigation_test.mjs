@@ -4,7 +4,7 @@ import { test } from "node:test"
 
 const source = await readFile(new URL("../../../app/javascript/admin/navigation.js", import.meta.url), "utf8")
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
-const { setupAdminAsyncIndex, setupAdminMobileNavigation } = await import(moduleUrl)
+const { createAdminRequestTimeout, setupAdminAsyncIndex, setupAdminMobileNavigation } = await import(moduleUrl)
 
 class FakeElement {
   constructor({ dataset = {}, closestResults = {}, queryResults = {} } = {}) {
@@ -149,5 +149,32 @@ test("async index setup is idempotent", () => {
     assert.equal(document.documentElement.dataset.adminAsyncIndexInitialized, "true")
   } finally {
     globalThis.document = originalDocument
+  }
+})
+
+test("request timeout aborts the controller and can be cleared", () => {
+  const originalWindow = globalThis.window
+  let timeoutCallback
+  let clearedTimeout
+  let aborted = false
+  globalThis.window = {
+    clearTimeout: (timeoutId) => { clearedTimeout = timeoutId },
+    setTimeout: (callback) => {
+      timeoutCallback = callback
+      return "timeout-id"
+    },
+  }
+
+  try {
+    const requestTimeout = createAdminRequestTimeout({ abort: () => { aborted = true } }, 100)
+
+    assert.equal(requestTimeout.timedOut(), false)
+    timeoutCallback()
+    assert.equal(aborted, true)
+    assert.equal(requestTimeout.timedOut(), true)
+    requestTimeout.clear()
+    assert.equal(clearedTimeout, "timeout-id")
+  } finally {
+    globalThis.window = originalWindow
   }
 })
