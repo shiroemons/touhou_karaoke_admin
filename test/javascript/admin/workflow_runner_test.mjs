@@ -150,6 +150,63 @@ test("workflow runner retries transient failures with bounded backoff", async ()
   }
 })
 
+test("workflow runner retries after a progress request timeout", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const pagehideHandlers = new Set()
+  const scheduled = []
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "request-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") pagehideHandlers.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") pagehideHandlers.delete(handler)
+    },
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(pagehideHandlers.size, 1)
+    timeoutCallback()
+    await waitForPoll()
+
+    assert.equal(fixture.statusState.textContent, "再試行中")
+    assert.match(fixture.statusLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1500)
+    assert.equal(clearedTimeout, "request-timeout")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+  }
+})
+
 test("workflow runner retries an invalid rejection value safely", async () => {
   const originalDocument = globalThis.document
   const originalFetch = globalThis.fetch

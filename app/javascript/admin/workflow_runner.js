@@ -1,7 +1,25 @@
 const POLL_INTERVAL_MS = 1500
 const MAX_POLL_RETRIES = 3
 const MAX_POLL_DELAY_MS = 10000
+const WORKFLOW_PROGRESS_TIMEOUT_MS = 15000
 const WORKFLOW_STEP_STATUSES = new Set(["pending", "running", "completed", "failed", "manual"])
+
+const createWorkflowProgressTimeout = (controller, timeoutMs = WORKFLOW_PROGRESS_TIMEOUT_MS) => {
+  const setTimeoutFunction = globalThis.setTimeout
+  const clearTimeoutFunction = globalThis.clearTimeout
+  if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
+
+  let timedOut = false
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
 
 const normalizedCount = (value) => {
   const parsed = Number(value)
@@ -153,6 +171,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       pollInFlight = true
       const controller = typeof AbortController === "function" ? new AbortController() : undefined
       pollController = controller
+      const requestTimeout = controller ? createWorkflowProgressTimeout(controller) : undefined
       try {
         const response = await fetch(runner.dataset.adminWorkflowProgressUrl, {
           headers: {
@@ -168,6 +187,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         }
 
         const payload = await response.json()
+        if (requestTimeout?.timedOut()) throw new Error("運用フロー進捗の取得がタイムアウトしました。")
         if (pollingStopped || !runnerIsMounted()) {
           stopPolling()
           return
@@ -187,7 +207,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         }
         if (payload.state === "completed" || payload.state === "failed") stopPolling()
       } catch (error) {
-        if (error?.name === "AbortError" || pollingStopped || !runnerIsMounted()) {
+        if ((error?.name === "AbortError" && !requestTimeout?.timedOut()) || pollingStopped || !runnerIsMounted()) {
           stopPolling()
           return
         }
@@ -222,6 +242,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
           current: "再接続待ち",
         })
       } finally {
+        requestTimeout?.clear()
         if (pollController === controller) pollController = undefined
         pollInFlight = false
         if (pollingStopped) return
