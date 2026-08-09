@@ -73,7 +73,7 @@ const updateAdminSearchableSelect = (container) => {
   const search = container.querySelector("[data-admin-searchable-select-search]")
   const options = Array.from(container.querySelectorAll("[data-admin-searchable-select-option]"))
   const status = container.querySelector("[data-admin-searchable-select-status]")
-  if (!search || options.length === 0) return
+  if (!search) return
 
   const query = searchableSelectText(search.value.trim())
   let visibleCount = 0

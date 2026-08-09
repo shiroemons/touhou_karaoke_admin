@@ -204,6 +204,20 @@ test("search input filters visible options and checkbox change writes hidden val
   assert.equal(fixture.secondOption.getAttribute("aria-selected"), "true")
 })
 
+test("setupAdminSearchableSelects reports selected values when no options are available", () => {
+  const fixture = buildSearchableSelect()
+  fixture.options.replaceChildren()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-searchable-select]" ? [fixture.container] : []
+  )
+
+  setupAdminSearchableSelects()
+
+  assert.equal(fixture.status.textContent, "選択中 1件 / 表示 0件")
+  assert.equal(fixture.chips.children.length, 1)
+  assert.equal(fixture.chips.children[0].textContent, "circle-1")
+})
+
 test("removing a selected chip returns focus to the search field", () => {
   const fixture = buildSearchableSelect()
   globalThis.document.querySelectorAll = (selector) => (
