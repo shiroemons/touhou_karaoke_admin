@@ -404,6 +404,25 @@ body[data-admin-navigation="loading"] .admin-main {
   gap: 10px;
 }
 
+.admin-dashboard-freshness {
+  align-items: center;
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-dashboard-freshness time {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-dashboard-refresh-form {
+  margin: 0;
+}
+
 .admin-dashboard-status-card {
   align-items: center;
   display: grid;

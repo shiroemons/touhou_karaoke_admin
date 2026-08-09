@@ -16,6 +16,12 @@
         <span>原曲</span>
       <% end %>
     </div>
+    <div class="admin-dashboard-freshness" aria-live="polite">
+      <span>最終集計 <time datetime="<%= @dashboard_generated_at.iso8601 %>"><%= l(@dashboard_generated_at, format: :admin_datetime) %></time></span>
+      <%= button_to admin_dashboard_refresh_path, method: :post, class: "admin-button btn btn-sm btn-outline", form_class: "admin-dashboard-refresh-form", aria: { label: "ダッシュボードを再集計" } do %>
+        再集計
+      <% end %>
+    </div>
   </div>
 
   <aside class="admin-dashboard-status-card">

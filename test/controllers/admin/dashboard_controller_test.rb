@@ -45,6 +45,8 @@ module Admin
       get admin_root_path
 
       assert_response :success
+      assert_select '.admin-dashboard-freshness time[datetime]'
+      assert_select 'form[action=?][method="post"] button[aria-label="ダッシュボードを再集計"]', admin_dashboard_refresh_path, text: '再集計'
     end
 
     test 'delivery type metrics match individually computed scope counts' do
@@ -171,12 +173,31 @@ module Admin
       end
     end
 
+    test 'dashboard refresh clears the cached counts before the next request' do
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        get admin_root_path
+        assert_response :success
+        assert Rails.cache.exist?(DashboardController::DASHBOARD_CACHE_KEY)
+
+        post admin_dashboard_refresh_path
+
+        assert_redirected_to admin_root_path
+        assert_equal I18n.t('admin.dashboard_refreshed'), flash[:notice]
+        assert_not Rails.cache.exist?(DashboardController::DASHBOARD_CACHE_KEY)
+
+        get admin_root_path
+        assert_response :success
+        assert Rails.cache.exist?(DashboardController::DASHBOARD_CACHE_KEY)
+        assert_equal Song.count, controller.send(:dashboard_summary).fetch(:total_songs)
+      end
+    end
+
     test 'cached counts match individually computed values' do
       with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
         get admin_root_path
         assert_response :success
 
-        cached = Rails.cache.fetch('admin:dashboard:v2')
+        cached = Rails.cache.fetch(DashboardController::DASHBOARD_CACHE_KEY)
         assert_equal Song.count, cached.fetch(:total_songs)
         assert_equal Song.with_original_songs.count, cached.fetch(:linked_songs)
         assert_equal Song.missing_original_songs.count, cached.fetch(:missing_original_songs)
@@ -190,6 +211,7 @@ module Admin
         assert_equal JoysoundMusicPost.count, cached.fetch(:joysound_music_posts)
         assert_equal Song.music_post.missing_original_songs.count, cached.fetch(:music_post_missing_original_songs)
         assert_equal Song.group(:karaoke_type).count, cached.fetch(:karaoke_type_counts)
+        assert_match(/\A\d{4}-\d{2}-\d{2}T/, cached.fetch(:generated_at))
       end
     end
 
