@@ -40,6 +40,8 @@ export const setupAdminOperationModal = ({ updateSelectionState } = {}) => {
         if (!panel || !modal.showModal) return
 
         event.preventDefault()
+        if (modal.open) return
+
         returnFocusDetails = trigger.closest("details")
         returnFocusDetails?.removeAttribute("open")
         showPanel(operationKey, trigger.dataset.adminOperationLabel || trigger.textContent.trim())

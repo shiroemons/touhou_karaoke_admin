@@ -35,6 +35,7 @@ class FakeElement {
     this.queryResults = new Map()
     this.hidden = false
     this.modalOpen = false
+    this.showModalCalls = 0
     this.focused = false
   }
 
@@ -75,7 +76,12 @@ class FakeElement {
   }
 
   showModal() {
+    this.showModalCalls += 1
     this.modalOpen = true
+  }
+
+  get open() {
+    return this.modalOpen
   }
 
   closest() {
@@ -133,8 +139,14 @@ test("operation modal restores focus to the trigger after closing", () => {
 
     assert.equal(event.defaultPrevented, true)
     assert.equal(modal.modalOpen, true)
+    assert.equal(modal.showModalCalls, 1)
     assert.equal(panel.hidden, false)
     assert.equal(details.open, false)
+
+    const duplicateEvent = trigger.click()
+
+    assert.equal(duplicateEvent.defaultPrevented, true)
+    assert.equal(modal.showModalCalls, 1)
 
     modal.close()
 
