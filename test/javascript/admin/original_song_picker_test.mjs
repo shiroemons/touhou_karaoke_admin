@@ -384,6 +384,44 @@ test("original song search exposes an actionable error when options cannot be lo
   assert.equal(fixture.search.attributes["aria-expanded"], "false")
 })
 
+test("original song search exposes an actionable error after a timeout", async () => {
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const fixture = buildPicker()
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "options-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+
+  try {
+    fixture.search.value = "応答しない原曲"
+    const request = fixture.search.dispatch("input")
+    assert.ok(timeoutCallback)
+    timeoutCallback()
+    await request
+
+    assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+    assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
+    assert.equal(fixture.search.value, "応答しない原曲")
+    assert.equal(clearedTimeout, "options-timeout")
+  } finally {
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+  }
+})
+
 test("original song search explains when no candidates match", async () => {
   const fixture = buildPicker()
   globalThis.document.querySelectorAll = (selector) => (

@@ -83,8 +83,26 @@ const normalizeOriginalSongPasteText = (text) => text
   .join("\n")
 
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
+const ORIGINAL_SONG_OPTIONS_TIMEOUT_MS = 15000
 let activeOriginalSongPicker
 const originalSongPickerResolveQueues = new WeakMap()
+
+const createOriginalSongOptionsTimeout = (controller, timeoutMs = ORIGINAL_SONG_OPTIONS_TIMEOUT_MS) => {
+  const setTimeoutFunction = globalThis.setTimeout
+  const clearTimeoutFunction = globalThis.clearTimeout
+  if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
+
+  let timedOut = false
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
 
 const originalSongPickerIsMounted = (picker) => picker?.isConnected !== false
 
@@ -301,6 +319,7 @@ export const setupAdminOriginalSongPickers = () => {
       }
 
       searchController = new AbortController()
+      const requestTimeout = createOriginalSongOptionsTimeout(searchController)
       updateOriginalSongPickerStatus(picker, "候補を検索しています...")
       try {
         const url = new URL(picker.dataset.optionsUrl, window.location.origin)
@@ -313,6 +332,7 @@ export const setupAdminOriginalSongPickers = () => {
         if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
         const optionsPayload = await response.json()
+        if (requestTimeout?.timedOut()) throw new Error("原曲候補の検索がタイムアウトしました。")
         if (!Array.isArray(optionsPayload)) throw new Error("候補データの形式が不正です。")
         if (requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
 
@@ -324,12 +344,13 @@ export const setupAdminOriginalSongPickers = () => {
             : "一致する原曲がありません。"
         )
       } catch (error) {
-        if (error?.name === "AbortError" || requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
+        if ((error?.name === "AbortError" && !requestTimeout?.timedOut()) || requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
 
         console.error(error)
         hideOriginalSongOptions(picker)
         updateOriginalSongPickerStatus(picker, "候補の取得に失敗しました。もう一度お試しください。", { error: true })
       } finally {
+        requestTimeout?.clear()
         if (requestSequence === searchRequestSequence) searchController = undefined
       }
     })
