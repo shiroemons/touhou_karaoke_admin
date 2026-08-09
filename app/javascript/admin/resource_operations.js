@@ -105,7 +105,7 @@ const setupAdminOperationForms = () => {
       if (form.dataset.adminOperationBusy === "true") return
 
       syncSelectedIds()
-      operationProgress.start()
+      const operation = operationProgress.start()
 
       try {
         const csrfToken = document.querySelector(adminSelectors.csrfToken)?.getAttribute("content")
@@ -118,13 +118,18 @@ const setupAdminOperationForms = () => {
           },
           body: new FormData(form),
           credentials: "same-origin",
+          signal: operation?.signal,
         })
 
+        if (!operationProgress.isCurrentOperation(operation)) return
         const payload = (await response.json().catch(() => ({}))) || {}
+        if (!operationProgress.isCurrentOperation(operation)) return
         if (!response.ok) throw new Error(payload.message || requestFailureMessage(response.status))
 
         operationProgress.applyServerProgress(payload.progress)
       } catch (error) {
+        if (!operationProgress.isCurrentOperation(operation) || error?.name === "AbortError") return
+
         console.error(error)
         operationProgress.fail(error.message || "処理中にエラーが発生しました。")
       }

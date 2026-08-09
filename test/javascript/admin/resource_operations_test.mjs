@@ -18,13 +18,29 @@ class AdminOperationProgress {
   constructor({ form }) {
     this.form = form
     this.phase = "waiting"
+    this.sequence = 0
+    this.activeSequence = 0
+    this.controller = undefined
+    form.operationProgress = this
   }
 
   start() {
     this.form.dataset.adminOperationBusy = "true"
+    this.activeSequence = ++this.sequence
+    this.controller = new AbortController()
+    return { sequence: this.activeSequence, signal: this.controller.signal }
   }
 
-  reset() {}
+  reset() {
+    this.controller?.abort()
+    this.activeSequence = 0
+    delete this.form.dataset.adminOperationBusy
+  }
+
+  isCurrentOperation(operation) {
+    return operation?.sequence === this.activeSequence
+  }
+
   applyServerProgress(payload) {
     this.form.dataset.adminOperationProgress = payload ? "received" : "skipped"
   }
@@ -148,6 +164,46 @@ test("async operation tolerates a null start response", async () => {
 
     assert.equal(event.defaultPrevented, true)
     assert.equal(form.dataset.adminOperationProgress, "skipped")
+    assert.equal(form.dataset.adminOperationFailure, undefined)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.FormData = originalFormData
+  }
+})
+
+test("async operation ignores a response after its progress is reset", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalFormData = globalThis.FormData
+  const form = new FakeForm()
+  let resolveResponse
+  let requestOptions
+  globalThis.document = {
+    querySelector: () => null,
+    querySelectorAll: (selector) => (selector === "[data-admin-operation-form]" ? [form] : []),
+  }
+  globalThis.fetch = (_url, options) => {
+    requestOptions = options
+    return new Promise((resolve) => {
+      resolveResponse = resolve
+    })
+  }
+  globalThis.FormData = class {}
+
+  try {
+    setupAdminResourceOperations()
+    form.dispatchSubmit()
+    await waitForAsyncWork()
+
+    assert.ok(requestOptions.signal)
+    form.operationProgress.reset()
+    assert.equal(requestOptions.signal.aborted, true)
+
+    resolveResponse({ ok: true, json: async () => ({ progress: { state: "completed", percentage: 100 } }) })
+    await waitForAsyncWork()
+
+    assert.equal(form.dataset.adminOperationProgress, undefined)
     assert.equal(form.dataset.adminOperationFailure, undefined)
   } finally {
     globalThis.document = originalDocument

@@ -50,6 +50,8 @@ export class AdminOperationProgress {
     this.updateSubmitStates = updateSubmitStates
     this.pollSequence = 0
     this.pollController = undefined
+    this.operationSequence = 0
+    this.operationController = undefined
     this.resetState()
   }
 
@@ -111,6 +113,8 @@ export class AdminOperationProgress {
   start() {
     this.clearTimers()
     this.resetState()
+    const operationSequence = ++this.operationSequence
+    this.operationController = typeof AbortController === "function" ? new AbortController() : undefined
     if (this.progress) this.progress.hidden = false
     this.setBusy(true)
     this.form.dataset.adminOperationBusy = "true"
@@ -145,6 +149,15 @@ export class AdminOperationProgress {
     this.startPolling()
     this.pagehideHandler = () => this.finish()
     window.addEventListener("pagehide", this.pagehideHandler, { once: true })
+
+    return {
+      sequence: operationSequence,
+      signal: this.operationController?.signal,
+    }
+  }
+
+  isCurrentOperation(operation) {
+    return operation?.sequence === this.operationSequence && !["waiting", "finished", "failed"].includes(this.phase)
   }
 
   fail(message) {
@@ -196,6 +209,10 @@ export class AdminOperationProgress {
     if (this.executeTimer !== undefined) {
       window.clearTimeout(this.executeTimer)
       this.executeTimer = undefined
+    }
+    if (this.operationController) {
+      this.operationController.abort()
+      this.operationController = undefined
     }
     this.removePagehideHandler()
   }
