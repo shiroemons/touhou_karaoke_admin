@@ -130,8 +130,14 @@ module Admin
     def operation_progress
       @operation = find_operation
       authorize_operation!
+      progress_id = scalar_param(:operation_progress_id)
 
-      render json: OperationProgress.read(params[:operation_progress_id])
+      unless OperationProgress.known?(progress_id)
+        render json: OperationProgress.unknown_payload, status: :not_found
+        return
+      end
+
+      render json: OperationProgress.read(progress_id)
     end
 
     private

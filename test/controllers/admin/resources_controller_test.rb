@@ -1274,6 +1274,16 @@ module Admin
       assert_equal 120, payload['current']
     end
 
+    test 'operation progress endpoint returns not found for an unknown progress id' do
+      progress_id = SecureRandom.uuid
+
+      get operation_progress_admin_dam_songs_path(operation: 'fetch_dam_touhou_songs', operation_progress_id: progress_id)
+
+      assert_response :not_found
+      assert_equal 'unknown', response.parsed_body['state']
+      assert_equal '状態不明', response.parsed_body['status']
+    end
+
     test 'operation progress endpoint accepts polling params without unpermitted warnings' do
       original_behavior = ActionController::Parameters.action_on_unpermitted_parameters
       ActionController::Parameters.action_on_unpermitted_parameters = :raise

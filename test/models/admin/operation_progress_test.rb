@@ -17,6 +17,17 @@ module Admin
       assert_equal 0, missing[:percentage]
     end
 
+    test 'distinguishes known progress ids from unknown ids' do
+      id = SecureRandom.uuid
+
+      assert_not OperationProgress.known?(id)
+      assert_equal 'unknown', OperationProgress.unknown_payload[:state]
+
+      OperationProgress.enqueue!(id, label: '待機しています')
+
+      assert OperationProgress.known?(id)
+    end
+
     test 'persists queued running updated completed and failed states' do
       id = SecureRandom.uuid
 

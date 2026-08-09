@@ -14,6 +14,22 @@ module Admin
         id.to_s.match?(ID_FORMAT)
       end
 
+      def known?(id)
+        return false unless valid_id?(id)
+
+        Rails.cache.exist?(cache_key(id)) || memory_store.key?(id) || Record.exists?(id:)
+      end
+
+      def unknown_payload
+        payload(
+          state: 'unknown',
+          percentage: 0,
+          status: '状態不明',
+          label: '処理状態を取得できません',
+          detail: '処理状態が見つかりません。再実行するか、画面を再読み込みしてください。'
+        )
+      end
+
       def start!(id, label:)
         return unless valid_id?(id)
 
