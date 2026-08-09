@@ -20,8 +20,9 @@ class FakeElement {
     return this.closestResults[selector] || null
   }
 
-  focus() {
+  focus(options) {
     this.focused = true
+    this.focusOptions = options
   }
 
   querySelector(selector) {
@@ -55,6 +56,7 @@ const buildFixture = () => {
   toggle.closestResults["[data-admin-mobile-navigation-toggle]"] = toggle
   navigationLink.closestResults[".admin-nav-link, .admin-brand"] = navigationLink
   sidebar.queryResults["[data-admin-mobile-navigation-toggle]"] = toggle
+  sidebar.queryResults[".admin-nav-link"] = navigationLink
   toggle.queryResults["[data-admin-mobile-navigation-toggle-label]"] = label
 
   const document = {
@@ -91,6 +93,17 @@ test("mobile navigation toggles state and accessible labels", () => {
   assert.equal(fixture.toggle.attributes["aria-expanded"], "false")
   assert.equal(fixture.toggle.attributes["aria-label"], "メニューを開く")
   assert.equal(fixture.label.textContent, "メニュー")
+})
+
+test("opening mobile navigation moves focus to the first navigation link", () => {
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+  setupAdminMobileNavigation()
+
+  fixture.document.dispatch("click", { target: fixture.toggle })
+
+  assert.equal(fixture.navigationLink.focused, true)
+  assert.deepEqual(fixture.navigationLink.focusOptions, { preventScroll: true })
 })
 
 test("navigation link closes an open mobile menu", () => {

@@ -2,6 +2,7 @@ let setupPageBehaviors = () => {}
 
 const mobileNavigationToggleSelector = "[data-admin-mobile-navigation-toggle]"
 const mobileNavigationToggleLabelSelector = "[data-admin-mobile-navigation-toggle-label]"
+const mobileNavigationFirstLinkSelector = ".admin-nav-link"
 const mobileNavigationOpenSelector = ".admin-sidebar[data-admin-mobile-navigation-open=\"true\"]"
 
 export const isAdminAbortError = (error) => error?.name === "AbortError"
@@ -17,6 +18,8 @@ const setAdminMobileNavigationOpen = (sidebar, open) => {
 
   const label = toggle.querySelector(mobileNavigationToggleLabelSelector)
   if (label) label.textContent = open ? "閉じる" : "メニュー"
+
+  if (open) sidebar.querySelector(mobileNavigationFirstLinkSelector)?.focus?.({ preventScroll: true })
 }
 
 export const setupAdminMobileNavigation = () => {
