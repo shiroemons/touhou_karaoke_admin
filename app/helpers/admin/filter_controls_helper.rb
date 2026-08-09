@@ -39,7 +39,7 @@ module Admin
     end
 
     def admin_radio_filter_control(filter, active_value)
-      fieldset_tag nil, class: 'admin-filter-choice-group' do
+      fieldset_tag nil, class: 'admin-filter-choice-group', aria: { label: filter.label } do
         safe_join([admin_radio_filter_choice(filter, '', 'すべて', active_value.blank?)] +
                   filter.options.map { |value, label| admin_radio_filter_choice(filter, value, label, active_value == value.to_s) })
       end
@@ -48,7 +48,7 @@ module Admin
     def admin_checkbox_filter_control(filter, active_value)
       active_values = Array(active_value).map(&:to_s)
 
-      fieldset_tag nil, class: 'admin-filter-choice-group' do
+      fieldset_tag nil, class: 'admin-filter-choice-group', aria: { label: filter.label } do
         safe_join(filter.options.map { |value, label| admin_checkbox_filter_choice(filter, value, label, active_values.include?(value.to_s)) })
       end
     end
@@ -74,7 +74,7 @@ module Admin
     def admin_presence_group_filter_control(filter, active_value)
       active_values = active_value.is_a?(Hash) ? active_value : {}
 
-      tag.div(class: 'admin-presence-filter-groups') do
+      tag.div(class: 'admin-presence-filter-groups', role: 'group', aria: { label: filter.label }) do
         safe_join(filter.options.map do |value, label|
           admin_presence_group_filter_row(filter, value, label, active_values[value.to_s])
         end)

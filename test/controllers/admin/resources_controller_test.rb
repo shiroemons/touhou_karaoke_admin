@@ -695,8 +695,10 @@ module Admin
 
       assert_response :success
       assert_select 'input[type="radio"][name="filters[karaoke_type]"]'
+      assert_select 'fieldset.admin-filter-choice-group[aria-label="カラオケ種別"]'
       assert_select 'input[type="radio"][name="filters[original_link]"][value="linked"]'
       assert_select 'input[type="radio"][name="filters[original_link]"][value="missing"]'
+      assert_select 'fieldset.admin-filter-choice-group[aria-label="原曲紐付け"]'
       assert_select 'input[type="radio"][name="filters[original_category]"][value="touhou_arrange"]'
       assert_select 'input[type="radio"][name="filters[original_category]"][value="original_or_other"]'
       assert_select 'input[type="radio"][name="filters[original_category]"][value="missing"]'
