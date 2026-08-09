@@ -24,7 +24,7 @@
         <span class="admin-form-requirement"><%= input_required ? "必須" : "任意" %></span>
       </div>
       <% if input[:type] == :file %>
-        <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: input_dom_id, class: "file-input file-input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+        <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: input_dom_id, class: "file-input file-input-bordered w-full", required: input_required, data: ({ admin_operation_required_input: true } if input_required) %>
       <% elsif input[:type] == :checkbox %>
         <label class="admin-checkbox-field">
           <%= hidden_field_tag "operation_fields[#{input[:name]}]", "0", id: nil %>
@@ -32,7 +32,7 @@
           <span><%= input[:description].presence || input[:label] %></span>
         </label>
       <% else %>
-        <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: input_dom_id, placeholder: input[:placeholder], class: "admin-input input input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+        <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: input_dom_id, placeholder: input[:placeholder], class: "admin-input input input-bordered w-full", required: input_required, data: ({ admin_operation_required_input: true } if input_required) %>
       <% end %>
     </div>
   <% end %>

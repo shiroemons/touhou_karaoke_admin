@@ -1268,7 +1268,7 @@ module Admin
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
       assert_select '.admin-form-label-row label[for$="-dam_song_url"]', text: 'DAM楽曲URL'
       assert_select '.admin-form-label-row .admin-form-requirement', text: '必須'
-      assert_select 'input[name="operation_fields[dam_song_url]"]'
+      assert_select 'input[name="operation_fields[dam_song_url]"][required][data-admin-operation-required-input]'
       assert_select 'input[name="operation_progress_id"]', 1
       assert_select 'dialog[data-admin-operation-dialog][aria-labelledby="admin-operation-confirm-title"]'
       assert_select '#admin-operation-confirm-title[data-admin-operation-dialog-title]', text: 'アクションを実行しますか？'
@@ -1314,6 +1314,8 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '期限切れを削除'
       assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][checked="checked"]'
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][required]', count: 0
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][data-admin-operation-required-input]', count: 0
       assert_select '.admin-checkbox-field', text: /削除せず対象を確認する/
     end
 
