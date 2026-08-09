@@ -1282,6 +1282,9 @@ module Admin
       assert_select 'h1', text: 'DAM楽曲URLから候補を追加'
       assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
       assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
+      assert_select '.admin-operation-description a[href=?][target="_blank"][rel="noopener"][aria-label=?]',
+                    Constants::Karaoke::Dam::SONG_URL,
+                    "#{Constants::Karaoke::Dam::SONG_URL}（新しいタブで開く）"
       assert_select 'form[data-admin-operation-form][data-admin-operation-action="FetchDamSong"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-label="DAM楽曲URLから候補を追加"][data-admin-operation-resource-label="DAM楽曲"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
