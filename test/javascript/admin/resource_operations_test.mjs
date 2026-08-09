@@ -81,7 +81,7 @@ const moduleUrl = `data:text/javascript;base64,${Buffer.from(moduleSource).toStr
 const { setupAdminResourceOperations } = await import(moduleUrl)
 
 class FakeForm {
-  constructor() {
+  constructor({ requiredInputs = [] } = {}) {
     this.action = "/admin/songs/operation"
     this.dataset = {
       adminOperationAsync: "true",
@@ -91,6 +91,7 @@ class FakeForm {
     this.eventListeners = {}
     this.method = "post"
     this.submitButton = { disabled: false }
+    this.requiredInputs = requiredInputs
   }
 
   addEventListener(type, callback) {
@@ -106,8 +107,8 @@ class FakeForm {
     return selector === "[data-admin-operation-submit]" ? this.submitButton : null
   }
 
-  querySelectorAll() {
-    return []
+  querySelectorAll(selector) {
+    return selector === "[data-admin-operation-required-input]" ? this.requiredInputs : []
   }
 
   dispatchSubmit() {
@@ -119,6 +120,25 @@ class FakeForm {
     }
     this.eventListeners.submit.forEach((callback) => callback(event))
     return event
+  }
+}
+
+class FakeInput {
+  constructor({ type, checked = false, value = "" }) {
+    this.type = type
+    this.checked = checked
+    this.value = value
+    this.files = []
+    this.eventListeners = {}
+  }
+
+  addEventListener(type, callback) {
+    this.eventListeners[type] ||= []
+    this.eventListeners[type].push(callback)
+  }
+
+  dispatch(type) {
+    ;(this.eventListeners[type] || []).forEach((callback) => callback())
   }
 }
 
@@ -181,6 +201,30 @@ test("busy async operation forms reject duplicate submit events", () => {
     assert.equal(event.defaultPrevented, true)
     assert.equal(form.eventListeners.submit.length, 1)
     assert.equal(form.submitButton.disabled, true)
+  } finally {
+    globalThis.document = originalDocument
+  }
+})
+
+test("required checkbox inputs block submission until checked", () => {
+  const originalDocument = globalThis.document
+  const requiredInput = new FakeInput({ type: "checkbox" })
+  const form = new FakeForm({ requiredInputs: [requiredInput] })
+  globalThis.document = {
+    querySelector: () => null,
+    querySelectorAll: (selector) => (selector === "[data-admin-operation-form]" ? [form] : []),
+  }
+
+  try {
+    setupAdminResourceOperations()
+
+    assert.equal(form.submitButton.disabled, true)
+    assert.equal(form.dispatchSubmit().defaultPrevented, true)
+
+    requiredInput.checked = true
+    requiredInput.dispatch("change")
+
+    assert.equal(form.submitButton.disabled, false)
   } finally {
     globalThis.document = originalDocument
   }

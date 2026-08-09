@@ -28,7 +28,7 @@
       <% elsif input[:type] == :checkbox %>
         <label class="admin-checkbox-field">
           <%= hidden_field_tag "operation_fields[#{input[:name]}]", "0", id: nil %>
-          <%= check_box_tag "operation_fields[#{input[:name]}]", "1", input.fetch(:checked, false), id: input_dom_id, class: "checkbox checkbox-sm" %>
+          <%= check_box_tag "operation_fields[#{input[:name]}]", "1", input.fetch(:checked, false), id: input_dom_id, class: "checkbox checkbox-sm", required: input_required, data: ({ admin_operation_required_input: true } if input_required) %>
           <span><%= input[:description].presence || input[:label] %></span>
         </label>
       <% else %>

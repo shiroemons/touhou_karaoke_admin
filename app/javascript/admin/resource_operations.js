@@ -11,6 +11,7 @@ import { adminSelectors } from "./selectors"
 const adminOperationRequiredInputsReady = (form) =>
   Array.from(form.querySelectorAll(adminSelectors.operationRequiredInput)).every((input) => {
     if (input.type === "file") return input.files.length > 0
+    if (input.type === "checkbox" || input.type === "radio") return input.checked
 
     return input.value.trim().length > 0
   })
