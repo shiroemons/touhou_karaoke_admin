@@ -1,16 +1,23 @@
 <section class="admin-panel">
-  <% if record.errors.any? %>
-    <div class="admin-errors">
-      <p><%= record.errors.count %> 件のエラーがあります。</p>
-      <ul>
-        <% record.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
   <%= form_with model: [:admin, record], url: record.persisted? ? admin_resource_path(resource, record) : admin_resources_path(resource), class: "admin-form" do |form| %>
+    <% if record.errors.any? %>
+      <div class="admin-errors" role="alert" aria-live="assertive" tabindex="-1">
+        <p><%= record.errors.count %> 件のエラーがあります。入力内容を確認してください。</p>
+        <ul>
+          <% record.errors.each do |error| %>
+            <% error_field = resource.form_fields.find { |field| field.name.to_sym == error.attribute.to_sym } %>
+            <li>
+              <% if error_field %>
+                <%= link_to error.full_message, "##{form.object_name}_#{error_field.name}" %>
+              <% else %>
+                <%= error.full_message %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
     <% resource.form_fields.each do |field| %>
       <% field_errors = record.errors.full_messages_for(field.name) %>
       <% field_error_id = "#{form.object_name}_#{field.name}_error" %>

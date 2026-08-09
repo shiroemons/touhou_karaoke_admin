@@ -4084,6 +4084,12 @@ th.admin-actions-column {
   color: #7f1d1d;
 }
 
+.admin-errors a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .admin-flash-notice {
   background: color-mix(in oklab, var(--color-success) 12%, var(--color-base-100));
   border: 1px solid color-mix(in oklab, var(--color-success) 34%, var(--color-base-300));
