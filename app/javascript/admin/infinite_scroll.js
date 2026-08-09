@@ -21,9 +21,18 @@ const validateAdminInfiniteScrollPayload = (payload, currentUrl) => {
   if (!isAdminUrl(next) || next.href === current.href) throw new Error("次の一覧ページを特定できません。")
 }
 
+let adminInfiniteScrollSentinel
+let adminInfiniteScrollCleanup
+
 export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
   const sentinel = document.querySelector("[data-admin-infinite-scroll]")
   const rows = document.querySelector("#admin-resource-rows")
+  if (sentinel && sentinel === adminInfiniteScrollSentinel) return
+
+  adminInfiniteScrollCleanup?.()
+  adminInfiniteScrollCleanup = undefined
+  adminInfiniteScrollSentinel = sentinel
+
   if (!sentinel || !rows || sentinel.dataset.initialized === "true") return
 
   sentinel.dataset.initialized = "true"
@@ -80,4 +89,8 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
   }, { root: scrollRoot, rootMargin: "240px" })
 
   observer.observe(sentinel)
+  adminInfiniteScrollCleanup = () => {
+    observer.disconnect?.()
+    if (adminInfiniteScrollSentinel === sentinel) adminInfiniteScrollSentinel = undefined
+  }
 }

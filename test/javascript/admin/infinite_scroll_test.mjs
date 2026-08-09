@@ -70,10 +70,15 @@ const buildFixture = () => {
   globalThis.IntersectionObserver = class {
     constructor(callback) {
       this.callback = callback
+      this.disconnected = false
       observer = this
     }
 
     observe() {}
+
+    disconnect() {
+      this.disconnected = true
+    }
   }
 
   return { document, observer: () => observer, retryButton, rows, sentinel, status }
@@ -207,6 +212,28 @@ test("infinite scroll rejects a non-advancing next URL", async () => {
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
+    delete globalThis.IntersectionObserver
+  }
+})
+
+test("infinite scroll disconnects the previous observer when content is replaced", () => {
+  const originalDocument = globalThis.document
+  const firstFixture = buildFixture()
+
+  globalThis.document = firstFixture.document
+  setupAdminInfiniteScroll()
+  const firstObserver = firstFixture.observer()
+
+  const secondFixture = buildFixture()
+  globalThis.document = secondFixture.document
+
+  try {
+    setupAdminInfiniteScroll()
+
+    assert.equal(firstObserver.disconnected, true)
+    assert.equal(secondFixture.observer().disconnected, false)
+  } finally {
+    globalThis.document = originalDocument
     delete globalThis.IntersectionObserver
   }
 })
