@@ -63,24 +63,39 @@ const browserUrl = (url) => {
   return nextUrl
 }
 
+let adminResourceContentController
 
-const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
-  const response = await fetch(adminContentUrl(url), {
-    headers: {
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  })
+export const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
+  if (adminResourceContentController) adminResourceContentController.abort()
 
-  if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
-
-  const payload = await response.json()
+  const controller = new AbortController()
+  adminResourceContentController = controller
   const currentContent = document.querySelector("[data-admin-resource-content]")
-  if (!currentContent) return
+  currentContent?.setAttribute("aria-busy", "true")
 
-  currentContent.outerHTML = payload.html
-  if (pushState) window.history.pushState({}, "", browserUrl(url))
-  setupPageBehaviors()
+  try {
+    const response = await fetch(adminContentUrl(url), {
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      signal: controller.signal,
+    })
+
+    if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+
+    const payload = await response.json()
+    if (!currentContent) return
+
+    currentContent.outerHTML = payload.html
+    if (pushState) window.history.pushState({}, "", browserUrl(url))
+    setupPageBehaviors()
+  } finally {
+    if (adminResourceContentController === controller) {
+      currentContent?.removeAttribute("aria-busy")
+      adminResourceContentController = undefined
+    }
+  }
 }
 
 const isAsyncAdminLink = (link) => {
@@ -98,6 +113,8 @@ const setupAdminAsyncIndex = () => {
 
     event.preventDefault()
     replaceAdminResourceContent(link.href).catch((error) => {
+      if (error.name === "AbortError") return
+
       console.error(error)
       window.location.href = link.href
     })
@@ -114,6 +131,8 @@ const setupAdminAsyncIndex = () => {
     })
 
     replaceAdminResourceContent(url).catch((error) => {
+      if (error.name === "AbortError") return
+
       console.error(error)
       form.submit()
     })
