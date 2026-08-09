@@ -85,6 +85,8 @@ const normalizeOriginalSongPasteText = (text) => text
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
 let activeOriginalSongPicker
 
+const originalSongPickerIsMounted = (picker) => picker?.isConnected !== false
+
 const setOriginalSongPickerOptionsExpanded = (picker, expanded) => {
   const searchInput = picker.querySelector("[data-admin-original-song-search]")
   const options = picker.querySelector("[data-admin-original-song-options]")
@@ -93,6 +95,11 @@ const setOriginalSongPickerOptionsExpanded = (picker, expanded) => {
 }
 
 const positionOriginalSongOptions = (picker) => {
+  if (!originalSongPickerIsMounted(picker)) {
+    if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
+    return
+  }
+
   const searchInput = picker.querySelector("[data-admin-original-song-search]")
   const options = picker.querySelector("[data-admin-original-song-options]")
   if (!searchInput || !options || options.hidden) return
@@ -121,11 +128,18 @@ const positionOriginalSongOptions = (picker) => {
 }
 
 const hideOriginalSongOptions = (picker) => {
+  if (!originalSongPickerIsMounted(picker)) {
+    if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
+    return
+  }
+
   setOriginalSongPickerOptionsExpanded(picker, false)
   if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
 }
 
 const renderOriginalSongOptions = (picker, optionsPayload) => {
+  if (!originalSongPickerIsMounted(picker)) return
+
   const options = picker.querySelector("[data-admin-original-song-options]")
   if (!options) return
 
@@ -173,6 +187,8 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
 
   try {
     const payload = await resolveOriginalSongText(picker, text)
+    if (!originalSongPickerIsMounted(picker)) return
+
     const items = payload.items?.length
       ? payload.items.map((item) => ({ title: item.title, status: item.exists ? "valid" : "invalid" }))
       : [{ title: text, status: payload.titles?.length ? "valid" : "invalid" }]
@@ -200,13 +216,15 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
       )
     }
   } catch (error) {
+    if (!originalSongPickerIsMounted(picker)) return
+
     console.error(error)
     const invalidItem = { title: text, status: "invalid" }
     updateOriginalSongPickerValue(picker, append ? [...selectedOriginalSongItems(picker), invalidItem] : [invalidItem])
     hideOriginalSongOptions(picker)
     updateOriginalSongPickerStatus(picker, "原曲候補の取得に失敗しました。入力を確認して再試行してください。", { error: true })
   } finally {
-    searchInput.value = ""
+    if (originalSongPickerIsMounted(picker)) searchInput.value = ""
   }
 }
 
@@ -283,7 +301,7 @@ export const setupAdminOriginalSongPickers = () => {
 
         const optionsPayload = await response.json()
         if (!Array.isArray(optionsPayload)) throw new Error("候補データの形式が不正です。")
-        if (requestSequence !== searchRequestSequence) return
+        if (requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
 
         renderOriginalSongOptions(picker, optionsPayload)
         updateOriginalSongPickerStatus(
@@ -293,7 +311,7 @@ export const setupAdminOriginalSongPickers = () => {
             : "一致する原曲がありません。"
         )
       } catch (error) {
-        if (error.name === "AbortError" || requestSequence !== searchRequestSequence) return
+        if (error?.name === "AbortError" || requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
 
         console.error(error)
         hideOriginalSongOptions(picker)
@@ -361,6 +379,10 @@ export const setupAdminOriginalSongPickers = () => {
 
 document.addEventListener("click", (event) => {
   if (!activeOriginalSongPicker) return
+  if (!originalSongPickerIsMounted(activeOriginalSongPicker)) {
+    activeOriginalSongPicker = undefined
+    return
+  }
   if (event.target.closest("[data-admin-original-song-picker]") === activeOriginalSongPicker) return
 
   hideOriginalSongOptions(activeOriginalSongPicker)

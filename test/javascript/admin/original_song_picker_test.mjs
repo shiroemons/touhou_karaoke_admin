@@ -13,6 +13,7 @@ class FakeElement {
     this.classList = new FakeClassList()
     this.dataset = dataset
     this.eventListeners = {}
+    this.isConnected = true
     this.hidden = hidden
     this.parent = undefined
     this.rect = { bottom: 40, left: 8, top: 10, width: 180, ...rect }
@@ -409,4 +410,28 @@ test("original song search ignores a stale response after a newer query", async 
 
   assert.equal(fixture.options.children[0].textContent, "新しい候補")
   assert.match(fixture.status.textContent, /1件の候補があります/)
+})
+
+test("original song search ignores a response after the picker is detached", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  let resolveRequest
+  globalThis.fetch = () => new Promise((resolve) => {
+    resolveRequest = resolve
+  })
+
+  fixture.search.value = "切断される原曲"
+  const request = fixture.search.dispatch("input")
+  fixture.picker.isConnected = false
+  resolveRequest({
+    ok: true,
+    json: async () => [{ label: "古い候補", title: "古い候補" }],
+  })
+  await request
+
+  assert.equal(fixture.options.children.length, 0)
+  assert.equal(fixture.status.textContent, "候補を検索しています...")
 })
