@@ -12,6 +12,7 @@ class FakeElement {
     this.queryResults = queryResults
     this.textContent = ""
     this.hidden = false
+    this.isConnected = true
   }
 
   querySelector(selector) {
@@ -171,6 +172,56 @@ test("workflow runner retries a malformed progress payload", async () => {
     assert.equal(fixture.statusState.textContent, "再試行中")
     assert.match(fixture.statusLabel.textContent, /1\/3回目/)
     assert.equal(scheduled.at(-1).delay, 1500)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("workflow runner stops polling after its runner is detached", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const pagehideHandlers = new Set()
+  let calls = 0
+  const scheduled = []
+  const cleared = []
+
+  globalThis.fetch = async () => {
+    calls += 1
+    throw new Error("network error")
+  }
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") pagehideHandlers.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") pagehideHandlers.delete(handler)
+    },
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: (timer) => {
+      cleared.push(timer)
+    },
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(pagehideHandlers.size, 1)
+    fixture.runner.isConnected = false
+    await scheduled.at(-1).callback()
+
+    assert.equal(calls, 1)
+    assert.equal(scheduled.length, 1)
+    assert.equal(pagehideHandlers.size, 0)
+    assert.deepEqual(cleared, [1])
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch

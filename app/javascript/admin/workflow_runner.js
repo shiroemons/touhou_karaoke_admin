@@ -23,6 +23,16 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
     let pollInFlight = false
     let pollTimer
     let pollingStopped = false
+    let pagehideHandler
+
+    const removePagehideHandler = () => {
+      if (!pagehideHandler) return
+
+      window.removeEventListener?.("pagehide", pagehideHandler)
+      pagehideHandler = undefined
+    }
+
+    const runnerIsMounted = () => runner.isConnected !== false
 
     const applyStatus = (payload) => {
       const currentStep = payload.workflow?.current_step
@@ -106,12 +116,22 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
     }
 
     const stopPolling = () => {
+      if (pollingStopped) return
+
       pollingStopped = true
-      if (pollTimer) window.clearTimeout(pollTimer)
+      if (pollTimer !== undefined) {
+        window.clearTimeout(pollTimer)
+        pollTimer = undefined
+      }
+      removePagehideHandler()
     }
 
     const poll = async () => {
       if (pollingStopped || pollInFlight) return
+      if (!runnerIsMounted()) {
+        stopPolling()
+        return
+      }
 
       pollInFlight = true
       try {
@@ -128,6 +148,10 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         }
 
         const payload = await response.json()
+        if (pollingStopped || !runnerIsMounted()) {
+          stopPolling()
+          return
+        }
         if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
           throw new Error("運用フロー進捗の形式が不正です。")
         }
@@ -143,6 +167,11 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         }
         if (payload.state === "completed" || payload.state === "failed") stopPolling()
       } catch (error) {
+        if (pollingStopped || !runnerIsMounted()) {
+          stopPolling()
+          return
+        }
+
         if (error.status === 404) {
           applyConnectionState({
             state: "unknown",
@@ -183,6 +212,8 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       }
     }
 
+    pagehideHandler = () => stopPolling()
+    window.addEventListener?.("pagehide", pagehideHandler, { once: true })
     poll()
   })
 }
