@@ -12,6 +12,7 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'カラオケ楽曲紐づけ'
+      assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ楽曲紐づけ一覧"]'
       assert_select 'a.admin-nav-link-active[aria-current="page"]', text: /カラオケ楽曲紐づけ/
       KaraokeSongBulkEditor::COLUMNS.each do |column|
         assert_select 'th[scope="col"][title=?]', column, text: KaraokeSongTsvColumns.label(column)

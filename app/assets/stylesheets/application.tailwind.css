@@ -2565,6 +2565,11 @@ body[data-admin-navigation="loading"] .admin-main {
   width: 100%;
 }
 
+.admin-table-wrap:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .admin-result-summary {
   align-items: center;
   color: color-mix(in oklab, var(--color-base-content) 64%, transparent);

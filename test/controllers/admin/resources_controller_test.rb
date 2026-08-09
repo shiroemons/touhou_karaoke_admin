@@ -980,6 +980,7 @@ module Admin
 
       assert_response :success
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信曲をキーワード検索"]'
+      assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ配信曲一覧"]'
       assert_select 'tbody tr', 0
       assert_select '.admin-empty-state.alert[role="status"]'
       assert_select '.admin-empty-state p', text: '条件に一致するデータがありません'
