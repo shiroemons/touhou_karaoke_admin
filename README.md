@@ -30,22 +30,26 @@
 
 ## 技術スタック
 
-- Ruby 4.0.5
-- Rails 8.1.x
-- PostgreSQL 18
-- Solid Queue
+- Ruby 4.0.6
+- Rails 8.1.3.1
+- PostgreSQL 18.4
+- Solid Queue 1.6
 - Pundit
 - Ransack
 - Algolia Search
 - Tailwind CSS 4 / daisyUI 5
 - esbuild
-- Node.js 24 / Yarn 1.22.22
+- Node.js 24 LTS / Yarn 4.18.0
 - Minitest
 - RuboCop / rubocop-rails / rubocop-performance
 
 ## 開発環境
 
 このプロジェクトは **devbox** を標準の開発環境として使います。Docker 環境も代替手段として残していますが、通常の開発・テスト・Lint・DB 操作は `make` ターゲット経由で実行してください。
+
+Node.js は24系LTSを対象にしています。CIは24.19.0を固定し、DockerはNodeSourceの24系最新パッチ（更新時の検証値は24.19.0）、Devboxはカタログで提供される`nodejs-slim` 24.18.1を使います。YarnはCorepack 0.35.0経由で4.18.0を使用し、依存関係の再現には`yarn install --immutable`を使います。
+
+DevboxのRuby 4.0.6パッケージには`x86_64-darwin`出力がないため、Intel MacはDocker環境を使用してください。Apple Silicon macOSと`aarch64-linux` / `x86_64-linux`は`devbox.lock`の対象です。
 
 ### devbox のインストール
 
@@ -217,6 +221,30 @@ test/                  # Minitest
 
 Docker 環境を使う場合は、コマンドに `docker-` プレフィックスを付けて実行します。
 
+### PostgreSQL 18のvolume移行
+
+PostgreSQL 18では公式イメージのデータディレクトリが変更されたため、named volumeは`/var/lib/postgresql`へマウントします。旧設定ではnamed volumeを`/var/lib/postgresql/data`へマウントしていても、実際のPGDATAが別の匿名volumeに置かれている可能性があります。推測でvolumeを付け替えず、旧コンテナを削除する前に次の順で移行してください。
+
+1. 稼働中の旧コンテナで実際のデータディレクトリとmountを確認します。
+
+```shell
+docker compose exec postgres-18 psql -U postgres -d postgres -c 'SHOW data_directory;'
+docker inspect "$(docker compose ps -q postgres-18)" --format '{{json .Mounts}}'
+```
+
+2. webとジョブからの書き込みを止めてから、primary DB、Solid Queue DB、ロール定義を退避します。`make docker-db-dump`はコンテナのmountに依存せずホストの`tmp/data`へstreamし、両方のcustom archiveを`pg_restore --list`で検証してから既存ファイルを置き換えます。
+
+```shell
+docker compose stop web
+make docker-db-dump
+ls -lh tmp/data/development-primary.bak tmp/data/development-queue.bak tmp/data/globals.sql
+```
+
+3. `docker compose down`ではvolumeを残します。移行と復元を確認するまで`docker compose down -v`、volume削除、`docker volume prune`を実行しないでください。
+4. 新しいPostgreSQLを起動し、`make docker-db-restore`でprimary DBとSolid Queue DBを復元します。このターゲットは対象の開発DBをdrop/createして空のDBへ復元します。`globals.sql`は自動復元しないため、独自ロールがある場合だけ内容を確認して手動適用してください。
+
+既存clusterに`POSTGRES_PASSWORD`を設定しても、作成済みロールのパスワードは変更されません。旧clusterをそのまま再利用する場合は、認証設定とロールのパスワードを別途確認してください。
+
 ### 初回セットアップ
 
 ```shell
@@ -228,6 +256,8 @@ make docker-init
 ```shell
 make docker-server
 ```
+
+既定では`127.0.0.1:3000`だけに公開します。別ホストから接続する場合は、Basic認証も設定したうえで`WEB_BIND_ADDRESS`を明示してください。
 
 ### Docker コマンド
 

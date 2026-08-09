@@ -23,7 +23,7 @@ Docker alternatives exist with the `docker-` prefix, such as `make docker-minite
 
 ## Coding Style & Naming Conventions
 
-Target Ruby `4.0.3`, Node `>=24 <25`, and Yarn `1.22.22`. Follow Rails conventions: `snake_case` files and methods, `CamelCase` classes/modules, and REST-style controller actions. Keep admin behavior inside existing resource, policy, helper, and service boundaries.
+Target Ruby `4.0.6`, Node `>=24 <25`, and Yarn `4.18.0`. Follow Rails conventions: `snake_case` files and methods, `CamelCase` classes/modules, and REST-style controller actions. Keep admin behavior inside existing resource, policy, helper, and service boundaries.
 
 RuboCop, `rubocop-rails`, and `rubocop-performance` define Ruby style. Run `make rubocop` before committing, or `make rubocop-correct` for safe automatic fixes.
 
