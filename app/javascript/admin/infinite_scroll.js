@@ -1,6 +1,25 @@
 const adminInfiniteScrollBaseUrl = () =>
   typeof window !== "undefined" && window.location?.origin ? window.location.origin : "http://admin.example.test"
 
+const ADMIN_INFINITE_SCROLL_TIMEOUT_MS = 15000
+
+const createInfiniteScrollRequestTimeout = (controller, timeoutMs = ADMIN_INFINITE_SCROLL_TIMEOUT_MS) => {
+  const setTimeoutFunction = globalThis.window?.setTimeout || globalThis.setTimeout
+  const clearTimeoutFunction = globalThis.window?.clearTimeout || globalThis.clearTimeout
+  if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
+
+  let timedOut = false
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
+
 const validateAdminInfiniteScrollPayload = (payload, currentUrl) => {
   if (
     !payload ||
@@ -52,6 +71,7 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
     if (status) status.textContent = "読み込み中..."
     const controller = typeof AbortController === "function" ? new AbortController() : undefined
     requestController = controller
+    const requestTimeout = controller ? createInfiniteScrollRequestTimeout(controller) : undefined
 
     try {
       const response = await fetch(nextUrl, {
@@ -65,6 +85,7 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
       if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
       const payload = await response.json()
+      if (requestTimeout?.timedOut()) throw new Error("一覧の読み込みがタイムアウトしました。")
       if (!isCurrentSentinel()) return
       validateAdminInfiniteScrollPayload(payload, nextUrl)
       const followingUrl = payload.next_url || ""
@@ -77,11 +98,12 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
       if (visibleCount) visibleCount.textContent = rows.querySelectorAll("tr").length.toLocaleString()
       if (status) status.textContent = followingUrl ? "さらに読み込みます" : "すべて読み込みました"
     } catch (error) {
-      if (error?.name === "AbortError" || !isCurrentSentinel()) return
+      if ((error?.name === "AbortError" && !requestTimeout?.timedOut()) || !isCurrentSentinel()) return
 
       if (status) status.textContent = "読み込みに失敗しました。再試行してください。"
       if (retryButton) retryButton.hidden = false
     } finally {
+      requestTimeout?.clear()
       sentinel.setAttribute("aria-busy", "false")
       loading = false
       if (requestController === controller) requestController = undefined

@@ -129,6 +129,45 @@ test("infinite scroll exposes a retry action after a failed request", async () =
   }
 })
 
+test("infinite scroll exposes a retry action after a request timeout", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let timeoutCallback
+  let clearedTimeout
+  const fixture = buildFixture()
+
+  globalThis.window = {
+    clearTimeout: (timeoutId) => { clearedTimeout = timeoutId },
+    setTimeout: (callback) => {
+      timeoutCallback = callback
+      return "timeout-id"
+    },
+  }
+  globalThis.document = fixture.document
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+
+  try {
+    setupAdminInfiniteScroll()
+    fixture.observer().callback([{ isIntersecting: true }])
+    assert.equal(fixture.sentinel.attributes["aria-busy"], "true")
+
+    timeoutCallback()
+    await waitForAsyncWork()
+
+    assert.equal(fixture.status.textContent, "読み込みに失敗しました。再試行してください。")
+    assert.equal(fixture.retryButton.hidden, false)
+    assert.equal(fixture.sentinel.attributes["aria-busy"], "false")
+    assert.equal(clearedTimeout, "timeout-id")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
 test("infinite scroll ignores duplicate observer events during a request", async () => {
   const originalDocument = globalThis.document
   const originalFetch = globalThis.fetch
