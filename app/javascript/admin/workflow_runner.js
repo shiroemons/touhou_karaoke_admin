@@ -128,6 +128,10 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         }
 
         const payload = await response.json()
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+          throw new Error("運用フロー進捗の形式が不正です。")
+        }
+
         pollFailureCount = 0
         applyStatus(payload)
         payload.workflow?.steps?.forEach(applyStep)
