@@ -9,6 +9,7 @@ class FakeElement {
     this.eventListeners = {}
     this.focused = false
     this.modalOpen = false
+    this.showModalCalls = 0
   }
 
   addEventListener(type, callback) {
@@ -38,7 +39,12 @@ class FakeElement {
   }
 
   showModal() {
+    this.showModalCalls += 1
     this.modalOpen = true
+  }
+
+  get open() {
+    return this.modalOpen
   }
 }
 
@@ -119,6 +125,11 @@ test("setupAdminAssociationDialogs opens and closes matching dialog", () => {
   trigger.click()
 
   assert.equal(dialog.modalOpen, true)
+  assert.equal(searchableSelectCalls.length, 1)
+
+  trigger.click()
+
+  assert.equal(dialog.showModalCalls, 1)
   assert.equal(searchableSelectCalls.length, 1)
 
   closeButton.click()

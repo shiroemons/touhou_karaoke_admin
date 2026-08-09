@@ -10,6 +10,8 @@ export const setupAdminAssociationDialogs = () => {
 
     document.querySelectorAll(`[data-admin-association-dialog-trigger="${dialogKey}"]`).forEach((trigger) => {
       trigger.addEventListener("click", () => {
+        if (dialog.open) return
+
         setupAdminSearchableSelects()
         rememberAdminDialogFocus(dialog)
         dialog.showModal()
