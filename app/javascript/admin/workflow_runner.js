@@ -1,3 +1,7 @@
+const POLL_INTERVAL_MS = 1500
+const MAX_POLL_RETRIES = 3
+const MAX_POLL_DELAY_MS = 10000
+
 export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
   document.querySelectorAll("[data-admin-workflow-runner]").forEach((runner) => {
     if (runner.dataset.initialized === "true") return
@@ -15,6 +19,10 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
     const resultsPanel = document.querySelector("[data-admin-workflow-results]")
     const resultsList = resultsPanel?.querySelector("[data-admin-workflow-result-list]")
     let completionNotified = runner.dataset.adminWorkflowState === "completed"
+    let pollFailureCount = 0
+    let pollInFlight = false
+    let pollTimer
+    let pollingStopped = false
 
     const applyStatus = (payload) => {
       const currentStep = payload.workflow?.current_step
@@ -89,7 +97,23 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       })
     }
 
+    const applyConnectionState = ({ state, status, label, current }) => {
+      runner.dataset.adminWorkflowState = state
+      if (statusLabel) statusLabel.textContent = label
+      if (statusState) statusState.textContent = status
+      if (statusCurrent) statusCurrent.textContent = current
+      if (currentStepLabel) currentStepLabel.textContent = `現在: ${current}`
+    }
+
+    const stopPolling = () => {
+      pollingStopped = true
+      if (pollTimer) window.clearTimeout(pollTimer)
+    }
+
     const poll = async () => {
+      if (pollingStopped || pollInFlight) return
+
+      pollInFlight = true
       try {
         const response = await fetch(runner.dataset.adminWorkflowProgressUrl, {
           headers: {
@@ -97,9 +121,14 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
             "X-Requested-With": "XMLHttpRequest",
           },
         })
-        if (!response.ok) return
+        if (!response.ok) {
+          const error = new Error(`運用フロー進捗の取得に失敗しました（HTTP ${response.status}）。`)
+          error.status = response.status
+          throw error
+        }
 
         const payload = await response.json()
+        pollFailureCount = 0
         applyStatus(payload)
         payload.workflow?.steps?.forEach(applyStep)
         applyResults(payload)
@@ -108,15 +137,48 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
           completionNotified = true
           showFlash?.(payload.label || `${payload.workflow?.workflow_label || "運用フロー"}が完了しました。`)
         }
-        if (payload.state === "completed" || payload.state === "failed") return
-        window.setTimeout(poll, 1500)
+        if (payload.state === "completed" || payload.state === "failed") stopPolling()
       } catch (error) {
-        console.error(error)
-        window.setTimeout(poll, 3000)
+        if (error.status === 404) {
+          applyConnectionState({
+            state: "unknown",
+            status: "状態不明",
+            label: "実行状況が見つかりません。画面を再読み込みしてください。",
+            current: "確認できません",
+          })
+          stopPolling()
+          return
+        }
+
+        pollFailureCount += 1
+        if (pollFailureCount >= MAX_POLL_RETRIES) {
+          applyConnectionState({
+            state: "failed",
+            status: "エラー",
+            label: "実行状況を確認できません。画面を再読み込みしてください。",
+            current: "確認できません",
+          })
+          stopPolling()
+          return
+        }
+
+        applyConnectionState({
+          state: "retrying",
+          status: "再試行中",
+          label: `実行状況を確認できません。${pollFailureCount}/${MAX_POLL_RETRIES}回目の再試行を待っています...`,
+          current: "再接続待ち",
+        })
+      } finally {
+        pollInFlight = false
+        if (pollingStopped) return
+
+        const retryDelay = pollFailureCount > 0
+          ? Math.min(MAX_POLL_DELAY_MS, POLL_INTERVAL_MS * (2 ** (pollFailureCount - 1)))
+          : POLL_INTERVAL_MS
+        pollTimer = window.setTimeout(poll, retryDelay)
       }
     }
 
     poll()
   })
 }
-

@@ -47,6 +47,11 @@ module Admin
     def progress
       WorkflowDefinition.fetch(params[:workflow_key])
 
+      unless OperationProgress.known?(params[:run_id])
+        render json: OperationProgress.unknown_payload, status: :not_found
+        return
+      end
+
       render json: WorkflowRunProgress.read(params[:run_id])
     end
 

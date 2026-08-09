@@ -261,6 +261,27 @@ module Admin
       assert_equal 3, payload.dig(:workflow, :total_steps)
     end
 
+    test 'workflow progress endpoint returns not found for an unknown run id' do
+      run_id = SecureRandom.uuid
+
+      get admin_workflow_progress_path('dam', run_id:)
+
+      assert_response :not_found
+      assert_equal 'unknown', response.parsed_body['state']
+      assert_equal '状態不明', response.parsed_body['status']
+    end
+
+    test 'workflow progress endpoint returns the current run payload' do
+      run_id = SecureRandom.uuid
+      WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('dam'))
+
+      get admin_workflow_progress_path('dam', run_id:)
+
+      assert_response :success
+      assert_equal 'queued', response.parsed_body['state']
+      assert_equal 'DAM', response.parsed_body.dig('workflow', 'workflow_label')
+    end
+
     test 'workflow run redirects to active overlapping run instead of starting duplicate' do
       run_id = SecureRandom.uuid
       WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('full'))

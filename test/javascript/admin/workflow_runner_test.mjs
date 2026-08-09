@@ -1,0 +1,147 @@
+import assert from "node:assert/strict"
+import { readFile } from "node:fs/promises"
+import { test } from "node:test"
+
+const source = await readFile(new URL("../../../app/javascript/admin/workflow_runner.js", import.meta.url), "utf8")
+const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
+const { setupAdminWorkflowRunner } = await import(moduleUrl)
+
+class FakeElement {
+  constructor({ dataset = {}, queryResults = {} } = {}) {
+    this.dataset = dataset
+    this.queryResults = queryResults
+    this.textContent = ""
+    this.hidden = false
+  }
+
+  querySelector(selector) {
+    return this.queryResults[selector] || null
+  }
+
+  querySelectorAll() {
+    return []
+  }
+}
+
+const buildFixture = ({ progressUrl = "/admin/workflow/dam/progress?run_id=run" } = {}) => {
+  const runner = new FakeElement({
+    dataset: {
+      adminWorkflowRunId: "run",
+      adminWorkflowProgressUrl: progressUrl,
+      adminWorkflowState: "running",
+    },
+  })
+  const statusPanel = new FakeElement()
+  const statusLabel = new FakeElement()
+  const statusState = new FakeElement()
+  const statusPercent = new FakeElement()
+  const statusCurrent = new FakeElement()
+  const statusCount = new FakeElement()
+  const currentStepLabel = new FakeElement()
+  const document = {
+    querySelectorAll: () => [runner],
+    querySelector: (selector) => (selector === "[data-admin-workflow-status]" ? statusPanel : null),
+  }
+  statusPanel.querySelector = (selector) => ({
+    "[data-admin-workflow-status-label]": statusLabel,
+    "[data-admin-workflow-status-state]": statusState,
+    "[data-admin-workflow-status-percent]": statusPercent,
+    "[data-admin-workflow-status-current]": statusCurrent,
+    "[data-admin-workflow-status-count]": statusCount,
+  })[selector] || null
+  runner.querySelector = (selector) => (selector === "[data-admin-workflow-current-step]" ? currentStepLabel : null)
+
+  return {
+    currentStepLabel,
+    document,
+    runner,
+    statusLabel,
+    statusState,
+    statusCurrent,
+    statusPercent,
+  }
+}
+
+const waitForPoll = () => new Promise((resolve) => setImmediate(resolve))
+
+test("workflow runner stops polling and displays an unknown state for a missing run", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let scheduledPolls = 0
+
+  globalThis.fetch = async () => ({ ok: false, status: 404 })
+  globalThis.window = {
+    setTimeout: () => {
+      scheduledPolls += 1
+      return scheduledPolls
+    },
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(fixture.runner.dataset.adminWorkflowState, "unknown")
+    assert.equal(fixture.statusState.textContent, "状態不明")
+    assert.match(fixture.statusLabel.textContent, /再読み込みしてください/)
+    assert.equal(fixture.statusCurrent.textContent, "確認できません")
+    assert.equal(scheduledPolls, 0)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("workflow runner retries transient failures with bounded backoff", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let calls = 0
+  const scheduled = []
+
+  globalThis.fetch = async () => {
+    calls += 1
+    throw new Error("network error")
+  }
+  globalThis.window = {
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(calls, 1)
+    assert.equal(fixture.statusState.textContent, "再試行中")
+    assert.match(fixture.statusLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1500)
+
+    await scheduled.at(-1).callback()
+    await waitForPoll()
+    assert.equal(calls, 2)
+    assert.equal(scheduled.at(-1).delay, 3000)
+
+    await scheduled.at(-1).callback()
+    await waitForPoll()
+    assert.equal(calls, 3)
+    assert.equal(fixture.runner.dataset.adminWorkflowState, "failed")
+    assert.equal(fixture.statusState.textContent, "エラー")
+    assert.match(fixture.statusLabel.textContent, /再読み込みしてください/)
+    assert.equal(scheduled.length, 2)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
