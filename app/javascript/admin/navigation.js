@@ -108,9 +108,10 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
     })
 
     if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+    if (adminResourceContentController !== controller) return
 
     const payload = await response.json()
-    if (!currentContent) return
+    if (adminResourceContentController !== controller || !currentContent) return
 
     currentContent.outerHTML = payload.html
     if (pushState) window.history.pushState({}, "", browserUrl(url))

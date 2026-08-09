@@ -94,6 +94,47 @@ test("resource content navigation aborts stale requests and preserves the latest
   }
 })
 
+test("resource content navigation ignores a stale response even when abort is ignored", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const content = new FakeContent()
+  content.outerHTML = "<main>initial</main>"
+  const requests = []
+
+  globalThis.document = { querySelector: () => content }
+  globalThis.window = {
+    location: { origin: "http://example.test" },
+    history: { pushState: () => {} },
+  }
+  globalThis.fetch = (url, options) => new Promise((resolve) => {
+    requests.push({ options, resolve, url })
+  })
+
+  try {
+    const firstRequestPromise = replaceAdminResourceContent("/admin/songs?q=old")
+    const secondRequestPromise = replaceAdminResourceContent("/admin/songs?q=new")
+
+    requests[0].resolve({
+      ok: true,
+      json: async () => ({ html: "<main>old</main>" }),
+    })
+    await firstRequestPromise
+    assert.equal(content.outerHTML, "<main>initial</main>")
+
+    requests[1].resolve({
+      ok: true,
+      json: async () => ({ html: "<main>new</main>" }),
+    })
+    await secondRequestPromise
+    assert.equal(content.outerHTML, "<main>new</main>")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
 test("resource content navigation restores focus to the replaced form control", async () => {
   const originalDocument = globalThis.document
   const originalFetch = globalThis.fetch
