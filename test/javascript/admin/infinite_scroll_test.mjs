@@ -7,7 +7,8 @@ const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("b
 const { setupAdminInfiniteScroll } = await import(moduleUrl)
 
 class FakeElement {
-  constructor({ dataset = {}, hidden = false } = {}) {
+  constructor({ attributes = {}, dataset = {}, hidden = false } = {}) {
+    this.attributes = attributes
     this.dataset = dataset
     this.hidden = hidden
     this.textContent = ""
@@ -40,6 +41,10 @@ class FakeElement {
 
   querySelectorAll() {
     return this.rows
+  }
+
+  setAttribute(name, value) {
+    this.attributes[name] = value
   }
 }
 
@@ -101,6 +106,7 @@ test("infinite scroll exposes a retry action after a failed request", async () =
     assert.equal(calls, 1)
     assert.equal(fixture.status.textContent, "読み込みに失敗しました。再試行してください。")
     assert.equal(fixture.retryButton.hidden, false)
+    assert.equal(fixture.sentinel.attributes["aria-busy"], "false")
 
     fixture.retryButton.click()
     await waitForAsyncWork()
@@ -110,6 +116,7 @@ test("infinite scroll exposes a retry action after a failed request", async () =
     assert.equal(fixture.retryButton.hidden, true)
     assert.equal(fixture.sentinel.hidden, true)
     assert.equal(fixture.status.textContent, "すべて読み込みました")
+    assert.equal(fixture.sentinel.attributes["aria-busy"], "false")
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
@@ -138,10 +145,65 @@ test("infinite scroll ignores duplicate observer events during a request", async
     fixture.observer().callback([{ isIntersecting: true }])
 
     assert.equal(calls, 1)
-    resolveFetch({ ok: true, json: async () => ({ html: "<tr></tr>", next_url: "/last" }) })
+    resolveFetch({ ok: true, json: async () => ({ html: "<tr></tr>", next_url: "/admin/last" }) })
     await waitForAsyncWork()
     assert.equal(calls, 1)
-    assert.equal(fixture.sentinel.dataset.nextUrl, "/last")
+    assert.equal(fixture.sentinel.dataset.nextUrl, "/admin/last")
+    assert.equal(fixture.sentinel.attributes["aria-busy"], "false")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    delete globalThis.IntersectionObserver
+  }
+})
+
+test("infinite scroll rejects malformed payloads without changing the rows", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const fixture = buildFixture()
+
+  globalThis.document = fixture.document
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ html: 42, next_url: null }),
+  })
+
+  try {
+    setupAdminInfiniteScroll()
+    fixture.observer().callback([{ isIntersecting: true }])
+    await waitForAsyncWork()
+
+    assert.deepEqual(fixture.rows.insertedHtml, [])
+    assert.equal(fixture.sentinel.dataset.nextUrl, "/next")
+    assert.equal(fixture.retryButton.hidden, false)
+    assert.equal(fixture.status.textContent, "読み込みに失敗しました。再試行してください。")
+    assert.equal(fixture.sentinel.attributes["aria-busy"], "false")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    delete globalThis.IntersectionObserver
+  }
+})
+
+test("infinite scroll rejects a non-advancing next URL", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const fixture = buildFixture()
+
+  globalThis.document = fixture.document
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ html: "<tr></tr>", next_url: "/next" }),
+  })
+
+  try {
+    setupAdminInfiniteScroll()
+    fixture.observer().callback([{ isIntersecting: true }])
+    await waitForAsyncWork()
+
+    assert.deepEqual(fixture.rows.insertedHtml, [])
+    assert.equal(fixture.sentinel.dataset.nextUrl, "/next")
+    assert.equal(fixture.retryButton.hidden, false)
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch

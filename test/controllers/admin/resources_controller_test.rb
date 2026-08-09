@@ -987,7 +987,7 @@ module Admin
       assert_response :success
       assert_select 'tbody tr', 24
       assert_select '.admin-pagination', false
-      assert_select '.admin-table-wrap .admin-infinite-scroll[role="status"][aria-live="polite"][data-next-url]'
+      assert_select '.admin-table-wrap .admin-infinite-scroll[role="status"][aria-live="polite"][aria-atomic="true"][aria-busy="false"][data-next-url]'
       assert_select 'a.admin-view-mode-button-active', text: '無限スクロール'
     end
 

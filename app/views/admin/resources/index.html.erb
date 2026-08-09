@@ -142,6 +142,8 @@
       class="admin-infinite-scroll"
       role="status"
       aria-live="polite"
+      aria-atomic="true"
+      aria-busy="false"
       data-admin-infinite-scroll
       data-next-url="<%= @next_infinite_scroll_url %>"
       <%= "hidden" if @next_infinite_scroll_url.blank? %>>
