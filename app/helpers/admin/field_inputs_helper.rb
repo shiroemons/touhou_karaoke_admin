@@ -7,7 +7,7 @@ module Admin
       when :belongs_to_select
         form.select(field.name, field_options(field), { include_blank: true }, input_options)
       when :has_many_select
-        admin_has_many_select_input(form, field)
+        admin_has_many_select_input(form, field, input_options)
       when :number
         form.number_field(field.name, input_options)
       when :boolean
@@ -19,31 +19,32 @@ module Admin
       end
     end
 
-    def admin_has_many_select_input(form, field)
+    def admin_has_many_select_input(form, field, input_options = {})
       selected_values = Array(form.object.public_send(field.name)).map(&:to_s)
       select_ids = admin_has_many_select_ids(form, field)
+      search_options = input_options.dup
+      custom_aria = search_options.delete(:aria) || {}
+      custom_describedby = custom_aria[:describedby] || custom_aria['describedby']
+      describedby = [select_ids[:status], custom_describedby].compact.flat_map { |value| value.to_s.split(/\s+/) }.reject(&:empty?).uniq.join(' ')
+
+      search_options[:class] = ['admin-input admin-searchable-select-search', search_options[:class]].flatten.compact
+      search_options[:data] = (search_options.delete(:data) || {}).merge(admin_searchable_select_search: true)
+      search_options[:aria] = {
+        label: "#{field.label}を検索",
+        controls: select_ids[:options],
+        expanded: false,
+        haspopup: 'listbox',
+        describedby:
+      }.merge(custom_aria)
+      search_options[:aria][:describedby] = describedby
+      search_options.merge!(name: nil, id: select_ids[:search], placeholder: "#{field.label}を検索", autocomplete: 'off')
 
       content_tag(:div, id: select_ids[:select], class: 'admin-searchable-select', data: { admin_searchable_select: true }) do
         safe_join(
           [
             hidden_field_tag("#{form.object_name}[#{field.name}][]", '', id: nil),
             admin_has_many_select_values(form, field, selected_values),
-            form.search_field(
-              :"#{field.name}_search",
-              name: nil,
-              placeholder: "#{field.label}を検索",
-              autocomplete: 'off',
-              class: 'admin-input admin-searchable-select-search',
-              data: { admin_searchable_select_search: true },
-              id: select_ids[:search],
-              aria: {
-                label: "#{field.label}を検索",
-                controls: select_ids[:options],
-                expanded: false,
-                haspopup: 'listbox',
-                describedby: select_ids[:status]
-              }
-            ),
+            form.search_field(:"#{field.name}_search", search_options),
             content_tag(:div, '', class: 'admin-searchable-select-chips', data: { admin_searchable_select_chips: true }),
             admin_has_many_select_options(field, selected_values, select_ids[:options]),
             content_tag(:p, '', id: select_ids[:status], class: 'admin-searchable-select-status', role: 'status', aria: { live: 'polite', atomic: true }, data: { admin_searchable_select_status: true })
