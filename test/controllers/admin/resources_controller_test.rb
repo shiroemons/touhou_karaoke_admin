@@ -990,12 +990,28 @@ module Admin
       assert_response :success
       assert_select 'details.admin-filter-disclosure'
       assert_select 'details.admin-filter-disclosure[open]', false
+      assert_select 'input#admin-filter-panel-state[data-admin-filter-disclosure-state][value="closed"]'
 
       get admin_songs_path, params: { filters: { karaoke_type: 'dam' } }
 
       assert_response :success
       assert_select 'details.admin-filter-disclosure[open]'
       assert_select '.admin-filter-active-count', text: '1件指定中'
+      assert_select 'input#admin-filter-panel-state[value="open"]'
+    end
+
+    test 'filter disclosure state overrides active filter default' do
+      get admin_songs_path, params: { filters: { karaoke_type: 'dam' }, filter_panel: 'closed' }
+
+      assert_response :success
+      assert_select 'details.admin-filter-disclosure[open]', false
+      assert_select 'input#admin-filter-panel-state[value="closed"]'
+
+      get admin_songs_path, params: { filter_panel: 'open' }
+
+      assert_response :success
+      assert_select 'details.admin-filter-disclosure[open]'
+      assert_select 'input#admin-filter-panel-state[value="open"]'
     end
 
     test 'presence filter choices identify their service group' do

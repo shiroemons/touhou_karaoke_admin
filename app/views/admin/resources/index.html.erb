@@ -51,7 +51,12 @@
     </div>
 
     <% if @resource.filters.present? %>
-      <details class="admin-filter-disclosure" <%= "open" if @active_filters.present? %>>
+      <% filter_disclosure_open = admin_filter_disclosure_open?(@active_filters) %>
+      <%= hidden_field_tag :filter_panel,
+                           filter_disclosure_open ? 'open' : 'closed',
+                           id: 'admin-filter-panel-state',
+                           data: { admin_filter_disclosure_state: true } %>
+      <details class="admin-filter-disclosure" data-admin-filter-disclosure="true" <%= "open" if filter_disclosure_open %>>
         <summary class="admin-filter-summary">
           <%= admin_icon(:filter) %>
           <span>絞り込み</span>

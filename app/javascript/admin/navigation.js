@@ -4,6 +4,8 @@ const mobileNavigationToggleSelector = "[data-admin-mobile-navigation-toggle]"
 const mobileNavigationToggleLabelSelector = "[data-admin-mobile-navigation-toggle-label]"
 const mobileNavigationFirstLinkSelector = ".admin-nav-link"
 const mobileNavigationOpenSelector = ".admin-sidebar[data-admin-mobile-navigation-open=\"true\"]"
+const adminFilterDisclosureSelector = "[data-admin-filter-disclosure]"
+const adminFilterDisclosureStateSelector = "[data-admin-filter-disclosure-state]"
 const ADMIN_REQUEST_TIMEOUT_MS = 15000
 
 export const isAdminAbortError = (error) => error?.name === "AbortError"
@@ -84,6 +86,13 @@ const browserUrl = (url) => {
   return nextUrl
 }
 
+const adminFilterDisclosureUrl = (url) => {
+  const nextUrl = new URL(url, window.location.origin)
+  const disclosure = document.querySelector(adminFilterDisclosureSelector)
+  if (disclosure) nextUrl.searchParams.set("filter_panel", disclosure.open ? "open" : "closed")
+  return nextUrl
+}
+
 const validateAdminResourceContentPayload = (payload) => {
   if (!payload || typeof payload !== "object" || typeof payload.html !== "string" || payload.html.trim().length === 0) {
     throw new Error("一覧データの形式が不正です。")
@@ -121,6 +130,7 @@ const restoreResourceContentFocus = (descriptor) => {
 export const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
   if (adminResourceContentController) adminResourceContentController.abort()
 
+  const nextUrl = adminFilterDisclosureUrl(url)
   const controller = new AbortController()
   adminResourceContentController = controller
   const requestTimeout = createAdminRequestTimeout(controller)
@@ -129,7 +139,7 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
   currentContent?.setAttribute("aria-busy", "true")
 
   try {
-    const response = await fetch(adminContentUrl(url), {
+    const response = await fetch(adminContentUrl(nextUrl), {
       headers: {
         Accept: "application/json",
         "X-Requested-With": "XMLHttpRequest",
@@ -144,7 +154,7 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
     if (adminResourceContentController !== controller || !currentContent) return
 
     currentContent.outerHTML = payload.html
-    if (pushState) window.history.pushState({}, "", browserUrl(url))
+    if (pushState) window.history.pushState({}, "", browserUrl(nextUrl))
     setupPageBehaviors()
     restoreResourceContentFocus(focusDescriptor)
   } catch (error) {
@@ -182,7 +192,7 @@ export const setupAdminAsyncIndex = () => {
       if (isAdminAbortError(error)) return
 
       console.error(error)
-      window.location.href = link.href
+      window.location.href = adminFilterDisclosureUrl(link.href)
     })
   })
 
@@ -350,6 +360,17 @@ export const setupAdminFilterForms = () => {
     if (form.dataset.initialized === "true") return
 
     form.dataset.initialized = "true"
+    const disclosure = form.querySelector(adminFilterDisclosureSelector)
+    const disclosureState = form.querySelector(adminFilterDisclosureStateSelector)
+    if (disclosure && disclosureState) {
+      const syncDisclosureState = () => {
+        disclosureState.value = disclosure.open ? "open" : "closed"
+      }
+
+      disclosure.addEventListener("toggle", syncDisclosureState)
+      syncDisclosureState()
+    }
+
     form.querySelectorAll("[data-admin-auto-submit]").forEach((input) => {
       input.addEventListener("change", () => {
         form.requestSubmit()

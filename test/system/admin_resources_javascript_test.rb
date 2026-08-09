@@ -76,4 +76,20 @@ class AdminResourcesJavascriptTest < ApplicationSystemTestCase
       assert_no_selector '[data-admin-operation-submit][disabled]'
     end
   end
+
+  test 'filter disclosure stays open when a selection returns to the default' do
+    visit admin_songs_path
+
+    find('[data-admin-filter-disclosure] summary').click
+    assert_selector '[data-admin-filter-disclosure][open]'
+
+    find('label[for="filters_karaoke_type_dam"]').click
+    assert_selector '[data-admin-filter-disclosure][open]'
+    assert_equal 'open', find('input#admin-filter-panel-state', visible: :all).value
+
+    find('label[for="filters_karaoke_type_all"]').click
+    assert_selector '[data-admin-filter-disclosure][open]'
+    assert find('#filters_karaoke_type_all', visible: :all).checked?
+    assert_no_selector '.admin-filter-active-count'
+  end
 end

@@ -21,6 +21,17 @@ module Admin
       ]
     end
 
+    def admin_filter_disclosure_open?(active_filters)
+      case params[:filter_panel].to_s
+      when 'open'
+        true
+      when 'closed'
+        false
+      else
+        active_filters.present?
+      end
+    end
+
     private
 
     def admin_filter_control_type(filter)
