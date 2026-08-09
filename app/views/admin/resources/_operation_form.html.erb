@@ -4,33 +4,35 @@
 <% required_inputs = operation.inputs.select { |input| input.fetch(:required, true) } %>
 <% submit_disabled = selection_required || required_inputs.present? %>
 <% operation_progress_id = SecureRandom.uuid %>
-<%= form_with url: admin_operation_path(resource, record, operation.key), method: :post, multipart: operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: operation.confirmation.presence || "#{operation.label}を実行します。よろしいですか？", admin_operation_action: operation.action_key, admin_operation_async: operation.async, admin_operation_estimated_seconds: operation.estimated_seconds, admin_operation_label: operation.label, admin_operation_progress_url: admin_operation_progress_path(resource, record, operation.key, operation_progress_id), admin_operation_resource_label: resource.label, admin_operation_inline_confirmation: modal, admin_operation_selection: supports_selection, admin_operation_selection_required: selection_required } do |form| %>
-  <%= hidden_field_tag :operation_progress_id, operation_progress_id %>
+<% operation_dom_suffix = "#{operation.key}-#{operation_progress_id}".gsub(/[^a-zA-Z0-9_-]/, '-') %>
+<%= form_with url: admin_operation_path(resource, record, operation.key), method: :post, multipart: operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: operation.confirmation.presence || "#{operation.label}を実行します。よろしいですか？", admin_operation_action: operation.action_key, admin_operation_async: operation.async, admin_operation_estimated_seconds: operation.estimated_seconds, admin_operation_label: operation.label, admin_operation_progress_url: admin_operation_progress_path(resource, record, operation.key, operation_progress_id), admin_operation_resource_label: resource.label, admin_operation_inline_confirmation: modal, admin_operation_selection: supports_selection, admin_operation_selection_required: selection_required, admin_operation_target_scope: admin_operation_target_scope(operation, record:), admin_operation_target_label: admin_operation_target_label(operation, record:) } do |form| %>
+  <%= hidden_field_tag :operation_progress_id, operation_progress_id, id: "admin-operation-progress-#{operation_dom_suffix}" %>
   <% if supports_selection %>
     <div class="admin-operation-selection-summary alert <%= selection_required ? "alert-warning" : "alert-info" %>" data-admin-operation-selection-summary>
       <strong><span data-admin-operation-selection-count>0</span>件選択中</strong>
-      <span data-admin-operation-selection-note><%= selection_required ? "対象を選択してください。" : "未選択の場合は現在の検索・絞り込み結果全体を対象にします。" %></span>
+      <span data-admin-operation-selection-note><%= selection_required ? "対象を選択してください。" : "未選択の場合は全件を対象にします。" %></span>
     </div>
     <div data-admin-operation-selected-ids></div>
   <% end %>
 
   <% operation.inputs.each do |input| %>
     <% input_required = input.fetch(:required, true) %>
+    <% input_dom_id = "admin-operation-input-#{operation_dom_suffix}-#{input[:name]}".gsub(/[^a-zA-Z0-9_-]/, '-') %>
     <div class="admin-form-row">
       <div class="admin-form-label-row">
-        <%= form.label "operation_fields_#{input[:name]}", input[:label] %>
+        <%= form.label "operation_fields_#{input[:name]}", input[:label], for: input_dom_id %>
         <span class="admin-form-requirement"><%= input_required ? "必須" : "任意" %></span>
       </div>
       <% if input[:type] == :file %>
-        <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: "operation_fields_#{input[:name]}", class: "file-input file-input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+        <%= file_field_tag "operation_fields[#{input[:name]}]", accept: input[:accept], id: input_dom_id, class: "file-input file-input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
       <% elsif input[:type] == :checkbox %>
         <label class="admin-checkbox-field">
           <%= hidden_field_tag "operation_fields[#{input[:name]}]", "0", id: nil %>
-          <%= check_box_tag "operation_fields[#{input[:name]}]", "1", input.fetch(:checked, false), id: "operation_fields_#{input[:name]}", class: "checkbox checkbox-sm" %>
+          <%= check_box_tag "operation_fields[#{input[:name]}]", "1", input.fetch(:checked, false), id: input_dom_id, class: "checkbox checkbox-sm" %>
           <span><%= input[:description].presence || input[:label] %></span>
         </label>
       <% else %>
-        <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: "operation_fields_#{input[:name]}", placeholder: input[:placeholder], class: "admin-input input input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
+        <%= text_field_tag "operation_fields[#{input[:name]}]", nil, id: input_dom_id, placeholder: input[:placeholder], class: "admin-input input input-bordered w-full", required: true, data: { admin_operation_required_input: true } %>
       <% end %>
     </div>
   <% end %>

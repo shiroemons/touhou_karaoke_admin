@@ -175,6 +175,48 @@ module Admin
       assert_select '.admin-operation-guide-item', { text: /DAM候補をカラオケ楽曲へ登録/, count: 0 }
     end
 
+    test 'collection operation and selection controls use unique DOM ids' do
+      get admin_songs_path, params: {
+        q: 'テスト',
+        sort: 'title',
+        direction: 'asc',
+        filters: { karaoke_type: 'dam' }
+      }
+
+      assert_response :success
+
+      progress_ids = css_select('input[name="operation_progress_id"]').filter_map { |node| node['id'] }
+      assert_equal progress_ids.length, progress_ids.uniq.length
+
+      operation_input_ids = css_select('input[id^="admin-operation-input-"]').pluck('id')
+      assert_equal operation_input_ids.length, operation_input_ids.uniq.length
+
+      operation_label_ids = css_select('label[for^="admin-operation-input-"]').pluck('for')
+      assert_equal operation_input_ids.sort, operation_label_ids.sort
+
+      selected_ids = css_select('input[data-admin-resource-select]').pluck('id')
+      assert_equal selected_ids.length, selected_ids.uniq.length
+      assert(selected_ids.all? { |id| id.start_with?('admin-selected-id-') })
+
+      view_mode_ids = css_select('input[name="view_mode"]').filter_map { |node| node['id'] }
+      assert_equal view_mode_ids.length, view_mode_ids.uniq.length
+    end
+
+    test 'workflow dry run controls are individually associated with their labels' do
+      get admin_workflow_steps_path('dam')
+
+      assert_response :success
+
+      dry_run_ids = css_select('input[type="checkbox"][name="operation_fields[dry_run]"]').pluck('id')
+      label_ids = css_select('label[for^="admin-operation-input-"]').filter_map do |node|
+        node['for'] if node['for'].include?('-dry_run')
+      end
+
+      assert_operator dry_run_ids.length, :>, 1
+      assert_equal dry_run_ids.length, dry_run_ids.uniq.length
+      assert_equal dry_run_ids.sort, label_ids.sort
+    end
+
     test 'cleanup orphan display artists operation renders tsv output checkbox' do
       get operation_admin_display_artists_path(operation: 'cleanup_orphan_display_artists')
 
@@ -1149,7 +1191,7 @@ module Admin
       assert_select 'form[data-admin-operation-form][data-admin-operation-action="FetchDamSong"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-label="DAM楽曲URLから候補を追加"][data-admin-operation-resource-label="DAM楽曲"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
-      assert_select '.admin-form-label-row label[for="operation_fields_dam_song_url"]', text: 'DAM楽曲URL'
+      assert_select '.admin-form-label-row label[for$="-dam_song_url"]', text: 'DAM楽曲URL'
       assert_select '.admin-form-label-row .admin-form-requirement', text: '必須'
       assert_select 'input[name="operation_fields[dam_song_url]"]'
       assert_select 'input[name="operation_progress_id"]', 1
