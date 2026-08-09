@@ -82,24 +82,25 @@ module Admin
     end
 
     def admin_presence_group_filter_row(filter, value, label, active_value)
-      tag.div(class: 'admin-presence-filter-row') do
+      tag.div(class: 'admin-presence-filter-row', role: 'group', aria: { label: label }) do
         tag.span(label, class: 'admin-presence-filter-label') +
           tag.div(class: 'admin-presence-filter-options') do
-            safe_join([
-                        admin_presence_group_filter_choice(filter, value, '', '指定なし', active_value.blank?),
-                        admin_presence_group_filter_choice(filter, value, 'present', 'あり', active_value == 'present'),
-                        admin_presence_group_filter_choice(filter, value, 'missing', 'なし', active_value == 'missing')
-                      ])
+            choices = [
+              { value: '', label: '指定なし', checked: active_value.blank? },
+              { value: 'present', label: 'あり', checked: active_value == 'present' },
+              { value: 'missing', label: 'なし', checked: active_value == 'missing' }
+            ]
+            safe_join(choices.map { |choice| admin_presence_group_filter_choice(filter, value, choice, label) })
           end
       end
     end
 
-    def admin_presence_group_filter_choice(filter, group, value, label, checked)
-      input_id = sanitize_to_id("filters_#{filter.name}_#{group}_#{value.presence || 'all'}")
+    def admin_presence_group_filter_choice(filter, group, choice, group_label)
+      input_id = sanitize_to_id("filters_#{filter.name}_#{group}_#{choice[:value].presence || 'all'}")
 
       tag.label(class: 'admin-filter-choice admin-presence-filter-choice', for: input_id) do
-        radio_button_tag("filters[#{filter.name}][#{group}]", value, checked, id: input_id, class: 'admin-filter-choice-input', data: { admin_auto_submit: true }) +
-          tag.span(label, class: 'admin-filter-choice-label')
+        radio_button_tag("filters[#{filter.name}][#{group}]", choice[:value], choice[:checked], id: input_id, class: 'admin-filter-choice-input', aria: { label: "#{group_label}: #{choice[:label]}" }, data: { admin_auto_submit: true }) +
+          tag.span(choice[:label], class: 'admin-filter-choice-label')
       end
     end
   end

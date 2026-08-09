@@ -964,6 +964,17 @@ module Admin
       assert_select '.admin-filter-active-count', text: '1件指定中'
     end
 
+    test 'presence filter choices identify their service group' do
+      get admin_songs_path
+
+      assert_response :success
+      assert_select '.admin-presence-filter-row[role="group"][aria-label="YouTube"]'
+      assert_select '.admin-presence-filter-row[role="group"][aria-label="ニコニコ"]'
+      assert_select 'input#filters_video_service_youtube_present[aria-label="YouTube: あり"]'
+      assert_select 'input#filters_video_service_nicovideo_missing[aria-label="ニコニコ: なし"]'
+      assert_select 'input#filters_music_service_apple_music_present[aria-label="Apple: あり"]'
+    end
+
     test 'index explains empty filtered results near the table' do
       get admin_songs_path, params: { q: '一致しない検索語' }
 
