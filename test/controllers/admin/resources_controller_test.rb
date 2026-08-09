@@ -112,6 +112,9 @@ module Admin
       assert_select '.admin-workflow-group h2', text: 'JOYSOUND'
       assert_select '.admin-workflow-group h2', text: 'JOYSOUND(うたスキ)'
       assert_select '.admin-workflow-group h2', text: '共通作業'
+      workflow_group_heading_ids = css_select('.admin-workflow-group[aria-labelledby]').pluck('aria-labelledby')
+      assert_equal workflow_group_heading_ids.length, workflow_group_heading_ids.uniq.length
+      workflow_group_heading_ids.each { |heading_id| assert_select "##{heading_id}", 1 }
       assert_select '.admin-workflow-action', text: /DAM候補一覧を取得/
       assert_select '.admin-workflow-action', text: /DAM候補一覧とDAMアーティストURLを作る/
       assert_select '.admin-workflow-action', text: /DAM楽曲URLから候補を追加/

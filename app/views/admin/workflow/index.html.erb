@@ -38,11 +38,12 @@
 
 <div class="admin-workflow-groups">
   <% @workflow_groups.each do |group| %>
-    <section class="admin-workflow-group">
+    <% heading_id = "admin-workflow-group-#{group[:key]}" %>
+    <section class="admin-workflow-group" aria-labelledby="<%= heading_id %>">
       <header>
         <span class="admin-workflow-group-icon"><%= admin_icon(group[:icon]) %></span>
         <div>
-          <h2><%= group[:label] %></h2>
+          <h2 id="<%= heading_id %>"><%= group[:label] %></h2>
           <p><%= group[:description] %></p>
         </div>
         <% unless group[:key] == "common" %>
