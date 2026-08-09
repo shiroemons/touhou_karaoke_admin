@@ -135,6 +135,37 @@ test("resource content navigation ignores a stale response even when abort is ig
   }
 })
 
+test("resource content navigation keeps the current content for a malformed response", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const content = new FakeContent()
+  content.outerHTML = "<main>initial</main>"
+
+  globalThis.document = { querySelector: () => content }
+  globalThis.window = {
+    location: { origin: "http://example.test" },
+    history: { pushState: () => {} },
+  }
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ html: null }),
+  })
+
+  try {
+    await assert.rejects(
+      replaceAdminResourceContent("/admin/songs?q=malformed"),
+      /一覧データの形式が不正です。/
+    )
+    assert.equal(content.outerHTML, "<main>initial</main>")
+    assert.equal(content.attributes["aria-busy"], undefined)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
 test("resource content navigation restores focus to the replaced form control", async () => {
   const originalDocument = globalThis.document
   const originalFetch = globalThis.fetch

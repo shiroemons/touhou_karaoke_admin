@@ -63,6 +63,14 @@ const browserUrl = (url) => {
   return nextUrl
 }
 
+const validateAdminResourceContentPayload = (payload) => {
+  if (!payload || typeof payload !== "object" || typeof payload.html !== "string" || payload.html.trim().length === 0) {
+    throw new Error("一覧データの形式が不正です。")
+  }
+
+  return payload
+}
+
 let adminResourceContentController
 
 const describeResourceContentFocus = (element, content) => {
@@ -110,7 +118,7 @@ export const replaceAdminResourceContent = async (url, { pushState = true } = {}
     if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
     if (adminResourceContentController !== controller) return
 
-    const payload = await response.json()
+    const payload = validateAdminResourceContentPayload(await response.json())
     if (adminResourceContentController !== controller || !currentContent) return
 
     currentContent.outerHTML = payload.html
