@@ -16,7 +16,17 @@
         <%= admin_icon(:dashboard) %>
         <span>東方カラオケ管理</span>
       <% end %>
-      <nav class="admin-nav">
+      <button
+        type="button"
+        class="admin-mobile-navigation-toggle"
+        aria-controls="admin-navigation"
+        aria-expanded="false"
+        aria-label="メニューを開く"
+        data-admin-mobile-navigation-toggle>
+        <%= admin_icon(:menu) %>
+        <span data-admin-mobile-navigation-toggle-label>メニュー</span>
+      </button>
+      <nav id="admin-navigation" class="admin-nav">
         <% main_navigation_groups, other_navigation_groups = admin_navigation_groups.partition { |group_label, _resources| group_label == "メイン" } %>
         <% main_navigation_groups.each do |group_label, resources| %>
           <section class="admin-nav-group admin-nav-group-primary" aria-label="<%= group_label %>">

@@ -1,5 +1,56 @@
 let setupPageBehaviors = () => {}
 
+const mobileNavigationToggleSelector = "[data-admin-mobile-navigation-toggle]"
+const mobileNavigationToggleLabelSelector = "[data-admin-mobile-navigation-toggle-label]"
+const mobileNavigationOpenSelector = ".admin-sidebar[data-admin-mobile-navigation-open=\"true\"]"
+
+const setAdminMobileNavigationOpen = (sidebar, open) => {
+  sidebar.dataset.adminMobileNavigationOpen = open.toString()
+
+  const toggle = sidebar.querySelector(mobileNavigationToggleSelector)
+  if (!toggle) return
+
+  toggle.setAttribute("aria-expanded", open.toString())
+  toggle.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く")
+
+  const label = toggle.querySelector(mobileNavigationToggleLabelSelector)
+  if (label) label.textContent = open ? "閉じる" : "メニュー"
+}
+
+export const setupAdminMobileNavigation = () => {
+  if (document.documentElement.dataset.adminMobileNavigationInitialized === "true") return
+
+  document.documentElement.dataset.adminMobileNavigationInitialized = "true"
+
+  document.addEventListener("click", (event) => {
+    const toggle = event.target.closest?.(mobileNavigationToggleSelector)
+    if (toggle) {
+      const sidebar = toggle.closest(".admin-sidebar")
+      if (sidebar) {
+        const open = sidebar.dataset.adminMobileNavigationOpen === "true"
+        setAdminMobileNavigationOpen(sidebar, !open)
+      }
+      return
+    }
+
+    const navigationLink = event.target.closest?.(".admin-nav-link, .admin-brand")
+    if (!navigationLink) return
+
+    const sidebar = navigationLink.closest(".admin-sidebar")
+    if (sidebar) setAdminMobileNavigationOpen(sidebar, false)
+  })
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return
+
+    const sidebar = document.querySelector(mobileNavigationOpenSelector)
+    if (!sidebar) return
+
+    setAdminMobileNavigationOpen(sidebar, false)
+    sidebar.querySelector(mobileNavigationToggleSelector)?.focus()
+  })
+}
+
 const adminContentUrl = (url) => {
   const contentUrl = new URL(url, window.location.origin)
   contentUrl.searchParams.set("partial", "content")
@@ -215,6 +266,7 @@ export const setupAdminFilterForms = () => {
 export const setupAdminNavigation = ({ setupPageBehaviors: nextSetupPageBehaviors } = {}) => {
   if (nextSetupPageBehaviors) setupPageBehaviors = nextSetupPageBehaviors
 
+  setupAdminMobileNavigation()
   setupAdminFilterForms()
   setupAdminAsyncIndex()
   setupAdminPageNavigation()
