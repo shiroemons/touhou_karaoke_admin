@@ -917,7 +917,7 @@ module Admin
       assert_select '.admin-operation-guide-cta', text: /対象を選択して実行/
       assert_select '.admin-operation-guide-meta small', text: '選択必須'
       assert_select '.admin-operation-guide-meta small', text: 'バックグラウンド'
-      assert_select 'th.admin-select-column'
+      assert_select 'th.admin-select-column input[data-admin-resource-select-all][aria-checked="false"]'
       assert_select '.admin-selection-toolbar[role="status"][aria-live="polite"][aria-atomic="true"]'
       assert_select '.admin-selection-toolbar [data-admin-selection-count]', text: '0'
       assert_select '.admin-selection-toolbar [data-admin-selection-note]', text: '一括操作を実行するには、対象行を選択してください。'
