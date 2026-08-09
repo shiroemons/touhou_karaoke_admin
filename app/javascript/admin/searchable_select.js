@@ -18,6 +18,10 @@ const hideAdminSearchableSelect = (container) => {
   updateAdminSearchableSelect(container)
 }
 
+const focusAdminSearchableSelectSearch = (container) => {
+  container.querySelector("[data-admin-searchable-select-search]")?.focus?.({ preventScroll: true })
+}
+
 const adminSearchableSelectValues = (container) =>
   Array.from(container.querySelectorAll("[data-admin-searchable-select-value]")).map((input) => input.value)
 
@@ -115,7 +119,10 @@ export const setupAdminSearchableSelects = () => {
       }
 
       updateAdminSearchableSelect(container)
-      if (checkbox) hideAdminSearchableSelect(container)
+      if (checkbox) {
+        focusAdminSearchableSelectSearch(container)
+        hideAdminSearchableSelect(container)
+      }
     })
     container.addEventListener("click", (event) => {
       const removeValue = event.target.closest("[data-admin-searchable-select-remove]")?.dataset.adminSearchableSelectRemove
@@ -126,6 +133,7 @@ export const setupAdminSearchableSelects = () => {
         adminSearchableSelectValues(container).filter((value) => value !== removeValue)
       )
       updateAdminSearchableSelect(container)
+      focusAdminSearchableSelectSearch(container)
     })
     container.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return

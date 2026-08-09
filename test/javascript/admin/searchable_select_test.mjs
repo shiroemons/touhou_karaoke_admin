@@ -34,6 +34,11 @@ class FakeElement {
     this.blurred = true
   }
 
+  focus(options) {
+    this.focused = true
+    this.focusOptions = options
+  }
+
   closest(selector) {
     return matchesSelector(this, selector) ? this : this.parent?.closest(selector)
   }
@@ -193,8 +198,25 @@ test("search input filters visible options and checkbox change writes hidden val
   assert.deepEqual(fixture.values.children.map((input) => input.value), ["circle-1", "circle-2"])
   assert.equal(fixture.options.hidden, true)
   assert.equal(fixture.search.getAttribute("aria-expanded"), "false")
+  assert.equal(fixture.search.focused, true)
+  assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
   assert.equal(fixture.option.getAttribute("aria-selected"), "true")
   assert.equal(fixture.secondOption.getAttribute("aria-selected"), "true")
+})
+
+test("removing a selected chip returns focus to the search field", () => {
+  const fixture = buildSearchableSelect()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-searchable-select]" ? [fixture.container] : []
+  )
+
+  setupAdminSearchableSelects()
+  fixture.search.focused = false
+  fixture.container.dispatch("click", fixture.chips.children[0])
+
+  assert.equal(fixture.search.focused, true)
+  assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
+  assert.equal(fixture.values.children.length, 0)
 })
 
 test("Escape closes the candidate list and resets the expanded state", () => {
