@@ -15,6 +15,18 @@ const selectedOriginalSongItems = (picker) => {
   return selectedOriginalSongTitles(picker).map((title) => ({ title, status: "valid" }))
 }
 
+const updateOriginalSongPickerStatus = (picker, message, { error = false } = {}) => {
+  const status = picker.querySelector("[data-admin-original-song-picker-status]")
+  if (!status) return
+
+  status.textContent = message
+  if (error) {
+    status.dataset.adminOriginalSongStatusLevel = "error"
+  } else {
+    delete status.dataset.adminOriginalSongStatusLevel
+  }
+}
+
 const normalizedOriginalSongPickerItems = (items) => {
   const itemByTitle = new Map()
   items.forEach((item) => {
@@ -169,14 +181,21 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
     ))
     if (candidates.length > 0) {
       renderOriginalSongOptions(picker, candidates)
+      updateOriginalSongPickerStatus(picker, `${candidates.length.toLocaleString()}件の候補があります。選択してください。`)
     } else {
       hideOriginalSongOptions(picker)
+      const resolvedCount = (payload.items || []).filter((item) => item.exists).length || payload.titles?.length || 0
+      updateOriginalSongPickerStatus(
+        picker,
+        resolvedCount > 0 ? "原曲を追加しました。" : "一致する原曲がありません。入力を確認してください。"
+      )
     }
   } catch (error) {
     console.error(error)
     const invalidItem = { title: text, status: "invalid" }
     updateOriginalSongPickerValue(picker, append ? [...selectedOriginalSongItems(picker), invalidItem] : [invalidItem])
     hideOriginalSongOptions(picker)
+    updateOriginalSongPickerStatus(picker, "原曲候補の取得に失敗しました。入力を確認して再試行してください。", { error: true })
   } finally {
     searchInput.value = ""
   }
@@ -189,6 +208,7 @@ export const setupAdminOriginalSongPickers = () => {
     picker.dataset.adminOriginalSongPickerInitialized = "true"
     updateOriginalSongPickerValue(picker, selectedOriginalSongTitles(picker))
     let searchController
+    let searchRequestSequence = 0
 
     picker.addEventListener("click", (event) => {
       const editTitle = event.target.closest("[data-admin-original-song-edit]")?.dataset.adminOriginalSongEdit
@@ -226,17 +246,21 @@ export const setupAdminOriginalSongPickers = () => {
       updateOriginalSongPickerValue(picker, [...currentItems, { title: selectedTitle, status: "valid" }])
       picker.querySelector("[data-admin-original-song-search]").value = ""
       hideOriginalSongOptions(picker)
+      updateOriginalSongPickerStatus(picker, "原曲を追加しました。")
     })
 
     picker.querySelector("[data-admin-original-song-search]")?.addEventListener("input", async (event) => {
       const query = event.target.value.trim()
+      const requestSequence = ++searchRequestSequence
       if (searchController) searchController.abort()
       if (!query) {
         hideOriginalSongOptions(picker)
+        updateOriginalSongPickerStatus(picker, "")
         return
       }
 
       searchController = new AbortController()
+      updateOriginalSongPickerStatus(picker, "候補を検索しています...")
       try {
         const url = new URL(picker.dataset.optionsUrl, window.location.origin)
         url.searchParams.set("q", query)
@@ -247,9 +271,25 @@ export const setupAdminOriginalSongPickers = () => {
         })
         if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
-        renderOriginalSongOptions(picker, await response.json())
+        const optionsPayload = await response.json()
+        if (!Array.isArray(optionsPayload)) throw new Error("候補データの形式が不正です。")
+        if (requestSequence !== searchRequestSequence) return
+
+        renderOriginalSongOptions(picker, optionsPayload)
+        updateOriginalSongPickerStatus(
+          picker,
+          optionsPayload.length > 0
+            ? `${optionsPayload.length.toLocaleString()}件の候補があります。選択してください。`
+            : "一致する原曲がありません。"
+        )
       } catch (error) {
-        if (error.name !== "AbortError") console.error(error)
+        if (error.name === "AbortError" || requestSequence !== searchRequestSequence) return
+
+        console.error(error)
+        hideOriginalSongOptions(picker)
+        updateOriginalSongPickerStatus(picker, "候補の取得に失敗しました。もう一度お試しください。", { error: true })
+      } finally {
+        if (requestSequence === searchRequestSequence) searchController = undefined
       }
     })
 
@@ -279,6 +319,7 @@ export const setupAdminOriginalSongPickers = () => {
         addOriginalSongTitle(picker, firstOption.dataset.adminOriginalSongSelect)
         event.target.value = ""
         hideOriginalSongOptions(picker)
+        updateOriginalSongPickerStatus(picker, "原曲を追加しました。")
         return
       }
 

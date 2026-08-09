@@ -13,6 +13,7 @@ module Admin
       assert_select '[data-admin-association-dialog-trigger="song-original-songs"]', text: /紐づけ/
       assert_select 'dialog[data-admin-association-dialog="song-original-songs"]' do
         assert_select '[data-admin-original-song-picker]'
+        assert_select '[data-admin-original-song-picker-status][role="status"][aria-live="polite"][aria-atomic="true"]'
         assert_select 'input[type="hidden"][name="original_songs"][value=?][data-admin-original-song-value]', original_song.title
         assert_select 'form[action=?][method="post"]', original_songs_admin_song_path(song) do
           assert_select 'input[name="_method"][value="patch"]', 1

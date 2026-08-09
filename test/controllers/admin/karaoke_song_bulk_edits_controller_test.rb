@@ -44,6 +44,7 @@ module Admin
       assert_select "input[name=?][aria-label=?]", "songs[#{missing_song.id}][spotify_url]", "#{missing_song.title}のSpotify URL"
       assert_select '[data-admin-original-song-picker]'
       assert_select '[data-admin-original-song-search]'
+      assert_select '[data-admin-original-song-picker-status][role="status"][aria-live="polite"][aria-atomic="true"]'
       assert_includes response.body, missing_song.title
       assert_not_includes response.body, linked_song.title
     end

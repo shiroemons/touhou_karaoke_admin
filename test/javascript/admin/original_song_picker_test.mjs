@@ -98,11 +98,12 @@ const buildPicker = ({ initialValue = "" } = {}) => {
   const valueInput = new FakeElement({ dataset: { adminOriginalSongValue: "true" }, value: initialValue })
   const chips = new FakeElement({ dataset: { adminOriginalSongChips: "true" } })
   const search = new FakeElement({ dataset: { adminOriginalSongSearch: "true" } })
+  const status = new FakeElement({ dataset: { adminOriginalSongPickerStatus: "true" } })
   const options = new FakeElement({ dataset: { adminOriginalSongOptions: "true" }, hidden: true })
 
-  ;[valueInput, chips, search, options].forEach((child) => picker.appendChild(child))
+  ;[valueInput, chips, search, status, options].forEach((child) => picker.appendChild(child))
 
-  return { chips, options, picker, search, valueInput }
+  return { chips, options, picker, search, status, valueInput }
 }
 
 const originalDocument = globalThis.document
@@ -294,4 +295,85 @@ test("setOriginalSongPickerText marks text invalid when resolve fails", async ()
   assert.equal(fixture.chips.children[0].dataset.adminOriginalSongStatus, "invalid")
   assert.equal(fixture.options.hidden, true)
   assert.equal(errors.length, 1)
+})
+
+test("original song search exposes an actionable error when options cannot be loaded", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({ ok: false, status: 503 })
+
+  fixture.search.value = "検索対象"
+  await fixture.search.dispatch("input")
+
+  assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+  assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
+  assert.equal(fixture.search.value, "検索対象")
+  assert.equal(fixture.options.hidden, true)
+})
+
+test("original song search explains when no candidates match", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({ ok: true, json: async () => [] })
+
+  fixture.search.value = "一致しない原曲"
+  await fixture.search.dispatch("input")
+
+  assert.equal(fixture.status.textContent, "一致する原曲がありません。")
+  assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, undefined)
+  assert.equal(fixture.options.hidden, true)
+})
+
+test("original song search treats malformed option data as a retryable error", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ items: [] }) })
+
+  fixture.search.value = "不正な候補データ"
+  await fixture.search.dispatch("input")
+
+  assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+  assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
+  assert.equal(fixture.options.hidden, true)
+})
+
+test("original song search ignores a stale response after a newer query", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  const requests = []
+  globalThis.fetch = (url, options) => new Promise((resolve) => {
+    requests.push({ options, resolve, url })
+  })
+
+  fixture.search.value = "古い検索"
+  const firstRequest = fixture.search.dispatch("input")
+  fixture.search.value = "新しい検索"
+  const secondRequest = fixture.search.dispatch("input")
+
+  requests[1].resolve({
+    ok: true,
+    json: async () => [{ label: "新しい候補", title: "新しい候補" }],
+  })
+  await secondRequest
+
+  requests[0].resolve({
+    ok: true,
+    json: async () => [{ label: "古い候補", title: "古い候補" }],
+  })
+  await firstRequest
+
+  assert.equal(fixture.options.children[0].textContent, "新しい候補")
+  assert.match(fixture.status.textContent, /1件の候補があります/)
 })

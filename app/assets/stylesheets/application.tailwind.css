@@ -3201,6 +3201,22 @@ body[data-admin-navigation="loading"] .admin-main {
   position: relative;
 }
 
+.admin-original-song-status {
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 4px 0 0;
+  min-height: 17px;
+}
+
+.admin-original-song-status:empty {
+  display: none;
+}
+
+.admin-original-song-status[data-admin-original-song-status-level="error"] {
+  color: #b42318;
+}
+
 .admin-original-song-options {
   background: var(--color-base-100);
   border: 1px solid #dbe8f6;
