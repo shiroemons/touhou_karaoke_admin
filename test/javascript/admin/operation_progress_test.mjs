@@ -53,6 +53,7 @@ const buildProgress = ({ progressUrl } = {}) => {
   const modalCancelButton = new FakeElement()
   const submitButton = new FakeElement()
   const progressBar = new FakeElement()
+  const progressElement = new FakeElement({ hidden: true })
   const progressStatus = new FakeElement()
   const progressLabel = new FakeElement()
   const progressPercent = new FakeElement()
@@ -65,10 +66,10 @@ const buildProgress = ({ progressUrl } = {}) => {
   ]
   let updateCalls = 0
 
-  const progress = new AdminOperationProgress({
+  const operationProgress = new AdminOperationProgress({
     form,
     operationModal: { open: false },
-    progress: new FakeElement(),
+    progress: progressElement,
     progressLabel,
     progressPercent,
     progressStatus,
@@ -89,7 +90,8 @@ const buildProgress = ({ progressUrl } = {}) => {
   return {
     form,
     modalCancelButton,
-    progress,
+    progress: operationProgress,
+    progressElement,
     progressBar,
     progressLabel,
     progressPercent,
@@ -101,7 +103,7 @@ const buildProgress = ({ progressUrl } = {}) => {
 }
 
 test("AdminOperationProgress.fail falls back to an actionable failed state", () => {
-  const { form, modalCancelButton, progress, progressBar, progressLabel, progressStatus, submitButton, updateCalls } = buildProgress()
+  const { form, modalCancelButton, progress, progressBar, progressElement, progressLabel, progressStatus, submitButton, updateCalls } = buildProgress()
 
   form.dataset.adminOperationBusy = "true"
   form.dataset.confirmed = "true"
@@ -112,6 +114,7 @@ test("AdminOperationProgress.fail falls back to an actionable failed state", () 
   progress.fail("リクエストに失敗しました（HTTP 500）。")
 
   assert.equal(progress.phase, "failed")
+  assert.equal(progressElement.attributes["aria-busy"], "false")
   assert.equal(progressStatus.textContent, "エラー")
   assert.equal(progressLabel.textContent, "リクエストに失敗しました（HTTP 500）。")
   assert.equal(form.dataset.adminOperationBusy, undefined)
@@ -122,7 +125,7 @@ test("AdminOperationProgress.fail falls back to an actionable failed state", () 
 })
 
 test("AdminOperationProgress.applyServerProgress handles failed server state", () => {
-  const { form, modalCancelButton, progress, progressBar, progressLabel, progressPercent, progressStatus, progressbar } = buildProgress()
+  const { form, modalCancelButton, progress, progressBar, progressElement, progressLabel, progressPercent, progressStatus, progressbar } = buildProgress()
 
   form.dataset.adminOperationBusy = "true"
   modalCancelButton.disabled = true
@@ -137,6 +140,7 @@ test("AdminOperationProgress.applyServerProgress handles failed server state", (
   })
 
   assert.equal(progress.phase, "failed")
+  assert.equal(progressElement.attributes["aria-busy"], "false")
   assert.equal(progressStatus.textContent, "エラー")
   assert.equal(progressLabel.textContent, "接続できませんでした")
   assert.equal(progressPercent.textContent, "42%")

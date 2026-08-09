@@ -56,7 +56,7 @@
     <% end %>
   </p>
 
-  <div class="admin-operation-progress" aria-live="polite" data-admin-operation-progress hidden>
+  <div class="admin-operation-progress" aria-live="polite" aria-atomic="true" aria-busy="false" data-admin-operation-progress hidden>
     <div class="admin-operation-progress-header">
       <div>
         <span class="admin-operation-progress-kicker">処理進捗</span>
@@ -68,7 +68,7 @@
         <span data-admin-operation-progress-status>待機中</span>
       </div>
     </div>
-    <div class="admin-operation-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="待機中 0%" data-admin-operation-progressbar>
+    <div class="admin-operation-progress-track" role="progressbar" aria-label="<%= operation.label %>の進捗" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="待機中 0%" data-admin-operation-progressbar>
       <div class="admin-operation-progress-bar" data-admin-operation-progress-bar></div>
     </div>
     <ol class="admin-operation-progress-steps" aria-label="処理ステップ">

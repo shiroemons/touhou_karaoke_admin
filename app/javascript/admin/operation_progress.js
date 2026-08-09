@@ -54,6 +54,7 @@ export class AdminOperationProgress {
     this.resetState()
     delete this.form.dataset.confirmed
 
+    this.setBusy(false)
     if (this.submitButton) this.submitButton.disabled = false
     if (this.modalCancelButton) this.modalCancelButton.disabled = false
     if (this.progress) this.progress.hidden = true
@@ -68,6 +69,7 @@ export class AdminOperationProgress {
     if (this.progress?.hidden || this.phase === "finished") return
 
     this.phase = "finished"
+    this.setBusy(false)
     this.activateStep("finish")
     const completedLabel = payload.detail || payload.label || (this.inlineConfirmation ? "処理が完了しました。ダイアログを閉じます..." : "処理が完了しました。画面を切り替えています...")
     this.update(100, "完了", completedLabel)
@@ -105,6 +107,7 @@ export class AdminOperationProgress {
 
   start() {
     if (this.progress) this.progress.hidden = false
+    this.setBusy(true)
     this.form.dataset.adminOperationBusy = "true"
     if (this.submitButton) this.submitButton.disabled = true
     if (this.modalCancelButton) this.modalCancelButton.disabled = true
@@ -137,6 +140,7 @@ export class AdminOperationProgress {
 
   fail(message) {
     this.phase = "failed"
+    this.setBusy(false)
     this.update(this.lastServerPercentage, "エラー", message || "処理の開始に失敗しました")
     if (this.pollTimer) window.clearTimeout(this.pollTimer)
     if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
@@ -165,6 +169,10 @@ export class AdminOperationProgress {
     if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
     if (this.pollTimer) window.clearTimeout(this.pollTimer)
     if (this.finishTimer) window.clearTimeout(this.finishTimer)
+  }
+
+  setBusy(busy) {
+    this.progress?.setAttribute("aria-busy", busy.toString())
   }
 
   activateStep(step) {
