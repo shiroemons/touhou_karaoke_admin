@@ -76,6 +76,16 @@ module Admin
             operation('DAM配信機種を再同期', key: :update_dam_delivery_models, method_name: :sync_dam_delivery_models, group: '外部取得', async: true, confirmation: '外部サイトへアクセスしてDAM配信機種を再同期します。実行しますか？'),
             operation('JOYSOUND候補をカラオケ楽曲へ登録', key: :fetch_joysound_songs, method_name: :register_joysound_songs_from_candidates, group: '外部取得', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてJOYSOUND候補をカラオケ楽曲へ登録します。実行しますか？'),
             operation('ミュージックポストをカラオケ楽曲へ登録', handler: :fetch_joysound_music_post_song, group: 'ミュージックポスト', async: true, repeat_while_created: true, max_attempts: 3, confirmation: '外部サイトへアクセスしてミュージックポストをカラオケ楽曲へ登録します。実行しますか？'),
+            operation(
+              'うたスキ重複曲を整理',
+              handler: :reconcile_joysound_song_duplicates,
+              group: '検証・整理',
+              async: true,
+              confirmation: '同じ曲URL・タイトルのうたスキ曲を既存データへ統合し、重複曲を削除します。実行しますか？',
+              inputs: [
+                { name: :dry_run, label: 'プレビューのみ', description: '削除・更新せず対象件数を確認する', type: :checkbox, checked: true, required: false }
+              ]
+            ),
             operation('ミュージックポストURLを検証', handler: :refresh_joysound_music_post_song, group: 'ミュージックポスト', async: true, confirmation: '外部サイトへアクセスして無効な楽曲を削除します。実行しますか？'),
             operation('うたスキ配信期限を反映', handler: :update_joysound_music_post_delivery_deadline_dates, group: 'ミュージックポスト', async: true, confirmation: '配信期限を一括更新します。実行しますか？')
           ],

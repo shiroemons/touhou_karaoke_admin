@@ -63,6 +63,10 @@ module Admin
         参照する外部URL:
         #{Constants::Karaoke::Joysound::SEARCH_URL}
       TEXT
+      'reconcile_joysound_song_duplicates' => <<~TEXT,
+        うたスキ楽曲の種別・曲URL・タイトルが一致する重複グループを確認します。
+        既存曲の関連情報を優先して統合し、旧アーティストURLが404/410、新URLが有効な場合だけURLを更新します。初期状態はプレビューです。
+      TEXT
       'refresh_joysound_music_post_song' => <<~TEXT,
         登録済みミュージックポスト楽曲のURL存在確認を行い、404など明確に無効な楽曲を削除します。ネットワークエラーの場合は削除せずスキップします。
 

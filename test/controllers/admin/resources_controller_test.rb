@@ -829,7 +829,7 @@ module Admin
       assert_select '.admin-operation-guide-item[data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', text: '楽曲TSVをエクスポート'
       assert_select '.admin-operation-guide-cta', text: /対象を選択して実行/
       assert_select '.admin-operation-guide-meta small', text: '選択必須'
-      assert_select '.admin-operation-guide-meta small', { text: 'バックグラウンド', count: 0 }
+      assert_select '.admin-operation-guide-meta small', text: 'バックグラウンド'
       assert_select 'th.admin-select-column'
       assert_select '.admin-selection-toolbar[aria-live="polite"]'
       assert_select '.admin-selection-toolbar [data-admin-selection-count]', text: '0'
@@ -1197,6 +1197,16 @@ module Admin
       assert_select 'h1', text: '期限切れを削除'
       assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][checked="checked"]'
       assert_select '.admin-checkbox-field', text: /削除せず対象を確認する/
+    end
+
+    test 'duplicate song cleanup operation renders a dry run checkbox and impact description' do
+      get operation_admin_songs_path(operation: 'reconcile_joysound_song_duplicates')
+
+      assert_response :success
+      assert_select 'h1', text: 'うたスキ重複曲を整理'
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][checked="checked"]'
+      assert_select '.admin-checkbox-field', text: /削除・更新せず対象件数を確認する/
+      assert_select '.admin-operation-description', text: %r{旧アーティストURLが404/410}
     end
 
     test 'operation progress endpoint returns current progress payload' do

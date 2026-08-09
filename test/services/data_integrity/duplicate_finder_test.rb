@@ -56,5 +56,10 @@ module DataIntegrity
       assert_includes DuplicateFinder::DEFAULT_CHECKS,
                       DuplicateFinder::Check.new(table: 'circles', columns: %w[name])
     end
+
+    test 'includes song identity in the default duplicate checks' do
+      assert_includes DuplicateFinder::DEFAULT_CHECKS,
+                      DuplicateFinder::Check.new(table: 'songs', columns: %w[karaoke_type url title])
+    end
   end
 end

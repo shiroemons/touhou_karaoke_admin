@@ -16,6 +16,7 @@ module DataIntegrity
       Check.new(table: 'song_with_dam_ouchikaraokes', columns: %w[url]),
       Check.new(table: 'song_with_joysound_utasukis', columns: %w[song_id]),
       Check.new(table: 'song_with_joysound_utasukis', columns: %w[url]),
+      Check.new(table: 'songs', columns: %w[karaoke_type url title]),
       Check.new(table: 'songs_original_songs', columns: %w[song_id original_song_code])
     ].freeze
 

@@ -2,6 +2,7 @@ module Admin
   module Operations
     class HandlerRegistry
       SONG_TSV_HANDLERS = %i[export_songs export_missing_original_songs import_songs_with_original_songs].freeze
+      SONG_INTEGRITY_HANDLERS = %i[reconcile_joysound_song_duplicates].freeze
       DISPLAY_ARTIST_HANDLERS = %i[validate_display_artist_urls cleanup_invalid_display_artists cleanup_orphan_display_artists].freeze
       JOYSOUND_MUSIC_POST_HANDLERS = %i[
         fetch_joysound_music_post_song
@@ -27,6 +28,8 @@ module Admin
         case handler.to_sym
         when *SONG_TSV_HANDLERS
           song_tsv_operation
+        when *SONG_INTEGRITY_HANDLERS
+          song_integrity_operation
         when *DISPLAY_ARTIST_HANDLERS
           display_artist_operation
         when *JOYSOUND_MUSIC_POST_HANDLERS
@@ -42,6 +45,10 @@ module Admin
 
       def song_tsv_operation
         @song_tsv_operation ||= SongTsvOperation.new(resource: @resource, operation:, params:, scope:)
+      end
+
+      def song_integrity_operation
+        @song_integrity_operation ||= SongIntegrityOperation.new(params:, scope:)
       end
 
       def display_artist_operation
