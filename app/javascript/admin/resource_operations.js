@@ -176,12 +176,13 @@ const setupAdminOperationForms = () => {
 
       const operationLabel = form.dataset.adminOperationLabel || "アクション"
       const resourceLabel = form.dataset.adminOperationResourceLabel || "対象"
+      const targetLabel = form.dataset.adminOperationTargetLabel || "この画面の対象"
       const messageParts = [form.dataset.confirmation || `${operationLabel}を実行します。よろしいですか？`]
       if (form.dataset.adminOperationSelection === "true") {
         const selectedCount = selectedAdminResourceIds().length
-        messageParts.push(selectedCount > 0 ? `${resourceLabel}: 選択中 ${selectedCount.toLocaleString()}件` : `${resourceLabel}: 現在の検索・絞り込み結果全体`)
+        messageParts.push(selectedCount > 0 ? `${resourceLabel}: 選択中 ${selectedCount.toLocaleString()}件` : `${resourceLabel}: ${targetLabel}`)
       } else {
-        messageParts.push(`${resourceLabel}: この画面の対象`)
+        messageParts.push(`${resourceLabel}: ${targetLabel}`)
       }
       const message = messageParts.join("\n")
       if (!dialog?.showModal) {
