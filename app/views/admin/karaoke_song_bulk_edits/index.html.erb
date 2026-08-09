@@ -162,6 +162,7 @@
                 </div>
               </td>
               <td>
+                <% original_song_picker_id = "admin-original-song-picker-song-#{song.id}" %>
                 <div
                   class="admin-original-song-picker"
                   data-admin-original-song-picker
@@ -175,12 +176,21 @@
                     <%= text_field_tag nil,
                                        nil,
                                        class: "admin-bulk-cell admin-bulk-original-songs admin-original-song-search input input-bordered",
+                                       id: nil,
                                        autocomplete: "off",
                                        placeholder: "原曲を検索",
-                                       aria: { label: "#{song.title}の原曲を検索" },
+                                       role: "combobox",
+                                       aria: {
+                                         label: "#{song.title}の原曲を検索",
+                                         controls: "#{original_song_picker_id}-options",
+                                         expanded: false,
+                                         haspopup: "listbox",
+                                         autocomplete: "list",
+                                         describedby: "#{original_song_picker_id}-status"
+                                       },
                                        data: { admin_original_song_search: true, admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: 0 } %>
-              <p class="admin-original-song-status" role="status" aria-live="polite" aria-atomic="true" data-admin-original-song-picker-status></p>
-                    <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
+                    <p id="<%= original_song_picker_id %>-status" class="admin-original-song-status" role="status" aria-live="polite" aria-atomic="true" data-admin-original-song-picker-status></p>
+                    <div id="<%= original_song_picker_id %>-options" class="admin-original-song-options" role="listbox" aria-label="<%= song.title %>の原曲候補" data-admin-original-song-options hidden></div>
                   </div>
                 </div>
               </td>

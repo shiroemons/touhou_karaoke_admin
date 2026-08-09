@@ -46,8 +46,10 @@ module Admin
       assert_select 'a[data-admin-copy-text]', count: 0
       assert_select 'a[href=?]', admin_song_path(missing_song), text: missing_song.title
       assert_select '[data-admin-original-song-picker]'
-      assert_select '[data-admin-original-song-search]'
-      assert_select '[data-admin-original-song-picker-status][role="status"][aria-live="polite"][aria-atomic="true"]'
+      assert_select '[data-admin-original-song-search][role="combobox"][aria-haspopup="listbox"][aria-expanded="false"][aria-autocomplete="list"][aria-controls][aria-describedby]'
+      assert_select '[data-admin-original-song-search][id]', count: 0
+      assert_select '[data-admin-original-song-options][role="listbox"][aria-label][hidden]'
+      assert_select '[data-admin-original-song-picker-status][role="status"][aria-live="polite"][aria-atomic="true"][id]'
       assert_includes response.body, missing_song.title
       assert_not_includes response.body, linked_song.title
     end

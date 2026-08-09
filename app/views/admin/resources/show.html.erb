@@ -184,6 +184,7 @@
       </div>
 
       <%= form_with url: original_songs_admin_song_path(@record), method: :patch, class: "admin-form admin-association-dialog-form" do %>
+        <% original_song_picker_id = "admin-original-song-picker-song-#{@record.id}" %>
         <div
           class="admin-original-song-picker"
           data-admin-original-song-picker
@@ -197,12 +198,21 @@
             <%= text_field_tag nil,
                                nil,
                                class: "admin-bulk-cell admin-original-song-search input input-bordered",
+                               id: nil,
                                autocomplete: "off",
                                placeholder: "原曲を検索",
-                               aria: { label: "#{admin_record_title(@resource, @record)}の原曲を検索" },
+                               role: "combobox",
+                               aria: {
+                                 label: "#{admin_record_title(@resource, @record)}の原曲を検索",
+                                 controls: "#{original_song_picker_id}-options",
+                                 expanded: false,
+                                 haspopup: "listbox",
+                                 autocomplete: "list",
+                                 describedby: "#{original_song_picker_id}-status"
+                               },
                                data: { admin_original_song_search: true } %>
-              <p class="admin-original-song-status" role="status" aria-live="polite" aria-atomic="true" data-admin-original-song-picker-status></p>
-            <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
+              <p id="<%= original_song_picker_id %>-status" class="admin-original-song-status" role="status" aria-live="polite" aria-atomic="true" data-admin-original-song-picker-status></p>
+            <div id="<%= original_song_picker_id %>-options" class="admin-original-song-options" role="listbox" aria-label="原曲候補" data-admin-original-song-options hidden></div>
           </div>
         </div>
         <div class="admin-form-actions">

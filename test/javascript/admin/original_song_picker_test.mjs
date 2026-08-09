@@ -8,6 +8,7 @@ class FakeClassList {
 
 class FakeElement {
   constructor({ dataset = {}, hidden = false, rect = {}, textContent = "", value = "" } = {}) {
+    this.attributes = {}
     this.children = []
     this.classList = new FakeClassList()
     this.dataset = dataset
@@ -69,6 +70,10 @@ class FakeElement {
   get innerHTML() {
     return this._innerHTML || ""
   }
+
+  setAttribute(name, value) {
+    this.attributes[name] = value.toString()
+  }
 }
 
 const collectDescendants = (element) =>
@@ -100,6 +105,7 @@ const buildPicker = ({ initialValue = "" } = {}) => {
   const search = new FakeElement({ dataset: { adminOriginalSongSearch: "true" } })
   const status = new FakeElement({ dataset: { adminOriginalSongPickerStatus: "true" } })
   const options = new FakeElement({ dataset: { adminOriginalSongOptions: "true" }, hidden: true })
+  options.id = "admin-original-song-options-test"
 
   ;[valueInput, chips, search, status, options].forEach((child) => picker.appendChild(child))
 
@@ -159,6 +165,7 @@ test("setupAdminOriginalSongPickers initializes chips from hidden value", () => 
   setupAdminOriginalSongPickers()
 
   assert.equal(fixture.picker.dataset.adminOriginalSongPickerInitialized, "true")
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
   assert.equal(fixture.valueInput.value, "赤より紅い夢/紅楼")
   assert.deepEqual(fixture.chips.children.map((chip) => chip.textContent), ["赤より紅い夢", "紅楼"])
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "valid"])
@@ -188,9 +195,12 @@ test("setOriginalSongPickerText resolves selected items and renders candidates f
   assert.equal(fixture.valueInput.value, "赤より紅い夢/紅楼?")
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "invalid"])
   assert.equal(fixture.options.hidden, false)
+  assert.equal(fixture.search.attributes["aria-expanded"], "true")
   assert.equal(fixture.options.children.length, 1)
   assert.equal(fixture.options.children[0].dataset.adminOriginalSongSelect, "紅楼")
   assert.equal(fixture.options.children[0].dataset.adminOriginalSongCandidateFor, "紅楼?")
+  assert.equal(fixture.options.children[0].attributes.role, "option")
+  assert.equal(fixture.options.children[0].attributes["aria-selected"], "false")
 })
 
 test("setOriginalSongPickerText appends to existing selection when append is true", async () => {
@@ -294,6 +304,7 @@ test("setOriginalSongPickerText marks text invalid when resolve fails", async ()
   assert.equal(fixture.chips.children.length, 1)
   assert.equal(fixture.chips.children[0].dataset.adminOriginalSongStatus, "invalid")
   assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
   assert.equal(errors.length, 1)
 })
 
@@ -312,6 +323,7 @@ test("original song search exposes an actionable error when options cannot be lo
   assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
   assert.equal(fixture.search.value, "検索対象")
   assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
 })
 
 test("original song search explains when no candidates match", async () => {
@@ -344,6 +356,27 @@ test("original song search treats malformed option data as a retryable error", a
   assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
   assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
   assert.equal(fixture.options.hidden, true)
+})
+
+test("Escape closes original song candidates", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => [{ label: "候補", title: "候補" }],
+  })
+
+  fixture.search.value = "候補"
+  await fixture.search.dispatch("input")
+  let prevented = false
+  await fixture.search.dispatch("keydown", { key: "Escape", preventDefault: () => { prevented = true } })
+
+  assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
+  assert.equal(prevented, true)
 })
 
 test("original song search ignores a stale response after a newer query", async () => {

@@ -1116,6 +1116,7 @@ module Admin
       assert_select '#admin-association-dialog-title-display-artist-circles', text: 'サークルを紐づけ'
       assert_select '[data-admin-searchable-select]'
       assert_select 'input[type="search"][data-admin-searchable-select-search][id="admin_searchable_select_display_artist_circle_ids-search"][placeholder="サークルを検索"][aria-controls="admin_searchable_select_display_artist_circle_ids-options"][aria-expanded="false"][aria-haspopup="listbox"][aria-describedby="admin_searchable_select_display_artist_circle_ids-status"]'
+      assert_select '[data-admin-original-song-search][id]', count: 0
       assert_select '[data-admin-searchable-select-chips]'
       assert_select '[data-admin-searchable-select-options][id="admin_searchable_select_display_artist_circle_ids-options"][role="listbox"][aria-label="サークルの候補"][aria-multiselectable="true"][hidden="hidden"]'
       assert_select 'p#admin_searchable_select_display_artist_circle_ids-status[data-admin-searchable-select-status][role="status"][aria-live="polite"][aria-atomic="true"]'

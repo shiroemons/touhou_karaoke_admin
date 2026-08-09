@@ -85,6 +85,13 @@ const normalizeOriginalSongPasteText = (text) => text
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
 let activeOriginalSongPicker
 
+const setOriginalSongPickerOptionsExpanded = (picker, expanded) => {
+  const searchInput = picker.querySelector("[data-admin-original-song-search]")
+  const options = picker.querySelector("[data-admin-original-song-options]")
+  if (searchInput) searchInput.setAttribute("aria-expanded", expanded.toString())
+  if (options) options.hidden = !expanded
+}
+
 const positionOriginalSongOptions = (picker) => {
   const searchInput = picker.querySelector("[data-admin-original-song-search]")
   const options = picker.querySelector("[data-admin-original-song-options]")
@@ -114,8 +121,7 @@ const positionOriginalSongOptions = (picker) => {
 }
 
 const hideOriginalSongOptions = (picker) => {
-  const options = picker.querySelector("[data-admin-original-song-options]")
-  if (options) options.hidden = true
+  setOriginalSongPickerOptionsExpanded(picker, false)
   if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
 }
 
@@ -128,14 +134,17 @@ const renderOriginalSongOptions = (picker, optionsPayload) => {
     const option = document.createElement("button")
     option.type = "button"
     option.className = "admin-original-song-option"
+    option.setAttribute("role", "option")
+    option.setAttribute("aria-selected", "false")
     option.dataset.adminOriginalSongSelect = item.title
     if (item.candidateFor) option.dataset.adminOriginalSongCandidateFor = item.candidateFor
     option.textContent = item.label || item.title
     options.appendChild(option)
   })
-  options.hidden = optionsPayload.length === 0
-  activeOriginalSongPicker = options.hidden ? undefined : picker
-  positionOriginalSongOptions(picker)
+  const expanded = optionsPayload.length > 0
+  setOriginalSongPickerOptionsExpanded(picker, expanded)
+  activeOriginalSongPicker = expanded ? picker : undefined
+  if (expanded) positionOriginalSongOptions(picker)
 }
 
 const resolveOriginalSongText = async (picker, text) => {
@@ -206,6 +215,7 @@ export const setupAdminOriginalSongPickers = () => {
     if (picker.dataset.adminOriginalSongPickerInitialized === "true") return
 
     picker.dataset.adminOriginalSongPickerInitialized = "true"
+    setOriginalSongPickerOptionsExpanded(picker, false)
     updateOriginalSongPickerValue(picker, selectedOriginalSongTitles(picker))
     let searchController
     let searchRequestSequence = 0
@@ -304,6 +314,13 @@ export const setupAdminOriginalSongPickers = () => {
     })
 
     searchInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const options = picker.querySelector("[data-admin-original-song-options]")
+        if (options && !options.hidden) event.preventDefault?.()
+        hideOriginalSongOptions(picker)
+        return
+      }
+
       if (event.key !== "Enter") return
       if (
         event.isComposing ||
