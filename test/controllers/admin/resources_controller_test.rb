@@ -898,7 +898,7 @@ module Admin
 
       assert_response :success
       assert_select 'tbody tr', 24
-      assert_select '.admin-pagination[aria-label="サークルのページ移動"]', text: %r{1 / 2}
+      assert_select '.admin-pagination[aria-label="サークルのページ移動"] span[aria-current="page"]', text: '1 / 2'
       assert_select 'a.admin-view-mode-button-active[aria-current="true"]', text: 'ページ送り'
     end
 

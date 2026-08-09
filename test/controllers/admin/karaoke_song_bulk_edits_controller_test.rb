@@ -79,7 +79,7 @@ module Admin
       get admin_karaoke_song_bulk_edit_path, params: { per_page: 50 }
 
       assert_response :success
-      assert_select '.admin-pagination[aria-label="カラオケ楽曲紐づけのページ移動"]'
+      assert_select '.admin-pagination[aria-label="カラオケ楽曲紐づけのページ移動"] span[aria-current="page"]', text: %r{1 / \d+}
       assert_select 'select[name="per_page"] option[selected][value="50"]'
       assert_select '.admin-result-summary', text: %r{表示中\s+50\s+/ .* 件}
       assert_select 'a[href*="per_page=50"]', text: /次へ/

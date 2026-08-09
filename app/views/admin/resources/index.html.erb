@@ -164,7 +164,7 @@
         <span>前へ</span>
       <% end %>
     <% end %>
-    <span><%= @page %> / <%= @total_pages %></span>
+    <span aria-current="page"><%= @page %> / <%= @total_pages %></span>
     <% if @page < @total_pages %>
       <%= link_to admin_resources_path(@resource, admin_page_params(@page + 1)), class: "admin-button btn" do %>
         <span>次へ</span>

@@ -240,7 +240,7 @@
             <span>前へ</span>
           <% end %>
         <% end %>
-        <span><%= @page %> / <%= @total_pages %></span>
+        <span aria-current="page"><%= @page %> / <%= @total_pages %></span>
         <% if @page < @total_pages %>
           <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page + 1, per_page: @per_page), class: "admin-button btn" do %>
             <span>次へ</span>
