@@ -36,7 +36,8 @@ module Admin
       assert_select '.admin-dashboard-hero h1', text: '管理画面'
       assert_select '.admin-dashboard-feature-card', text: /カラオケ配信曲/
       assert_select '.admin-dashboard-status-list', text: /原曲紐付け済み/
-      assert_select '.admin-dashboard-type-card h2', text: '配信種別'
+      assert_select '.admin-dashboard-status-card[aria-label="原曲紐付け状況"]'
+      assert_select '.admin-dashboard-type-card[aria-labelledby="admin-dashboard-type-heading"] h2#admin-dashboard-type-heading', text: '配信種別'
       assert_select '.admin-dashboard-type-ring', text: /配信/
       assert_select '.admin-dashboard-type-legend dt', text: 'DAM'
       assert_select '.admin-dashboard-type-legend dt', text: 'JOYSOUND'

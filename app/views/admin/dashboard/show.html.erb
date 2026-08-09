@@ -24,7 +24,7 @@
     </div>
   </div>
 
-  <aside class="admin-dashboard-status-card">
+  <aside class="admin-dashboard-status-card" aria-label="原曲紐付け状況">
     <div class="admin-dashboard-ring" style="--value: <%= @dashboard_summary[:linked_rate] %>">
       <strong><%= @dashboard_summary[:linked_rate] %>%</strong>
       <span>紐付け</span>
@@ -45,10 +45,10 @@
     </div>
   </aside>
 
-  <aside class="admin-dashboard-type-card">
+  <aside class="admin-dashboard-type-card" aria-labelledby="admin-dashboard-type-heading">
     <div class="admin-dashboard-section-heading">
       <div>
-        <h2>配信種別</h2>
+        <h2 id="admin-dashboard-type-heading">配信種別</h2>
         <p>DAM / JOYSOUND / うたスキ</p>
       </div>
     </div>
