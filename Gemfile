@@ -44,4 +44,4 @@ gem 'pundit'
 gem 'ransack'
 
 gem "solid_cache"
-gem "solid_queue", "~> 1.4"
+gem "solid_queue", "~> 1.6"

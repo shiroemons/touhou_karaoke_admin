@@ -15,4 +15,4 @@ production:
     schedule: every hour at minute 12
   prune_admin_operation_progresses:
     command: "Admin::OperationProgress.prune_older_than!(7.days.ago)"
-    schedule: every day at 3:20am
+    schedule: every day at 3:20am Asia/Tokyo
