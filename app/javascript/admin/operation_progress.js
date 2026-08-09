@@ -1,5 +1,8 @@
 const DEFAULT_PROGRESS_STATUS = "外部サイト取得中"
 const DEFAULT_PROGRESS_LABEL = "外部サイトから取得・保存しています..."
+const POLL_INTERVAL_MS = 1200
+const MAX_POLL_RETRIES = 3
+const MAX_POLL_DELAY_MS = 10000
 
 const elapsedTime = (startedAt) => {
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
@@ -69,7 +72,7 @@ export class AdminOperationProgress {
     const completedLabel = payload.detail || payload.label || (this.inlineConfirmation ? "処理が完了しました。ダイアログを閉じます..." : "処理が完了しました。画面を切り替えています...")
     this.update(100, "完了", completedLabel)
     if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
-    if (this.pollTimer) window.clearInterval(this.pollTimer)
+    if (this.pollTimer) window.clearTimeout(this.pollTimer)
     if (this.inlineConfirmation && this.operationModal?.open) {
       this.finishTimer = window.setTimeout(() => {
         this.operationModal.close()
@@ -135,7 +138,7 @@ export class AdminOperationProgress {
   fail(message) {
     this.phase = "failed"
     this.update(this.lastServerPercentage, "エラー", message || "処理の開始に失敗しました")
-    if (this.pollTimer) window.clearInterval(this.pollTimer)
+    if (this.pollTimer) window.clearTimeout(this.pollTimer)
     if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
     this.progressBar?.classList.remove("admin-operation-progress-bar-active")
     if (this.modalCancelButton) this.modalCancelButton.disabled = false
@@ -149,6 +152,8 @@ export class AdminOperationProgress {
     this.pollTimer = undefined
     this.finishTimer = undefined
     this.executeStartedAt = undefined
+    this.pollFailureCount = 0
+    this.pollInFlight = false
     this.phase = "waiting"
     this.lastServerPercentage = 0
     this.hasServerProgress = false
@@ -158,7 +163,7 @@ export class AdminOperationProgress {
 
   clearTimers() {
     if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
-    if (this.pollTimer) window.clearInterval(this.pollTimer)
+    if (this.pollTimer) window.clearTimeout(this.pollTimer)
     if (this.finishTimer) window.clearTimeout(this.finishTimer)
   }
 
@@ -197,6 +202,9 @@ export class AdminOperationProgress {
     if (!this.progressUrl) return
 
     const poll = async () => {
+      if (this.phase === "finished" || this.phase === "failed" || this.pollInFlight) return
+
+      this.pollInFlight = true
       try {
         const response = await fetch(this.progressUrl, {
           headers: {
@@ -204,15 +212,40 @@ export class AdminOperationProgress {
             "X-Requested-With": "XMLHttpRequest",
           },
         })
-        if (!response.ok) return
+        if (!response.ok) {
+          const error = new Error(`処理状態の取得に失敗しました（HTTP ${response.status}）。`)
+          error.status = response.status
+          throw error
+        }
 
+        this.pollFailureCount = 0
         this.applyServerProgress(await response.json())
       } catch (error) {
-        console.debug(error)
+        if (error.status === 404) {
+          this.fail("処理状態が見つかりません。再実行するか、画面を再読み込みしてください。")
+          return
+        }
+
+        this.pollFailureCount += 1
+        if (this.pollFailureCount >= MAX_POLL_RETRIES) {
+          this.fail("処理状態を確認できません。再実行するか、画面を再読み込みしてください。")
+          return
+        }
+
+        this.lastStatus = "再試行中"
+        this.lastLabel = `進捗を確認できません。${this.pollFailureCount}/${MAX_POLL_RETRIES}回目の再試行を待っています...`
+        this.update(this.lastServerPercentage, this.lastStatus, this.lastLabel)
+      } finally {
+        this.pollInFlight = false
+        if (this.phase === "finished" || this.phase === "failed") return
+
+        const retryDelay = this.pollFailureCount > 0
+          ? Math.min(MAX_POLL_DELAY_MS, POLL_INTERVAL_MS * (2 ** (this.pollFailureCount - 1)))
+          : POLL_INTERVAL_MS
+        this.pollTimer = window.setTimeout(poll, retryDelay)
       }
     }
 
     poll()
-    this.pollTimer = window.setInterval(poll, 1200)
   }
 }

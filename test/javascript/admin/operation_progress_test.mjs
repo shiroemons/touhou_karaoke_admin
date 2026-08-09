@@ -48,7 +48,7 @@ class FakeElement {
   }
 }
 
-const buildProgress = () => {
+const buildProgress = ({ progressUrl } = {}) => {
   const form = new FakeElement()
   const modalCancelButton = new FakeElement()
   const submitButton = new FakeElement()
@@ -79,7 +79,7 @@ const buildProgress = () => {
     modalCancelButton,
     submitButton,
     inlineConfirmation: false,
-    progressUrl: undefined,
+    progressUrl,
     estimatedSeconds: 40,
     updateSubmitStates: () => {
       updateCalls += 1
@@ -144,4 +144,77 @@ test("AdminOperationProgress.applyServerProgress handles failed server state", (
   assert.equal(form.dataset.adminOperationBusy, undefined)
   assert.equal(modalCancelButton.disabled, false)
   assert.equal(progressBar.classList.has("admin-operation-progress-bar-active"), false)
+})
+
+test("AdminOperationProgress stops polling when the progress id is unknown", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let scheduledPolls = 0
+
+  globalThis.fetch = async () => ({ ok: false, status: 404 })
+  globalThis.window = {
+    setTimeout: () => {
+      scheduledPolls += 1
+      return scheduledPolls
+    },
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(progress.phase, "failed")
+    assert.equal(progressStatus.textContent, "エラー")
+    assert.match(progressLabel.textContent, /処理状態が見つかりません/)
+    assert.equal(scheduledPolls, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("AdminOperationProgress retries transient polling failures with backoff", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let calls = 0
+  const scheduled = []
+
+  globalThis.fetch = async () => {
+    calls += 1
+    throw new Error("network error")
+  }
+  globalThis.window = {
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(calls, 1)
+    assert.equal(progressStatus.textContent, "再試行中")
+    assert.match(progressLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1200)
+
+    await scheduled.at(-1).callback()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(calls, 2)
+    assert.equal(scheduled.at(-1).delay, 2400)
+
+    await scheduled.at(-1).callback()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(progress.phase, "failed")
+    assert.equal(calls, 3)
+    assert.match(progressLabel.textContent, /処理状態を確認できません/)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
 })
