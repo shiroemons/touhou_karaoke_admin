@@ -8,7 +8,7 @@
 <%= form_with url: admin_operation_path(resource, record, operation.key), method: :post, multipart: operation.inputs.any? { |input| input[:type] == :file }, class: "admin-form", data: { admin_operation_form: true, confirmation: operation.confirmation.presence || "#{operation.label}を実行します。よろしいですか？", admin_operation_action: operation.action_key, admin_operation_async: operation.async, admin_operation_estimated_seconds: operation.estimated_seconds, admin_operation_label: operation.label, admin_operation_progress_url: admin_operation_progress_path(resource, record, operation.key, operation_progress_id), admin_operation_resource_label: resource.label, admin_operation_inline_confirmation: modal, admin_operation_selection: supports_selection, admin_operation_selection_required: selection_required, admin_operation_target_scope: admin_operation_target_scope(operation, record:), admin_operation_target_label: admin_operation_target_label(operation, record:) } do |form| %>
   <%= hidden_field_tag :operation_progress_id, operation_progress_id, id: "admin-operation-progress-#{operation_dom_suffix}" %>
   <% if supports_selection %>
-    <div class="admin-operation-selection-summary alert <%= selection_required ? "alert-warning" : "alert-info" %>" data-admin-operation-selection-summary>
+    <div class="admin-operation-selection-summary alert <%= selection_required ? "alert-warning" : "alert-info" %>" data-admin-operation-selection-summary role="status" aria-live="polite" aria-atomic="true">
       <strong><span data-admin-operation-selection-count>0</span>件選択中</strong>
       <span data-admin-operation-selection-note><%= selection_required ? "対象を選択してください。" : "未選択の場合は全件を対象にします。" %></span>
     </div>
@@ -46,7 +46,7 @@
       <span>実行</span>
     <% end %>
   </div>
-  <p class="admin-operation-submit-note" id="admin-operation-submit-note-<%= operation_progress_id %>" data-admin-operation-submit-note>
+  <p class="admin-operation-submit-note" id="admin-operation-submit-note-<%= operation_progress_id %>" data-admin-operation-submit-note role="status" aria-live="polite" aria-atomic="true">
     <% if selection_required %>
       対象を選択すると実行できます。
     <% elsif required_inputs.present? %>

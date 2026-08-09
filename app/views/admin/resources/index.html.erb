@@ -81,7 +81,7 @@
 </div>
 
 <% if selectable_collection_operations %>
-  <div class="admin-selection-toolbar alert alert-info" data-admin-selection-toolbar aria-live="polite">
+  <div class="admin-selection-toolbar alert alert-info" data-admin-selection-toolbar role="status" aria-live="polite" aria-atomic="true">
     <%= admin_icon(:select) %>
     <div>
       <strong><span data-admin-selection-count>0</span>件選択中</strong>
