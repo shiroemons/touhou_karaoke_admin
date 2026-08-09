@@ -1,0 +1,3 @@
+# The image contains runtime tools only; Compose bind-mounts the application.
+**
+!Dockerfile

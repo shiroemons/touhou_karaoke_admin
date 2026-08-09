@@ -1,32 +1,39 @@
-FROM ruby:4.0.5-bookworm
+FROM ruby:4.0.6-bookworm
+
+ARG NODE_MAJOR=24
+ARG COREPACK_VERSION=0.35.0
+ARG YARN_VERSION=4.18.0
+ARG BUNDLER_VERSION=4.0.18
+
+ENV COREPACK_HOME=/usr/local/share/corepack
 
 WORKDIR /app
 
-# Using Node.js v24.x (Active LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
-
-# PostgreSQL
-RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-RUN apt install curl ca-certificates gnupg
-RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-
-# Add packages
-RUN apt-get update && apt-get install -y \
+# Install repository keys before adding the NodeSource and PostgreSQL repositories.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      gnupg \
+    && install -d -m 0755 /etc/apt/keyrings /usr/share/postgresql-common/pgdg \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+      | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" \
+      > /etc/apt/sources.list.d/nodesource.list \
+    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+      https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+      > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      chromium \
+      chromium-driver \
       git \
-      postgresql-client-18 \
       nodejs \
-      vim
-
-# Add Yarn Classic for assets:precompile
-RUN npm install -g yarn@1.22.22
-
-# Add Chromium
-RUN apt-get update && apt-get install -y chromium
-
-# Add chromedriver
-RUN CHROME_DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE) \
-    && curl -sO https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
-    && unzip chromedriver_linux64.zip \
-    && mv chromedriver /usr/bin/chromedriver \
-    && chmod +x /usr/bin/chromedriver \
-    && rm chromedriver_linux64.zip
+      postgresql-client-18 \
+      vim \
+    && npm install --global "corepack@${COREPACK_VERSION}" \
+    && corepack enable \
+    && corepack install --global "yarn@${YARN_VERSION}" \
+    && gem install bundler -v "${BUNDLER_VERSION}" --no-document \
+    && rm -rf /var/lib/apt/lists/*

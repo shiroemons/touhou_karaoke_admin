@@ -14,8 +14,12 @@ FileUtils.chdir APP_ROOT do
   # Add necessary setup steps to this file.
 
   puts "== Installing dependencies =="
-  system! "gem install bundler --conservative"
+  bundler_version = File.read("Gemfile.lock")[/^BUNDLED WITH\n\s+(\S+)$/, 1]
+  abort "Gemfile.lock does not declare BUNDLED WITH" unless bundler_version
+
+  system! "gem", "install", "bundler", "--version", bundler_version, "--no-document"
   system("bundle check") || system!("bundle install")
+  system! "yarn", "install", "--immutable"
 
   # puts "\n== Copying sample files =="
   # unless File.exist?("config/database.yml")
