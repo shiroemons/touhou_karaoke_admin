@@ -961,7 +961,7 @@ module Admin
       assert_select 'input[data-admin-resource-select]', 1
       assert_select 'dialog[data-admin-operation-modal][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '#admin-operation-modal-title-song[data-admin-operation-modal-title]'
-      assert_select '[data-admin-operation-panel="export_songs"]'
+      assert_select '[data-admin-operation-panel="export_songs"][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '[data-admin-operation-panel="export_songs"] form[data-admin-operation-form][data-admin-operation-inline-confirmation="true"][data-admin-operation-selection-required="true"]'
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selected-ids]'
       assert_select '[data-admin-operation-panel="export_songs"] .admin-operation-selection-summary.alert.alert-warning[role="status"][aria-live="polite"][aria-atomic="true"]'
