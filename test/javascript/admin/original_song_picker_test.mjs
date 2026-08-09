@@ -47,8 +47,9 @@ class FakeElement {
     this.dispatchedEvents.push(event.type)
   }
 
-  focus() {
+  focus(options) {
     this.focused = true
+    this.focusOptions = options
   }
 
   getBoundingClientRect() {
@@ -202,6 +203,28 @@ test("setOriginalSongPickerText resolves selected items and renders candidates f
   assert.equal(fixture.options.children[0].dataset.adminOriginalSongCandidateFor, "紅楼?")
   assert.equal(fixture.options.children[0].attributes.role, "option")
   assert.equal(fixture.options.children[0].attributes["aria-selected"], "false")
+})
+
+test("selecting an original song candidate returns focus to the search field", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => [{ label: "候補", title: "候補" }],
+  })
+
+  fixture.search.value = "候補"
+  await fixture.search.dispatch("input")
+  fixture.search.focused = false
+  await fixture.picker.dispatch("click", { target: fixture.options.children[0] })
+
+  assert.equal(fixture.valueInput.value, "候補")
+  assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.focused, true)
+  assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
 })
 
 test("setOriginalSongPickerText appends to existing selection when append is true", async () => {

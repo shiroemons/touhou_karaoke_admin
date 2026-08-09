@@ -314,7 +314,11 @@ export const setupAdminOriginalSongPickers = () => {
         ? selectedOriginalSongItems(picker).filter((item) => !(item.status === "invalid" && item.title === candidateFor))
         : selectedOriginalSongItems(picker)
       updateOriginalSongPickerValue(picker, [...currentItems, { title: selectedTitle, status: "valid" }])
-      picker.querySelector("[data-admin-original-song-search]").value = ""
+      const searchInput = picker.querySelector("[data-admin-original-song-search]")
+      if (searchInput) {
+        searchInput.value = ""
+        searchInput.focus?.({ preventScroll: true })
+      }
       hideOriginalSongOptions(picker)
       updateOriginalSongPickerStatus(picker, "原曲を追加しました。")
     })
