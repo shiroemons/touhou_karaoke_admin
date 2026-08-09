@@ -5,7 +5,11 @@ import { test } from "node:test"
 const source = await readFile(new URL("../../../app/javascript/admin/resource_operations.js", import.meta.url), "utf8")
 const moduleSource = source
   .replace(
-    /^import \{[\s\S]*?\} from "\.\/resource_selection"\nimport \{ setupAdminOperationModal \} from "\.\/operation_modal"\nimport \{ AdminOperationProgress \} from "\.\/operation_progress"\nimport \{ adminSelectors \} from "\.\/selectors"\n/m,
+    /^import \{ rememberAdminDialogFocus \} from "\.\/dialog_focus"\n/m,
+    "const rememberAdminDialogFocus = () => {}\n"
+  )
+  .replace(
+    /^import \{[\s\S]*?\} from "\.\/resource_selection"\nconst rememberAdminDialogFocus = \(\) => \{\}\nimport \{ setupAdminOperationModal \} from "\.\/operation_modal"\nimport \{ AdminOperationProgress \} from "\.\/operation_progress"\nimport \{ adminSelectors \} from "\.\/selectors"\n/m,
     `const selectedAdminResourceIds = () => []
 const setupAdminResourceSelection = () => {}
 const updateResourceSelectionState = () => {}

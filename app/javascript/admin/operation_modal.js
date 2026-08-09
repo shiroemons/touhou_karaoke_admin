@@ -1,3 +1,4 @@
+import { rememberAdminDialogFocus } from "./dialog_focus"
 import { adminSelectors } from "./selectors"
 
 export const setupAdminOperationModal = ({ updateSelectionState } = {}) => {
@@ -9,6 +10,12 @@ export const setupAdminOperationModal = ({ updateSelectionState } = {}) => {
     const panels = Array.from(modal.querySelectorAll(adminSelectors.operationPanel))
     const closeButton = modal.querySelector(adminSelectors.operationModalClose)
     const resourceKey = modal.dataset.adminOperationResource
+    let returnFocusDetails
+
+    modal.addEventListener("close", () => {
+      if (returnFocusDetails) returnFocusDetails.setAttribute("open", "")
+      returnFocusDetails = null
+    })
 
     const showPanel = (operationKey, label) => {
       let activePanel
@@ -33,8 +40,10 @@ export const setupAdminOperationModal = ({ updateSelectionState } = {}) => {
         if (!panel || !modal.showModal) return
 
         event.preventDefault()
-        trigger.closest("details")?.removeAttribute("open")
+        returnFocusDetails = trigger.closest("details")
+        returnFocusDetails?.removeAttribute("open")
         showPanel(operationKey, trigger.dataset.adminOperationLabel || trigger.textContent.trim())
+        rememberAdminDialogFocus(modal)
         modal.showModal()
       })
     })

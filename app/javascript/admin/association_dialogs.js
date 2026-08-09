@@ -1,3 +1,4 @@
+import { rememberAdminDialogFocus } from "./dialog_focus"
 import { setupAdminSearchableSelects } from "./searchable_select"
 
 export const setupAdminAssociationDialogs = () => {
@@ -10,6 +11,7 @@ export const setupAdminAssociationDialogs = () => {
     document.querySelectorAll(`[data-admin-association-dialog-trigger="${dialogKey}"]`).forEach((trigger) => {
       trigger.addEventListener("click", () => {
         setupAdminSearchableSelects()
+        rememberAdminDialogFocus(dialog)
         dialog.showModal()
       })
     })

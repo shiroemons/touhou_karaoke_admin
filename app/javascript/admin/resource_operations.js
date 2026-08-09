@@ -3,6 +3,7 @@ import {
   setupAdminResourceSelection,
   updateAdminResourceSelectionState as updateResourceSelectionState,
 } from "./resource_selection"
+import { rememberAdminDialogFocus } from "./dialog_focus"
 import { setupAdminOperationModal } from "./operation_modal"
 import { AdminOperationProgress } from "./operation_progress"
 import { adminSelectors } from "./selectors"
@@ -199,6 +200,7 @@ const setupAdminOperationForms = () => {
 
       if (dialogTitle) dialogTitle.textContent = `${operationLabel}を実行しますか？`
       if (dialogMessage) dialogMessage.textContent = message
+      rememberAdminDialogFocus(dialog)
       dialog.showModal()
     })
 
