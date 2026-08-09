@@ -1,6 +1,5 @@
 DEVBOX_PC_PORT_NUM ?= 53178
 DEVBOX_PC_URL := http://localhost:$(DEVBOX_PC_PORT_NUM)
-
 .PHONY: all setup setup-git-hooks shell versions up tui logs down status ps restart fix-pg health doctor recover recover-force kill-orphan-ports \
 	server jobs console console-sandbox bundle \
 	dbinit dbconsole migrate migrate-redo rollback dbseed \
@@ -390,13 +389,29 @@ docker-stats: ## [Docker] Generate statistics
 
 docker-db-dump: ## [Docker] Database backup
 	mkdir -p tmp/data
-	docker compose exec postgres-18 pg_dump -Fc --no-owner -v -d postgres://postgres:@localhost/touhou_karaoke_admin_development -f /tmp/data/dev.bak
+	docker compose exec -T postgres-18 pg_dump -Fc --no-owner -v -h localhost -U postgres -d touhou_karaoke_admin_development > tmp/data/development-primary.bak.tmp
+	docker compose exec -T postgres-18 pg_dump -Fc --no-owner -v -h localhost -U postgres -d touhou_karaoke_admin_development_queue > tmp/data/development-queue.bak.tmp
+	docker compose exec -T postgres-18 pg_dumpall --globals-only --no-role-passwords -h localhost -U postgres > tmp/data/globals.sql.tmp
+	docker compose exec -T postgres-18 pg_restore --list < tmp/data/development-primary.bak.tmp >/dev/null
+	docker compose exec -T postgres-18 pg_restore --list < tmp/data/development-queue.bak.tmp >/dev/null
+	test -s tmp/data/globals.sql.tmp
+	mv tmp/data/development-primary.bak.tmp tmp/data/development-primary.bak
+	mv tmp/data/development-queue.bak.tmp tmp/data/development-queue.bak
+	mv tmp/data/globals.sql.tmp tmp/data/globals.sql
 
 docker-db-restore: ## [Docker] Database restore
-	@if test -f ./tmp/dev.bak; then \
-		docker compose exec postgres-18 pg_restore --no-privileges --no-owner --clean -v -d postgres://postgres:@localhost/touhou_karaoke_admin_development /tmp/data/dev.bak; \
+	@if test -f ./tmp/data/development-primary.bak && test -f ./tmp/data/development-queue.bak; then \
+		set -e; \
+		docker compose exec -T postgres-18 pg_restore --list < ./tmp/data/development-primary.bak >/dev/null; \
+		docker compose exec -T postgres-18 pg_restore --list < ./tmp/data/development-queue.bak >/dev/null; \
+		docker compose exec postgres-18 dropdb --if-exists --force -h localhost -U postgres touhou_karaoke_admin_development; \
+		docker compose exec postgres-18 dropdb --if-exists --force -h localhost -U postgres touhou_karaoke_admin_development_queue; \
+		docker compose exec postgres-18 createdb -h localhost -U postgres touhou_karaoke_admin_development; \
+		docker compose exec postgres-18 createdb -h localhost -U postgres touhou_karaoke_admin_development_queue; \
+		docker compose exec -T postgres-18 pg_restore --no-privileges --no-owner --exit-on-error --single-transaction -v -h localhost -U postgres -d touhou_karaoke_admin_development < ./tmp/data/development-primary.bak; \
+		docker compose exec -T postgres-18 pg_restore --no-privileges --no-owner --exit-on-error --single-transaction -v -h localhost -U postgres -d touhou_karaoke_admin_development_queue < ./tmp/data/development-queue.bak; \
 	else \
-		echo "Error: ./tmp/dev.bak does not exist."; \
+		echo "Error: primary and queue backups do not exist in ./tmp/data/."; \
 		exit 1; \
 	fi
 
