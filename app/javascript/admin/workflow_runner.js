@@ -2,6 +2,13 @@ const POLL_INTERVAL_MS = 1500
 const MAX_POLL_RETRIES = 3
 const MAX_POLL_DELAY_MS = 10000
 
+const normalizedCount = (value) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0
+}
+
+const normalizedPercentage = (value) => Math.min(100, normalizedCount(value))
+
 export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
   document.querySelectorAll("[data-admin-workflow-runner]").forEach((runner) => {
     if (runner.dataset.initialized === "true") return
@@ -41,13 +48,15 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       if (statusPanel) {
         if (statusLabel) statusLabel.textContent = payload.label || "実行状況を確認しています"
         if (statusState) statusState.textContent = payload.status || payload.state || "確認中"
-        if (statusPercent) statusPercent.textContent = `${Number.parseInt(payload.percentage || "0", 10)}%`
+        if (statusPercent) statusPercent.textContent = `${normalizedPercentage(payload.percentage)}%`
         if (statusCurrent) statusCurrent.textContent = currentText
       }
       if (currentStepLabel) currentStepLabel.textContent = `現在: ${currentText}`
       if (statusPanel && statusCount) {
         const workflow = payload.workflow || {}
-        statusCount.textContent = `${Number.parseInt(workflow.completed_steps || "0", 10)} / ${Number.parseInt(workflow.total_steps || "0", 10)}`
+        const totalSteps = normalizedCount(workflow.total_steps)
+        const completedSteps = Math.min(totalSteps, normalizedCount(workflow.completed_steps))
+        statusCount.textContent = `${completedSteps} / ${totalSteps}`
       }
     }
 
@@ -67,9 +76,7 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       }
       if (progress) {
         progress.textContent = labels[step.status] || step.status
-        if (step.status === "running" && Number.isFinite(Number.parseInt(childProgress.percentage || "0", 10))) {
-          progress.textContent += ` ${Number.parseInt(childProgress.percentage || "0", 10)}%`
-        }
+        if (step.status === "running") progress.textContent += ` ${normalizedPercentage(childProgress.percentage)}%`
       }
     }
 

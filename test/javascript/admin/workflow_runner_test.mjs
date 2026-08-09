@@ -60,6 +60,7 @@ const buildFixture = ({ progressUrl = "/admin/workflow/dam/progress?run_id=run" 
     statusState,
     statusCurrent,
     statusPercent,
+    statusCount,
   }
 }
 
@@ -172,6 +173,44 @@ test("workflow runner retries a malformed progress payload", async () => {
     assert.equal(fixture.statusState.textContent, "再試行中")
     assert.match(fixture.statusLabel.textContent, /1\/3回目/)
     assert.equal(scheduled.at(-1).delay, 1500)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("workflow runner normalizes malformed progress numbers", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      state: "running",
+      status: "実行中",
+      percentage: "not-a-number",
+      workflow: {
+        completed_steps: "12",
+        total_steps: "3",
+        steps: [],
+      },
+    }),
+  })
+  globalThis.window = {
+    setTimeout: () => "poll",
+    clearTimeout: () => {},
+  }
+  const fixture = buildFixture()
+  globalThis.document = fixture.document
+
+  try {
+    setupAdminWorkflowRunner()
+    await waitForPoll()
+
+    assert.equal(fixture.statusPercent.textContent, "0%")
+    assert.equal(fixture.statusCount.textContent, "3 / 3")
   } finally {
     globalThis.document = originalDocument
     globalThis.fetch = originalFetch
