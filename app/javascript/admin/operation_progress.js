@@ -108,6 +108,7 @@ export class AdminOperationProgress {
 
   start() {
     this.clearTimers()
+    this.resetState()
     if (this.progress) this.progress.hidden = false
     this.setBusy(true)
     this.form.dataset.adminOperationBusy = "true"

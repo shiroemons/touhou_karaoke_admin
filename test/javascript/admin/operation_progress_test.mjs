@@ -215,6 +215,46 @@ test("AdminOperationProgress releases timers and pagehide handlers between runs"
   }
 })
 
+test("AdminOperationProgress resets stale progress state before a retry", () => {
+  const originalWindow = globalThis.window
+  const listeners = new Set()
+
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.delete(handler)
+    },
+    setInterval: () => "interval",
+    clearInterval: () => {},
+    setTimeout: () => "timeout",
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress } = buildProgress()
+    progress.phase = "failed"
+    progress.lastServerPercentage = 72
+    progress.hasServerProgress = true
+    progress.pollFailureCount = 2
+    progress.lastStatus = "再試行中"
+    progress.lastLabel = "古い進捗"
+
+    progress.start()
+
+    assert.equal(progress.phase, "prepare")
+    assert.equal(progress.lastServerPercentage, 0)
+    assert.equal(progress.hasServerProgress, false)
+    assert.equal(progress.pollFailureCount, 0)
+    assert.equal(progress.lastStatus, "外部サイト取得中")
+    assert.equal(progress.lastLabel, "外部サイトから取得・保存しています...")
+    assert.equal(listeners.size, 1)
+  } finally {
+    globalThis.window = originalWindow
+  }
+})
+
 test("AdminOperationProgress stops polling when the progress id is unknown", async () => {
   const originalFetch = globalThis.fetch
   const originalWindow = globalThis.window
