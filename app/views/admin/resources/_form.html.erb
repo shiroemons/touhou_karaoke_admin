@@ -1,4 +1,4 @@
-<section class="admin-panel">
+<section class="admin-panel" aria-label="<%= @resource.label %>の<%= record.persisted? ? '編集' : '作成' %>フォーム">
   <%= form_with model: [:admin, record], url: record.persisted? ? admin_resource_path(resource, record) : admin_resources_path(resource), class: "admin-form" do |form| %>
     <% if record.errors.any? %>
       <div class="admin-errors" role="alert" aria-live="assertive" tabindex="-1" data-admin-form-error-summary>

@@ -1128,6 +1128,7 @@ module Admin
       get edit_admin_song_path(@song)
 
       assert_response :success
+      assert_select 'section.admin-panel[aria-label="カラオケ配信曲の編集フォーム"] form.admin-form'
       assert_select 'form'
       assert_select 'input[name="song[youtube_url]"]'
     end
