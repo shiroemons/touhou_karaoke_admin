@@ -155,6 +155,66 @@ test("AdminOperationProgress.applyServerProgress handles failed server state", (
   assert.equal(progressBar.classList.has("admin-operation-progress-bar-active"), false)
 })
 
+test("AdminOperationProgress releases timers and pagehide handlers between runs", () => {
+  const originalWindow = globalThis.window
+  const listeners = new Set()
+  const clearedIntervals = []
+  const clearedTimeouts = []
+  let intervalId = 0
+  let timeoutId = 0
+
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.delete(handler)
+    },
+    setInterval: () => {
+      intervalId += 1
+      return `interval-${intervalId}`
+    },
+    clearInterval: (id) => {
+      clearedIntervals.push(id)
+    },
+    setTimeout: (callback) => {
+      timeoutId += 1
+      return { callback, id: `timeout-${timeoutId}` }
+    },
+    clearTimeout: (timer) => {
+      clearedTimeouts.push(timer)
+    },
+  }
+
+  try {
+    const { progress } = buildProgress()
+    progress.start()
+    const executeTimer = progress.executeTimer
+
+    assert.equal(listeners.size, 1)
+    assert.ok(executeTimer)
+
+    progress.finish()
+
+    assert.equal(listeners.size, 0)
+    assert.equal(progress.elapsedTimer, undefined)
+    assert.equal(progress.executeTimer, undefined)
+    assert.ok(clearedIntervals.length > 0)
+    assert.ok(clearedTimeouts.includes(executeTimer))
+
+    executeTimer.callback()
+    assert.equal(progress.phase, "finished")
+
+    progress.reset()
+    progress.start()
+    assert.equal(listeners.size, 1)
+    progress.reset()
+    assert.equal(listeners.size, 0)
+  } finally {
+    globalThis.window = originalWindow
+  }
+})
+
 test("AdminOperationProgress stops polling when the progress id is unknown", async () => {
   const originalFetch = globalThis.fetch
   const originalWindow = globalThis.window

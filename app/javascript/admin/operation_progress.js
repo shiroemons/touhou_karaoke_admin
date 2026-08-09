@@ -71,12 +71,11 @@ export class AdminOperationProgress {
     if (this.progress?.hidden || this.phase === "finished") return
 
     this.phase = "finished"
+    this.clearTimers()
     this.setBusy(false)
     this.activateStep("finish")
     const completedLabel = payload.detail || payload.label || (this.inlineConfirmation ? "処理が完了しました。ダイアログを閉じます..." : "処理が完了しました。画面を切り替えています...")
     this.update(100, "完了", completedLabel)
-    if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
-    if (this.pollTimer) window.clearTimeout(this.pollTimer)
     if (this.inlineConfirmation && this.operationModal?.open) {
       this.finishTimer = window.setTimeout(() => {
         this.operationModal.close()
@@ -108,6 +107,7 @@ export class AdminOperationProgress {
   }
 
   start() {
+    this.clearTimers()
     if (this.progress) this.progress.hidden = false
     this.setBusy(true)
     this.form.dataset.adminOperationBusy = "true"
@@ -128,7 +128,10 @@ export class AdminOperationProgress {
       }
     }, 1000)
 
-    window.setTimeout(() => {
+    this.executeTimer = window.setTimeout(() => {
+      this.executeTimer = undefined
+      if (this.phase !== "prepare") return
+
       this.phase = "execute"
       this.executeStartedAt = Date.now()
       this.activateStep("execute")
@@ -137,15 +140,15 @@ export class AdminOperationProgress {
     }, 250)
 
     this.startPolling()
-    window.addEventListener("pagehide", () => this.finish(), { once: true })
+    this.pagehideHandler = () => this.finish()
+    window.addEventListener("pagehide", this.pagehideHandler, { once: true })
   }
 
   fail(message) {
     this.phase = "failed"
     this.setBusy(false)
     this.update(this.lastServerPercentage, "エラー", message || "処理の開始に失敗しました")
-    if (this.pollTimer) window.clearTimeout(this.pollTimer)
-    if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
+    this.clearTimers()
     this.progressBar?.classList.remove("admin-operation-progress-bar-active")
     if (this.modalCancelButton) this.modalCancelButton.disabled = false
     delete this.form.dataset.adminOperationBusy
@@ -157,6 +160,7 @@ export class AdminOperationProgress {
     this.elapsedTimer = undefined
     this.pollTimer = undefined
     this.finishTimer = undefined
+    this.executeTimer = undefined
     this.executeStartedAt = undefined
     this.pollFailureCount = 0
     this.pollInFlight = false
@@ -168,9 +172,30 @@ export class AdminOperationProgress {
   }
 
   clearTimers() {
-    if (this.elapsedTimer) window.clearInterval(this.elapsedTimer)
-    if (this.pollTimer) window.clearTimeout(this.pollTimer)
-    if (this.finishTimer) window.clearTimeout(this.finishTimer)
+    if (this.elapsedTimer !== undefined) {
+      window.clearInterval(this.elapsedTimer)
+      this.elapsedTimer = undefined
+    }
+    if (this.pollTimer !== undefined) {
+      window.clearTimeout(this.pollTimer)
+      this.pollTimer = undefined
+    }
+    if (this.finishTimer !== undefined) {
+      window.clearTimeout(this.finishTimer)
+      this.finishTimer = undefined
+    }
+    if (this.executeTimer !== undefined) {
+      window.clearTimeout(this.executeTimer)
+      this.executeTimer = undefined
+    }
+    this.removePagehideHandler()
+  }
+
+  removePagehideHandler() {
+    if (!this.pagehideHandler) return
+
+    window.removeEventListener("pagehide", this.pagehideHandler)
+    this.pagehideHandler = undefined
   }
 
   setBusy(busy) {
