@@ -455,7 +455,8 @@ module Admin
 
       assert_response :success
       assert_select 'form[data-admin-delete-confirmation=?]', 'サークル「一覧削除確認サークル」を削除します。この操作は取り消せません。削除してよろしいですか？'
-      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog]'
+      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog][aria-describedby="admin-delete-confirmation-message"]'
+      assert_select 'p#admin-delete-confirmation-message[data-admin-delete-confirmation-message][aria-live="polite"]'
     end
 
     test 'filters index independently from keyword search' do
@@ -1211,7 +1212,8 @@ module Admin
 
       assert_response :success
       assert_select 'form[data-admin-delete-confirmation=?]', 'サークル「詳細削除確認サークル」を削除します。この操作は取り消せません。削除してよろしいですか？'
-      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog]'
+      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog][aria-describedby="admin-delete-confirmation-message"]'
+      assert_select 'p#admin-delete-confirmation-message[data-admin-delete-confirmation-message][aria-live="polite"]'
     end
 
     test 'does not destroy circle with associated data' do
