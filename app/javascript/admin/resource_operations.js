@@ -118,7 +118,7 @@ const setupAdminOperationForms = () => {
           credentials: "same-origin",
         })
 
-        const payload = await response.json().catch(() => ({}))
+        const payload = (await response.json().catch(() => ({}))) || {}
         if (!response.ok) throw new Error(payload.message || requestFailureMessage(response.status))
 
         operationProgress.applyServerProgress(payload.progress)

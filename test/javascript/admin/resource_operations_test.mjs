@@ -25,8 +25,13 @@ class AdminOperationProgress {
   }
 
   reset() {}
-  applyServerProgress() {}
-  fail() {}
+  applyServerProgress(payload) {
+    this.form.dataset.adminOperationProgress = payload ? "received" : "skipped"
+  }
+
+  fail(message) {
+    this.form.dataset.adminOperationFailure = message
+  }
 }
 const adminSelectors = {
   csrfToken: "meta[name='csrf-token']",
@@ -99,6 +104,8 @@ class FakeForm {
   }
 }
 
+const waitForAsyncWork = () => new Promise((resolve) => setImmediate(resolve))
+
 test("busy async operation forms reject duplicate submit events", () => {
   const originalDocument = globalThis.document
   const form = new FakeForm()
@@ -118,5 +125,32 @@ test("busy async operation forms reject duplicate submit events", () => {
     assert.equal(form.submitButton.disabled, true)
   } finally {
     globalThis.document = originalDocument
+  }
+})
+
+test("async operation tolerates a null start response", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalFormData = globalThis.FormData
+  const form = new FakeForm()
+  globalThis.document = {
+    querySelector: () => null,
+    querySelectorAll: (selector) => (selector === "[data-admin-operation-form]" ? [form] : []),
+  }
+  globalThis.fetch = async () => ({ ok: true, json: async () => null })
+  globalThis.FormData = class {}
+
+  try {
+    setupAdminResourceOperations()
+    const event = form.dispatchSubmit()
+    await waitForAsyncWork()
+
+    assert.equal(event.defaultPrevented, true)
+    assert.equal(form.dataset.adminOperationProgress, "skipped")
+    assert.equal(form.dataset.adminOperationFailure, undefined)
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.FormData = originalFormData
   }
 })
