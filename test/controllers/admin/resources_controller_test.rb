@@ -1096,7 +1096,7 @@ module Admin
       end
 
       assert_response :unprocessable_content
-      assert_select '.admin-errors[role="alert"][aria-live="assertive"]'
+      assert_select '.admin-errors[role="alert"][aria-live="assertive"][data-admin-form-error-summary]'
       assert_select '.admin-errors a[href="#karaoke_delivery_model_name"]', text: /機種名/
       assert_select '.admin-form-row-invalid input[name="karaoke_delivery_model[name]"][aria-invalid="true"][aria-describedby="karaoke_delivery_model_name_error"]'
       assert_select '#karaoke_delivery_model_name_error.admin-field-errors', text: /機種名/

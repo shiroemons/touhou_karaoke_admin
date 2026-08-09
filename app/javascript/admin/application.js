@@ -6,6 +6,7 @@ import { setupAdminDeleteConfirmations } from "./delete_confirmation"
 import { setupAdminFlash, showAdminFlash } from "./flash"
 import { setupAdminInfiniteScroll } from "./infinite_scroll"
 import { setupAdminFilterForms, setupAdminNavigation } from "./navigation"
+import { setupAdminFormErrors } from "./form_errors"
 import { setupAdminResourceOperations, updateAdminResourceSelectionState } from "./resource_operations"
 import { setupAdminWorkflowRunner } from "./workflow_runner"
 
@@ -15,6 +16,7 @@ document.addEventListener("DOMContentLoaded", setupAdminFlash)
 document.addEventListener("DOMContentLoaded", setupAdminDeleteConfirmations)
 document.addEventListener("DOMContentLoaded", () => setupAdminInfiniteScroll({ updateSelectionState: updateAdminResourceSelectionState }))
 document.addEventListener("DOMContentLoaded", setupAdminBulkEditControls)
+document.addEventListener("DOMContentLoaded", setupAdminFormErrors)
 document.addEventListener("DOMContentLoaded", () => setupAdminNavigation({ setupPageBehaviors: setupAdminPageBehaviors }))
 document.addEventListener("DOMContentLoaded", () => setupAdminWorkflowRunner({ showFlash: showAdminFlash }))
 
