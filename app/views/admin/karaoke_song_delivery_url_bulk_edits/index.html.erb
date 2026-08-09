@@ -34,8 +34,8 @@
         <% end %>
       </div>
       <div class="admin-delivery-url-controls">
-        <section class="admin-delivery-url-control-group">
-          <h2>絞り込み</h2>
+        <section class="admin-delivery-url-control-group" aria-labelledby="admin-delivery-url-filter-heading">
+          <h2 id="admin-delivery-url-filter-heading">絞り込み</h2>
           <div class="admin-delivery-url-control-row">
             <%= form.select :karaoke_type,
                             options_for_select([["すべての種別", ""]] + karaoke_song_delivery_url_karaoke_type_options.map { |karaoke_type| [karaoke_type, karaoke_type] }, @karaoke_type),
@@ -53,8 +53,8 @@
             <% end %>
           </div>
         </section>
-        <section class="admin-delivery-url-control-group">
-          <h2>並び替え</h2>
+        <section class="admin-delivery-url-control-group" aria-labelledby="admin-delivery-url-sort-heading">
+          <h2 id="admin-delivery-url-sort-heading">並び替え</h2>
           <div class="admin-delivery-url-control-row">
             <%= form.select :sort,
                             options_for_select(karaoke_song_delivery_url_sort_options, @sort),
@@ -70,8 +70,8 @@
                             data: { admin_auto_submit: true } %>
           </div>
         </section>
-        <section class="admin-delivery-url-control-group">
-          <h2>表示件数</h2>
+        <section class="admin-delivery-url-control-group" aria-labelledby="admin-delivery-url-page-size-heading">
+          <h2 id="admin-delivery-url-page-size-heading">表示件数</h2>
           <div class="admin-delivery-url-control-row">
             <%= form.select :per_page,
                             options_for_select(karaoke_song_delivery_url_per_page_options, @per_page),

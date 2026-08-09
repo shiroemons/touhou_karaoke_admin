@@ -39,8 +39,9 @@ module Admin
       assert_select 'button[aria-label="配信URL変更チェックを実行"][name="mode"][value="preview"]'
       assert_select 'button.btn-warning[data-turbo-confirm=?]', '配信URLの変更をDBに反映します。変更チェック結果を確認済みですか？'
       assert_select 'button[aria-label="配信URL変更をDBに反映"][aria-describedby="admin-delivery-url-bulk-update-note"][name="mode"][value="update"][disabled]'
-      assert_select '.admin-delivery-url-control-group h2', text: '絞り込み'
-      assert_select '.admin-delivery-url-control-group h2', text: '並び替え'
+      assert_select '.admin-delivery-url-control-group[aria-labelledby="admin-delivery-url-filter-heading"] h2#admin-delivery-url-filter-heading', text: '絞り込み'
+      assert_select '.admin-delivery-url-control-group[aria-labelledby="admin-delivery-url-sort-heading"] h2#admin-delivery-url-sort-heading', text: '並び替え'
+      assert_select '.admin-delivery-url-control-group[aria-labelledby="admin-delivery-url-page-size-heading"] h2#admin-delivery-url-page-size-heading', text: '表示件数'
       assert_select 'input[name="missing_url_columns[]"][value="youtube_url"][data-admin-auto-submit]'
       missing_url_column_ids = css_select('input[name="missing_url_columns[]"]').filter_map { |element| element['id'] }
       assert_equal missing_url_column_ids.uniq, missing_url_column_ids
