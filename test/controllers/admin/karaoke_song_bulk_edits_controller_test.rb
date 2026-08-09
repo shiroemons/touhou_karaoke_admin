@@ -225,7 +225,7 @@ module Admin
       }
 
       assert_response :success
-      assert_select 'h2', text: '原曲紐づけチェック結果'
+      assert_select 'section.admin-original-song-preview[aria-labelledby="admin-karaoke-song-bulk-preview-heading"] h2#admin-karaoke-song-bulk-preview-heading', text: '原曲紐づけチェック結果'
       assert_select '.admin-original-song-preview-row', text: /Controller Preview Song/
       assert_select '.admin-original-song-preview-row li', text: /#{first_original_song.code}/
       assert_select '.admin-original-song-preview-row li', text: /#{second_original_song.code}/

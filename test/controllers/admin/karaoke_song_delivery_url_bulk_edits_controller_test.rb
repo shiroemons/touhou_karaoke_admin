@@ -195,7 +195,7 @@ module Admin
       }
 
       assert_response :success
-      assert_select 'h2', text: '配信URL更新チェック結果'
+      assert_select 'section.admin-original-song-preview[aria-labelledby="admin-delivery-url-bulk-preview-heading"] h2#admin-delivery-url-bulk-preview-heading', text: '配信URL更新チェック結果'
       assert_select '.admin-delivery-url-preview-row', text: /Controller Delivery URL Preview Song/
       assert_select '.admin-delivery-url-preview-row li span', text: /YouTube URL/
       assert_select '.admin-delivery-url-preview-row strong', text: %r{https://youtube.example/preview}

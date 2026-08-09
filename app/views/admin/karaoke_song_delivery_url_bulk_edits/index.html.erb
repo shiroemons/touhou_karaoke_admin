@@ -88,10 +88,10 @@
   <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page, per_page: @per_page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
     <% update_disabled = @preview_result.blank? || @preview_result.errors.present? %>
     <% if @preview_result.present? %>
-      <section class="admin-panel admin-original-song-preview">
+      <section class="admin-panel admin-original-song-preview" aria-labelledby="admin-delivery-url-bulk-preview-heading">
         <div class="admin-dashboard-section-heading">
           <div>
-            <h2>配信URL更新チェック結果</h2>
+            <h2 id="admin-delivery-url-bulk-preview-heading">配信URL更新チェック結果</h2>
             <p><%= @preview_result.checked_count %>件の楽曲を確認しました。DBは更新していません。</p>
           </div>
         </div>
