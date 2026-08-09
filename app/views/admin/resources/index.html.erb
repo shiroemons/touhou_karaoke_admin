@@ -146,6 +146,7 @@
       data-next-url="<%= @next_infinite_scroll_url %>"
       <%= "hidden" if @next_infinite_scroll_url.blank? %>>
       <span class="admin-infinite-scroll-status" data-admin-infinite-scroll-status>さらに読み込みます</span>
+      <button type="button" class="admin-button btn btn-sm btn-ghost" data-admin-infinite-scroll-retry hidden>再試行</button>
     </div>
   <% end %>
 </div>

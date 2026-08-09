@@ -200,6 +200,7 @@ module Admin
 
       view_mode_ids = css_select('input[name="view_mode"]').filter_map { |node| node['id'] }
       assert_equal view_mode_ids.length, view_mode_ids.uniq.length
+      assert_select '[data-admin-infinite-scroll-retry][hidden]', 1
     end
 
     test 'workflow dry run controls are individually associated with their labels' do

@@ -6,6 +6,7 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
   sentinel.dataset.initialized = "true"
   const scrollRoot = sentinel.closest(".admin-table-wrap")
   const status = sentinel.querySelector("[data-admin-infinite-scroll-status]")
+  const retryButton = sentinel.querySelector("[data-admin-infinite-scroll-retry]")
   let loading = false
 
   const loadNextPage = async () => {
@@ -13,9 +14,9 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
     if (loading || !nextUrl) return
 
     loading = true
-    if (status) status.textContent = "読み込み中..."
+      if (status) status.textContent = "読み込み中..."
 
-    try {
+      try {
       const response = await fetch(nextUrl, {
         headers: {
           Accept: "application/json",
@@ -29,17 +30,23 @@ export const setupAdminInfiniteScroll = ({ updateSelectionState } = {}) => {
       rows.insertAdjacentHTML("beforeend", payload.html)
       sentinel.dataset.nextUrl = payload.next_url || ""
       sentinel.hidden = !payload.next_url
+      if (retryButton) retryButton.hidden = true
       updateSelectionState?.()
       const visibleCount = document.querySelector("[data-admin-visible-count]")
       if (visibleCount) visibleCount.textContent = rows.querySelectorAll("tr").length.toLocaleString()
       if (status) status.textContent = payload.next_url ? "さらに読み込みます" : "すべて読み込みました"
     } catch (error) {
-      console.error(error)
-      if (status) status.textContent = "読み込みに失敗しました"
+      if (status) status.textContent = "読み込みに失敗しました。再試行してください。"
+      if (retryButton) retryButton.hidden = false
     } finally {
       loading = false
     }
   }
+
+  retryButton?.addEventListener("click", () => {
+    retryButton.hidden = true
+    loadNextPage()
+  })
 
   const observer = new IntersectionObserver((entries) => {
     if (entries.some((entry) => entry.isIntersecting)) loadNextPage()
