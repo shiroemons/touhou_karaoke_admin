@@ -899,6 +899,7 @@ module Admin
       assert_response :success
       assert_select 'tbody tr', 24
       assert_select '.admin-pagination[aria-label="サークルのページ移動"]', text: %r{1 / 2}
+      assert_select 'a.admin-view-mode-button-active[aria-current="true"]', text: 'ページ送り'
     end
 
     test 'index links operations to dedicated action pages' do
@@ -934,6 +935,7 @@ module Admin
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-submit-note][role="status"][aria-live="polite"][aria-atomic="true"]', text: '対象を選択すると実行できます。'
       assert_select '.admin-display-settings .admin-operation-dropdown-wrap', false
       assert_select '.admin-table-controls .admin-table-display-settings'
+      assert_select '.admin-view-mode-group[role="group"][aria-label="表示方式"]'
       assert_select 'a.admin-operation-guide-item[href=?][data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
     end
 
@@ -1008,7 +1010,7 @@ module Admin
       assert_select 'tbody tr', 24
       assert_select '.admin-pagination', false
       assert_select '.admin-table-wrap .admin-infinite-scroll[role="status"][aria-live="polite"][aria-atomic="true"][aria-busy="false"][data-next-url]'
-      assert_select 'a.admin-view-mode-button-active', text: '無限スクロール'
+      assert_select 'a.admin-view-mode-button-active[aria-current="true"]', text: '無限スクロール'
     end
 
     test 'infinite scroll rows endpoint returns next page html and next url' do
