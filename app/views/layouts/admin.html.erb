@@ -26,7 +26,7 @@
         <%= admin_icon(:menu) %>
         <span data-admin-mobile-navigation-toggle-label>メニュー</span>
       </button>
-      <nav id="admin-navigation" class="admin-nav">
+      <nav id="admin-navigation" class="admin-nav" aria-label="管理メニュー">
         <% main_navigation_groups, other_navigation_groups = admin_navigation_groups.partition { |group_label, _resources| group_label == "メイン" } %>
         <% main_navigation_groups.each do |group_label, resources| %>
           <section class="admin-nav-group admin-nav-group-primary" aria-label="<%= group_label %>">

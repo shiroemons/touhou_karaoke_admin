@@ -49,6 +49,7 @@ module Admin
       assert_select '.admin-dashboard-bar-group', false
       assert_select '.admin-dashboard-workflow', false
       assert_select 'a.admin-nav-link', text: /運用フロー/
+      assert_select 'nav#admin-navigation.admin-nav[aria-label="管理メニュー"]'
       assert_select '.admin-nav-group-primary[aria-label="メイン"] a.admin-nav-link-primary', text: /カラオケ配信曲/
       assert_operator response.body.index('aria-label="メイン"'), :<, response.body.index('aria-label="運用"')
       assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
