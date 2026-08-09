@@ -1701,6 +1701,16 @@ body[data-admin-navigation="loading"] .admin-main {
   gap: 8px;
 }
 
+.admin-search-row-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.admin-search-row-inline .admin-search-field {
+  min-width: 0;
+  width: 100%;
+}
+
 .admin-search-row > *,
 .admin-filter-list *,
 .admin-operation-list * {

@@ -18,7 +18,7 @@
 
   <div class="admin-index-toolbar">
     <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path, method: :get, class: "admin-query-panel admin-control-panel", data: { admin_filter_form: true } do |form| %>
-      <div class="admin-search-row">
+      <div class="admin-search-row admin-search-row-inline">
         <label class="admin-search-field input input-bordered">
           <span class="admin-sr-only">キーワード</span>
           <%= admin_icon(:search) %>

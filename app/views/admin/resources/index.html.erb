@@ -34,7 +34,7 @@
     <%= hidden_field_tag :direction, params[:direction], id: "admin-query-direction" if params[:direction].present? %>
     <%= hidden_field_tag :per_page, @per_page, id: "admin-query-per-page" if @view_mode == "paginated" %>
 
-    <div class="admin-search-row">
+    <div class="admin-search-row admin-search-row-inline">
       <label class="admin-search-field input input-bordered">
         <span class="admin-sr-only">キーワード</span>
         <%= admin_icon(:search) %>
