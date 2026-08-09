@@ -8,6 +8,7 @@ class FakeElement {
     this.dataset = dataset
     this.eventListeners = {}
     this.attributes = {}
+    this.style = {}
     this.textContent = textContent
   }
 
@@ -22,6 +23,15 @@ class FakeElement {
 
   remove() {
     this.removed = true
+  }
+
+  focus(options) {
+    this.focused = true
+    this.focusOptions = options
+  }
+
+  select() {
+    this.selected = true
   }
 
   setAttribute(name, value) {
@@ -105,4 +115,16 @@ test("copy failures expose an assertive error message", async () => {
   assert.equal(toast.attributes.role, "alert")
   assert.equal(toast.attributes["aria-live"], "assertive")
   assert.equal(errors.length, 1)
+})
+
+test("fallback copy restores focus to the copy control", async () => {
+  Object.defineProperty(globalThis.navigator, "clipboard", {
+    configurable: true,
+    value: undefined,
+  })
+
+  await fixture.dispatch("click", { preventDefault: () => {} })
+
+  assert.equal(fixture.focused, true)
+  assert.deepEqual(fixture.focusOptions, { preventScroll: true })
 })

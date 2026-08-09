@@ -24,7 +24,7 @@ const showCopyToast = (message, type) => {
   }, COPY_TOAST_DURATION_MS)
 }
 
-const copyTextToClipboard = async (text) => {
+const copyTextToClipboard = async (text, focusTarget) => {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text)
     return
@@ -41,6 +41,7 @@ const copyTextToClipboard = async (text) => {
     if (!document.execCommand("copy")) throw new Error("execCommand('copy') に失敗しました。")
   } finally {
     textarea.remove()
+    focusTarget?.focus?.({ preventScroll: true })
   }
 }
 
@@ -53,7 +54,7 @@ export const setupAdminCopyText = () => {
       event.preventDefault()
 
       try {
-        await copyTextToClipboard(element.dataset.adminCopyText)
+        await copyTextToClipboard(element.dataset.adminCopyText, element)
         showCopyToast("コピーしました", "notice")
       } catch (error) {
         console.error(error)
