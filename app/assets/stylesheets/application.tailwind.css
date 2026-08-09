@@ -1008,6 +1008,7 @@ body[data-admin-navigation="loading"] .admin-main {
   border: 1px solid #e3edf7;
   border-radius: 16px;
   box-shadow: 0 14px 36px rgb(15 23 42 / 6%);
+  align-content: start;
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -3826,7 +3827,10 @@ th.admin-actions-column {
 }
 
 .admin-detail-value-url .admin-url {
+  display: block;
   max-width: 100%;
+  min-width: 0;
+  width: 100%;
 }
 
 .admin-related-sections {
@@ -4482,5 +4486,41 @@ th.admin-actions-column {
 
   to {
     background-position: 28px 0, 0 0;
+  }
+}
+
+/* These rules follow the detail and operation base styles so the mobile
+   layout remains effective regardless of stylesheet section order. */
+@media (max-width: 860px) {
+  .admin-detail-hero {
+    display: grid;
+  }
+
+  .admin-section-heading {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .admin-detail-row {
+    gap: 5px;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-change-field {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-operation-progress-header,
+  .admin-operation-progress-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-operation-progress-header {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .admin-operation-progress-meta {
+    width: 100%;
   }
 }

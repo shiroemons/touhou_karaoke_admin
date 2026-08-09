@@ -110,7 +110,7 @@ module Admin
         'admin-detail-value',
         ('admin-detail-value-url' if field.type == :url),
         ('admin-detail-value-empty' if admin_field_raw_value(record, field).blank?)
-      ]
+      ].compact.join(' ')
     end
 
     def admin_field_raw_value(record, field)
