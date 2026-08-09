@@ -172,6 +172,36 @@ test("async operation tolerates a null start response", async () => {
   }
 })
 
+test("async operation shows a fallback message for an invalid rejection", async () => {
+  const originalDocument = globalThis.document
+  const originalFetch = globalThis.fetch
+  const originalFormData = globalThis.FormData
+  const originalConsoleError = console.error
+  const form = new FakeForm()
+  globalThis.document = {
+    querySelector: () => null,
+    querySelectorAll: (selector) => (selector === "[data-admin-operation-form]" ? [form] : []),
+  }
+  globalThis.fetch = async () => {
+    throw null
+  }
+  globalThis.FormData = class {}
+  console.error = () => {}
+
+  try {
+    setupAdminResourceOperations()
+    form.dispatchSubmit()
+    await waitForAsyncWork()
+
+    assert.equal(form.dataset.adminOperationFailure, "処理中にエラーが発生しました。")
+  } finally {
+    globalThis.document = originalDocument
+    globalThis.fetch = originalFetch
+    globalThis.FormData = originalFormData
+    console.error = originalConsoleError
+  }
+})
+
 test("async operation ignores a response after its progress is reset", async () => {
   const originalDocument = globalThis.document
   const originalFetch = globalThis.fetch

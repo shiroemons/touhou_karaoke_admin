@@ -131,7 +131,7 @@ const setupAdminOperationForms = () => {
         if (!operationProgress.isCurrentOperation(operation) || error?.name === "AbortError") return
 
         console.error(error)
-        operationProgress.fail(error.message || "処理中にエラーが発生しました。")
+        operationProgress.fail(error?.message || "処理中にエラーが発生しました。")
       }
     }
 
