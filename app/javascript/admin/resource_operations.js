@@ -99,6 +99,8 @@ const setupAdminOperationForms = () => {
     })
 
     const submitAsyncOperation = async () => {
+      if (form.dataset.adminOperationBusy === "true") return
+
       syncSelectedIds()
       operationProgress.start()
 
@@ -147,6 +149,11 @@ const setupAdminOperationForms = () => {
       if (!adminOperationFormReady(form)) {
         event.preventDefault()
         updateAdminOperationSubmitStates()
+        return
+      }
+
+      if (form.dataset.adminOperationBusy === "true") {
+        event.preventDefault()
         return
       }
 
