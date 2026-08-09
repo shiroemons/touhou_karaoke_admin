@@ -653,6 +653,7 @@ module Admin
       assert_select 'tbody tr:first-child.admin-row-updated'
       assert_select 'tbody tr:first-child .admin-update-badge-update', text: '更新'
       assert_select 'a.admin-sort-link-active .admin-sort-label', text: '更新日時'
+      assert_select 'th.admin-table-field-updated-at[aria-sort="descending"] a[aria-label="更新日時（降順）。クリックで既定の並び順に戻す"]'
     end
 
     test 'marks recently created resources in index' do
@@ -732,11 +733,13 @@ module Admin
       assert_response :success
       assert_select 'tbody tr:first-child td', text: 'Sort Circle A'
       assert_select 'a.admin-sort-link-active .admin-sort-label', text: 'サークル名'
+      assert_select 'th.admin-table-field-name[aria-sort="ascending"] a[aria-label="サークル名（昇順）。クリックで降順に変更"]'
 
       get admin_circles_path, params: { q: 'Sort Circle', sort: 'name', direction: 'desc' }
 
       assert_response :success
       assert_select 'tbody tr:first-child td', text: 'Sort Circle B'
+      assert_select 'th.admin-table-field-name[aria-sort="descending"]'
       assert_select 'a.admin-sort-link-active' do |links|
         href = links.first['href']
         assert_includes href, 'q=Sort+Circle'
