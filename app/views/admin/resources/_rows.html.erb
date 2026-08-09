@@ -8,7 +8,7 @@
     <% end %>
     <% @resource.index_fields.each do |field| %>
       <td class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>">
-        <% if field.link %>
+        <% if field.link && !%i[belongs_to url].include?(field.type) %>
           <%= link_to admin_field_value(record, field), admin_resource_path(@resource, record) %>
         <% else %>
           <%= admin_field_value(record, field) %>

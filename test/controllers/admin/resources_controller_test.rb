@@ -392,6 +392,20 @@ module Admin
       assert_select %(tbody tr[data-admin-row-href="#{admin_display_artist_path(@display_artist)}"]), { minimum: 1 }
     end
 
+    test 'resource index does not nest links in linked field values' do
+      get admin_songs_path, params: { q: @song.title }
+
+      assert_response :success
+      assert_select 'td.admin-table-field-display-artist > a[href=?]', admin_display_artist_path(@display_artist), text: /ZUN/
+      assert_select 'td.admin-table-field-display-artist a a', 0
+
+      get admin_dam_songs_path, params: { q: @dam_song.title }
+
+      assert_response :success
+      assert_select 'td.admin-table-field-display-artist a a', 0
+      assert_select 'td.admin-table-field-url a a', 0
+    end
+
     test 'display artist index shows linked circles in first column' do
       later_circle = Circle.create!(name: '後から表示')
       DisplayArtistsCircle.find_by!(display_artist: @display_artist, circle: @circle).update!(created_at: 2.days.ago)
