@@ -84,6 +84,7 @@ const normalizeOriginalSongPasteText = (text) => text
 
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
 let activeOriginalSongPicker
+const originalSongPickerResolveQueues = new WeakMap()
 
 const originalSongPickerIsMounted = (picker) => picker?.isConnected !== false
 
@@ -178,6 +179,18 @@ const resolveOriginalSongText = async (picker, text) => {
   return response.json()
 }
 
+const enqueueOriginalSongResolve = (picker, text) => {
+  const previousRequest = originalSongPickerResolveQueues.get(picker) || Promise.resolve()
+  const request = previousRequest
+    .catch(() => {})
+    .then(() => resolveOriginalSongText(picker, text))
+
+  originalSongPickerResolveQueues.set(picker, request)
+  return request.finally(() => {
+    if (originalSongPickerResolveQueues.get(picker) === request) originalSongPickerResolveQueues.delete(picker)
+  })
+}
+
 export const setOriginalSongPickerText = async (searchInput, text, { append = false } = {}) => {
   const picker = searchInput.closest("[data-admin-original-song-picker]")
   if (!picker) {
@@ -186,7 +199,7 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
   }
 
   try {
-    const payload = await resolveOriginalSongText(picker, text)
+    const payload = await enqueueOriginalSongResolve(picker, text)
     if (!originalSongPickerIsMounted(picker)) return
 
     const items = payload.items?.length
@@ -224,7 +237,7 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
     hideOriginalSongOptions(picker)
     updateOriginalSongPickerStatus(picker, "原曲候補の取得に失敗しました。入力を確認して再試行してください。", { error: true })
   } finally {
-    if (originalSongPickerIsMounted(picker)) searchInput.value = ""
+    if (originalSongPickerIsMounted(picker) && searchInput.value.trim() === text.trim()) searchInput.value = ""
   }
 }
 

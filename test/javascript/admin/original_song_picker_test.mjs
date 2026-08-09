@@ -228,6 +228,63 @@ test("setOriginalSongPickerText appends to existing selection when append is tru
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "valid"])
 })
 
+test("setOriginalSongPickerText serializes concurrent appends", async () => {
+  const fixture = buildPicker()
+  const requests = []
+  globalThis.fetch = (_url, options) => new Promise((resolve) => {
+    requests.push({
+      resolve,
+      text: JSON.parse(options.body).text,
+    })
+  })
+
+  const firstRequest = setOriginalSongPickerText(fixture.search, "先に追加", { append: true })
+  const secondRequest = setOriginalSongPickerText(fixture.search, "後から追加", { append: true })
+
+  for (let attempt = 0; attempt < 5 && requests.length < 1; attempt += 1) await Promise.resolve()
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].text, "先に追加")
+
+  requests[0].resolve({
+    ok: true,
+    json: async () => ({ items: [{ exists: true, title: "先に追加" }] }),
+  })
+  await firstRequest
+
+  for (let attempt = 0; attempt < 5 && requests.length < 2; attempt += 1) await Promise.resolve()
+  assert.equal(requests.length, 2)
+  assert.equal(requests[1].text, "後から追加")
+
+  requests[1].resolve({
+    ok: true,
+    json: async () => ({ items: [{ exists: true, title: "後から追加" }] }),
+  })
+  await secondRequest
+
+  assert.equal(fixture.valueInput.value, "先に追加/後から追加")
+})
+
+test("setOriginalSongPickerText preserves newer input while resolving", async () => {
+  const fixture = buildPicker()
+  let resolveRequest
+  globalThis.fetch = () => new Promise((resolve) => {
+    resolveRequest = resolve
+  })
+
+  fixture.search.value = "解決対象"
+  const request = setOriginalSongPickerText(fixture.search, "解決対象")
+  fixture.search.value = "入力中の別の原曲"
+
+  for (let attempt = 0; attempt < 5 && !resolveRequest; attempt += 1) await Promise.resolve()
+  resolveRequest({
+    ok: true,
+    json: async () => ({ items: [{ exists: true, title: "解決対象" }] }),
+  })
+  await request
+
+  assert.equal(fixture.search.value, "入力中の別の原曲")
+})
+
 test("normal multiline paste appends all original songs to the focused picker", async () => {
   const fixture = buildPicker({ initialValue: "既存曲" })
   globalThis.document.querySelectorAll = (selector) => (
