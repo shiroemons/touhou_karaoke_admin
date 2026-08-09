@@ -186,6 +186,11 @@ body[data-admin-navigation="loading"] .admin-main {
   opacity: 0.68;
 }
 
+[data-admin-resource-content][aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.68;
+}
+
 .admin-sr-only {
   border: 0;
   clip: rect(0 0 0 0);
