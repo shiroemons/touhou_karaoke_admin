@@ -37,7 +37,7 @@ module Admin
 
       assert_redirected_to admin_song_path(song)
       follow_redirect!
-      assert_select '.admin-flash-notice', text: '原曲紐づけを更新しました。'
+      assert_select '.admin-flash-notice[role="status"][aria-live="polite"][aria-atomic="true"]', text: '原曲紐づけを更新しました。'
       song.reload
       assert_equal [original_song], song.original_songs.to_a
       assert_equal 'https://youtube.example/keep', song.youtube_url
@@ -64,7 +64,7 @@ module Admin
 
       assert_redirected_to admin_song_path(song)
       follow_redirect!
-      assert_select '.admin-flash-alert', text: /Missing Controller Original/
+      assert_select '.admin-flash-alert[role="alert"][aria-live="assertive"][aria-atomic="true"]', text: /Missing Controller Original/
       assert_empty song.reload.original_songs
     end
 
