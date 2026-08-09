@@ -28,6 +28,8 @@ on:
       - 'public/**'
       - 'test/**'
       - 'vendor/**'
+      - '.yarn/**'
+      - '.yarnrc.yml'
       - 'yarn.lock'
   pull_request:
     types:
@@ -58,6 +60,8 @@ on:
       - 'public/**'
       - 'test/**'
       - 'vendor/**'
+      - '.yarn/**'
+      - '.yarnrc.yml'
       - 'yarn.lock'
 
 env:
@@ -79,20 +83,21 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18-alpine
+        image: postgres:18.4-alpine3.24
         ports:
           - 5432:5432
         env:
           POSTGRES_PASSWORD: password
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d postgres -c 'SELECT 1'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --health-start-period 10s
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -101,14 +106,21 @@ jobs:
           bundler-cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@v7.0.0
         with:
-          node-version: 24
-          cache: yarn
-          cache-dependency-path: yarn.lock
+          node-version: 24.19.0
+
+      - name: Set up Corepack and Yarn
+        run: |
+          npm install --global corepack@0.35.0
+          corepack enable
+          corepack install --global yarn@4.18.0
 
       - name: Install JS dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
+
+      - name: Run JavaScript tests
+        run: yarn test:js
 
       - name: Build assets
         run: |
