@@ -284,6 +284,47 @@ test("AdminOperationProgress stops polling when the progress id is unknown", asy
   }
 })
 
+test("AdminOperationProgress ignores a poll response after reset", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let resolveResponse
+  let requestOptions
+
+  globalThis.fetch = (url, options) => {
+    requestOptions = options
+    return new Promise((resolve) => {
+      resolveResponse = resolve
+    })
+  }
+  globalThis.window = {
+    clearInterval: () => {},
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.ok(requestOptions.signal)
+    progress.reset()
+    assert.equal(requestOptions.signal.aborted, true)
+
+    resolveResponse({
+      ok: true,
+      json: async () => ({ percentage: 90, status: "完了", label: "古い進捗" }),
+    })
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(progress.phase, "waiting")
+    assert.equal(progressStatus.textContent, "待機中")
+    assert.equal(progressLabel.textContent, "処理を開始しています...")
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
 test("AdminOperationProgress retries transient polling failures with backoff", async () => {
   const originalFetch = globalThis.fetch
   const originalWindow = globalThis.window

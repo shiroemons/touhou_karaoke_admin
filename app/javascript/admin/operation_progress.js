@@ -48,6 +48,8 @@ export class AdminOperationProgress {
     this.progressUrl = progressUrl
     this.estimatedSeconds = estimatedSeconds
     this.updateSubmitStates = updateSubmitStates
+    this.pollSequence = 0
+    this.pollController = undefined
     this.resetState()
   }
 
@@ -173,6 +175,12 @@ export class AdminOperationProgress {
   }
 
   clearTimers() {
+    this.pollSequence += 1
+    this.pollInFlight = false
+    if (this.pollController) {
+      this.pollController.abort()
+      this.pollController = undefined
+    }
     if (this.elapsedTimer !== undefined) {
       window.clearInterval(this.elapsedTimer)
       this.elapsedTimer = undefined
@@ -241,6 +249,10 @@ export class AdminOperationProgress {
   startPolling() {
     if (!this.progressUrl) return
 
+    this.pollController?.abort()
+    const pollSequence = ++this.pollSequence
+    const controller = typeof AbortController === "function" ? new AbortController() : undefined
+    this.pollController = controller
     const poll = async () => {
       if (this.phase === "finished" || this.phase === "failed" || this.pollInFlight) return
 
@@ -251,17 +263,23 @@ export class AdminOperationProgress {
             Accept: "application/json",
             "X-Requested-With": "XMLHttpRequest",
           },
+          signal: controller?.signal,
         })
+        if (this.pollSequence !== pollSequence) return
         if (!response.ok) {
           const error = new Error(`処理状態の取得に失敗しました（HTTP ${response.status}）。`)
           error.status = response.status
           throw error
         }
 
+        const payload = await response.json()
+        if (this.pollSequence !== pollSequence) return
         this.pollFailureCount = 0
-        this.applyServerProgress(await response.json())
+        this.applyServerProgress(payload)
       } catch (error) {
-        if (error.status === 404) {
+        if (error?.name === "AbortError" || this.pollSequence !== pollSequence) return
+
+        if (error?.status === 404) {
           this.fail("処理状態が見つかりません。再実行するか、画面を再読み込みしてください。")
           return
         }
@@ -276,6 +294,7 @@ export class AdminOperationProgress {
         this.lastLabel = `進捗を確認できません。${this.pollFailureCount}/${MAX_POLL_RETRIES}回目の再試行を待っています...`
         this.update(this.lastServerPercentage, this.lastStatus, this.lastLabel)
       } finally {
+        if (this.pollSequence !== pollSequence) return
         this.pollInFlight = false
         if (this.phase === "finished" || this.phase === "failed") return
 
