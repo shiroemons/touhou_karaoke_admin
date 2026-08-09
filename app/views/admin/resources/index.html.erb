@@ -1,5 +1,5 @@
 <% selectable_collection_operations = @resource.operations.any? { |operation| operation.scope == :collection && operation.selection != :none } %>
-<div class="admin-index-content" data-admin-resource-content>
+<div class="admin-index-content" data-admin-resource-content aria-busy="false" tabindex="-1">
 <header class="admin-page-header">
   <div>
     <h1><%= @resource.label %></h1>
@@ -29,10 +29,10 @@
 
 <div class="admin-index-toolbar">
   <%= form_with url: admin_resources_path(@resource), method: :get, class: "admin-query-panel admin-control-panel", data: { admin_filter_form: true } do |form| %>
-    <%= form.hidden_field :view_mode, value: @view_mode %>
-    <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
-    <%= hidden_field_tag :direction, params[:direction] if params[:direction].present? %>
-    <%= hidden_field_tag :per_page, @per_page if @view_mode == "paginated" %>
+    <%= form.hidden_field :view_mode, value: @view_mode, id: "admin-query-view-mode" %>
+    <%= hidden_field_tag :sort, params[:sort], id: "admin-query-sort" if params[:sort].present? %>
+    <%= hidden_field_tag :direction, params[:direction], id: "admin-query-direction" if params[:direction].present? %>
+    <%= hidden_field_tag :per_page, @per_page, id: "admin-query-per-page" if @view_mode == "paginated" %>
 
     <div class="admin-search-row">
       <label class="admin-search-field input input-bordered">
@@ -74,14 +74,14 @@
 </div>
 
 <div class="admin-table-controls">
-  <div class="admin-result-summary" data-admin-result-summary data-total-count="<%= @total_count %>">
+  <div class="admin-result-summary" data-admin-result-summary data-total-count="<%= @total_count %>" role="status" aria-live="polite" aria-atomic="true">
     <span>表示中 <strong data-admin-visible-count><%= number_with_delimiter(@records.size) %></strong> / <%= number_with_delimiter(@total_count) %> 件</span>
   </div>
   <%= render "display_settings" %>
 </div>
 
 <% if selectable_collection_operations %>
-  <div class="admin-selection-toolbar alert alert-info" data-admin-selection-toolbar aria-live="polite">
+  <div class="admin-selection-toolbar alert alert-info" data-admin-selection-toolbar role="status" aria-live="polite" aria-atomic="true">
     <%= admin_icon(:select) %>
     <div>
       <strong><span data-admin-selection-count>0</span>件選択中</strong>
@@ -94,20 +94,22 @@
   </div>
 <% end %>
 
-<div class="admin-table-wrap">
+<div class="admin-table-wrap" tabindex="0" role="region" aria-label="<%= @resource.label %>一覧">
   <table class="admin-table admin-table-resource-<%= @resource.key.to_s.dasherize %> table table-zebra">
+    <caption class="admin-sr-only"><%= @resource.label %>一覧</caption>
     <thead>
       <tr>
         <% if selectable_collection_operations %>
-          <th class="admin-select-column admin-table-field">
+          <th class="admin-select-column admin-table-field" scope="col">
             <label class="admin-row-select-all">
-              <%= check_box_tag "select_all_#{@resource.key}", "1", false, class: "checkbox checkbox-sm", data: { admin_resource_select_all: true }, aria: { label: "表示中の#{@resource.label}を選択" } %>
+              <%= check_box_tag "select_all_#{@resource.key}", "1", false, class: "checkbox checkbox-sm", data: { admin_resource_select_all: true }, aria: { label: "表示中の#{@resource.label}を選択", checked: "false" } %>
               <span>選択</span>
             </label>
           </th>
         <% end %>
         <% @resource.index_fields.each do |field| %>
-          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>">
+          <% sort_order = field.sortable ? admin_sort_order(field) : nil %>
+          <th class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>" scope="col" <%= tag.attributes(aria: { label: field.label, sort: sort_order || "none" }) if field.sortable %>>
             <% if field.sortable %>
               <%= admin_sort_link(@resource, field) %>
             <% else %>
@@ -115,7 +117,7 @@
             <% end %>
           </th>
         <% end %>
-        <th class="admin-actions-column admin-table-field admin-table-field-actions">操作</th>
+        <th class="admin-actions-column admin-table-field admin-table-field-actions" scope="col">操作</th>
       </tr>
     </thead>
     <tbody id="admin-resource-rows">
@@ -142,10 +144,13 @@
       class="admin-infinite-scroll"
       role="status"
       aria-live="polite"
+      aria-atomic="true"
+      aria-busy="false"
       data-admin-infinite-scroll
       data-next-url="<%= @next_infinite_scroll_url %>"
       <%= "hidden" if @next_infinite_scroll_url.blank? %>>
       <span class="admin-infinite-scroll-status" data-admin-infinite-scroll-status>さらに読み込みます</span>
+      <button type="button" class="admin-button btn btn-sm btn-ghost" data-admin-infinite-scroll-retry hidden>再試行</button>
     </div>
   <% end %>
 </div>
@@ -160,7 +165,7 @@
         <span>前へ</span>
       <% end %>
     <% end %>
-    <span><%= @page %> / <%= @total_pages %></span>
+    <span aria-current="page"><%= @page %> / <%= @total_pages %></span>
     <% if @page < @total_pages %>
       <%= link_to admin_resources_path(@resource, admin_page_params(@page + 1)), class: "admin-button btn" do %>
         <span>次へ</span>

@@ -1,14 +1,23 @@
 module Admin
   class DashboardController < BaseController
+    DASHBOARD_CACHE_KEY = DashboardCache::KEY
+    DASHBOARD_CACHE_TTL = DashboardCache::TTL
+
     def show
       @resources = admin_resources
       @management_groups = management_groups
       @dashboard_summary = dashboard_summary
+      @dashboard_generated_at = dashboard_generated_at
       @priority_metrics = priority_metrics
       @delivery_type_metrics = delivery_type_metrics
       @delivery_type_chart = delivery_type_chart
       @quick_operation_groups = quick_operation_groups
       @insight_groups = insight_groups
+    end
+
+    def refresh
+      DashboardCache.invalidate!
+      redirect_to admin_root_path, notice: I18n.t('admin.dashboard_refreshed')
     end
 
     private
@@ -17,18 +26,36 @@ module Admin
     # 二重構造で取得する。@dashboard_counts のメモ化により、1リクエスト内では
     # cache.fetch は1回だけ呼ばれる (test 環境の :null_store でも計算は1回で済む)。
     def dashboard_counts
-      @dashboard_counts ||= Rails.cache.fetch('admin:dashboard:v1', expires_in: 5.minutes) { compute_dashboard_counts }
+      @dashboard_counts ||= if params[:refresh].to_s == '1'
+                              refresh_dashboard_counts
+                            else
+                              DashboardCache.fetch { compute_dashboard_counts }
+                            end
+    end
+
+    def refresh_dashboard_counts
+      counts = compute_dashboard_counts
+      DashboardCache.write(counts)
+      counts
+    end
+
+    def dashboard_generated_at
+      Time.iso8601(dashboard_counts.fetch(:generated_at)).in_time_zone('Asia/Tokyo')
+    rescue ArgumentError, KeyError, TypeError
+      Time.current.in_time_zone('Asia/Tokyo')
     end
 
     # キャッシュに格納するのはプリミティブ値 (整数・文字列) と、それらの Hash/配列のみ。
     # ResourceRegistry::Resource のような Data オブジェクトは Marshal 化できないため含めない。
     def compute_dashboard_counts
+      linked_songs = Song.with_original_songs.count
+
       {
         karaoke_type_counts: Song.group(:karaoke_type).count,
         total_songs: Song.count,
-        linked_songs: Song.touhou_arrange.count,
+        linked_songs:,
         missing_original_songs: Song.missing_original_songs.count,
-        with_original_songs: Song.with_original_songs.count,
+        with_original_songs: linked_songs,
         music_post_with_original_songs: Song.music_post.with_original_songs.count,
         music_post_missing_original_songs: Song.music_post.missing_original_songs.count,
         original_songs: OriginalSong.count,
@@ -39,7 +66,8 @@ module Admin
         joysound_music_posts: JoysoundMusicPost.count,
         music_posts_active: JoysoundMusicPost.where(delivery_deadline_on: Date.current..).count,
         music_posts_expired: JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count,
-        management_counts: management_counts
+        management_counts: management_counts,
+        generated_at: Time.current.iso8601
       }
     end
 

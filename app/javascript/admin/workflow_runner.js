@@ -1,3 +1,35 @@
+const POLL_INTERVAL_MS = 1500
+const MAX_POLL_RETRIES = 3
+const MAX_POLL_DELAY_MS = 10000
+const WORKFLOW_PROGRESS_TIMEOUT_MS = 15000
+const WORKFLOW_STEP_STATUSES = new Set(["pending", "running", "completed", "failed", "manual"])
+
+const createWorkflowProgressTimeout = (controller, timeoutMs = WORKFLOW_PROGRESS_TIMEOUT_MS) => {
+  const setTimeoutFunction = globalThis.setTimeout
+  const clearTimeoutFunction = globalThis.clearTimeout
+  if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
+
+  let timedOut = false
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
+
+const normalizedCount = (value) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0
+}
+
+const normalizedPercentage = (value) => Math.min(100, normalizedCount(value))
+
+const normalizedStepStatus = (status) => WORKFLOW_STEP_STATUSES.has(status) ? status : "unknown"
+
 export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
   document.querySelectorAll("[data-admin-workflow-runner]").forEach((runner) => {
     if (runner.dataset.initialized === "true") return
@@ -15,6 +47,21 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
     const resultsPanel = document.querySelector("[data-admin-workflow-results]")
     const resultsList = resultsPanel?.querySelector("[data-admin-workflow-result-list]")
     let completionNotified = runner.dataset.adminWorkflowState === "completed"
+    let pollFailureCount = 0
+    let pollInFlight = false
+    let pollTimer
+    let pollingStopped = false
+    let pollController
+    let pagehideHandler
+
+    const removePagehideHandler = () => {
+      if (!pagehideHandler) return
+
+      window.removeEventListener?.("pagehide", pagehideHandler)
+      pagehideHandler = undefined
+    }
+
+    const runnerIsMounted = () => runner.isConnected !== false
 
     const applyStatus = (payload) => {
       const currentStep = payload.workflow?.current_step
@@ -23,13 +70,15 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       if (statusPanel) {
         if (statusLabel) statusLabel.textContent = payload.label || "実行状況を確認しています"
         if (statusState) statusState.textContent = payload.status || payload.state || "確認中"
-        if (statusPercent) statusPercent.textContent = `${Number.parseInt(payload.percentage || "0", 10)}%`
+        if (statusPercent) statusPercent.textContent = `${normalizedPercentage(payload.percentage)}%`
         if (statusCurrent) statusCurrent.textContent = currentText
       }
       if (currentStepLabel) currentStepLabel.textContent = `現在: ${currentText}`
       if (statusPanel && statusCount) {
         const workflow = payload.workflow || {}
-        statusCount.textContent = `${Number.parseInt(workflow.completed_steps || "0", 10)} / ${Number.parseInt(workflow.total_steps || "0", 10)}`
+        const totalSteps = normalizedCount(workflow.total_steps)
+        const completedSteps = Math.min(totalSteps, normalizedCount(workflow.completed_steps))
+        statusCount.textContent = `${completedSteps} / ${totalSteps}`
       }
     }
 
@@ -37,7 +86,8 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       const item = stepItems.find((candidate) => candidate.dataset.adminWorkflowStep === step.key)
       if (!item) return
 
-      item.dataset.adminWorkflowStatus = step.status
+      const status = normalizedStepStatus(step.status)
+      item.dataset.adminWorkflowStatus = status
       const progress = item.querySelector("[data-admin-workflow-step-progress]")
       const childProgress = step.progress || {}
       const labels = {
@@ -46,12 +96,11 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
         completed: childProgress.detail || "完了",
         failed: step.error || childProgress.detail || "失敗",
         manual: "個別実行のみ",
+        unknown: "状態不明",
       }
       if (progress) {
-        progress.textContent = labels[step.status] || step.status
-        if (step.status === "running" && Number.isFinite(Number.parseInt(childProgress.percentage || "0", 10))) {
-          progress.textContent += ` ${Number.parseInt(childProgress.percentage || "0", 10)}%`
-        }
+        progress.textContent = labels[status]
+        if (status === "running") progress.textContent += ` ${normalizedPercentage(childProgress.percentage)}%`
       }
     }
 
@@ -89,17 +138,65 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
       })
     }
 
+    const applyConnectionState = ({ state, status, label, current }) => {
+      runner.dataset.adminWorkflowState = state
+      if (statusLabel) statusLabel.textContent = label
+      if (statusState) statusState.textContent = status
+      if (statusCurrent) statusCurrent.textContent = current
+      if (currentStepLabel) currentStepLabel.textContent = `現在: ${current}`
+    }
+
+    const stopPolling = () => {
+      if (pollingStopped) return
+
+      pollingStopped = true
+      if (pollTimer !== undefined) {
+        window.clearTimeout(pollTimer)
+        pollTimer = undefined
+      }
+      if (pollController) {
+        pollController.abort()
+        pollController = undefined
+      }
+      removePagehideHandler()
+    }
+
     const poll = async () => {
+      if (pollingStopped || pollInFlight) return
+      if (!runnerIsMounted()) {
+        stopPolling()
+        return
+      }
+
+      pollInFlight = true
+      const controller = typeof AbortController === "function" ? new AbortController() : undefined
+      pollController = controller
+      const requestTimeout = controller ? createWorkflowProgressTimeout(controller) : undefined
       try {
         const response = await fetch(runner.dataset.adminWorkflowProgressUrl, {
           headers: {
             Accept: "application/json",
             "X-Requested-With": "XMLHttpRequest",
           },
+          signal: controller?.signal,
         })
-        if (!response.ok) return
+        if (!response.ok) {
+          const error = new Error(`運用フロー進捗の取得に失敗しました（HTTP ${response.status}）。`)
+          error.status = response.status
+          throw error
+        }
 
         const payload = await response.json()
+        if (requestTimeout?.timedOut()) throw new Error("運用フロー進捗の取得がタイムアウトしました。")
+        if (pollingStopped || !runnerIsMounted()) {
+          stopPolling()
+          return
+        }
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+          throw new Error("運用フロー進捗の形式が不正です。")
+        }
+
+        pollFailureCount = 0
         applyStatus(payload)
         payload.workflow?.steps?.forEach(applyStep)
         applyResults(payload)
@@ -108,15 +205,57 @@ export const setupAdminWorkflowRunner = ({ showFlash } = {}) => {
           completionNotified = true
           showFlash?.(payload.label || `${payload.workflow?.workflow_label || "運用フロー"}が完了しました。`)
         }
-        if (payload.state === "completed" || payload.state === "failed") return
-        window.setTimeout(poll, 1500)
+        if (payload.state === "completed" || payload.state === "failed") stopPolling()
       } catch (error) {
-        console.error(error)
-        window.setTimeout(poll, 3000)
+        if ((error?.name === "AbortError" && !requestTimeout?.timedOut()) || pollingStopped || !runnerIsMounted()) {
+          stopPolling()
+          return
+        }
+
+        if (error?.status === 404) {
+          applyConnectionState({
+            state: "unknown",
+            status: "状態不明",
+            label: "実行状況が見つかりません。画面を再読み込みしてください。",
+            current: "確認できません",
+          })
+          stopPolling()
+          return
+        }
+
+        pollFailureCount += 1
+        if (pollFailureCount >= MAX_POLL_RETRIES) {
+          applyConnectionState({
+            state: "failed",
+            status: "エラー",
+            label: "実行状況を確認できません。画面を再読み込みしてください。",
+            current: "確認できません",
+          })
+          stopPolling()
+          return
+        }
+
+        applyConnectionState({
+          state: "retrying",
+          status: "再試行中",
+          label: `実行状況を確認できません。${pollFailureCount}/${MAX_POLL_RETRIES}回目の再試行を待っています...`,
+          current: "再接続待ち",
+        })
+      } finally {
+        requestTimeout?.clear()
+        if (pollController === controller) pollController = undefined
+        pollInFlight = false
+        if (pollingStopped) return
+
+        const retryDelay = pollFailureCount > 0
+          ? Math.min(MAX_POLL_DELAY_MS, POLL_INTERVAL_MS * (2 ** (pollFailureCount - 1)))
+          : POLL_INTERVAL_MS
+        pollTimer = window.setTimeout(poll, retryDelay)
       }
     }
 
+    pagehideHandler = () => stopPolling()
+    window.addEventListener?.("pagehide", pagehideHandler, { once: true })
     poll()
   })
 }
-

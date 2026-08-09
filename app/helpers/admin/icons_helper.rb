@@ -29,6 +29,7 @@ module Admin
       disclosure: 'chevron-down',
       action: 'play',
       select: 'list-check',
+      copy: 'copy',
       upload: 'upload',
       download: 'download',
       infinite: 'list-plus',

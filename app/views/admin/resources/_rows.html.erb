@@ -3,12 +3,12 @@
   <tr class="<%= admin_record_row_class(record).join(" ") %>" data-admin-row-href="<%= admin_resource_path(@resource, record) %>">
     <% if selectable_collection_operations %>
       <td class="admin-select-column">
-        <%= check_box_tag "selected_ids[]", record.id, false, class: "checkbox checkbox-sm", data: { admin_resource_select: true }, aria: { label: "#{@resource.label} #{record.id} を選択" } %>
+        <%= check_box_tag "selected_ids[]", record.id, false, id: "admin-selected-id-#{record.id}", class: "checkbox checkbox-sm", data: { admin_resource_select: true }, aria: { label: "#{@resource.label} #{record.id} を選択" } %>
       </td>
     <% end %>
     <% @resource.index_fields.each do |field| %>
       <td class="admin-table-field admin-table-field-<%= field.name.to_s.delete_suffix("?").dasherize %>">
-        <% if field.link %>
+        <% if field.link && !%i[belongs_to url].include?(field.type) %>
           <%= link_to admin_field_value(record, field), admin_resource_path(@resource, record) %>
         <% else %>
           <%= admin_field_value(record, field) %>

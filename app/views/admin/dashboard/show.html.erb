@@ -16,9 +16,15 @@
         <span>原曲</span>
       <% end %>
     </div>
+    <div class="admin-dashboard-freshness" aria-live="polite">
+      <span>最終集計 <time datetime="<%= @dashboard_generated_at.iso8601 %>"><%= l(@dashboard_generated_at, format: :admin_datetime) %></time></span>
+      <%= button_to admin_dashboard_refresh_path, method: :post, class: "admin-button btn btn-sm btn-outline", form_class: "admin-dashboard-refresh-form", aria: { label: "ダッシュボードを再集計" } do %>
+        再集計
+      <% end %>
+    </div>
   </div>
 
-  <aside class="admin-dashboard-status-card">
+  <aside class="admin-dashboard-status-card" aria-label="原曲紐付け状況">
     <div class="admin-dashboard-ring" style="--value: <%= @dashboard_summary[:linked_rate] %>">
       <strong><%= @dashboard_summary[:linked_rate] %>%</strong>
       <span>紐付け</span>
@@ -39,10 +45,10 @@
     </div>
   </aside>
 
-  <aside class="admin-dashboard-type-card">
+  <aside class="admin-dashboard-type-card" aria-labelledby="admin-dashboard-type-heading">
     <div class="admin-dashboard-section-heading">
       <div>
-        <h2>配信種別</h2>
+        <h2 id="admin-dashboard-type-heading">配信種別</h2>
         <p>DAM / JOYSOUND / うたスキ</p>
       </div>
     </div>
@@ -135,9 +141,10 @@
     </div>
 
     <div class="admin-dashboard-action-groups">
-      <% @quick_operation_groups.each do |group| %>
-        <section class="admin-dashboard-action-group">
-          <h3><%= group[:label] %></h3>
+      <% @quick_operation_groups.each_with_index do |group, index| %>
+        <% heading_id = "admin-dashboard-action-group-#{index}" %>
+        <section class="admin-dashboard-action-group" aria-labelledby="<%= heading_id %>">
+          <h3 id="<%= heading_id %>"><%= group[:label] %></h3>
           <div>
             <% group[:operations].each do |item| %>
               <%= link_to admin_resource_collection_operation_path(item[:resource], item[:operation].key), class: "admin-dashboard-action-link" do %>
@@ -159,9 +166,10 @@
       </div>
     </div>
     <div class="admin-dashboard-insights">
-      <% @insight_groups.each do |group| %>
-        <section class="admin-dashboard-insight-group" aria-labelledby="admin-dashboard-<%= group[:label].parameterize %>">
-          <h3 id="admin-dashboard-<%= group[:label].parameterize %>"><%= group[:label] %></h3>
+      <% @insight_groups.each_with_index do |group, index| %>
+        <% heading_id = "admin-dashboard-insight-group-#{index}" %>
+        <section class="admin-dashboard-insight-group" aria-labelledby="<%= heading_id %>">
+          <h3 id="<%= heading_id %>"><%= group[:label] %></h3>
           <p><%= group[:description] %></p>
           <div class="admin-insight-grid">
             <% group[:metrics].each do |metric| %>
@@ -187,12 +195,13 @@
   </div>
 
   <div class="admin-dashboard-management-grid">
-    <% @management_groups.each do |group| %>
-      <section class="admin-dashboard-management-panel">
+    <% @management_groups.each_with_index do |group, index| %>
+      <% heading_id = "admin-dashboard-management-group-#{index}" %>
+      <section class="admin-dashboard-management-panel" aria-labelledby="<%= heading_id %>">
         <header>
           <div class="admin-dashboard-management-icon"><%= admin_icon(group[:icon]) %></div>
           <div>
-            <h3><%= group[:label] %></h3>
+            <h3 id="<%= heading_id %>"><%= group[:label] %></h3>
             <p><%= group[:description] %></p>
           </div>
           <span><%= number_with_delimiter(group[:total_count]) %> 件</span>

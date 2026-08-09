@@ -48,11 +48,13 @@ class FakeElement {
   }
 }
 
-const buildProgress = () => {
+const buildProgress = ({ progressUrl } = {}) => {
   const form = new FakeElement()
   const modalCancelButton = new FakeElement()
   const submitButton = new FakeElement()
   const progressBar = new FakeElement()
+  const progressElement = new FakeElement({ hidden: true })
+  const progressAnnouncement = new FakeElement()
   const progressStatus = new FakeElement()
   const progressLabel = new FakeElement()
   const progressPercent = new FakeElement()
@@ -65,10 +67,11 @@ const buildProgress = () => {
   ]
   let updateCalls = 0
 
-  const progress = new AdminOperationProgress({
+  const operationProgress = new AdminOperationProgress({
     form,
     operationModal: { open: false },
-    progress: new FakeElement(),
+    progress: progressElement,
+    progressAnnouncement,
     progressLabel,
     progressPercent,
     progressStatus,
@@ -79,7 +82,7 @@ const buildProgress = () => {
     modalCancelButton,
     submitButton,
     inlineConfirmation: false,
-    progressUrl: undefined,
+    progressUrl,
     estimatedSeconds: 40,
     updateSubmitStates: () => {
       updateCalls += 1
@@ -89,7 +92,9 @@ const buildProgress = () => {
   return {
     form,
     modalCancelButton,
-    progress,
+    progress: operationProgress,
+    progressElement,
+    progressAnnouncement,
     progressBar,
     progressLabel,
     progressPercent,
@@ -101,7 +106,7 @@ const buildProgress = () => {
 }
 
 test("AdminOperationProgress.fail falls back to an actionable failed state", () => {
-  const { form, modalCancelButton, progress, progressBar, progressLabel, progressStatus, submitButton, updateCalls } = buildProgress()
+  const { form, modalCancelButton, progress, progressAnnouncement, progressBar, progressElement, progressLabel, progressStatus, submitButton, updateCalls } = buildProgress()
 
   form.dataset.adminOperationBusy = "true"
   form.dataset.confirmed = "true"
@@ -112,8 +117,10 @@ test("AdminOperationProgress.fail falls back to an actionable failed state", () 
   progress.fail("リクエストに失敗しました（HTTP 500）。")
 
   assert.equal(progress.phase, "failed")
+  assert.equal(progressElement.attributes["aria-busy"], "false")
   assert.equal(progressStatus.textContent, "エラー")
   assert.equal(progressLabel.textContent, "リクエストに失敗しました（HTTP 500）。")
+  assert.equal(progressAnnouncement.textContent, "エラー。リクエストに失敗しました（HTTP 500）。")
   assert.equal(form.dataset.adminOperationBusy, undefined)
   assert.equal(form.dataset.confirmed, undefined)
   assert.equal(modalCancelButton.disabled, false)
@@ -122,7 +129,7 @@ test("AdminOperationProgress.fail falls back to an actionable failed state", () 
 })
 
 test("AdminOperationProgress.applyServerProgress handles failed server state", () => {
-  const { form, modalCancelButton, progress, progressBar, progressLabel, progressPercent, progressStatus, progressbar } = buildProgress()
+  const { form, modalCancelButton, progress, progressAnnouncement, progressBar, progressElement, progressLabel, progressPercent, progressStatus, progressbar } = buildProgress()
 
   form.dataset.adminOperationBusy = "true"
   modalCancelButton.disabled = true
@@ -137,11 +144,295 @@ test("AdminOperationProgress.applyServerProgress handles failed server state", (
   })
 
   assert.equal(progress.phase, "failed")
+  assert.equal(progressElement.attributes["aria-busy"], "false")
   assert.equal(progressStatus.textContent, "エラー")
   assert.equal(progressLabel.textContent, "接続できませんでした")
+  assert.equal(progressAnnouncement.textContent, "エラー。接続できませんでした")
   assert.equal(progressPercent.textContent, "42%")
   assert.equal(progressbar.attributes["aria-valuenow"], "42")
   assert.equal(form.dataset.adminOperationBusy, undefined)
   assert.equal(modalCancelButton.disabled, false)
   assert.equal(progressBar.classList.has("admin-operation-progress-bar-active"), false)
+})
+
+test("AdminOperationProgress clamps invalid progress values", () => {
+  const { progress, progressBar, progressPercent, progressbar } = buildProgress()
+
+  progress.applyServerProgress({
+    state: "running",
+    percentage: 999,
+    status: "実行中",
+    label: "処理中です",
+  })
+
+  assert.equal(progress.lastServerPercentage, 100)
+  assert.equal(progressPercent.textContent, "100%")
+  assert.equal(progressbar.attributes["aria-valuenow"], "100")
+  assert.equal(progressBar.style.width, "100%")
+
+  progress.update(Number.NaN, "確認中", "入力を確認しています")
+
+  assert.equal(progressPercent.textContent, "0%")
+  assert.equal(progressbar.attributes["aria-valuenow"], "0")
+  assert.equal(progressBar.style.width, "0%")
+})
+
+test("AdminOperationProgress releases timers and pagehide handlers between runs", () => {
+  const originalWindow = globalThis.window
+  const listeners = new Set()
+  const clearedIntervals = []
+  const clearedTimeouts = []
+  let intervalId = 0
+  let timeoutId = 0
+
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.delete(handler)
+    },
+    setInterval: () => {
+      intervalId += 1
+      return `interval-${intervalId}`
+    },
+    clearInterval: (id) => {
+      clearedIntervals.push(id)
+    },
+    setTimeout: (callback) => {
+      timeoutId += 1
+      return { callback, id: `timeout-${timeoutId}` }
+    },
+    clearTimeout: (timer) => {
+      clearedTimeouts.push(timer)
+    },
+  }
+
+  try {
+    const { progress } = buildProgress()
+    progress.start()
+    const executeTimer = progress.executeTimer
+
+    assert.equal(listeners.size, 1)
+    assert.ok(executeTimer)
+
+    progress.finish()
+
+    assert.equal(listeners.size, 0)
+    assert.equal(progress.elapsedTimer, undefined)
+    assert.equal(progress.executeTimer, undefined)
+    assert.ok(clearedIntervals.length > 0)
+    assert.ok(clearedTimeouts.includes(executeTimer))
+
+    executeTimer.callback()
+    assert.equal(progress.phase, "finished")
+
+    progress.reset()
+    progress.start()
+    assert.equal(listeners.size, 1)
+    progress.reset()
+    assert.equal(listeners.size, 0)
+  } finally {
+    globalThis.window = originalWindow
+  }
+})
+
+test("AdminOperationProgress resets stale progress state before a retry", () => {
+  const originalWindow = globalThis.window
+  const listeners = new Set()
+
+  globalThis.window = {
+    addEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.add(handler)
+    },
+    removeEventListener: (type, handler) => {
+      if (type === "pagehide") listeners.delete(handler)
+    },
+    setInterval: () => "interval",
+    clearInterval: () => {},
+    setTimeout: () => "timeout",
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress } = buildProgress()
+    progress.phase = "failed"
+    progress.lastServerPercentage = 72
+    progress.hasServerProgress = true
+    progress.pollFailureCount = 2
+    progress.lastStatus = "再試行中"
+    progress.lastLabel = "古い進捗"
+
+    progress.start()
+
+    assert.equal(progress.phase, "prepare")
+    assert.equal(progress.lastServerPercentage, 0)
+    assert.equal(progress.hasServerProgress, false)
+    assert.equal(progress.pollFailureCount, 0)
+    assert.equal(progress.lastStatus, "外部サイト取得中")
+    assert.equal(progress.lastLabel, "外部サイトから取得・保存しています...")
+    assert.equal(listeners.size, 1)
+  } finally {
+    globalThis.window = originalWindow
+  }
+})
+
+test("AdminOperationProgress stops polling when the progress id is unknown", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let scheduledPolls = 0
+
+  globalThis.fetch = async () => ({ ok: false, status: 404 })
+  globalThis.window = {
+    setTimeout: () => {
+      scheduledPolls += 1
+      return scheduledPolls
+    },
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(progress.phase, "failed")
+    assert.equal(progressStatus.textContent, "エラー")
+    assert.match(progressLabel.textContent, /処理状態が見つかりません/)
+    assert.equal(scheduledPolls, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("AdminOperationProgress ignores a poll response after reset", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let resolveResponse
+  let requestOptions
+
+  globalThis.fetch = (url, options) => {
+    requestOptions = options
+    return new Promise((resolve) => {
+      resolveResponse = resolve
+    })
+  }
+  globalThis.window = {
+    clearInterval: () => {},
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.ok(requestOptions.signal)
+    progress.reset()
+    assert.equal(requestOptions.signal.aborted, true)
+
+    resolveResponse({
+      ok: true,
+      json: async () => ({ percentage: 90, status: "完了", label: "古い進捗" }),
+    })
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(progress.phase, "waiting")
+    assert.equal(progressStatus.textContent, "待機中")
+    assert.equal(progressLabel.textContent, "処理を開始しています...")
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("AdminOperationProgress retries transient polling failures with backoff", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  let calls = 0
+  const scheduled = []
+
+  globalThis.fetch = async () => {
+    calls += 1
+    throw new Error("network error")
+  }
+  globalThis.window = {
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(calls, 1)
+    assert.equal(progressStatus.textContent, "再試行中")
+    assert.match(progressLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1200)
+
+    await scheduled.at(-1).callback()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(calls, 2)
+    assert.equal(scheduled.at(-1).delay, 2400)
+
+    await scheduled.at(-1).callback()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(progress.phase, "failed")
+    assert.equal(calls, 3)
+    assert.match(progressLabel.textContent, /処理状態を確認できません/)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+  }
+})
+
+test("AdminOperationProgress retries after a progress request timeout", async () => {
+  const originalFetch = globalThis.fetch
+  const originalWindow = globalThis.window
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const scheduled = []
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "request-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+  globalThis.window = {
+    setTimeout: (callback, delay) => {
+      scheduled.push({ callback, delay })
+      return scheduled.length
+    },
+    clearTimeout: () => {},
+  }
+
+  try {
+    const { progress, progressLabel, progressStatus } = buildProgress({ progressUrl: "/progress" })
+    progress.startPolling()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    timeoutCallback()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(progressStatus.textContent, "再試行中")
+    assert.match(progressLabel.textContent, /1\/3回目/)
+    assert.equal(scheduled.at(-1).delay, 1200)
+    assert.equal(clearedTimeout, "request-timeout")
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.window = originalWindow
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+  }
 })

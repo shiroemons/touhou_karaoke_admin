@@ -12,9 +12,10 @@
       </summary>
 
       <div class="admin-operation-guide-groups">
-        <% available_operations.group_by { |operation, _index| operation.group }.each do |group, operations| %>
-          <section class="admin-operation-guide-group">
-            <h3><%= group %></h3>
+        <% available_operations.group_by { |operation, _index| operation.group }.each_with_index do |(group, operations), group_index| %>
+          <% heading_id = "admin-operation-guide-#{resource.key}-group-#{group_index}" %>
+          <section class="admin-operation-guide-group" aria-labelledby="<%= heading_id %>">
+            <h3 id="<%= heading_id %>"><%= group %></h3>
             <div class="admin-operation-guide-list">
               <% operations.each do |operation, _index| %>
                 <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-operation-guide-item", data: { admin_operation_trigger: true, admin_operation_resource: resource.key, admin_operation_key: operation.key, admin_operation_label: operation.label } do %>
@@ -40,15 +41,16 @@
       </div>
     </details>
   <% else %>
-    <section class="admin-panel admin-operations">
+    <section class="admin-panel admin-operations" aria-labelledby="admin-operations-heading-<%= resource.key %>">
       <div class="admin-operations-heading">
-        <h2>操作</h2>
+        <h2 id="admin-operations-heading-<%= resource.key %>">操作</h2>
         <p>目的別に選択できます</p>
       </div>
       <div class="admin-operation-groups">
-        <% available_operations.group_by { |operation, _index| operation.group }.each do |group, operations| %>
-          <section class="admin-operation-group">
-            <h3><%= group %></h3>
+        <% available_operations.group_by { |operation, _index| operation.group }.each_with_index do |(group, operations), group_index| %>
+          <% heading_id = "admin-operation-#{resource.key}-group-#{group_index}" %>
+          <section class="admin-operation-group" aria-labelledby="<%= heading_id %>">
+            <h3 id="<%= heading_id %>"><%= group %></h3>
             <div class="admin-operation-list">
               <% operations.each do |operation, _index| %>
                 <%= link_to admin_operation_path(resource, record, operation.key), class: "admin-button btn btn-sm btn-outline" do %>

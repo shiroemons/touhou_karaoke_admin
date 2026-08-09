@@ -12,7 +12,7 @@
       </div>
 
       <% modal_operations.each do |operation| %>
-        <section class="admin-operation-modal-panel" data-admin-operation-panel="<%= operation.key %>" <%= "hidden" unless operation == modal_operations.first %>>
+        <section class="admin-operation-modal-panel" aria-labelledby="<%= modal_title_id %>" data-admin-operation-panel="<%= operation.key %>" <%= "hidden" unless operation == modal_operations.first %>>
           <div class="admin-operation-description"><%= linked_operation_description(operation.description) %></div>
           <%= render "admin/resources/operation_form", resource:, record: nil, operation:, modal: true %>
         </section>

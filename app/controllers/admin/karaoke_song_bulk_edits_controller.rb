@@ -57,6 +57,7 @@ module Admin
       if result.errors.present?
         redirect_to admin_karaoke_song_bulk_edit_path(index_params), alert: result.errors.join("\n")
       else
+        DashboardCache.invalidate! if result.updated_count.positive?
         redirect_to admin_karaoke_song_bulk_edit_path(index_params), notice: "更新が完了しました。更新件数: #{result.updated_count}件、変更なし: #{result.skipped_count}件"
       end
     end

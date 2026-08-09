@@ -35,10 +35,10 @@
   <%= form_with url: admin_karaoke_song_bulk_edit_path(status: @status, q: @query, page: @page, per_page: @per_page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
     <% update_disabled = @preview_result.blank? || @preview_result.errors.present? %>
     <% if @preview_result.present? %>
-      <section class="admin-panel admin-original-song-preview">
+      <section class="admin-panel admin-original-song-preview" aria-labelledby="admin-karaoke-song-bulk-preview-heading">
         <div class="admin-dashboard-section-heading">
           <div>
-            <h2>原曲紐づけチェック結果</h2>
+            <h2 id="admin-karaoke-song-bulk-preview-heading">原曲紐づけチェック結果</h2>
             <p><%= @preview_result.checked_count %>件の楽曲を確認しました。DBは更新していません。</p>
           </div>
         </div>
@@ -132,12 +132,13 @@
       <% end %>
     </datalist>
 
-    <div class="admin-table-wrap">
+    <div class="admin-table-wrap" tabindex="0" role="region" aria-label="カラオケ楽曲紐づけ一覧">
       <table class="admin-table admin-table-karaoke-song-bulk-edit table table-zebra" data-admin-bulk-edit-table>
+        <caption class="admin-sr-only">カラオケ楽曲紐づけ一覧</caption>
         <thead>
           <tr>
             <% karaoke_song_bulk_edit_columns.each do |column| %>
-              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" title="<%= column %>"><%= karaoke_song_bulk_edit_column_label(column) %></th>
+              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" scope="col" title="<%= column %>"><%= karaoke_song_bulk_edit_column_label(column) %></th>
             <% end %>
           </tr>
         </thead>
@@ -146,9 +147,23 @@
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
               <td><%= song.karaoke_type %></td>
-              <td class="admin-table-field-display-artist-name" data-admin-copy-text="<%= song.display_artist.name %>"><%= song.display_artist.name %></td>
-              <td title="<%= song.title %>"><%= link_to song.title, admin_song_path(song), data: { admin_copy_text: song.title } %></td>
+              <td class="admin-table-field-display-artist-name">
+                <button type="button" class="admin-copy-button" data-admin-copy-text="<%= song.display_artist.name %>" aria-label="<%= song.display_artist.name %>をコピー" title="アーティスト名をコピー">
+                  <span><%= song.display_artist.name %></span>
+                  <%= admin_icon(:copy) %>
+                </button>
+              </td>
+              <td title="<%= song.title %>">
+                <div class="admin-title-copy-cell">
+                  <%= link_to song.title, admin_song_path(song) %>
+                  <button type="button" class="admin-copy-button admin-copy-button-icon" data-admin-copy-text="<%= song.title %>" aria-label="<%= song.title %>をコピー" title="タイトルをコピー">
+                    <%= admin_icon(:copy) %>
+                    <span class="admin-sr-only">コピー</span>
+                  </button>
+                </div>
+              </td>
               <td>
+                <% original_song_picker_id = "admin-original-song-picker-song-#{song.id}" %>
                 <div
                   class="admin-original-song-picker"
                   data-admin-original-song-picker
@@ -162,11 +177,21 @@
                     <%= text_field_tag nil,
                                        nil,
                                        class: "admin-bulk-cell admin-bulk-original-songs admin-original-song-search input input-bordered",
+                                       id: nil,
                                        autocomplete: "off",
                                        placeholder: "原曲を検索",
-                                       aria: { label: "#{song.title}の原曲を検索" },
+                                       role: "combobox",
+                                       aria: {
+                                         label: "#{song.title}の原曲を検索",
+                                         controls: "#{original_song_picker_id}-options",
+                                         expanded: false,
+                                         haspopup: "listbox",
+                                         autocomplete: "list",
+                                         describedby: "#{original_song_picker_id}-status"
+                                       },
                                        data: { admin_original_song_search: true, admin_bulk_cell: true, admin_bulk_row: row_index, admin_bulk_column_index: 0 } %>
-                    <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
+                    <p id="<%= original_song_picker_id %>-status" class="admin-original-song-status" role="status" aria-live="polite" aria-atomic="true" data-admin-original-song-picker-status></p>
+                    <div id="<%= original_song_picker_id %>-options" class="admin-original-song-options" role="listbox" aria-label="<%= song.title %>の原曲候補" data-admin-original-song-options hidden></div>
                   </div>
                 </div>
               </td>
@@ -207,7 +232,7 @@
             <span>前へ</span>
           <% end %>
         <% end %>
-        <span><%= @page %> / <%= @total_pages %></span>
+        <span aria-current="page"><%= @page %> / <%= @total_pages %></span>
         <% if @page < @total_pages %>
           <%= link_to admin_karaoke_song_bulk_edit_path(status: @status, q: @query, page: @page + 1, per_page: @per_page), class: "admin-button btn" do %>
             <span>次へ</span>

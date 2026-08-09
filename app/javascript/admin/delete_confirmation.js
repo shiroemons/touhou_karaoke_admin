@@ -44,6 +44,8 @@ export const setupAdminDeleteConfirmations = () => {
       return
     }
 
+    if (dialog.open) return
+
     pendingForm = form
     returnFocusElement = document.activeElement
     if (message) message.textContent = confirmationMessage

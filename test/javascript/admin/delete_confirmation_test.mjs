@@ -24,6 +24,7 @@ class FakeElement {
     this.eventListeners = {}
     this.queryResults = new Map()
     this.open = false
+    this.showModalCalls = 0
     this.textContent = ""
     this.focused = false
     this.requestSubmitCalls = 0
@@ -57,6 +58,7 @@ class FakeElement {
   }
 
   showModal() {
+    this.showModalCalls += 1
     this.open = true
   }
 
@@ -118,6 +120,13 @@ test("opens the daisyUI dialog, cancels safely, and restores focus", () => {
   assert.equal(fixture.dialog.open, true)
   assert.equal(fixture.message.textContent, "サークル「確認対象」を削除します。")
   assert.equal(fixture.form.requestSubmitCalls, 0)
+
+  const duplicateEvent = fixture.document.dispatchSubmit(fixture.form)
+
+  assert.equal(duplicateEvent.defaultPrevented, true)
+  assert.equal(duplicateEvent.propagationStopped, true)
+  assert.equal(fixture.dialog.showModalCalls, 1)
+  assert.equal(fixture.message.textContent, "サークル「確認対象」を削除します。")
 
   fixture.cancelButton.click()
 

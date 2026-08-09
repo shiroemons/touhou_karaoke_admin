@@ -36,7 +36,8 @@ module Admin
       assert_select '.admin-dashboard-hero h1', text: '管理画面'
       assert_select '.admin-dashboard-feature-card', text: /カラオケ配信曲/
       assert_select '.admin-dashboard-status-list', text: /原曲紐付け済み/
-      assert_select '.admin-dashboard-type-card h2', text: '配信種別'
+      assert_select '.admin-dashboard-status-card[aria-label="原曲紐付け状況"]'
+      assert_select '.admin-dashboard-type-card[aria-labelledby="admin-dashboard-type-heading"] h2#admin-dashboard-type-heading', text: '配信種別'
       assert_select '.admin-dashboard-type-ring', text: /配信/
       assert_select '.admin-dashboard-type-legend dt', text: 'DAM'
       assert_select '.admin-dashboard-type-legend dt', text: 'JOYSOUND'
@@ -49,11 +50,18 @@ module Admin
       assert_select '.admin-dashboard-bar-group', false
       assert_select '.admin-dashboard-workflow', false
       assert_select 'a.admin-nav-link', text: /運用フロー/
+      assert_select 'aside.admin-sidebar[aria-label="管理サイドバー"]'
+      assert_select 'nav#admin-navigation.admin-nav[aria-label="管理メニュー"]'
       assert_select '.admin-nav-group-primary[aria-label="メイン"] a.admin-nav-link-primary', text: /カラオケ配信曲/
       assert_operator response.body.index('aria-label="メイン"'), :<, response.body.index('aria-label="運用"')
       assert_select '.admin-dashboard-action-link', text: 'DAM候補をカラオケ楽曲へ登録'
+      css_select('.admin-dashboard-action-group, .admin-dashboard-management-panel').each do |section|
+        heading_id = section['aria-labelledby']
+        assert heading_id.present?
+        assert_select "##{heading_id}", text: section.at_css('h3').text
+      end
       assert_select 'a.admin-skip-link[href="#admin-main-content"]', text: '本文へスキップ'
-      assert_select 'main#admin-main-content.admin-main[tabindex="-1"][data-admin-page-content]'
+      assert_select 'main#admin-main-content.admin-main[aria-busy="false"][tabindex="-1"][data-admin-page-content]'
       assert_select '.admin-dashboard-insight-group h3', text: 'データ状態'
       assert_select '.admin-dashboard-insight-group h3', text: 'マスタデータ'
       assert_select '.admin-dashboard-insight-group h3', text: 'ミュージックポスト'
@@ -109,6 +117,9 @@ module Admin
       assert_select '.admin-workflow-group h2', text: 'JOYSOUND'
       assert_select '.admin-workflow-group h2', text: 'JOYSOUND(うたスキ)'
       assert_select '.admin-workflow-group h2', text: '共通作業'
+      workflow_group_heading_ids = css_select('.admin-workflow-group[aria-labelledby]').pluck('aria-labelledby')
+      assert_equal workflow_group_heading_ids.length, workflow_group_heading_ids.uniq.length
+      workflow_group_heading_ids.each { |heading_id| assert_select "##{heading_id}", 1 }
       assert_select '.admin-workflow-action', text: /DAM候補一覧を取得/
       assert_select '.admin-workflow-action', text: /DAM候補一覧とDAMアーティストURLを作る/
       assert_select '.admin-workflow-action', text: /DAM楽曲URLから候補を追加/
@@ -139,6 +150,10 @@ module Admin
       assert_select '.admin-workflow-run-warning.alert.alert-warning', text: '自動実行は外部取得とDB更新を順番に開始するため、対象フローを確認してから開始してください。'
       assert_select '.admin-workflow-parallel-note', text: /JOYSOUNDとDAMを並列実行/
       assert_select 'ol[data-admin-workflow-step-list][aria-label="全体更新の実行ステップ"]'
+      assert_select '[data-admin-workflow-runner][aria-labelledby="admin-workflow-runner-heading"] h2#admin-workflow-runner-heading', text: 'ステップ実行'
+      detail_group_heading_ids = css_select('.admin-workflow-detail-group[aria-labelledby]').pluck('aria-labelledby')
+      assert_equal detail_group_heading_ids.length, detail_group_heading_ids.uniq.length
+      detail_group_heading_ids.each { |heading_id| assert_select "##{heading_id}", 1 }
       assert_select '.admin-workflow-step', text: /ミュージックポスト一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND候補一覧を取得/
       assert_select '.admin-workflow-step', text: /JOYSOUND楽曲URLから候補を追加/
@@ -175,6 +190,54 @@ module Admin
       assert_select '.admin-operation-guide-item', { text: /DAM候補をカラオケ楽曲へ登録/, count: 0 }
     end
 
+    test 'collection operation and selection controls use unique DOM ids' do
+      get admin_songs_path, params: {
+        q: 'テスト',
+        sort: 'title',
+        direction: 'asc',
+        filters: { karaoke_type: 'dam' }
+      }
+
+      assert_response :success
+
+      progress_ids = css_select('input[name="operation_progress_id"]').filter_map { |node| node['id'] }
+      assert_equal progress_ids.length, progress_ids.uniq.length
+
+      operation_input_ids = css_select('input[id^="admin-operation-input-"]').pluck('id')
+      assert_equal operation_input_ids.length, operation_input_ids.uniq.length
+
+      operation_label_ids = css_select('label[for^="admin-operation-input-"]').pluck('for')
+      assert_equal operation_input_ids.sort, operation_label_ids.sort
+
+      selected_ids = css_select('input[data-admin-resource-select]').pluck('id')
+      assert_equal selected_ids.length, selected_ids.uniq.length
+      assert(selected_ids.all? { |id| id.start_with?('admin-selected-id-') })
+
+      view_mode_ids = css_select('input[name="view_mode"]').filter_map { |node| node['id'] }
+      assert_equal view_mode_ids.length, view_mode_ids.uniq.length
+      assert_select '[data-admin-infinite-scroll-retry][hidden]', 1
+      assert_select '[data-admin-resource-content][aria-busy="false"][tabindex="-1"]'
+      assert_select '.admin-result-summary[role="status"][aria-live="polite"][aria-atomic="true"]'
+      assert_select 'th.admin-table-field-karaoke-type[aria-label="カラオケ種別"][aria-sort="none"]'
+      assert_select 'th.admin-table-field-title[aria-label="タイトル"][aria-sort="ascending"]'
+      assert_select 'th.admin-table-field-updated-at[aria-label="更新日時"][aria-sort="none"]'
+    end
+
+    test 'workflow dry run controls are individually associated with their labels' do
+      get admin_workflow_steps_path('dam')
+
+      assert_response :success
+
+      dry_run_ids = css_select('input[type="checkbox"][name="operation_fields[dry_run]"]').pluck('id')
+      label_ids = css_select('label[for^="admin-operation-input-"]').filter_map do |node|
+        node['for'] if node['for'].include?('-dry_run')
+      end
+
+      assert_operator dry_run_ids.length, :>, 1
+      assert_equal dry_run_ids.length, dry_run_ids.uniq.length
+      assert_equal dry_run_ids.sort, label_ids.sort
+    end
+
     test 'cleanup orphan display artists operation renders tsv output checkbox' do
       get operation_admin_display_artists_path(operation: 'cleanup_orphan_display_artists')
 
@@ -194,7 +257,8 @@ module Admin
       get admin_workflow_steps_path('dam')
 
       assert_response :success
-      assert_select '.admin-workflow-status[aria-live="polite"]', text: /実行状況/
+      assert_select '.admin-workflow-status[role="status"][aria-live="polite"][aria-atomic="false"]', text: /実行状況/
+      assert_select '.admin-workflow-status[aria-labelledby="admin-workflow-status-heading"] h2#admin-workflow-status-heading', text: '実行状況'
       assert_select '[data-admin-workflow-status-label]', text: 'DAMを開始待ちです'
       assert_select '[data-admin-workflow-status-state]', text: 'ジョブ待機中'
       assert_select '[data-admin-workflow-status-current]', text: 'DAM候補一覧を取得'
@@ -219,6 +283,27 @@ module Admin
       assert_equal 3, payload.dig(:workflow, :total_steps)
     end
 
+    test 'workflow progress endpoint returns not found for an unknown run id' do
+      run_id = SecureRandom.uuid
+
+      get admin_workflow_progress_path('dam', run_id:)
+
+      assert_response :not_found
+      assert_equal 'unknown', response.parsed_body['state']
+      assert_equal '状態不明', response.parsed_body['status']
+    end
+
+    test 'workflow progress endpoint returns the current run payload' do
+      run_id = SecureRandom.uuid
+      WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('dam'))
+
+      get admin_workflow_progress_path('dam', run_id:)
+
+      assert_response :success
+      assert_equal 'queued', response.parsed_body['state']
+      assert_equal 'DAM', response.parsed_body.dig('workflow', 'workflow_label')
+    end
+
     test 'workflow run redirects to active overlapping run instead of starting duplicate' do
       run_id = SecureRandom.uuid
       WorkflowRunProgress.create!(run_id, workflow: WorkflowDefinition.fetch('full'))
@@ -239,6 +324,7 @@ module Admin
 
       assert_response :success
       assert_select '.admin-workflow-status.alert.alert-warning', text: /重複実行を避けるため/
+      assert_select '.admin-workflow-status[aria-labelledby="admin-workflow-status-heading"] h2#admin-workflow-status-heading', text: '実行状況'
       assert_select 'a[href=?]', admin_workflow_steps_path('full', run_id:), text: /実行中の状況を見る/
     end
 
@@ -289,7 +375,8 @@ module Admin
       get admin_workflow_steps_path('dam', run_id:)
 
       assert_response :success
-      assert_select '[data-admin-workflow-results][aria-live="polite"]:not([hidden])'
+      assert_select '[data-admin-workflow-results][role="status"][aria-live="polite"][aria-atomic="true"]:not([hidden])'
+      assert_select '[data-admin-workflow-results][aria-labelledby="admin-workflow-results-heading"] h2#admin-workflow-results-heading', text: '実行結果'
       assert_select '.admin-workflow-result-item', text: /DAM候補一覧を取得/
       assert_select '.admin-workflow-result-item', text: /DAM楽曲一覧 追加2件/
     end
@@ -326,6 +413,20 @@ module Admin
       assert_select %(tbody tr[data-admin-row-href="#{admin_display_artist_path(@display_artist)}"]), { minimum: 1 }
     end
 
+    test 'resource index does not nest links in linked field values' do
+      get admin_songs_path, params: { q: @song.title }
+
+      assert_response :success
+      assert_select 'td.admin-table-field-display-artist > a[href=?]', admin_display_artist_path(@display_artist), text: /ZUN/
+      assert_select 'td.admin-table-field-display-artist a a', 0
+
+      get admin_dam_songs_path, params: { q: @dam_song.title }
+
+      assert_response :success
+      assert_select 'td.admin-table-field-display-artist a a', 0
+      assert_select 'td.admin-table-field-url a a', 0
+    end
+
     test 'display artist index shows linked circles in first column' do
       later_circle = Circle.create!(name: '後から表示')
       DisplayArtistsCircle.find_by!(display_artist: @display_artist, circle: @circle).update!(created_at: 2.days.ago)
@@ -356,6 +457,13 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '[紅] 赤より紅い夢'
       assert_select '.admin-detail-identity code', text: @original_song.code
+    end
+
+    test 'member operation panel is labelled by its heading' do
+      get admin_karaoke_delivery_model_path(@delivery_model)
+
+      assert_response :success
+      assert_select '.admin-operations[aria-labelledby="admin-operations-heading-karaoke_delivery_model"] h2#admin-operations-heading-karaoke_delivery_model', text: '操作'
     end
 
     test 'search filters index by allowed columns' do
@@ -389,7 +497,8 @@ module Admin
 
       assert_response :success
       assert_select 'form[data-admin-delete-confirmation=?]', 'サークル「一覧削除確認サークル」を削除します。この操作は取り消せません。削除してよろしいですか？'
-      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog]'
+      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog][aria-describedby="admin-delete-confirmation-message"]'
+      assert_select 'p#admin-delete-confirmation-message[data-admin-delete-confirmation-message][aria-live="polite"]'
     end
 
     test 'filters index independently from keyword search' do
@@ -515,6 +624,8 @@ module Admin
 
       assert_response :success
       assert_select 'table.admin-table-resource-song'
+      assert_select 'table.admin-table-resource-song caption.admin-sr-only', text: 'カラオケ配信曲一覧'
+      assert_select 'table.admin-table-resource-song thead th[scope="col"]', minimum: 1
       assert_select 'thead th:nth-child(2)', text: 'カラオケ種別'
       assert_select 'thead th.admin-table-field-karaoke-type'
       assert_select 'thead th:nth-child(3)', text: 'タイトル'
@@ -572,6 +683,7 @@ module Admin
       assert_select 'tbody tr:first-child.admin-row-updated'
       assert_select 'tbody tr:first-child .admin-update-badge-update', text: '更新'
       assert_select 'a.admin-sort-link-active .admin-sort-label', text: '更新日時'
+      assert_select 'th.admin-table-field-updated-at[aria-sort="descending"] a[aria-label="更新日時（降順）。クリックで既定の並び順に戻す"]'
     end
 
     test 'marks recently created resources in index' do
@@ -614,8 +726,10 @@ module Admin
 
       assert_response :success
       assert_select 'input[type="radio"][name="filters[karaoke_type]"]'
+      assert_select 'fieldset.admin-filter-choice-group[aria-label="カラオケ種別"]'
       assert_select 'input[type="radio"][name="filters[original_link]"][value="linked"]'
       assert_select 'input[type="radio"][name="filters[original_link]"][value="missing"]'
+      assert_select 'fieldset.admin-filter-choice-group[aria-label="原曲紐付け"]'
       assert_select 'input[type="radio"][name="filters[original_category]"][value="touhou_arrange"]'
       assert_select 'input[type="radio"][name="filters[original_category]"][value="original_or_other"]'
       assert_select 'input[type="radio"][name="filters[original_category]"][value="missing"]'
@@ -627,7 +741,7 @@ module Admin
       get admin_original_songs_path
 
       assert_response :success
-      assert_select 'select[name="filters[original_type]"]'
+      assert_select 'select[name="filters[original_type]"][aria-label="原作種別"]'
     end
 
     test 'filters original resources by enum values' do
@@ -649,11 +763,13 @@ module Admin
       assert_response :success
       assert_select 'tbody tr:first-child td', text: 'Sort Circle A'
       assert_select 'a.admin-sort-link-active .admin-sort-label', text: 'サークル名'
+      assert_select 'th.admin-table-field-name[aria-sort="ascending"] a[aria-label="サークル名（昇順）。クリックで降順に変更"]'
 
       get admin_circles_path, params: { q: 'Sort Circle', sort: 'name', direction: 'desc' }
 
       assert_response :success
       assert_select 'tbody tr:first-child td', text: 'Sort Circle B'
+      assert_select 'th.admin-table-field-name[aria-sort="descending"]'
       assert_select 'a.admin-sort-link-active' do |links|
         href = links.first['href']
         assert_includes href, 'q=Sort+Circle'
@@ -812,7 +928,8 @@ module Admin
 
       assert_response :success
       assert_select 'tbody tr', 24
-      assert_select '.admin-pagination[aria-label="サークルのページ移動"]', text: %r{1 / 2}
+      assert_select '.admin-pagination[aria-label="サークルのページ移動"] span[aria-current="page"]', text: '1 / 2'
+      assert_select 'a.admin-view-mode-button-active[aria-current="true"]', text: 'ページ送り'
     end
 
     test 'index links operations to dedicated action pages' do
@@ -826,28 +943,35 @@ module Admin
       assert_select '.admin-operation-guide h2', text: '運用アクション'
       assert_select '.admin-operation-guide-group h3', text: 'TSV入出力'
       assert_select '.admin-operation-guide-group h3', { text: '外部取得', count: 0 }
+      operation_groups = css_select('.admin-operation-guide-group')
+      operation_groups.each do |group|
+        heading_id = group['aria-labelledby']
+        assert heading_id.present?
+        assert_select "##{heading_id}", text: group.at_css('h3').text
+      end
       assert_select '.admin-operation-guide-item[data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', text: '楽曲TSVをエクスポート'
       assert_select '.admin-operation-guide-cta', text: /対象を選択して実行/
       assert_select '.admin-operation-guide-meta small', text: '選択必須'
       assert_select '.admin-operation-guide-meta small', text: 'バックグラウンド'
-      assert_select 'th.admin-select-column'
-      assert_select '.admin-selection-toolbar[aria-live="polite"]'
+      assert_select 'th.admin-select-column input[data-admin-resource-select-all][aria-checked="false"]'
+      assert_select '.admin-selection-toolbar[role="status"][aria-live="polite"][aria-atomic="true"]'
       assert_select '.admin-selection-toolbar [data-admin-selection-count]', text: '0'
       assert_select '.admin-selection-toolbar [data-admin-selection-note]', text: '一括操作を実行するには、対象行を選択してください。'
       assert_select '.admin-selection-toolbar button[data-admin-resource-selection-clear][disabled]', text: /選択解除/
       assert_select 'input[data-admin-resource-select]', 1
       assert_select 'dialog[data-admin-operation-modal][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '#admin-operation-modal-title-song[data-admin-operation-modal-title]'
-      assert_select '[data-admin-operation-panel="export_songs"]'
+      assert_select '[data-admin-operation-panel="export_songs"][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '[data-admin-operation-panel="export_songs"] form[data-admin-operation-form][data-admin-operation-inline-confirmation="true"][data-admin-operation-selection-required="true"]'
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selected-ids]'
-      assert_select '[data-admin-operation-panel="export_songs"] .admin-operation-selection-summary.alert.alert-warning'
+      assert_select '[data-admin-operation-panel="export_songs"] .admin-operation-selection-summary.alert.alert-warning[role="status"][aria-live="polite"][aria-atomic="true"]'
       assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-selection-note]', text: '対象を選択してください。'
       assert_select '[data-admin-operation-panel="export_songs"] button[aria-label="楽曲TSVをエクスポートをキャンセル"][data-admin-operation-modal-cancel]'
       assert_select '[data-admin-operation-panel="export_songs"] button[data-admin-operation-submit][disabled][aria-describedby]'
-      assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-submit-note]', text: '対象を選択すると実行できます。'
+      assert_select '[data-admin-operation-panel="export_songs"] [data-admin-operation-submit-note][role="status"][aria-live="polite"][aria-atomic="true"]', text: '対象を選択すると実行できます。'
       assert_select '.admin-display-settings .admin-operation-dropdown-wrap', false
       assert_select '.admin-table-controls .admin-table-display-settings'
+      assert_select '.admin-view-mode-group[role="group"][aria-label="表示方式"]'
       assert_select 'a.admin-operation-guide-item[href=?][data-admin-operation-trigger][data-admin-operation-resource="song"][data-admin-operation-key="export_songs"][data-admin-operation-label="楽曲TSVをエクスポート"] strong', operation_admin_songs_path(operation: 'export_songs'), text: '楽曲TSVをエクスポート'
     end
 
@@ -874,11 +998,23 @@ module Admin
       assert_select '.admin-filter-active-count', text: '1件指定中'
     end
 
+    test 'presence filter choices identify their service group' do
+      get admin_songs_path
+
+      assert_response :success
+      assert_select '.admin-presence-filter-row[role="group"][aria-label="YouTube"]'
+      assert_select '.admin-presence-filter-row[role="group"][aria-label="ニコニコ"]'
+      assert_select 'input#filters_video_service_youtube_present[aria-label="YouTube: あり"]'
+      assert_select 'input#filters_video_service_nicovideo_missing[aria-label="ニコニコ: なし"]'
+      assert_select 'input#filters_music_service_apple_music_present[aria-label="Apple: あり"]'
+    end
+
     test 'index explains empty filtered results near the table' do
       get admin_songs_path, params: { q: '一致しない検索語' }
 
       assert_response :success
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信曲をキーワード検索"]'
+      assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ配信曲一覧"]'
       assert_select 'tbody tr', 0
       assert_select '.admin-empty-state.alert[role="status"]'
       assert_select '.admin-empty-state p', text: '条件に一致するデータがありません'
@@ -921,8 +1057,8 @@ module Admin
       assert_response :success
       assert_select 'tbody tr', 24
       assert_select '.admin-pagination', false
-      assert_select '.admin-table-wrap .admin-infinite-scroll[role="status"][aria-live="polite"][data-next-url]'
-      assert_select 'a.admin-view-mode-button-active', text: '無限スクロール'
+      assert_select '.admin-table-wrap .admin-infinite-scroll[role="status"][aria-live="polite"][aria-atomic="true"][aria-busy="false"][data-next-url]'
+      assert_select 'a.admin-view-mode-button-active[aria-current="true"]', text: '無限スクロール'
     end
 
     test 'infinite scroll rows endpoint returns next page html and next url' do
@@ -958,6 +1094,27 @@ module Admin
       assert_equal 'サークル', Admin::ChangeLog.last.resource_label
     end
 
+    test 'resource writes invalidate dashboard counts' do
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+
+        post admin_circles_path, params: { circle: { name: '集計無効化サークル' } }
+        assert_redirected_to admin_circle_path(Circle.order(:created_at).last)
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        patch admin_song_path(@song), params: { song: { youtube_url: 'https://youtube.example/cache-invalidation' } }
+        assert_redirected_to admin_song_path(@song)
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+
+        artist = DisplayArtist.create!(karaoke_type: 'DAM', name: '集計無効化削除', url: 'https://example.com/cache-invalidation')
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        delete admin_display_artist_path(artist)
+        assert_redirected_to admin_display_artists_path
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     test 'does not create a circle with a duplicate name' do
       assert_no_difference -> { Circle.count } do
         post admin_circles_path, params: { circle: { name: @circle.name } }
@@ -973,7 +1130,8 @@ module Admin
       end
 
       assert_response :unprocessable_content
-      assert_select '.admin-errors'
+      assert_select '.admin-errors[role="alert"][aria-live="assertive"][data-admin-form-error-summary]'
+      assert_select '.admin-errors a[href="#karaoke_delivery_model_name"]', text: /機種名/
       assert_select '.admin-form-row-invalid input[name="karaoke_delivery_model[name]"][aria-invalid="true"][aria-describedby="karaoke_delivery_model_name_error"]'
       assert_select '#karaoke_delivery_model_name_error.admin-field-errors', text: /機種名/
     end
@@ -982,6 +1140,7 @@ module Admin
       get edit_admin_song_path(@song)
 
       assert_response :success
+      assert_select 'section.admin-panel[aria-label="カラオケ配信曲の編集フォーム"] form.admin-form'
       assert_select 'form'
       assert_select 'input[name="song[youtube_url]"]'
     end
@@ -1001,23 +1160,31 @@ module Admin
       get admin_display_artist_path(@display_artist)
 
       assert_response :success
+      assert_select '.admin-related-section[aria-labelledby="admin-detail-association-circles"] h3#admin-detail-association-circles', text: 'サークル'
       assert_select '.admin-related-section header button[aria-label="[DAM] ZUNのサークルを紐づけ"][data-admin-association-dialog-trigger="display-artist-circles"]', text: /紐づけ/
       assert_select 'dialog[aria-labelledby="admin-association-dialog-title-display-artist-circles"][data-admin-association-dialog="display-artist-circles"]'
       assert_select '#admin-association-dialog-title-display-artist-circles', text: 'サークルを紐づけ'
       assert_select '[data-admin-searchable-select]'
-      assert_select 'input[type="search"][data-admin-searchable-select-search][placeholder="サークルを検索"]'
+      assert_select 'label[for="admin_searchable_select_display_artist_circle_ids-search"]', text: 'サークル'
+      assert_select 'input[type="search"][data-admin-searchable-select-search][id="admin_searchable_select_display_artist_circle_ids-search"][placeholder="サークルを検索"][aria-controls="admin_searchable_select_display_artist_circle_ids-options"][aria-expanded="false"][aria-haspopup="listbox"][aria-describedby="admin_searchable_select_display_artist_circle_ids-status"]'
+      assert_select '[data-admin-original-song-search][id]', count: 0
       assert_select '[data-admin-searchable-select-chips]'
-      assert_select '[data-admin-searchable-select-options][hidden="hidden"]'
+      assert_select '[data-admin-searchable-select-options][id="admin_searchable_select_display_artist_circle_ids-options"][role="listbox"][aria-label="サークルの候補"][aria-multiselectable="true"][hidden="hidden"]'
+      assert_select 'p#admin_searchable_select_display_artist_circle_ids-status[data-admin-searchable-select-status][role="status"][aria-live="polite"][aria-atomic="true"]'
       assert_select 'input[type="hidden"][name="display_artist[circle_ids][]"][value=""]'
       assert_select '[data-admin-searchable-select-values][data-input-name="display_artist[circle_ids][]"]'
       assert_select '[data-admin-searchable-select-values] input[type="hidden"][name="display_artist[circle_ids][]"][value=?]', @circle.id.to_s
+      ids = css_select('[id]').filter_map { |element| element['id'] }
+      assert_equal ids.uniq, ids
       assert_select 'button[aria-label="サークル紐づけを更新"]', text: /更新/
       assert_select 'button[aria-label="サークル紐づけをキャンセル"][data-admin-association-dialog-close]', text: /キャンセル/
       assert_select '[data-admin-searchable-select-option]', text: @circle.name do
+        assert_select '[aria-selected="true"]'
         assert_select 'input[type="checkbox"][name]', 0
         assert_select 'input[type="checkbox"][value=?][checked="checked"]', @circle.id.to_s
       end
       assert_select '[data-admin-searchable-select-option]', text: other_circle.name do
+        assert_select '[aria-selected="false"]'
         assert_select 'input[type="checkbox"][name]', 0
         assert_select 'input[type="checkbox"][value=?]', other_circle.id.to_s
       end
@@ -1118,7 +1285,8 @@ module Admin
 
       assert_response :success
       assert_select 'form[data-admin-delete-confirmation=?]', 'サークル「詳細削除確認サークル」を削除します。この操作は取り消せません。削除してよろしいですか？'
-      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog]'
+      assert_select 'dialog.modal[data-admin-delete-confirmation-dialog][aria-describedby="admin-delete-confirmation-message"]'
+      assert_select 'p#admin-delete-confirmation-message[data-admin-delete-confirmation-message][aria-live="polite"]'
     end
 
     test 'does not destroy circle with associated data' do
@@ -1144,20 +1312,26 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'DAM楽曲URLから候補を追加'
+      assert_select 'section[aria-labelledby="admin-operation-description-heading"] h2#admin-operation-description-heading', text: '説明'
+      assert_select 'section[aria-labelledby="admin-operation-execution-heading"] h2#admin-operation-execution-heading', text: '実行'
       assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
       assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
+      assert_select '.admin-operation-description a[href=?][target="_blank"][rel="noopener"][aria-label=?]',
+                    Constants::Karaoke::Dam::SONG_URL,
+                    "#{Constants::Karaoke::Dam::SONG_URL}（新しいタブで開く）"
       assert_select 'form[data-admin-operation-form][data-admin-operation-action="FetchDamSong"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-label="DAM楽曲URLから候補を追加"][data-admin-operation-resource-label="DAM楽曲"]'
       assert_select 'form[data-admin-operation-form][data-admin-operation-progress-url]'
-      assert_select '.admin-form-label-row label[for="operation_fields_dam_song_url"]', text: 'DAM楽曲URL'
+      assert_select '.admin-form-label-row label[for$="-dam_song_url"]', text: 'DAM楽曲URL'
       assert_select '.admin-form-label-row .admin-form-requirement', text: '必須'
-      assert_select 'input[name="operation_fields[dam_song_url]"]'
+      assert_select 'input[name="operation_fields[dam_song_url]"][required][data-admin-operation-required-input]'
       assert_select 'input[name="operation_progress_id"]', 1
       assert_select 'dialog[data-admin-operation-dialog][aria-labelledby="admin-operation-confirm-title"]'
       assert_select '#admin-operation-confirm-title[data-admin-operation-dialog-title]', text: 'アクションを実行しますか？'
       assert_select '[data-admin-operation-dialog-message][aria-live="polite"]'
-      assert_select '[data-admin-operation-progress][aria-live="polite"]'
-      assert_select '[data-admin-operation-progressbar][aria-valuemin="0"][aria-valuemax="100"][aria-valuenow="0"]'
+      assert_select '[data-admin-operation-progress][aria-busy="false"]'
+      assert_select '[data-admin-operation-progress-announcement][role="status"][aria-live="polite"][aria-atomic="true"]'
+      assert_select '[data-admin-operation-progressbar][aria-label="DAM楽曲URLから候補を追加の進捗"][aria-valuemin="0"][aria-valuemax="100"][aria-valuenow="0"]'
       assert_select '[data-admin-operation-progress-percent]', text: '0%'
       assert_select '[data-admin-operation-progress-elapsed]', text: '00:00'
       assert_select '[data-admin-operation-progress-status]', text: '待機中'
@@ -1196,6 +1370,8 @@ module Admin
       assert_response :success
       assert_select 'h1', text: '期限切れを削除'
       assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][checked="checked"]'
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][required]', count: 0
+      assert_select 'input[type="checkbox"][name="operation_fields[dry_run]"][data-admin-operation-required-input]', count: 0
       assert_select '.admin-checkbox-field', text: /削除せず対象を確認する/
     end
 
@@ -1230,6 +1406,16 @@ module Admin
       assert_equal '外部サイト取得中', payload['status']
       assert_equal '処理済み: 120件', payload['detail']
       assert_equal 120, payload['current']
+    end
+
+    test 'operation progress endpoint returns not found for an unknown progress id' do
+      progress_id = SecureRandom.uuid
+
+      get operation_progress_admin_dam_songs_path(operation: 'fetch_dam_touhou_songs', operation_progress_id: progress_id)
+
+      assert_response :not_found
+      assert_equal 'unknown', response.parsed_body['state']
+      assert_equal '状態不明', response.parsed_body['status']
     end
 
     test 'operation progress endpoint accepts polling params without unpermitted warnings' do
@@ -1598,6 +1784,15 @@ module Admin
     end
 
     private
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
+    end
 
     def operation_index(resource_key, handler)
       ResourceRegistry.fetch(resource_key).operations.index { |operation| operation.handler == handler }

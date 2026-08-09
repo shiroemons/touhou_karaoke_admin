@@ -11,8 +11,10 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'カラオケ配信URL編集'
+      assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ配信URL編集一覧"]'
+      assert_select 'table.admin-table-karaoke-delivery-url-bulk-edit caption.admin-sr-only', text: 'カラオケ配信URL編集一覧'
       KaraokeSongDeliveryUrlBulkEditor::COLUMNS.each do |column|
-        assert_select 'th[title=?]', column, text: KaraokeSongTsvColumns.label(column)
+        assert_select 'th[scope="col"][title=?]', column, text: KaraokeSongTsvColumns.label(column)
       end
       assert_select 'textarea[name="bulk_tsv"]' do |elements|
         assert_equal KaraokeSongTsvColumns.labels(KaraokeSongDeliveryUrlBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']
@@ -26,6 +28,9 @@ module Admin
       assert_select "input[name=?][placeholder=?]", "songs[#{linked_song.id}][line_music_url]", 'https://music.line.me/webapp/track/...'
       assert_select "input[name=?][aria-label=?]", "songs[#{linked_song.id}][youtube_url]", "#{linked_song.title}のYouTube URL"
       assert_select "input[name=?][aria-label=?]", "songs[#{linked_song.id}][line_music_url]", "#{linked_song.title}のLINE MUSIC URL"
+      assert_select 'button.admin-copy-button[data-admin-copy-text=?][aria-label=?]', linked_song.display_artist.name, "#{linked_song.display_artist.name}をコピー"
+      assert_select 'a[data-admin-copy-text]', count: 0
+      assert_select 'a[href=?]', admin_song_path(linked_song), text: linked_song.title
       assert_select 'form[data-admin-filter-form]'
       assert_select '.admin-search-field .admin-sr-only', text: 'キーワード'
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信URL編集をキーワード検索"]'
@@ -34,9 +39,12 @@ module Admin
       assert_select 'button[aria-label="配信URL変更チェックを実行"][name="mode"][value="preview"]'
       assert_select 'button.btn-warning[data-turbo-confirm=?]', '配信URLの変更をDBに反映します。変更チェック結果を確認済みですか？'
       assert_select 'button[aria-label="配信URL変更をDBに反映"][aria-describedby="admin-delivery-url-bulk-update-note"][name="mode"][value="update"][disabled]'
-      assert_select '.admin-delivery-url-control-group h2', text: '絞り込み'
-      assert_select '.admin-delivery-url-control-group h2', text: '並び替え'
+      assert_select '.admin-delivery-url-control-group[aria-labelledby="admin-delivery-url-filter-heading"] h2#admin-delivery-url-filter-heading', text: '絞り込み'
+      assert_select '.admin-delivery-url-control-group[aria-labelledby="admin-delivery-url-sort-heading"] h2#admin-delivery-url-sort-heading', text: '並び替え'
+      assert_select '.admin-delivery-url-control-group[aria-labelledby="admin-delivery-url-page-size-heading"] h2#admin-delivery-url-page-size-heading', text: '表示件数'
       assert_select 'input[name="missing_url_columns[]"][value="youtube_url"][data-admin-auto-submit]'
+      missing_url_column_ids = css_select('input[name="missing_url_columns[]"]').filter_map { |element| element['id'] }
+      assert_equal missing_url_column_ids.uniq, missing_url_column_ids
       assert_select 'select[name="karaoke_type"][aria-label="配信種別"][data-admin-auto-submit]'
       assert_select 'select[name="sort"][aria-label="並び替え項目"][data-admin-auto-submit] option[selected][value="created_at"]'
       assert_select 'select[name="direction"][aria-label="並び順"][data-admin-auto-submit] option[selected][value="desc"]'
@@ -91,7 +99,7 @@ module Admin
       get admin_karaoke_song_delivery_url_bulk_edit_path, params: { per_page: 50 }
 
       assert_response :success
-      assert_select '.admin-pagination[aria-label="カラオケ配信URL編集のページ移動"]'
+      assert_select '.admin-pagination[aria-label="カラオケ配信URL編集のページ移動"] span[aria-current="page"]', text: %r{1 / \d+}
       assert_select 'select[name="per_page"] option[selected][value="50"]'
       assert_select '.admin-result-summary', text: %r{表示中\s+50\s+/ .* 件}
       assert_select 'a[href*="per_page=50"]', text: /次へ/
@@ -155,6 +163,20 @@ module Admin
       assert_equal 'https://music.line.example/controller', song.line_music_url
     end
 
+    test 'delivery url bulk updates invalidate dashboard counts' do
+      song = create_song(title: 'Controller Delivery Cache Song')
+
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        post admin_karaoke_song_delivery_url_bulk_edit_path, params: {
+          songs: { song.id => { youtube_url: 'https://youtube.example/cache' } }
+        }
+
+        assert_redirected_to admin_karaoke_song_delivery_url_bulk_edit_path
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     test 'previews delivery url changes without updating records' do
       song = create_song(title: 'Controller Delivery URL Preview Song', youtube_url: '')
 
@@ -173,7 +195,7 @@ module Admin
       }
 
       assert_response :success
-      assert_select 'h2', text: '配信URL更新チェック結果'
+      assert_select 'section.admin-original-song-preview[aria-labelledby="admin-delivery-url-bulk-preview-heading"] h2#admin-delivery-url-bulk-preview-heading', text: '配信URL更新チェック結果'
       assert_select '.admin-delivery-url-preview-row', text: /Controller Delivery URL Preview Song/
       assert_select '.admin-delivery-url-preview-row li span', text: /YouTube URL/
       assert_select '.admin-delivery-url-preview-row strong', text: %r{https://youtube.example/preview}
@@ -281,6 +303,17 @@ module Admin
       follow_redirect!
       assert_select '.admin-flash-alert', /missing-song-id/
       assert_equal '', song.reload.youtube_url
+    end
+
+    private
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
     end
   end
 end

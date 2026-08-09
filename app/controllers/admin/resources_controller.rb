@@ -49,6 +49,7 @@ module Admin
       authorize @record
 
       if @record.save
+        DashboardCache.invalidate!
         ChangeLog.record_create!(resource: @resource, record: @record, actor_name: current_user.name)
         redirect_to admin_resource_path(@resource, @record), notice: I18n.t('admin.created', resource: @resource.label)
       else
@@ -60,6 +61,7 @@ module Admin
       authorize @record
 
       if @record.update(resource_params)
+        DashboardCache.invalidate!
         ChangeLog.record_update!(resource: @resource, record: @record, actor_name: current_user.name)
         redirect_to admin_resource_path(@resource, @record), notice: I18n.t('admin.updated', resource: @resource.label)
       else
@@ -70,11 +72,13 @@ module Admin
     def destroy
       authorize @record
       @record.destroy!
+      DashboardCache.invalidate!
       ChangeLog.record_destroy!(resource: @resource, record: @record, actor_name: current_user.name)
       redirect_to admin_resources_path(@resource), notice: I18n.t('admin.destroyed', resource: @resource.label)
     end
 
     def operation
+      operation_started = false
       @operation = find_operation
       authorize_operation!
 
@@ -109,6 +113,7 @@ module Admin
         return
       end
 
+      operation_started = true
       result = OperationRunner.new(resource: @resource, operation: @operation, record: @record, params:, scope: operation_scope).run
 
       if result.download_data.present?
@@ -125,13 +130,21 @@ module Admin
     rescue StandardError => e
       Rails.logger.error(e)
       redirect_back_or_to admin_resources_path(@resource), alert: Admin::ErrorMessage.user_facing(e.message)
+    ensure
+      DashboardCache.invalidate! if operation_started
     end
 
     def operation_progress
       @operation = find_operation
       authorize_operation!
+      progress_id = scalar_param(:operation_progress_id)
 
-      render json: OperationProgress.read(params[:operation_progress_id])
+      unless OperationProgress.known?(progress_id)
+        render json: OperationProgress.unknown_payload, status: :not_found
+        return
+      end
+
+      render json: OperationProgress.read(progress_id)
     end
 
     private

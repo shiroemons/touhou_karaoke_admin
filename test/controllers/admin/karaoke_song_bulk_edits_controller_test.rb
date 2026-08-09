@@ -12,9 +12,11 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'カラオケ楽曲紐づけ'
+      assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ楽曲紐づけ一覧"]'
+      assert_select 'table.admin-table-karaoke-song-bulk-edit caption.admin-sr-only', text: 'カラオケ楽曲紐づけ一覧'
       assert_select 'a.admin-nav-link-active[aria-current="page"]', text: /カラオケ楽曲紐づけ/
       KaraokeSongBulkEditor::COLUMNS.each do |column|
-        assert_select 'th[title=?]', column, text: KaraokeSongTsvColumns.label(column)
+        assert_select 'th[scope="col"][title=?]', column, text: KaraokeSongTsvColumns.label(column)
       end
       assert_select 'textarea[name="bulk_tsv"]' do |elements|
         assert_equal KaraokeSongTsvColumns.labels(KaraokeSongBulkEditor::COLUMNS).join("\t"), elements.first['placeholder']
@@ -42,8 +44,14 @@ module Admin
       assert_select "input[aria-label=?][placeholder=?]", "#{missing_song.title}の原曲を検索", '原曲を検索'
       assert_select "input[name=?][aria-label=?]", "songs[#{missing_song.id}][youtube_url]", "#{missing_song.title}のYouTube URL"
       assert_select "input[name=?][aria-label=?]", "songs[#{missing_song.id}][spotify_url]", "#{missing_song.title}のSpotify URL"
+      assert_select 'button.admin-copy-button[data-admin-copy-text=?][aria-label=?]', missing_song.display_artist.name, "#{missing_song.display_artist.name}をコピー"
+      assert_select 'a[data-admin-copy-text]', count: 0
+      assert_select 'a[href=?]', admin_song_path(missing_song), text: missing_song.title
       assert_select '[data-admin-original-song-picker]'
-      assert_select '[data-admin-original-song-search]'
+      assert_select '[data-admin-original-song-search][role="combobox"][aria-haspopup="listbox"][aria-expanded="false"][aria-autocomplete="list"][aria-controls][aria-describedby]'
+      assert_select '[data-admin-original-song-search][id]', count: 0
+      assert_select '[data-admin-original-song-options][role="listbox"][aria-label][hidden]'
+      assert_select '[data-admin-original-song-picker-status][role="status"][aria-live="polite"][aria-atomic="true"][id]'
       assert_includes response.body, missing_song.title
       assert_not_includes response.body, linked_song.title
     end
@@ -75,7 +83,7 @@ module Admin
       get admin_karaoke_song_bulk_edit_path, params: { per_page: 50 }
 
       assert_response :success
-      assert_select '.admin-pagination[aria-label="カラオケ楽曲紐づけのページ移動"]'
+      assert_select '.admin-pagination[aria-label="カラオケ楽曲紐づけのページ移動"] span[aria-current="page"]', text: %r{1 / \d+}
       assert_select 'select[name="per_page"] option[selected][value="50"]'
       assert_select '.admin-result-summary', text: %r{表示中\s+50\s+/ .* 件}
       assert_select 'a[href*="per_page=50"]', text: /次へ/
@@ -186,6 +194,21 @@ module Admin
       assert_equal 'https://youtube.example/controller', song.youtube_url
     end
 
+    test 'bulk updates invalidate dashboard counts' do
+      song = create_song(title: 'Controller Bulk Cache Song')
+      original_song = create_original_song(title: 'Controller Bulk Cache Original')
+
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+        post admin_karaoke_song_bulk_edit_path, params: {
+          songs: { song.id => { original_songs: original_song.title, youtube_url: 'https://youtube.example/cache' } }
+        }
+
+        assert_redirected_to admin_karaoke_song_bulk_edit_path(status: 'missing')
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     test 'previews multiple original song links without updating records' do
       song = create_song(title: 'Controller Preview Song')
       first_original_song = create_original_song(title: 'Controller Preview First')
@@ -202,7 +225,7 @@ module Admin
       }
 
       assert_response :success
-      assert_select 'h2', text: '原曲紐づけチェック結果'
+      assert_select 'section.admin-original-song-preview[aria-labelledby="admin-karaoke-song-bulk-preview-heading"] h2#admin-karaoke-song-bulk-preview-heading', text: '原曲紐づけチェック結果'
       assert_select '.admin-original-song-preview-row', text: /Controller Preview Song/
       assert_select '.admin-original-song-preview-row li', text: /#{first_original_song.code}/
       assert_select '.admin-original-song-preview-row li', text: /#{second_original_song.code}/
@@ -335,6 +358,17 @@ module Admin
       assert_select '.admin-flash-alert', /Unknown Controller Original/
       assert_empty song.reload.original_songs
       assert_equal '', song.youtube_url
+    end
+
+    private
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
     end
   end
 end

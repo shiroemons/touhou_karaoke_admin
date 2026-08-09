@@ -15,6 +15,18 @@ const selectedOriginalSongItems = (picker) => {
   return selectedOriginalSongTitles(picker).map((title) => ({ title, status: "valid" }))
 }
 
+const updateOriginalSongPickerStatus = (picker, message, { error = false } = {}) => {
+  const status = picker.querySelector("[data-admin-original-song-picker-status]")
+  if (!status) return
+
+  status.textContent = message
+  if (error) {
+    status.dataset.adminOriginalSongStatusLevel = "error"
+  } else {
+    delete status.dataset.adminOriginalSongStatusLevel
+  }
+}
+
 const normalizedOriginalSongPickerItems = (items) => {
   const itemByTitle = new Map()
   items.forEach((item) => {
@@ -71,9 +83,42 @@ const normalizeOriginalSongPasteText = (text) => text
   .join("\n")
 
 const ORIGINAL_SONG_OPTIONS_MAX_HEIGHT = 240
+const ORIGINAL_SONG_OPTIONS_TIMEOUT_MS = 15000
 let activeOriginalSongPicker
+const originalSongPickerResolveQueues = new WeakMap()
+
+const createOriginalSongRequestTimeout = (controller, timeoutMs = ORIGINAL_SONG_OPTIONS_TIMEOUT_MS) => {
+  const setTimeoutFunction = globalThis.setTimeout
+  const clearTimeoutFunction = globalThis.clearTimeout
+  if (typeof setTimeoutFunction !== "function" || typeof clearTimeoutFunction !== "function") return undefined
+
+  let timedOut = false
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
+
+const originalSongPickerIsMounted = (picker) => picker?.isConnected !== false
+
+const setOriginalSongPickerOptionsExpanded = (picker, expanded) => {
+  const searchInput = picker.querySelector("[data-admin-original-song-search]")
+  const options = picker.querySelector("[data-admin-original-song-options]")
+  if (searchInput) searchInput.setAttribute("aria-expanded", expanded.toString())
+  if (options) options.hidden = !expanded
+}
 
 const positionOriginalSongOptions = (picker) => {
+  if (!originalSongPickerIsMounted(picker)) {
+    if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
+    return
+  }
+
   const searchInput = picker.querySelector("[data-admin-original-song-search]")
   const options = picker.querySelector("[data-admin-original-song-options]")
   if (!searchInput || !options || options.hidden) return
@@ -102,12 +147,22 @@ const positionOriginalSongOptions = (picker) => {
 }
 
 const hideOriginalSongOptions = (picker) => {
-  const options = picker.querySelector("[data-admin-original-song-options]")
-  if (options) options.hidden = true
+  if (!originalSongPickerIsMounted(picker)) {
+    if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
+    return
+  }
+
+  setOriginalSongPickerOptionsExpanded(picker, false)
   if (activeOriginalSongPicker === picker) activeOriginalSongPicker = undefined
 }
 
+const focusOriginalSongPickerSearch = (picker) => {
+  picker.querySelector("[data-admin-original-song-search]")?.focus?.({ preventScroll: true })
+}
+
 const renderOriginalSongOptions = (picker, optionsPayload) => {
+  if (!originalSongPickerIsMounted(picker)) return
+
   const options = picker.querySelector("[data-admin-original-song-options]")
   if (!options) return
 
@@ -116,31 +171,57 @@ const renderOriginalSongOptions = (picker, optionsPayload) => {
     const option = document.createElement("button")
     option.type = "button"
     option.className = "admin-original-song-option"
+    option.setAttribute("role", "option")
+    option.setAttribute("aria-selected", "false")
     option.dataset.adminOriginalSongSelect = item.title
     if (item.candidateFor) option.dataset.adminOriginalSongCandidateFor = item.candidateFor
     option.textContent = item.label || item.title
     options.appendChild(option)
   })
-  options.hidden = optionsPayload.length === 0
-  activeOriginalSongPicker = options.hidden ? undefined : picker
-  positionOriginalSongOptions(picker)
+  const expanded = optionsPayload.length > 0
+  setOriginalSongPickerOptionsExpanded(picker, expanded)
+  activeOriginalSongPicker = expanded ? picker : undefined
+  if (expanded) positionOriginalSongOptions(picker)
 }
 
 const resolveOriginalSongText = async (picker, text) => {
-  const response = await fetch(picker.dataset.resolveUrl, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || "",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    body: JSON.stringify({ text }),
-  })
-  if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+  const controller = typeof AbortController === "function" ? new AbortController() : undefined
+  const requestTimeout = controller ? createOriginalSongRequestTimeout(controller) : undefined
 
-  return response.json()
+  try {
+    const response = await fetch(picker.dataset.resolveUrl, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || "",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify({ text }),
+      signal: controller?.signal,
+    })
+    if (requestTimeout?.timedOut()) throw new Error("原曲候補の解決がタイムアウトしました。")
+    if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+
+    const payload = await response.json()
+    if (requestTimeout?.timedOut()) throw new Error("原曲候補の解決がタイムアウトしました。")
+    return payload
+  } finally {
+    requestTimeout?.clear()
+  }
+}
+
+const enqueueOriginalSongResolve = (picker, text) => {
+  const previousRequest = originalSongPickerResolveQueues.get(picker) || Promise.resolve()
+  const request = previousRequest
+    .catch(() => {})
+    .then(() => resolveOriginalSongText(picker, text))
+
+  originalSongPickerResolveQueues.set(picker, request)
+  return request.finally(() => {
+    if (originalSongPickerResolveQueues.get(picker) === request) originalSongPickerResolveQueues.delete(picker)
+  })
 }
 
 export const setOriginalSongPickerText = async (searchInput, text, { append = false } = {}) => {
@@ -151,7 +232,9 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
   }
 
   try {
-    const payload = await resolveOriginalSongText(picker, text)
+    const payload = await enqueueOriginalSongResolve(picker, text)
+    if (!originalSongPickerIsMounted(picker)) return
+
     const items = payload.items?.length
       ? payload.items.map((item) => ({ title: item.title, status: item.exists ? "valid" : "invalid" }))
       : [{ title: text, status: payload.titles?.length ? "valid" : "invalid" }]
@@ -169,16 +252,25 @@ export const setOriginalSongPickerText = async (searchInput, text, { append = fa
     ))
     if (candidates.length > 0) {
       renderOriginalSongOptions(picker, candidates)
+      updateOriginalSongPickerStatus(picker, `${candidates.length.toLocaleString()}件の候補があります。選択してください。`)
     } else {
       hideOriginalSongOptions(picker)
+      const resolvedCount = (payload.items || []).filter((item) => item.exists).length || payload.titles?.length || 0
+      updateOriginalSongPickerStatus(
+        picker,
+        resolvedCount > 0 ? "原曲を追加しました。" : "一致する原曲がありません。入力を確認してください。"
+      )
     }
   } catch (error) {
+    if (!originalSongPickerIsMounted(picker)) return
+
     console.error(error)
     const invalidItem = { title: text, status: "invalid" }
     updateOriginalSongPickerValue(picker, append ? [...selectedOriginalSongItems(picker), invalidItem] : [invalidItem])
     hideOriginalSongOptions(picker)
+    updateOriginalSongPickerStatus(picker, "原曲候補の取得に失敗しました。入力を確認して再試行してください。", { error: true })
   } finally {
-    searchInput.value = ""
+    if (originalSongPickerIsMounted(picker) && searchInput.value.trim() === text.trim()) searchInput.value = ""
   }
 }
 
@@ -187,8 +279,10 @@ export const setupAdminOriginalSongPickers = () => {
     if (picker.dataset.adminOriginalSongPickerInitialized === "true") return
 
     picker.dataset.adminOriginalSongPickerInitialized = "true"
+    setOriginalSongPickerOptionsExpanded(picker, false)
     updateOriginalSongPickerValue(picker, selectedOriginalSongTitles(picker))
     let searchController
+    let searchRequestSequence = 0
 
     picker.addEventListener("click", (event) => {
       const editTitle = event.target.closest("[data-admin-original-song-edit]")?.dataset.adminOriginalSongEdit
@@ -212,6 +306,7 @@ export const setupAdminOriginalSongPickers = () => {
           picker,
           selectedOriginalSongItems(picker).filter((item) => item.title !== removeTitle)
         )
+        focusOriginalSongPickerSearch(picker)
         return
       }
 
@@ -224,19 +319,28 @@ export const setupAdminOriginalSongPickers = () => {
         ? selectedOriginalSongItems(picker).filter((item) => !(item.status === "invalid" && item.title === candidateFor))
         : selectedOriginalSongItems(picker)
       updateOriginalSongPickerValue(picker, [...currentItems, { title: selectedTitle, status: "valid" }])
-      picker.querySelector("[data-admin-original-song-search]").value = ""
+      const searchInput = picker.querySelector("[data-admin-original-song-search]")
+      if (searchInput) {
+        searchInput.value = ""
+      }
+      focusOriginalSongPickerSearch(picker)
       hideOriginalSongOptions(picker)
+      updateOriginalSongPickerStatus(picker, "原曲を追加しました。")
     })
 
     picker.querySelector("[data-admin-original-song-search]")?.addEventListener("input", async (event) => {
       const query = event.target.value.trim()
+      const requestSequence = ++searchRequestSequence
       if (searchController) searchController.abort()
       if (!query) {
         hideOriginalSongOptions(picker)
+        updateOriginalSongPickerStatus(picker, "")
         return
       }
 
       searchController = new AbortController()
+      const requestTimeout = createOriginalSongRequestTimeout(searchController)
+      updateOriginalSongPickerStatus(picker, "候補を検索しています...")
       try {
         const url = new URL(picker.dataset.optionsUrl, window.location.origin)
         url.searchParams.set("q", query)
@@ -247,9 +351,27 @@ export const setupAdminOriginalSongPickers = () => {
         })
         if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
-        renderOriginalSongOptions(picker, await response.json())
+        const optionsPayload = await response.json()
+        if (requestTimeout?.timedOut()) throw new Error("原曲候補の検索がタイムアウトしました。")
+        if (!Array.isArray(optionsPayload)) throw new Error("候補データの形式が不正です。")
+        if (requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
+
+        renderOriginalSongOptions(picker, optionsPayload)
+        updateOriginalSongPickerStatus(
+          picker,
+          optionsPayload.length > 0
+            ? `${optionsPayload.length.toLocaleString()}件の候補があります。選択してください。`
+            : "一致する原曲がありません。"
+        )
       } catch (error) {
-        if (error.name !== "AbortError") console.error(error)
+        if ((error?.name === "AbortError" && !requestTimeout?.timedOut()) || requestSequence !== searchRequestSequence || !originalSongPickerIsMounted(picker)) return
+
+        console.error(error)
+        hideOriginalSongOptions(picker)
+        updateOriginalSongPickerStatus(picker, "候補の取得に失敗しました。もう一度お試しください。", { error: true })
+      } finally {
+        requestTimeout?.clear()
+        if (requestSequence === searchRequestSequence) searchController = undefined
       }
     })
 
@@ -264,6 +386,13 @@ export const setupAdminOriginalSongPickers = () => {
     })
 
     searchInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const options = picker.querySelector("[data-admin-original-song-options]")
+        if (options && !options.hidden) event.preventDefault?.()
+        hideOriginalSongOptions(picker)
+        return
+      }
+
       if (event.key !== "Enter") return
       if (
         event.isComposing ||
@@ -279,6 +408,7 @@ export const setupAdminOriginalSongPickers = () => {
         addOriginalSongTitle(picker, firstOption.dataset.adminOriginalSongSelect)
         event.target.value = ""
         hideOriginalSongOptions(picker)
+        updateOriginalSongPickerStatus(picker, "原曲を追加しました。")
         return
       }
 
@@ -303,6 +433,10 @@ export const setupAdminOriginalSongPickers = () => {
 
 document.addEventListener("click", (event) => {
   if (!activeOriginalSongPicker) return
+  if (!originalSongPickerIsMounted(activeOriginalSongPicker)) {
+    activeOriginalSongPicker = undefined
+    return
+  }
   if (event.target.closest("[data-admin-original-song-picker]") === activeOriginalSongPicker) return
 
   hideOriginalSongOptions(activeOriginalSongPicker)

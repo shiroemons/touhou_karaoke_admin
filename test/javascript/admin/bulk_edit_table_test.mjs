@@ -194,3 +194,31 @@ test("setupAdminBulkEditTables does not distribute original song rows without Sh
   assert.equal(prevented, false)
   assert.equal(originalSongPickerCalls.length, 0)
 })
+
+test("setupAdminBulkEditTables leaves malformed cell coordinates to the browser", () => {
+  const table = buildTable()
+  const startCell = table.querySelector(
+    '[data-admin-bulk-cell][data-admin-bulk-row="0"][data-admin-bulk-column-index="1"]'
+  )
+  const nextCell = table.querySelector(
+    '[data-admin-bulk-cell][data-admin-bulk-row="0"][data-admin-bulk-column-index="2"]'
+  )
+  startCell.dataset.adminBulkRow = "not-a-row"
+  globalThis.document = {
+    querySelectorAll: (selector) => (
+      selector === "[data-admin-bulk-edit-table]" ? [table] : []
+    ),
+  }
+
+  setupAdminBulkEditTables()
+  let prevented = false
+  table.dispatch("paste", {
+    clipboardData: { getData: () => "a\tb" },
+    preventDefault: () => { prevented = true },
+    target: startCell,
+  })
+
+  assert.equal(prevented, false)
+  assert.equal(startCell.value, "")
+  assert.equal(nextCell.value, "")
+})

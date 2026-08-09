@@ -11,12 +11,22 @@
 
   <body class="admin-shell">
     <a class="admin-skip-link" href="#admin-main-content">本文へスキップ</a>
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" aria-label="管理サイドバー">
       <%= link_to admin_root_path, class: "admin-brand" do %>
         <%= admin_icon(:dashboard) %>
         <span>東方カラオケ管理</span>
       <% end %>
-      <nav class="admin-nav">
+      <button
+        type="button"
+        class="admin-mobile-navigation-toggle"
+        aria-controls="admin-navigation"
+        aria-expanded="false"
+        aria-label="メニューを開く"
+        data-admin-mobile-navigation-toggle>
+        <%= admin_icon(:menu) %>
+        <span data-admin-mobile-navigation-toggle-label>メニュー</span>
+      </button>
+      <nav id="admin-navigation" class="admin-nav" aria-label="管理メニュー">
         <% main_navigation_groups, other_navigation_groups = admin_navigation_groups.partition { |group_label, _resources| group_label == "メイン" } %>
         <% main_navigation_groups.each do |group_label, resources| %>
           <section class="admin-nav-group admin-nav-group-primary" aria-label="<%= group_label %>">
@@ -63,13 +73,13 @@
       </nav>
     </aside>
 
-    <main id="admin-main-content" class="admin-main" data-admin-page-content tabindex="-1">
+    <main id="admin-main-content" class="admin-main" data-admin-page-content aria-busy="false" tabindex="-1">
       <div data-admin-flash-container>
         <% if notice.present? %>
-          <div class="admin-flash admin-flash-notice alert alert-success" data-admin-flash="notice" data-admin-flash-autohide="true"><%= notice %></div>
+          <div class="admin-flash admin-flash-notice alert alert-success" data-admin-flash="notice" data-admin-flash-autohide="true" role="status" aria-live="polite" aria-atomic="true"><%= notice %></div>
         <% end %>
         <% if alert.present? %>
-          <div class="admin-flash admin-flash-alert alert alert-error" data-admin-flash="alert"><%= alert %></div>
+          <div class="admin-flash admin-flash-alert alert alert-error" data-admin-flash="alert" role="alert" aria-live="assertive" aria-atomic="true"><%= alert %></div>
         <% end %>
       </div>
 

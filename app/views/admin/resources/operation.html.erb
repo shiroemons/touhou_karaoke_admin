@@ -18,13 +18,13 @@
   </div>
 </header>
 
-<section class="admin-panel">
-  <h2>説明</h2>
+<section class="admin-panel" aria-labelledby="admin-operation-description-heading">
+  <h2 id="admin-operation-description-heading">説明</h2>
   <div class="admin-operation-description"><%= linked_operation_description(@operation.description) %></div>
 </section>
 
-<section class="admin-panel">
-  <h2>実行</h2>
+<section class="admin-panel" aria-labelledby="admin-operation-execution-heading">
+  <h2 id="admin-operation-execution-heading">実行</h2>
   <%= render "operation_form", resource: @resource, record: @record, operation: @operation %>
 </section>
 

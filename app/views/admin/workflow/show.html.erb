@@ -30,9 +30,9 @@
 <% result_steps = @workflow_run&.dig(:workflow, :result_steps) || [] %>
 
 <% if @active_workflow_run.present? && @active_workflow_run[:workflow_key] != @workflow.key %>
-  <section class="admin-workflow-status admin-panel alert alert-warning">
+  <section class="admin-workflow-status admin-panel alert alert-warning" aria-labelledby="admin-workflow-status-heading">
     <div class="admin-section-heading">
-      <h2>実行状況</h2>
+      <h2 id="admin-workflow-status-heading">実行状況</h2>
       <p><%= @active_workflow_run[:workflow_label] %>を実行中です。重複実行を避けるため、このフローの自動実行は開始できません。</p>
     </div>
     <%= link_to admin_workflow_steps_path(@active_workflow_run[:workflow_key], run_id: @active_workflow_run[:id]), class: "admin-button btn btn-outline" do %>
@@ -41,9 +41,9 @@
     <% end %>
   </section>
 <% elsif @workflow_run.present? %>
-  <section class="admin-workflow-status admin-panel" aria-live="polite" data-admin-workflow-status>
+  <section class="admin-workflow-status admin-panel" role="status" aria-labelledby="admin-workflow-status-heading" aria-live="polite" aria-atomic="false" data-admin-workflow-status>
     <div class="admin-section-heading">
-      <h2>実行状況</h2>
+      <h2 id="admin-workflow-status-heading">実行状況</h2>
       <p data-admin-workflow-status-label><%= @workflow_run[:label] %></p>
     </div>
     <div class="admin-workflow-status-grid">
@@ -68,9 +68,9 @@
 <% end %>
 
 <% if @workflow_run.present? %>
-  <section class="admin-workflow-results admin-panel" aria-live="polite" data-admin-workflow-results <%= "hidden" if result_steps.blank? %>>
+  <section class="admin-workflow-results admin-panel" role="status" aria-labelledby="admin-workflow-results-heading" aria-live="polite" aria-atomic="true" data-admin-workflow-results <%= "hidden" if result_steps.blank? %>>
     <div class="admin-section-heading">
-      <h2>実行結果</h2>
+      <h2 id="admin-workflow-results-heading">実行結果</h2>
       <p>完了したステップごとの追加・更新・削除件数です。</p>
     </div>
     <ol class="admin-workflow-result-list" data-admin-workflow-result-list>
@@ -85,9 +85,9 @@
   </section>
 <% end %>
 
-<section class="admin-workflow-runner admin-panel" data-admin-workflow-runner data-admin-workflow-key="<%= @workflow.key %>" data-admin-workflow-run-id="<%= @workflow_run_id %>" data-admin-workflow-state="<%= @workflow_run[:state] if @workflow_run.present? %>" data-admin-workflow-progress-url="<%= admin_workflow_progress_path(@workflow.key, run_id: @workflow_run_id) if @workflow_run_id.present? %>">
+<section class="admin-workflow-runner admin-panel" aria-labelledby="admin-workflow-runner-heading" data-admin-workflow-runner data-admin-workflow-key="<%= @workflow.key %>" data-admin-workflow-run-id="<%= @workflow_run_id %>" data-admin-workflow-state="<%= @workflow_run[:state] if @workflow_run.present? %>" data-admin-workflow-progress-url="<%= admin_workflow_progress_path(@workflow.key, run_id: @workflow_run_id) if @workflow_run_id.present? %>">
   <div class="admin-section-heading">
-    <h2>ステップ実行</h2>
+    <h2 id="admin-workflow-runner-heading">ステップ実行</h2>
     <p>個別実行も残しつつ、まとまった処理はバックグラウンドで順番に実行できます。</p>
   </div>
 
@@ -137,11 +137,12 @@
 </section>
 
 <% @workflow_groups.each do |group| %>
-  <section class="admin-workflow-group admin-workflow-detail-group">
+  <% heading_id = "admin-workflow-detail-group-#{group[:key]}" %>
+  <section class="admin-workflow-group admin-workflow-detail-group" aria-labelledby="<%= heading_id %>">
     <header>
       <span class="admin-workflow-group-icon"><%= admin_icon(group[:icon]) %></span>
       <div>
-        <h2><%= group[:label] %></h2>
+        <h2 id="<%= heading_id %>"><%= group[:label] %></h2>
         <p><%= group[:description] %></p>
       </div>
     </header>

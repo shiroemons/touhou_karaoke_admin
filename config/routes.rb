@@ -3,6 +3,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: "dashboard#show"
+    post "dashboard/refresh", to: "dashboard#refresh", as: :dashboard_refresh
     get :workflow, to: "workflow#index"
     get "workflow/:workflow_key", to: "workflow#show", as: :workflow_steps
     post "workflow/:workflow_key/run", to: "workflow#run", as: :run_workflow

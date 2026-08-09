@@ -82,6 +82,25 @@ module Admin
       assert_equal 1, calls['fetch_dam_touhou_songs']
     end
 
+    test 'invalidates dashboard cache after a workflow finishes' do
+      run_id = SecureRandom.uuid
+      workflow = WorkflowDefinition.fetch('dam')
+      WorkflowRunProgress.create!(run_id, workflow:)
+
+      with_cache_store(ActiveSupport::Cache::MemoryStore.new) do
+        Rails.cache.write(DashboardCache::KEY, { total_songs: 1 })
+
+        stub_operation_runner(lambda do |_operation_key, progress_id|
+          OperationProgress.complete!(progress_id, label: '完了', detail: '変更なし（追加・更新・削除はありません）')
+          FakeRunnerResult.new('完了', nil, nil, nil, { change_summary: { created_count: 0 } })
+        end) do
+          WorkflowRunJob.perform_now(workflow_key: 'dam', progress_id: run_id)
+        end
+
+        assert_not Rails.cache.exist?(DashboardCache::KEY)
+      end
+    end
+
     test 'logs workflow and step context' do
       run_id = SecureRandom.uuid
       workflow = WorkflowDefinition.fetch('dam')
@@ -131,6 +150,15 @@ module Admin
       yield
     ensure
       OperationRunner.define_singleton_method(:new, original_new)
+    end
+
+    def with_cache_store(store)
+      original_cache = Rails.cache
+      Rails.cache = store
+      yield
+    ensure
+      store.clear
+      Rails.cache = original_cache
     end
   end
 end

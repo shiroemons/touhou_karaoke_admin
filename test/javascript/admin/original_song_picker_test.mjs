@@ -8,10 +8,12 @@ class FakeClassList {
 
 class FakeElement {
   constructor({ dataset = {}, hidden = false, rect = {}, textContent = "", value = "" } = {}) {
+    this.attributes = {}
     this.children = []
     this.classList = new FakeClassList()
     this.dataset = dataset
     this.eventListeners = {}
+    this.isConnected = true
     this.hidden = hidden
     this.parent = undefined
     this.rect = { bottom: 40, left: 8, top: 10, width: 180, ...rect }
@@ -45,8 +47,9 @@ class FakeElement {
     this.dispatchedEvents.push(event.type)
   }
 
-  focus() {
+  focus(options) {
     this.focused = true
+    this.focusOptions = options
   }
 
   getBoundingClientRect() {
@@ -68,6 +71,10 @@ class FakeElement {
 
   get innerHTML() {
     return this._innerHTML || ""
+  }
+
+  setAttribute(name, value) {
+    this.attributes[name] = value.toString()
   }
 }
 
@@ -98,11 +105,13 @@ const buildPicker = ({ initialValue = "" } = {}) => {
   const valueInput = new FakeElement({ dataset: { adminOriginalSongValue: "true" }, value: initialValue })
   const chips = new FakeElement({ dataset: { adminOriginalSongChips: "true" } })
   const search = new FakeElement({ dataset: { adminOriginalSongSearch: "true" } })
+  const status = new FakeElement({ dataset: { adminOriginalSongPickerStatus: "true" } })
   const options = new FakeElement({ dataset: { adminOriginalSongOptions: "true" }, hidden: true })
+  options.id = "admin-original-song-options-test"
 
-  ;[valueInput, chips, search, options].forEach((child) => picker.appendChild(child))
+  ;[valueInput, chips, search, status, options].forEach((child) => picker.appendChild(child))
 
-  return { chips, options, picker, search, valueInput }
+  return { chips, options, picker, search, status, valueInput }
 }
 
 const originalDocument = globalThis.document
@@ -158,6 +167,7 @@ test("setupAdminOriginalSongPickers initializes chips from hidden value", () => 
   setupAdminOriginalSongPickers()
 
   assert.equal(fixture.picker.dataset.adminOriginalSongPickerInitialized, "true")
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
   assert.equal(fixture.valueInput.value, "赤より紅い夢/紅楼")
   assert.deepEqual(fixture.chips.children.map((chip) => chip.textContent), ["赤より紅い夢", "紅楼"])
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "valid"])
@@ -187,9 +197,50 @@ test("setOriginalSongPickerText resolves selected items and renders candidates f
   assert.equal(fixture.valueInput.value, "赤より紅い夢/紅楼?")
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "invalid"])
   assert.equal(fixture.options.hidden, false)
+  assert.equal(fixture.search.attributes["aria-expanded"], "true")
   assert.equal(fixture.options.children.length, 1)
   assert.equal(fixture.options.children[0].dataset.adminOriginalSongSelect, "紅楼")
   assert.equal(fixture.options.children[0].dataset.adminOriginalSongCandidateFor, "紅楼?")
+  assert.equal(fixture.options.children[0].attributes.role, "option")
+  assert.equal(fixture.options.children[0].attributes["aria-selected"], "false")
+})
+
+test("selecting an original song candidate returns focus to the search field", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => [{ label: "候補", title: "候補" }],
+  })
+
+  fixture.search.value = "候補"
+  await fixture.search.dispatch("input")
+  fixture.search.focused = false
+  await fixture.picker.dispatch("click", { target: fixture.options.children[0] })
+
+  assert.equal(fixture.valueInput.value, "候補")
+  assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.focused, true)
+  assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
+})
+
+test("removing an original song chip returns focus to the search field", async () => {
+  const fixture = buildPicker({ initialValue: "削除対象" })
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+
+  fixture.search.focused = false
+  await fixture.picker.dispatch("click", { target: fixture.chips.children[0] })
+
+  assert.equal(fixture.valueInput.value, "")
+  assert.equal(fixture.chips.children.length, 0)
+  assert.equal(fixture.search.focused, true)
+  assert.deepEqual(fixture.search.focusOptions, { preventScroll: true })
 })
 
 test("setOriginalSongPickerText appends to existing selection when append is true", async () => {
@@ -214,6 +265,63 @@ test("setOriginalSongPickerText appends to existing selection when append is tru
   assert.equal(fixture.valueInput.value, "既存曲/新しい曲")
   assert.deepEqual(fixture.chips.children.map((chip) => chip.textContent), ["既存曲", "新しい曲"])
   assert.deepEqual(fixture.chips.children.map((chip) => chip.dataset.adminOriginalSongStatus), ["valid", "valid"])
+})
+
+test("setOriginalSongPickerText serializes concurrent appends", async () => {
+  const fixture = buildPicker()
+  const requests = []
+  globalThis.fetch = (_url, options) => new Promise((resolve) => {
+    requests.push({
+      resolve,
+      text: JSON.parse(options.body).text,
+    })
+  })
+
+  const firstRequest = setOriginalSongPickerText(fixture.search, "先に追加", { append: true })
+  const secondRequest = setOriginalSongPickerText(fixture.search, "後から追加", { append: true })
+
+  for (let attempt = 0; attempt < 5 && requests.length < 1; attempt += 1) await Promise.resolve()
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].text, "先に追加")
+
+  requests[0].resolve({
+    ok: true,
+    json: async () => ({ items: [{ exists: true, title: "先に追加" }] }),
+  })
+  await firstRequest
+
+  for (let attempt = 0; attempt < 5 && requests.length < 2; attempt += 1) await Promise.resolve()
+  assert.equal(requests.length, 2)
+  assert.equal(requests[1].text, "後から追加")
+
+  requests[1].resolve({
+    ok: true,
+    json: async () => ({ items: [{ exists: true, title: "後から追加" }] }),
+  })
+  await secondRequest
+
+  assert.equal(fixture.valueInput.value, "先に追加/後から追加")
+})
+
+test("setOriginalSongPickerText preserves newer input while resolving", async () => {
+  const fixture = buildPicker()
+  let resolveRequest
+  globalThis.fetch = () => new Promise((resolve) => {
+    resolveRequest = resolve
+  })
+
+  fixture.search.value = "解決対象"
+  const request = setOriginalSongPickerText(fixture.search, "解決対象")
+  fixture.search.value = "入力中の別の原曲"
+
+  for (let attempt = 0; attempt < 5 && !resolveRequest; attempt += 1) await Promise.resolve()
+  resolveRequest({
+    ok: true,
+    json: async () => ({ items: [{ exists: true, title: "解決対象" }] }),
+  })
+  await request
+
+  assert.equal(fixture.search.value, "入力中の別の原曲")
 })
 
 test("normal multiline paste appends all original songs to the focused picker", async () => {
@@ -293,5 +401,208 @@ test("setOriginalSongPickerText marks text invalid when resolve fails", async ()
   assert.equal(fixture.chips.children.length, 1)
   assert.equal(fixture.chips.children[0].dataset.adminOriginalSongStatus, "invalid")
   assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
   assert.equal(errors.length, 1)
+})
+
+test("setOriginalSongPickerText exposes an actionable error after a timeout", async () => {
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const originalConsoleError = console.error
+  const fixture = buildPicker()
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "resolve-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  console.error = () => {}
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+
+  try {
+    const request = setOriginalSongPickerText(fixture.search, "応答しない原曲")
+    for (let attempt = 0; attempt < 5 && !timeoutCallback; attempt += 1) await Promise.resolve()
+    assert.ok(timeoutCallback)
+    timeoutCallback()
+    await request
+
+    assert.equal(fixture.valueInput.value, "応答しない原曲")
+    assert.equal(fixture.chips.children[0].dataset.adminOriginalSongStatus, "invalid")
+    assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+    assert.equal(clearedTimeout, "resolve-timeout")
+  } finally {
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+    console.error = originalConsoleError
+  }
+})
+
+test("original song search exposes an actionable error when options cannot be loaded", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({ ok: false, status: 503 })
+
+  fixture.search.value = "検索対象"
+  await fixture.search.dispatch("input")
+
+  assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+  assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
+  assert.equal(fixture.search.value, "検索対象")
+  assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
+})
+
+test("original song search exposes an actionable error after a timeout", async () => {
+  const originalSetTimeout = globalThis.setTimeout
+  const originalClearTimeout = globalThis.clearTimeout
+  const fixture = buildPicker()
+  let timeoutCallback
+  let clearedTimeout
+
+  globalThis.setTimeout = (callback, delay) => {
+    timeoutCallback = callback
+    assert.equal(delay, 15000)
+    return "options-timeout"
+  }
+  globalThis.clearTimeout = (timer) => { clearedTimeout = timer }
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))
+  })
+
+  try {
+    fixture.search.value = "応答しない原曲"
+    const request = fixture.search.dispatch("input")
+    assert.ok(timeoutCallback)
+    timeoutCallback()
+    await request
+
+    assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+    assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
+    assert.equal(fixture.search.value, "応答しない原曲")
+    assert.equal(clearedTimeout, "options-timeout")
+  } finally {
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+  }
+})
+
+test("original song search explains when no candidates match", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({ ok: true, json: async () => [] })
+
+  fixture.search.value = "一致しない原曲"
+  await fixture.search.dispatch("input")
+
+  assert.equal(fixture.status.textContent, "一致する原曲がありません。")
+  assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, undefined)
+  assert.equal(fixture.options.hidden, true)
+})
+
+test("original song search treats malformed option data as a retryable error", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ items: [] }) })
+
+  fixture.search.value = "不正な候補データ"
+  await fixture.search.dispatch("input")
+
+  assert.match(fixture.status.textContent, /候補の取得に失敗しました/)
+  assert.equal(fixture.status.dataset.adminOriginalSongStatusLevel, "error")
+  assert.equal(fixture.options.hidden, true)
+})
+
+test("Escape closes original song candidates", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => [{ label: "候補", title: "候補" }],
+  })
+
+  fixture.search.value = "候補"
+  await fixture.search.dispatch("input")
+  let prevented = false
+  await fixture.search.dispatch("keydown", { key: "Escape", preventDefault: () => { prevented = true } })
+
+  assert.equal(fixture.options.hidden, true)
+  assert.equal(fixture.search.attributes["aria-expanded"], "false")
+  assert.equal(prevented, true)
+})
+
+test("original song search ignores a stale response after a newer query", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  const requests = []
+  globalThis.fetch = (url, options) => new Promise((resolve) => {
+    requests.push({ options, resolve, url })
+  })
+
+  fixture.search.value = "古い検索"
+  const firstRequest = fixture.search.dispatch("input")
+  fixture.search.value = "新しい検索"
+  const secondRequest = fixture.search.dispatch("input")
+
+  requests[1].resolve({
+    ok: true,
+    json: async () => [{ label: "新しい候補", title: "新しい候補" }],
+  })
+  await secondRequest
+
+  requests[0].resolve({
+    ok: true,
+    json: async () => [{ label: "古い候補", title: "古い候補" }],
+  })
+  await firstRequest
+
+  assert.equal(fixture.options.children[0].textContent, "新しい候補")
+  assert.match(fixture.status.textContent, /1件の候補があります/)
+})
+
+test("original song search ignores a response after the picker is detached", async () => {
+  const fixture = buildPicker()
+  globalThis.document.querySelectorAll = (selector) => (
+    selector === "[data-admin-original-song-picker]" ? [fixture.picker] : []
+  )
+  setupAdminOriginalSongPickers()
+  let resolveRequest
+  globalThis.fetch = () => new Promise((resolve) => {
+    resolveRequest = resolve
+  })
+
+  fixture.search.value = "切断される原曲"
+  const request = fixture.search.dispatch("input")
+  fixture.picker.isConnected = false
+  resolveRequest({
+    ok: true,
+    json: async () => [{ label: "古い候補", title: "古い候補" }],
+  })
+  await request
+
+  assert.equal(fixture.options.children.length, 0)
+  assert.equal(fixture.status.textContent, "候補を検索しています...")
 })

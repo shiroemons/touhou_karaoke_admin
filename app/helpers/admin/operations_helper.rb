@@ -19,6 +19,27 @@ module Admin
       '実行内容を確認'
     end
 
+    def admin_operation_target_scope(operation, record: nil)
+      return :record if record.present?
+      return :selected if operation.selection == :required
+      return :all if operation.selection == :none
+
+      :selected_or_all
+    end
+
+    def admin_operation_target_label(operation, record: nil)
+      case admin_operation_target_scope(operation, record:)
+      when :record
+        'このレコード'
+      when :selected
+        '選択した対象'
+      when :all
+        '全件（検索・絞り込み条件は対象外）'
+      else
+        '選択した対象、または全件'
+      end
+    end
+
     def admin_resource_operation_visible?(resource, operation, operation_scope)
       return true unless operation_scope == :collection
       return true if operation.selection != :none

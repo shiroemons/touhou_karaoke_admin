@@ -9,6 +9,7 @@ ja:
     not_authorized: "この操作を実行する権限がありません。"
     not_found: "対象のデータが見つかりません。"
     operation_completed: "%{operation}を実行しました。"
+    dashboard_refreshed: "ダッシュボードを再集計しました。"
     associations:
       original_songs: 原曲
       songs: カラオケ配信曲

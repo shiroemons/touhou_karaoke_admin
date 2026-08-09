@@ -19,8 +19,12 @@ export const showAdminFlash = (message, type = "notice", autohide = true) => {
   if (!container || !message) return
 
   const flash = document.createElement("div")
+  const isAlert = type === "alert"
   flash.className = `admin-flash admin-flash-${type} alert ${type === "alert" ? "alert-error" : "alert-success"}`
   flash.dataset.adminFlash = type
+  flash.setAttribute("role", isAlert ? "alert" : "status")
+  flash.setAttribute("aria-live", isAlert ? "assertive" : "polite")
+  flash.setAttribute("aria-atomic", "true")
   if (autohide) flash.dataset.adminFlashAutohide = "true"
   flash.textContent = message
   container.appendChild(flash)

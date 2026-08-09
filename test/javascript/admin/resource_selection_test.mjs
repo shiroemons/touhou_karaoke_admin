@@ -10,12 +10,17 @@ const { selectedAdminResourceIds, setupAdminResourceSelection, updateAdminResour
 
 class FakeElement {
   constructor({ checked = false, dataset = {}, value = "" } = {}) {
+    this.attributes = {}
     this.checked = checked
     this.dataset = dataset
     this.eventListeners = {}
     this.indeterminate = false
     this.value = value
     this.textContent = ""
+  }
+
+  setAttribute(name, value) {
+    this.attributes[name] = value
   }
 
   addEventListener(type, callback) {
@@ -98,6 +103,7 @@ test("updateAdminResourceSelectionState updates select-all count and required no
 
   assert.equal(selectAll.checked, false)
   assert.equal(selectAll.indeterminate, true)
+  assert.equal(selectAll.attributes["aria-checked"], "mixed")
   assert.equal(count.textContent, "2")
   assert.equal(note.textContent, "選択した対象で実行できます。")
   assert.equal(afterUpdateCalled, true)

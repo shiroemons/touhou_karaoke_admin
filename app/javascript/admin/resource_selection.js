@@ -11,6 +11,7 @@ export const updateAdminResourceSelectionState = ({ afterUpdate } = {}) => {
   document.querySelectorAll(adminSelectors.resourceSelectAll).forEach((input) => {
     input.checked = rowCheckboxes.length > 0 && selectedCount === rowCheckboxes.length
     input.indeterminate = selectedCount > 0 && selectedCount < rowCheckboxes.length
+    input.setAttribute("aria-checked", input.indeterminate ? "mixed" : input.checked.toString())
   })
 
   document.querySelectorAll(adminSelectors.selectionCount).forEach((item) => {

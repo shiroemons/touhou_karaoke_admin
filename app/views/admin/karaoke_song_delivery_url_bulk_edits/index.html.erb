@@ -34,8 +34,8 @@
         <% end %>
       </div>
       <div class="admin-delivery-url-controls">
-        <section class="admin-delivery-url-control-group">
-          <h2>絞り込み</h2>
+        <section class="admin-delivery-url-control-group" aria-labelledby="admin-delivery-url-filter-heading">
+          <h2 id="admin-delivery-url-filter-heading">絞り込み</h2>
           <div class="admin-delivery-url-control-row">
             <%= form.select :karaoke_type,
                             options_for_select([["すべての種別", ""]] + karaoke_song_delivery_url_karaoke_type_options.map { |karaoke_type| [karaoke_type, karaoke_type] }, @karaoke_type),
@@ -47,14 +47,14 @@
           <div class="admin-url-filter-grid">
             <% karaoke_song_delivery_url_filter_columns.each do |column| %>
               <label class="admin-url-filter-option <%= "admin-url-filter-option-active" if @missing_url_columns.include?(column) %>">
-                <%= check_box_tag "missing_url_columns[]", column, @missing_url_columns.include?(column), class: "checkbox checkbox-sm", data: { admin_auto_submit: true } %>
+                <%= check_box_tag "missing_url_columns[]", column, @missing_url_columns.include?(column), id: "admin-missing-url-column-#{column.dasherize}", class: "checkbox checkbox-sm", data: { admin_auto_submit: true } %>
                 <span><%= karaoke_song_delivery_url_column_label(column) %> 設定済みを非表示</span>
               </label>
             <% end %>
           </div>
         </section>
-        <section class="admin-delivery-url-control-group">
-          <h2>並び替え</h2>
+        <section class="admin-delivery-url-control-group" aria-labelledby="admin-delivery-url-sort-heading">
+          <h2 id="admin-delivery-url-sort-heading">並び替え</h2>
           <div class="admin-delivery-url-control-row">
             <%= form.select :sort,
                             options_for_select(karaoke_song_delivery_url_sort_options, @sort),
@@ -70,8 +70,8 @@
                             data: { admin_auto_submit: true } %>
           </div>
         </section>
-        <section class="admin-delivery-url-control-group">
-          <h2>表示件数</h2>
+        <section class="admin-delivery-url-control-group" aria-labelledby="admin-delivery-url-page-size-heading">
+          <h2 id="admin-delivery-url-page-size-heading">表示件数</h2>
           <div class="admin-delivery-url-control-row">
             <%= form.select :per_page,
                             options_for_select(karaoke_song_delivery_url_per_page_options, @per_page),
@@ -88,10 +88,10 @@
   <%= form_with url: admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page, per_page: @per_page), method: :post, class: "admin-form admin-bulk-edit-form" do %>
     <% update_disabled = @preview_result.blank? || @preview_result.errors.present? %>
     <% if @preview_result.present? %>
-      <section class="admin-panel admin-original-song-preview">
+      <section class="admin-panel admin-original-song-preview" aria-labelledby="admin-delivery-url-bulk-preview-heading">
         <div class="admin-dashboard-section-heading">
           <div>
-            <h2>配信URL更新チェック結果</h2>
+            <h2 id="admin-delivery-url-bulk-preview-heading">配信URL更新チェック結果</h2>
             <p><%= @preview_result.checked_count %>件の楽曲を確認しました。DBは更新していません。</p>
           </div>
         </div>
@@ -173,12 +173,13 @@
       </div>
     </div>
 
-    <div class="admin-table-wrap">
+    <div class="admin-table-wrap" tabindex="0" role="region" aria-label="カラオケ配信URL編集一覧">
       <table class="admin-table admin-table-karaoke-song-bulk-edit admin-table-karaoke-delivery-url-bulk-edit table table-zebra" data-admin-bulk-edit-table>
+        <caption class="admin-sr-only">カラオケ配信URL編集一覧</caption>
         <thead>
           <tr>
             <% karaoke_song_delivery_url_bulk_edit_columns.each do |column| %>
-              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" title="<%= column %>"><%= karaoke_song_delivery_url_column_label(column) %></th>
+              <th class="admin-table-field admin-table-field-<%= column.dasherize %>" scope="col" title="<%= column %>"><%= karaoke_song_delivery_url_column_label(column) %></th>
             <% end %>
           </tr>
         </thead>
@@ -187,8 +188,21 @@
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
               <td><%= song.karaoke_type %></td>
-              <td class="admin-table-field-display-artist-name" data-admin-copy-text="<%= song.display_artist.name %>"><%= song.display_artist.name %></td>
-              <td title="<%= song.title %>"><%= link_to song.title, admin_song_path(song), data: { admin_copy_text: song.title } %></td>
+              <td class="admin-table-field-display-artist-name">
+                <button type="button" class="admin-copy-button" data-admin-copy-text="<%= song.display_artist.name %>" aria-label="<%= song.display_artist.name %>をコピー" title="アーティスト名をコピー">
+                  <span><%= song.display_artist.name %></span>
+                  <%= admin_icon(:copy) %>
+                </button>
+              </td>
+              <td title="<%= song.title %>">
+                <div class="admin-title-copy-cell">
+                  <%= link_to song.title, admin_song_path(song) %>
+                  <button type="button" class="admin-copy-button admin-copy-button-icon" data-admin-copy-text="<%= song.title %>" aria-label="<%= song.title %>をコピー" title="タイトルをコピー">
+                    <%= admin_icon(:copy) %>
+                    <span class="admin-sr-only">コピー</span>
+                  </button>
+                </div>
+              </td>
               <td class="admin-table-field-original-songs"><%= song.original_songs.map(&:title).join(" / ").presence || "未設定" %></td>
               <% Admin::KaraokeSongDeliveryUrlBulkEditor::URL_COLUMNS.each_with_index do |column, column_index| %>
                 <td>
@@ -227,7 +241,7 @@
             <span>前へ</span>
           <% end %>
         <% end %>
-        <span><%= @page %> / <%= @total_pages %></span>
+        <span aria-current="page"><%= @page %> / <%= @total_pages %></span>
         <% if @page < @total_pages %>
           <%= link_to admin_karaoke_song_delivery_url_bulk_edit_path(q: @query, missing_url_columns: @missing_url_columns, karaoke_type: @karaoke_type, sort: @sort, direction: @direction, page: @page + 1, per_page: @per_page), class: "admin-button btn" do %>
             <span>次へ</span>

@@ -11,7 +11,13 @@ module ApplicationHelper
       url = match[0]
 
       fragments << text[last_index...match.begin(0)]
-      fragments << link_to(url, url, target: "_blank", rel: "noopener")
+      fragments << link_to(
+        url,
+        url,
+        target: "_blank",
+        rel: "noopener",
+        aria: { label: "#{url}（新しいタブで開く）" }
+      )
       last_index = match.end(0)
     end
 

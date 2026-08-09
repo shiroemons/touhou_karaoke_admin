@@ -53,6 +53,37 @@
   width: 34px;
 }
 
+.admin-mobile-navigation-toggle {
+  align-items: center;
+  background: color-mix(in oklab, var(--color-neutral-content) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-neutral-content) 18%, transparent);
+  border-radius: 8px;
+  color: var(--color-neutral-content);
+  display: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.admin-mobile-navigation-toggle:hover {
+  background: color-mix(in oklab, var(--color-neutral-content) 14%, transparent);
+}
+
+.admin-mobile-navigation-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.admin-mobile-navigation-toggle .admin-icon {
+  height: 18px;
+  width: 18px;
+}
+
 .admin-nav {
   display: grid;
   gap: 18px;
@@ -151,6 +182,11 @@
 }
 
 body[data-admin-navigation="loading"] .admin-main {
+  cursor: progress;
+  opacity: 0.68;
+}
+
+[data-admin-resource-content][aria-busy="true"] {
   cursor: progress;
   opacity: 0.68;
 }
@@ -371,6 +407,25 @@ body[data-admin-navigation="loading"] .admin-main {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.admin-dashboard-freshness {
+  align-items: center;
+  color: color-mix(in oklab, var(--color-base-content) 58%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-dashboard-freshness time {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-dashboard-refresh-form {
+  margin: 0;
 }
 
 .admin-dashboard-status-card {
@@ -2515,6 +2570,11 @@ body[data-admin-navigation="loading"] .admin-main {
   width: 100%;
 }
 
+.admin-table-wrap:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .admin-result-summary {
   align-items: center;
   color: color-mix(in oklab, var(--color-base-content) 64%, transparent);
@@ -2917,8 +2977,55 @@ body[data-admin-navigation="loading"] .admin-main {
   overflow-wrap: anywhere;
 }
 
-[data-admin-copy-text] {
+.admin-copy-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--color-primary);
   cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.admin-copy-button > span:not(.admin-sr-only) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-copy-button .admin-icon {
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
+.admin-copy-button:hover,
+.admin-copy-button:focus-visible {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  border-color: color-mix(in oklab, var(--color-primary) 28%, transparent);
+}
+
+.admin-title-copy-cell {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-title-copy-cell > a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-copy-button-icon {
+  flex: 0 0 auto;
+  padding: 6px;
 }
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-title {
@@ -3151,6 +3258,22 @@ body[data-admin-navigation="loading"] .admin-main {
   position: relative;
 }
 
+.admin-original-song-status {
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 4px 0 0;
+  min-height: 17px;
+}
+
+.admin-original-song-status:empty {
+  display: none;
+}
+
+.admin-original-song-status[data-admin-original-song-status-level="error"] {
+  color: #b42318;
+}
+
 .admin-original-song-options {
   background: var(--color-base-100);
   border: 1px solid #dbe8f6;
@@ -3344,6 +3467,24 @@ th.admin-actions-column {
     height: auto;
     min-height: 0;
     position: static;
+    padding: 14px 16px 16px;
+  }
+
+  .admin-brand {
+    margin-bottom: 12px;
+  }
+
+  .admin-mobile-navigation-toggle {
+    display: flex;
+  }
+
+  .admin-nav {
+    display: none;
+    margin-top: 14px;
+  }
+
+  .admin-sidebar[data-admin-mobile-navigation-open="true"] .admin-nav {
+    display: grid;
   }
 
   .admin-main {
@@ -4014,6 +4155,12 @@ th.admin-actions-column {
   background: color-mix(in oklab, var(--color-error) 12%, var(--color-base-100));
   border: 1px solid color-mix(in oklab, var(--color-error) 34%, var(--color-base-300));
   color: #7f1d1d;
+}
+
+.admin-errors a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .admin-flash-notice {

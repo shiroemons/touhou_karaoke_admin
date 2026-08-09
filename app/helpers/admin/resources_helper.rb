@@ -35,7 +35,7 @@ module Admin
     def admin_url_value(value)
       return '-' if value.blank?
 
-      link_to(value, value, target: '_blank', rel: 'noopener', class: 'admin-url')
+      link_to(value, value, target: '_blank', rel: 'noopener', class: 'admin-url', aria: { label: "#{value}（新しいタブで開く）" })
     end
 
     def admin_badge_value(value)

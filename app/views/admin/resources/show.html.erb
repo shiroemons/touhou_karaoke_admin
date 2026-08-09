@@ -94,10 +94,11 @@
       <% @resource.associations.each do |association| %>
         <% records = admin_association_records(@record, association) %>
         <% count = admin_association_count(@record, association) %>
-        <section class="admin-related-section">
+        <% heading_id = "admin-detail-association-#{association}" %>
+        <section class="admin-related-section" aria-labelledby="<%= heading_id %>">
           <header>
             <div>
-              <h3><%= admin_association_label(association) %></h3>
+              <h3 id="<%= heading_id %>"><%= admin_association_label(association) %></h3>
               <span><%= number_with_delimiter(count) %> 件</span>
             </div>
             <% if @resource.key == :display_artist && association == :circles && policy(@record).update? %>
@@ -150,7 +151,7 @@
 
         <%= form_with model: [:admin, @record], url: admin_resource_path(@resource, @record), method: :patch, class: "admin-form admin-association-dialog-form" do |form| %>
           <div class="admin-form-row">
-            <%= form.label circle_field.name, circle_field.label %>
+            <%= form.label circle_field.name, circle_field.label, for: admin_has_many_select_search_id(form, circle_field) %>
             <%= admin_field_input(form, circle_field) %>
           </div>
           <div class="admin-form-actions">
@@ -184,6 +185,7 @@
       </div>
 
       <%= form_with url: original_songs_admin_song_path(@record), method: :patch, class: "admin-form admin-association-dialog-form" do %>
+        <% original_song_picker_id = "admin-original-song-picker-song-#{@record.id}" %>
         <div
           class="admin-original-song-picker"
           data-admin-original-song-picker
@@ -197,11 +199,21 @@
             <%= text_field_tag nil,
                                nil,
                                class: "admin-bulk-cell admin-original-song-search input input-bordered",
+                               id: nil,
                                autocomplete: "off",
                                placeholder: "原曲を検索",
-                               aria: { label: "#{admin_record_title(@resource, @record)}の原曲を検索" },
+                               role: "combobox",
+                               aria: {
+                                 label: "#{admin_record_title(@resource, @record)}の原曲を検索",
+                                 controls: "#{original_song_picker_id}-options",
+                                 expanded: false,
+                                 haspopup: "listbox",
+                                 autocomplete: "list",
+                                 describedby: "#{original_song_picker_id}-status"
+                               },
                                data: { admin_original_song_search: true } %>
-            <div class="admin-original-song-options" data-admin-original-song-options hidden></div>
+              <p id="<%= original_song_picker_id %>-status" class="admin-original-song-status" role="status" aria-live="polite" aria-atomic="true" data-admin-original-song-picker-status></p>
+            <div id="<%= original_song_picker_id %>-options" class="admin-original-song-options" role="listbox" aria-label="原曲候補" data-admin-original-song-options hidden></div>
           </div>
         </div>
         <div class="admin-form-actions">

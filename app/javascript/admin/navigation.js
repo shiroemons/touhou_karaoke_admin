@@ -1,5 +1,77 @@
 let setupPageBehaviors = () => {}
 
+const mobileNavigationToggleSelector = "[data-admin-mobile-navigation-toggle]"
+const mobileNavigationToggleLabelSelector = "[data-admin-mobile-navigation-toggle-label]"
+const mobileNavigationFirstLinkSelector = ".admin-nav-link"
+const mobileNavigationOpenSelector = ".admin-sidebar[data-admin-mobile-navigation-open=\"true\"]"
+const ADMIN_REQUEST_TIMEOUT_MS = 15000
+
+export const isAdminAbortError = (error) => error?.name === "AbortError"
+
+export const createAdminRequestTimeout = (controller, timeoutMs = ADMIN_REQUEST_TIMEOUT_MS) => {
+  let timedOut = false
+  const setTimeoutFunction = window.setTimeout || globalThis.setTimeout
+  const clearTimeoutFunction = window.clearTimeout || globalThis.clearTimeout
+  const timeoutId = setTimeoutFunction(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+
+  return {
+    clear: () => clearTimeoutFunction(timeoutId),
+    timedOut: () => timedOut,
+  }
+}
+
+const setAdminMobileNavigationOpen = (sidebar, open) => {
+  sidebar.dataset.adminMobileNavigationOpen = open.toString()
+
+  const toggle = sidebar.querySelector(mobileNavigationToggleSelector)
+  if (!toggle) return
+
+  toggle.setAttribute("aria-expanded", open.toString())
+  toggle.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く")
+
+  const label = toggle.querySelector(mobileNavigationToggleLabelSelector)
+  if (label) label.textContent = open ? "閉じる" : "メニュー"
+
+  if (open) sidebar.querySelector(mobileNavigationFirstLinkSelector)?.focus?.({ preventScroll: true })
+}
+
+export const setupAdminMobileNavigation = () => {
+  if (document.documentElement.dataset.adminMobileNavigationInitialized === "true") return
+
+  document.documentElement.dataset.adminMobileNavigationInitialized = "true"
+
+  document.addEventListener("click", (event) => {
+    const toggle = event.target.closest?.(mobileNavigationToggleSelector)
+    if (toggle) {
+      const sidebar = toggle.closest(".admin-sidebar")
+      if (sidebar) {
+        const open = sidebar.dataset.adminMobileNavigationOpen === "true"
+        setAdminMobileNavigationOpen(sidebar, !open)
+      }
+      return
+    }
+
+    const navigationLink = event.target.closest?.(".admin-nav-link, .admin-brand")
+    if (!navigationLink) return
+
+    const sidebar = navigationLink.closest(".admin-sidebar")
+    if (sidebar) setAdminMobileNavigationOpen(sidebar, false)
+  })
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return
+
+    const sidebar = document.querySelector(mobileNavigationOpenSelector)
+    if (!sidebar) return
+
+    setAdminMobileNavigationOpen(sidebar, false)
+    sidebar.querySelector(mobileNavigationToggleSelector)?.focus()
+  })
+}
+
 const adminContentUrl = (url) => {
   const contentUrl = new URL(url, window.location.origin)
   contentUrl.searchParams.set("partial", "content")
@@ -12,24 +84,80 @@ const browserUrl = (url) => {
   return nextUrl
 }
 
+const validateAdminResourceContentPayload = (payload) => {
+  if (!payload || typeof payload !== "object" || typeof payload.html !== "string" || payload.html.trim().length === 0) {
+    throw new Error("一覧データの形式が不正です。")
+  }
 
-const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
-  const response = await fetch(adminContentUrl(url), {
-    headers: {
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
+  return payload
+}
+
+let adminResourceContentController
+
+const describeResourceContentFocus = (element, content) => {
+  if (!element || !content?.contains?.(element)) return null
+
+  return {
+    id: element.id || "",
+    name: element.name || "",
+    type: element.type || "",
+  }
+}
+
+const restoreResourceContentFocus = (descriptor) => {
+  if (!descriptor) return
+
+  const content = document.querySelector("[data-admin-resource-content]")
+  const candidates = Array.from(content?.querySelectorAll?.("[id], [name]") || [])
+  const focusTarget = candidates.find((element) => {
+    if (descriptor.id && element.id === descriptor.id) return true
+    return descriptor.name && element.name === descriptor.name && (!descriptor.type || element.type === descriptor.type)
   })
 
-  if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+  focusTarget?.focus?.({ preventScroll: true })
+  if (!focusTarget) content?.focus?.({ preventScroll: true })
+}
 
-  const payload = await response.json()
+export const replaceAdminResourceContent = async (url, { pushState = true } = {}) => {
+  if (adminResourceContentController) adminResourceContentController.abort()
+
+  const controller = new AbortController()
+  adminResourceContentController = controller
+  const requestTimeout = createAdminRequestTimeout(controller)
   const currentContent = document.querySelector("[data-admin-resource-content]")
-  if (!currentContent) return
+  const focusDescriptor = describeResourceContentFocus(document.activeElement, currentContent)
+  currentContent?.setAttribute("aria-busy", "true")
 
-  currentContent.outerHTML = payload.html
-  if (pushState) window.history.pushState({}, "", browserUrl(url))
-  setupPageBehaviors()
+  try {
+    const response = await fetch(adminContentUrl(url), {
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      signal: controller.signal,
+    })
+
+    if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
+    if (adminResourceContentController !== controller) return
+
+    const payload = validateAdminResourceContentPayload(await response.json())
+    if (adminResourceContentController !== controller || !currentContent) return
+
+    currentContent.outerHTML = payload.html
+    if (pushState) window.history.pushState({}, "", browserUrl(url))
+    setupPageBehaviors()
+    restoreResourceContentFocus(focusDescriptor)
+  } catch (error) {
+    if (requestTimeout.timedOut()) throw new Error("一覧の読み込みがタイムアウトしました。画面を再読み込みしてください。")
+
+    throw error
+  } finally {
+    requestTimeout.clear()
+    if (adminResourceContentController === controller) {
+      currentContent?.setAttribute("aria-busy", "false")
+      adminResourceContentController = undefined
+    }
+  }
 }
 
 const isAsyncAdminLink = (link) => {
@@ -40,13 +168,19 @@ const isAsyncAdminLink = (link) => {
   return url.origin === window.location.origin && url.pathname.startsWith("/admin/")
 }
 
-const setupAdminAsyncIndex = () => {
+export const setupAdminAsyncIndex = () => {
+  if (document.documentElement.dataset.adminAsyncIndexInitialized === "true") return
+
+  document.documentElement.dataset.adminAsyncIndexInitialized = "true"
+
   document.addEventListener("click", (event) => {
     const link = event.target.closest("a")
     if (!isAsyncAdminLink(link)) return
 
     event.preventDefault()
     replaceAdminResourceContent(link.href).catch((error) => {
+      if (isAdminAbortError(error)) return
+
       console.error(error)
       window.location.href = link.href
     })
@@ -63,6 +197,8 @@ const setupAdminAsyncIndex = () => {
     })
 
     replaceAdminResourceContent(url).catch((error) => {
+      if (isAdminAbortError(error)) return
+
       console.error(error)
       form.submit()
     })
@@ -95,7 +231,7 @@ const isAsyncAdminPageLink = (link, event) => {
   return url.origin === window.location.origin && url.pathname.startsWith("/admin/")
 }
 
-const replaceAdminPage = (html, url, { pushState = true } = {}) => {
+export const replaceAdminPage = (html, url, { pushState = true } = {}) => {
   const nextDocument = new DOMParser().parseFromString(html, "text/html")
   const nextContent = nextDocument.querySelector("[data-admin-page-content]")
   const currentContent = document.querySelector("[data-admin-page-content]")
@@ -111,15 +247,17 @@ const replaceAdminPage = (html, url, { pushState = true } = {}) => {
   if (pushState) window.history.pushState({}, "", adminPageUrl(url))
 
   const pageContent = document.querySelector("[data-admin-page-content]")
-  pageContent?.scrollTo({ top: 0, left: 0 })
+  pageContent?.scrollTo?.({ top: 0, left: 0 })
   setupPageBehaviors()
+  pageContent?.focus?.({ preventScroll: true })
 }
 
-const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
+export const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
   if (adminPageNavigationController) adminPageNavigationController.abort()
 
   const controller = new AbortController()
   adminPageNavigationController = controller
+  const requestTimeout = createAdminRequestTimeout(controller)
   document.body.dataset.adminNavigation = "loading"
   document.querySelector("[data-admin-page-content]")?.setAttribute("aria-busy", "true")
 
@@ -133,13 +271,22 @@ const fetchAndReplaceAdminPage = async (url, { pushState = true } = {}) => {
       signal: controller.signal,
     })
 
+    if (adminPageNavigationController !== controller) return
     if (!response.ok) throw new Error(`リクエストに失敗しました（HTTP ${response.status}）。`)
 
-    replaceAdminPage(await response.text(), response.url, { pushState })
+    const html = await response.text()
+    if (adminPageNavigationController !== controller) return
+
+    replaceAdminPage(html, response.url, { pushState })
+  } catch (error) {
+    if (requestTimeout.timedOut()) throw new Error("画面の読み込みがタイムアウトしました。再読み込みしてください。")
+
+    throw error
   } finally {
+    requestTimeout.clear()
     if (adminPageNavigationController === controller) {
       delete document.body.dataset.adminNavigation
-      document.querySelector("[data-admin-page-content]")?.removeAttribute("aria-busy")
+      document.querySelector("[data-admin-page-content]")?.setAttribute("aria-busy", "false")
       adminPageNavigationController = undefined
     }
   }
@@ -155,7 +302,7 @@ const setupAdminPageNavigation = () => {
 
     event.preventDefault()
     fetchAndReplaceAdminPage(link.href).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.href = link.href
@@ -164,7 +311,7 @@ const setupAdminPageNavigation = () => {
 
   window.addEventListener("popstate", () => {
     fetchAndReplaceAdminPage(window.location.href, { pushState: false }).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.reload()
@@ -189,7 +336,7 @@ const setupAdminClickableRows = () => {
 
     event.preventDefault()
     fetchAndReplaceAdminPage(row.dataset.adminRowHref).catch((error) => {
-      if (error.name === "AbortError") return
+      if (isAdminAbortError(error)) return
 
       console.error(error)
       window.location.href = row.dataset.adminRowHref
@@ -215,6 +362,7 @@ export const setupAdminFilterForms = () => {
 export const setupAdminNavigation = ({ setupPageBehaviors: nextSetupPageBehaviors } = {}) => {
   if (nextSetupPageBehaviors) setupPageBehaviors = nextSetupPageBehaviors
 
+  setupAdminMobileNavigation()
   setupAdminFilterForms()
   setupAdminAsyncIndex()
   setupAdminPageNavigation()

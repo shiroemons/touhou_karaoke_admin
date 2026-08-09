@@ -3,6 +3,7 @@ import {
   setupAdminResourceSelection,
   updateAdminResourceSelectionState as updateResourceSelectionState,
 } from "./resource_selection"
+import { rememberAdminDialogFocus } from "./dialog_focus"
 import { setupAdminOperationModal } from "./operation_modal"
 import { AdminOperationProgress } from "./operation_progress"
 import { adminSelectors } from "./selectors"
@@ -10,6 +11,7 @@ import { adminSelectors } from "./selectors"
 const adminOperationRequiredInputsReady = (form) =>
   Array.from(form.querySelectorAll(adminSelectors.operationRequiredInput)).every((input) => {
     if (input.type === "file") return input.files.length > 0
+    if (input.type === "checkbox" || input.type === "radio") return input.checked
 
     return input.value.trim().length > 0
   })
@@ -69,6 +71,7 @@ const setupAdminOperationForms = () => {
     const modalCancelButton = form.querySelector(adminSelectors.operationModalCancel)
     const submitButton = form.querySelector(adminSelectors.operationSubmit)
     const progress = form.querySelector(adminSelectors.operationProgress)
+    const progressAnnouncement = form.querySelector(adminSelectors.operationProgressAnnouncement)
     const progressLabel = form.querySelector(adminSelectors.operationProgressLabel)
     const progressPercent = form.querySelector(adminSelectors.operationProgressPercent)
     const progressStatus = form.querySelector(adminSelectors.operationProgressStatus)
@@ -83,6 +86,7 @@ const setupAdminOperationForms = () => {
       form,
       operationModal,
       progress,
+      progressAnnouncement,
       progressLabel,
       progressPercent,
       progressStatus,
@@ -99,8 +103,10 @@ const setupAdminOperationForms = () => {
     })
 
     const submitAsyncOperation = async () => {
+      if (form.dataset.adminOperationBusy === "true") return
+
       syncSelectedIds()
-      operationProgress.start()
+      const operation = operationProgress.start()
 
       try {
         const csrfToken = document.querySelector(adminSelectors.csrfToken)?.getAttribute("content")
@@ -113,15 +119,20 @@ const setupAdminOperationForms = () => {
           },
           body: new FormData(form),
           credentials: "same-origin",
+          signal: operation?.signal,
         })
 
-        const payload = await response.json().catch(() => ({}))
+        if (!operationProgress.isCurrentOperation(operation)) return
+        const payload = (await response.json().catch(() => ({}))) || {}
+        if (!operationProgress.isCurrentOperation(operation)) return
         if (!response.ok) throw new Error(payload.message || requestFailureMessage(response.status))
 
         operationProgress.applyServerProgress(payload.progress)
       } catch (error) {
+        if (!operationProgress.isCurrentOperation(operation) || error?.name === "AbortError") return
+
         console.error(error)
-        operationProgress.fail(error.message || "処理中にエラーが発生しました。")
+        operationProgress.fail(error?.message || "処理中にエラーが発生しました。")
       }
     }
 
@@ -150,6 +161,11 @@ const setupAdminOperationForms = () => {
         return
       }
 
+      if (form.dataset.adminOperationBusy === "true") {
+        event.preventDefault()
+        return
+      }
+
       if (form.dataset.confirmed === "true") {
         syncSelectedIds()
         if (asyncOperation) {
@@ -173,15 +189,17 @@ const setupAdminOperationForms = () => {
       }
 
       event.preventDefault()
+      if (dialog?.open) return
 
       const operationLabel = form.dataset.adminOperationLabel || "アクション"
       const resourceLabel = form.dataset.adminOperationResourceLabel || "対象"
+      const targetLabel = form.dataset.adminOperationTargetLabel || "この画面の対象"
       const messageParts = [form.dataset.confirmation || `${operationLabel}を実行します。よろしいですか？`]
       if (form.dataset.adminOperationSelection === "true") {
         const selectedCount = selectedAdminResourceIds().length
-        messageParts.push(selectedCount > 0 ? `${resourceLabel}: 選択中 ${selectedCount.toLocaleString()}件` : `${resourceLabel}: 現在の検索・絞り込み結果全体`)
+        messageParts.push(selectedCount > 0 ? `${resourceLabel}: 選択中 ${selectedCount.toLocaleString()}件` : `${resourceLabel}: ${targetLabel}`)
       } else {
-        messageParts.push(`${resourceLabel}: この画面の対象`)
+        messageParts.push(`${resourceLabel}: ${targetLabel}`)
       }
       const message = messageParts.join("\n")
       if (!dialog?.showModal) {
@@ -191,6 +209,7 @@ const setupAdminOperationForms = () => {
 
       if (dialogTitle) dialogTitle.textContent = `${operationLabel}を実行しますか？`
       if (dialogMessage) dialogMessage.textContent = message
+      rememberAdminDialogFocus(dialog)
       dialog.showModal()
     })
 

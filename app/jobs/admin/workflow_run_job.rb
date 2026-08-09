@@ -5,10 +5,12 @@ module Admin
     queue_as :admin_operations
 
     def perform(workflow_key:, progress_id:, actor_name: nil)
+      workflow_started = false
       workflow = WorkflowDefinition.fetch(workflow_key)
       actor = OperationLogContext.actor_name(actor_name)
       Rails.logger.info("Admin::WorkflowRunJob started workflow=#{workflow.key} progress_id=#{progress_id} actor=#{actor}")
       WorkflowRunProgress.start!(progress_id, workflow:)
+      workflow_started = true
 
       workflow.stages.each do |stage|
         WorkflowRunProgress.update_stage!(progress_id, label: "#{stage.label}を実行しています")
@@ -25,6 +27,8 @@ module Admin
       WorkflowRunProgress.fail!(progress_id, message: e.message)
       Rails.logger.error(e.full_message)
       raise
+    ensure
+      DashboardCache.invalidate! if workflow_started
     end
 
     private

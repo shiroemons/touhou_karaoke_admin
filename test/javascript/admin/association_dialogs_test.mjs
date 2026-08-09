@@ -7,7 +7,9 @@ class FakeElement {
     this.children = []
     this.dataset = dataset
     this.eventListeners = {}
+    this.focused = false
     this.modalOpen = false
+    this.showModalCalls = 0
   }
 
   addEventListener(type, callback) {
@@ -21,6 +23,7 @@ class FakeElement {
 
   close() {
     this.modalOpen = false
+    ;(this.eventListeners.close || []).forEach((callback) => callback())
   }
 
   click() {
@@ -31,8 +34,17 @@ class FakeElement {
     return this.children.filter((element) => matchesSelector(element, selector))
   }
 
+  focus() {
+    this.focused = true
+  }
+
   showModal() {
+    this.showModalCalls += 1
     this.modalOpen = true
+  }
+
+  get open() {
+    return this.modalOpen
   }
 }
 
@@ -53,19 +65,30 @@ const dataSelectorToProperty = (name) =>
 const originalDocument = globalThis.document
 const searchableSelectCalls = []
 
+globalThis.__rememberAdminDialogFocus = (dialog) => {
+  const focusTarget = globalThis.document.activeElement
+  if (focusTarget?.focus) dialog.addEventListener("close", () => focusTarget.focus())
+}
+
 globalThis.__setupAdminSearchableSelects = () => {
   searchableSelectCalls.push("called")
 }
 
 const source = await readFile(new URL("../../../app/javascript/admin/association_dialogs.js", import.meta.url), "utf8")
-const moduleSource = source.replace(
-  /^import[\s\S]+?from "\.\/searchable_select"\n/,
-  "const setupAdminSearchableSelects = globalThis.__setupAdminSearchableSelects\n"
-)
+const moduleSource = source
+  .replace(
+    /^import \{ rememberAdminDialogFocus \} from "\.\/dialog_focus"\n/,
+    "const rememberAdminDialogFocus = globalThis.__rememberAdminDialogFocus\n"
+  )
+  .replace(
+    /^import \{ setupAdminSearchableSelects \} from "\.\/searchable_select"\n/m,
+    "const setupAdminSearchableSelects = globalThis.__setupAdminSearchableSelects\n"
+  )
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(moduleSource).toString("base64")}`
 const { setupAdminAssociationDialogs } = await import(moduleUrl)
 
 test.after(() => {
+  delete globalThis.__rememberAdminDialogFocus
   delete globalThis.__setupAdminSearchableSelects
   globalThis.document = originalDocument
 })
@@ -82,6 +105,7 @@ test("setupAdminAssociationDialogs opens and closes matching dialog", () => {
   dialog.appendChild(closeButton)
 
   globalThis.document = {
+    activeElement: trigger,
     querySelectorAll: (selector) => {
       if (selector === "[data-admin-association-dialog]") return [dialog]
       if (selector === '[data-admin-association-dialog-trigger="artists"]') return [trigger]
@@ -103,9 +127,15 @@ test("setupAdminAssociationDialogs opens and closes matching dialog", () => {
   assert.equal(dialog.modalOpen, true)
   assert.equal(searchableSelectCalls.length, 1)
 
+  trigger.click()
+
+  assert.equal(dialog.showModalCalls, 1)
+  assert.equal(searchableSelectCalls.length, 1)
+
   closeButton.click()
 
   assert.equal(dialog.modalOpen, false)
+  assert.equal(trigger.focused, true)
 })
 
 test("setupAdminAssociationDialogs does not attach duplicate listeners", () => {
