@@ -94,10 +94,11 @@
       <% @resource.associations.each do |association| %>
         <% records = admin_association_records(@record, association) %>
         <% count = admin_association_count(@record, association) %>
-        <section class="admin-related-section">
+        <% heading_id = "admin-detail-association-#{association}" %>
+        <section class="admin-related-section" aria-labelledby="<%= heading_id %>">
           <header>
             <div>
-              <h3><%= admin_association_label(association) %></h3>
+              <h3 id="<%= heading_id %>"><%= admin_association_label(association) %></h3>
               <span><%= number_with_delimiter(count) %> 件</span>
             </div>
             <% if @resource.key == :display_artist && association == :circles && policy(@record).update? %>
