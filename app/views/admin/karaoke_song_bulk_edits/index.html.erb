@@ -132,7 +132,13 @@
       <% end %>
     </datalist>
 
-    <div class="admin-table-wrap" tabindex="0" role="region" aria-label="カラオケ楽曲紐づけ一覧">
+    <% if @songs.present? %>
+      <p id="admin-karaoke-song-bulk-table-scroll-hint" class="admin-table-scroll-hint" role="note">
+        <span aria-hidden="true">↔</span>
+        <span>横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。</span>
+      </p>
+    <% end %>
+    <div class="admin-table-wrap <%= "admin-table-wrap-empty" if @songs.empty? %>" tabindex="0" role="region" aria-label="カラオケ楽曲紐づけ一覧" <%= tag.attributes(aria: { describedby: "admin-karaoke-song-bulk-table-scroll-hint" }) if @songs.present? %>>
       <table class="admin-table admin-table-karaoke-song-bulk-edit table table-zebra" data-admin-bulk-edit-table>
         <caption class="admin-sr-only">カラオケ楽曲紐づけ一覧</caption>
         <thead>
@@ -146,7 +152,7 @@
           <% @songs.each_with_index do |song, row_index| %>
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
-              <td><%= song.karaoke_type %></td>
+              <td class="admin-table-field-karaoke-type"><%= song.karaoke_type %></td>
               <td class="admin-table-field-display-artist-name">
                 <button type="button" class="admin-copy-button" data-admin-copy-text="<%= song.display_artist.name %>" aria-label="<%= song.display_artist.name %>をコピー" title="アーティスト名をコピー">
                   <span><%= song.display_artist.name %></span>

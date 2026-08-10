@@ -13,6 +13,7 @@ module Admin
       assert_equal url, link.text
       assert_equal '_blank', link['target']
       assert_equal 'noopener', link['rel']
+      assert_equal url, link['title']
       assert_equal "#{url}（新しいタブで開く）", link['aria-label']
     end
 
