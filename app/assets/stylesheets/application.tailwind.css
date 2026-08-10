@@ -3761,6 +3761,30 @@ th.admin-actions-column {
   }
 }
 
+@media (max-width: 480px) {
+  .admin-workflow-group > header {
+    align-items: start;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .admin-workflow-group > header .admin-workflow-run-link {
+    grid-column: 1 / -1;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .admin-workflow-step {
+    align-items: start;
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .admin-workflow-step > .admin-button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
 .admin-badge {
   align-items: center;
   background: color-mix(in oklab, var(--color-primary) 10%, var(--color-base-100));
