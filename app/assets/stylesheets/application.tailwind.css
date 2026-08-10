@@ -1089,7 +1089,7 @@ body[data-admin-navigation="loading"] .admin-main {
   align-items: start;
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(310px, 100%), 1fr));
 }
 
 .admin-dashboard-management-panel {
