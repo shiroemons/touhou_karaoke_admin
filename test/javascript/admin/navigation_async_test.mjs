@@ -302,6 +302,7 @@ test("full page navigation focuses the new main content", () => {
   const originalDOMParser = globalThis.DOMParser
   const nextContent = new FakeContent()
   const currentContent = new FakeContent()
+  let scrollPosition
   let currentPageContent = currentContent
   const nextDocument = {
     querySelector: () => null,
@@ -320,6 +321,7 @@ test("full page navigation focuses the new main content", () => {
   globalThis.window = {
     history: { pushState: () => {} },
     location: { origin: "http://example.test" },
+    scrollTo: (position) => { scrollPosition = position },
   }
   globalThis.DOMParser = class DOMParser {
     parseFromString() {
@@ -332,6 +334,7 @@ test("full page navigation focuses the new main content", () => {
     replaceAdminPage("<html>new</html>", "/admin/songs")
 
     assert.equal(nextContent.focused, true)
+    assert.deepEqual(scrollPosition, { top: 0, left: 0 })
   } finally {
     globalThis.document = originalDocument
     globalThis.window = originalWindow

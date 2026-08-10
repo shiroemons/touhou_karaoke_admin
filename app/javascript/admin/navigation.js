@@ -258,6 +258,7 @@ export const replaceAdminPage = (html, url, { pushState = true } = {}) => {
 
   const pageContent = document.querySelector("[data-admin-page-content]")
   pageContent?.scrollTo?.({ top: 0, left: 0 })
+  window.scrollTo?.({ top: 0, left: 0 })
   setupPageBehaviors()
   pageContent?.focus?.({ preventScroll: true })
 }
