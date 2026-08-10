@@ -133,7 +133,7 @@ task fix-pg   # 古い postmaster.pid を削除して PostgreSQL を再起動
 task versions # Ruby / Rails / Node / Yarn / PostgreSQL / Bundler のバージョンを表示
 ```
 
-`task up` 後、管理画面は http://localhost:3000/admin で開けます。ヘルスチェックは http://localhost:3000/up です。
+`task up` 後、通常は管理画面を http://localhost:3000/admin、ヘルスチェックを http://localhost:3000/up で開けます。3000番ポートが使用中の場合は、空いているポート（例: 3001）を自動選択し、起動先URLを表示します。現在のポートは `task status` でも確認できます。ポートを指定する場合は `DEVBOX_RAILS_PORT=3100 task up` とします。
 
 Rails サーバーだけを起動したい場合は次を使います。
 

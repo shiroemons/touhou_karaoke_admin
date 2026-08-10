@@ -1,0 +1,148 @@
+#!/bin/sh
+
+# Select an available Rails and Process Compose port and keep them in the
+# ignored runtime state file so separate Task invocations use the same ports.
+set -eu
+
+state_file="${DEVBOX_PORT_STATE_FILE:-.devbox/ports.env}"
+default_rails_port="${DEVBOX_RAILS_PORT:-${PORT:-3000}}"
+default_pc_port="${DEVBOX_PC_PORT_NUM:-53178}"
+max_port=65535
+
+fail() {
+  echo "ポート自動選択に失敗しました: $*" >&2
+  exit 1
+}
+
+validate_port() {
+  port="$1"
+
+  case "$port" in
+    ''|*[!0-9]*)
+      fail "ポート番号は1から65535の整数で指定してください: $port"
+      ;;
+  esac
+
+  if [ "$port" -lt 1 ] || [ "$port" -gt "$max_port" ]; then
+    fail "ポート番号は1から65535の範囲で指定してください: $port"
+  fi
+}
+
+port_in_use() {
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+find_free_port() {
+  candidate="$1"
+
+  while [ "$candidate" -le "$max_port" ]; do
+    if ! port_in_use "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    candidate=$((candidate + 1))
+  done
+
+  fail "空きポートが見つかりませんでした"
+}
+
+read_state_value() {
+  key="$1"
+  awk -F= -v key="$key" '$1 == key { print $2; exit }' "$state_file"
+}
+
+load_state() {
+  rails_port=""
+  pc_port=""
+
+  if [ -f "$state_file" ]; then
+    rails_port="$(read_state_value RAILS_PORT)"
+    pc_port="$(read_state_value DEVBOX_PC_PORT_NUM)"
+  fi
+
+  rails_port="${rails_port:-$default_rails_port}"
+  pc_port="${pc_port:-$default_pc_port}"
+  validate_port "$rails_port"
+  validate_port "$pc_port"
+}
+
+write_state() {
+  state_dir=$(dirname "$state_file")
+  state_tmp="${state_file}.tmp.$$"
+
+  mkdir -p "$state_dir"
+  umask 077
+  printf 'RAILS_PORT=%s\nDEVBOX_PC_PORT_NUM=%s\n' "$rails_port" "$pc_port" > "$state_tmp"
+  mv "$state_tmp" "$state_file"
+}
+
+emit_ports() {
+  printf 'RAILS_PORT=%s\n' "$rails_port"
+  printf 'DEVBOX_PC_PORT_NUM=%s\n' "$pc_port"
+  printf 'DEVBOX_PORTS_EXISTING=%s\n' "${existing:-0}"
+}
+
+select_ports() {
+  if [ "$1" = reuse ] && [ -f "$state_file" ]; then
+    load_state
+    if curl -fsS --max-time 1 "http://127.0.0.1:${rails_port}/up" >/dev/null 2>&1; then
+      existing=1
+      emit_ports
+      return 0
+    fi
+  fi
+
+  validate_port "$default_rails_port"
+  validate_port "$default_pc_port"
+  requested_rails_port="$default_rails_port"
+  requested_pc_port="$default_pc_port"
+  rails_port="$(find_free_port "$requested_rails_port")"
+  pc_port="$(find_free_port "$requested_pc_port")"
+
+  while [ "$pc_port" = "$rails_port" ]; do
+    pc_port="$(find_free_port "$((pc_port + 1))")"
+  done
+
+  if [ "$1" = reuse ]; then
+    write_state
+  fi
+  existing=0
+
+  if [ "$rails_port" != "$requested_rails_port" ]; then
+    echo "Railsのポート ${requested_rails_port} は使用中のため、${rails_port} を使用します" >&2
+  fi
+  if [ "$pc_port" != "$requested_pc_port" ]; then
+    echo "Process Composeのポート ${requested_pc_port} は使用中のため、${pc_port} を使用します" >&2
+  fi
+
+  emit_ports
+}
+
+command="${1:-read}"
+
+case "$command" in
+  read)
+    load_state
+    existing=0
+    emit_ports
+    ;;
+  select)
+    if ! command -v lsof >/dev/null 2>&1; then
+      fail "lsof が必要です"
+    fi
+    select_ports reuse
+    ;;
+  new)
+    if ! command -v lsof >/dev/null 2>&1; then
+      fail "lsof が必要です"
+    fi
+    select_ports new
+    ;;
+  clear)
+    rm -f "$state_file"
+    ;;
+  *)
+    echo "使い方: $0 {read|select|new|clear}" >&2
+    exit 2
+    ;;
+esac

@@ -1,6 +1,9 @@
 version: '3'
 silent: true
 
+vars:
+  DEVBOX_PORTS: sh script/devbox-ports
+
 tasks:
   default:
     desc: 利用可能なタスクを表示
@@ -39,12 +42,13 @@ tasks:
         devbox run -- bash -c 'echo "Ruby: $(ruby --version)"; echo "Rails: $(bin/rails --version 2>/dev/null || echo N/A)"; echo "Node: $(node --version)"; echo "Yarn: $(yarn --version)"; echo "PostgreSQL: $(psql --version)"; echo "Bundler: $(bundler --version 2>/dev/null)"' 2>&1 | grep -v '東方カラオケ' | grep -v 'warning:' | grep -v '/nix/store' | grep -v '^Info:' | grep -v '^$' | sed -e 's/ruby //' -e 's/Rails //' -e 's/psql (PostgreSQL) //' -e 's/Bundler version //' -e 's/ (.*//'
 
   up:
-    desc: PostgreSQLとRailsサーバーをバックグラウンド起動
+    desc: PostgreSQLとRailsサーバーをバックグラウンド起動（ポート競合時は自動切替）
     cmds:
       - |
-        devbox_pc_port_num="${DEVBOX_PC_PORT_NUM:-53178}"
-        if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
-          echo "サービスは既に起動しています"
+        set -eu
+        eval "$({{.DEVBOX_PORTS}} select)"
+        if [ "$DEVBOX_PORTS_EXISTING" = "1" ]; then
+          echo "サービスは既に起動しています (http://localhost:${RAILS_PORT}/admin)"
         else
           pid_file=".devbox/virtenv/postgresql_18/data/postmaster.pid"
           if [ -f "$pid_file" ]; then
@@ -54,7 +58,14 @@ tasks:
               rm -f "$pid_file"
             fi
           fi
-          devbox services up --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" -b --pcport "$devbox_pc_port_num"
+          if ! devbox services up \
+            --env "PORT=$RAILS_PORT" \
+            --env "DEVBOX_PC_PORT_NUM=$DEVBOX_PC_PORT_NUM" \
+            -b --pcport "$DEVBOX_PC_PORT_NUM"; then
+            {{.DEVBOX_PORTS}} clear
+            exit 1
+          fi
+          echo "サービスを起動しました (http://localhost:${RAILS_PORT}/admin)"
         fi
       - task: versions
       - task: status
@@ -62,7 +73,13 @@ tasks:
   tui:
     desc: PostgreSQLとRailsサーバーをTUIモードで起動
     cmds:
-      - devbox services up --env "DEVBOX_PC_PORT_NUM=${DEVBOX_PC_PORT_NUM:-53178}" --pcport "${DEVBOX_PC_PORT_NUM:-53178}"
+      - |
+        set -eu
+        eval "$({{.DEVBOX_PORTS}} select)"
+        devbox services up \
+          --env "PORT=$RAILS_PORT" \
+          --env "DEVBOX_PC_PORT_NUM=$DEVBOX_PC_PORT_NUM" \
+          --pcport "$DEVBOX_PC_PORT_NUM"
 
   logs:
     desc: Railsのdevelopment.logを表示
@@ -73,10 +90,12 @@ tasks:
     desc: devboxサービスを停止
     cmds:
       - |
-        devbox_pc_port_num="${DEVBOX_PC_PORT_NUM:-53178}"
-        devbox_pc_url="http://localhost:${devbox_pc_port_num}"
-        if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1 || devbox run -- pg_isready -h /tmp -p 5432 >/dev/null 2>&1; then
-          curl -fsS -X POST "$devbox_pc_url/project/stop" >/dev/null 2>&1 || devbox services stop --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" 2>/dev/null || true
+        set -eu
+        eval "$({{.DEVBOX_PORTS}} read)"
+        devbox_pc_url="http://localhost:${DEVBOX_PC_PORT_NUM}"
+        if curl -fsS "http://127.0.0.1:${RAILS_PORT}/up" >/dev/null 2>&1 || devbox run -- pg_isready -h /tmp -p 5432 >/dev/null 2>&1 || lsof -tiTCP:"$DEVBOX_PC_PORT_NUM" -sTCP:LISTEN >/dev/null 2>&1; then
+          curl -fsS -X POST "$devbox_pc_url/project/stop" >/dev/null 2>&1 || devbox services stop --env "DEVBOX_PC_PORT_NUM=$DEVBOX_PC_PORT_NUM" 2>/dev/null || true
+          {{.DEVBOX_PORTS}} clear
           echo "サービス停止を要求しました"
         else
           echo "サービスは起動していません"
@@ -86,10 +105,11 @@ tasks:
     desc: devboxサービスの状態を表示
     cmds:
       - |
-        if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
-          echo "Rails:      Ready (http://localhost:3000/up)"
+        eval "$({{.DEVBOX_PORTS}} read)"
+        if curl -fsS "http://127.0.0.1:${RAILS_PORT}/up" >/dev/null 2>&1; then
+          echo "Rails:      Ready (http://localhost:${RAILS_PORT}/up)"
         else
-          echo "Rails:      Not running"
+          echo "Rails:      Not running (expected http://localhost:${RAILS_PORT}/up)"
         fi
         if devbox run -- pg_isready -h /tmp -p 5432 >/dev/null 2>&1; then
           echo "PostgreSQL: Ready (/tmp:5432)"
@@ -111,13 +131,20 @@ tasks:
     desc: 古いPIDを削除してPostgreSQLを再起動
     cmds:
       - |
-        devbox_pc_port_num="${DEVBOX_PC_PORT_NUM:-53178}"
-        devbox_pc_url="http://localhost:${devbox_pc_port_num}"
+        set -eu
+        eval "$({{.DEVBOX_PORTS}} read)"
+        devbox_pc_url="http://localhost:${DEVBOX_PC_PORT_NUM}"
         echo "PostgreSQLを修復します..."
-        curl -fsS -X POST "$devbox_pc_url/project/stop" >/dev/null 2>&1 || devbox services stop --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" 2>/dev/null || true
+        curl -fsS -X POST "$devbox_pc_url/project/stop" >/dev/null 2>&1 || devbox services stop --env "DEVBOX_PC_PORT_NUM=$DEVBOX_PC_PORT_NUM" 2>/dev/null || true
+        {{.DEVBOX_PORTS}} clear
         rm -f .devbox/virtenv/postgresql_18/data/postmaster.pid
         echo "postmaster.pidを削除しました。再起動します..."
-        devbox services up --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" -b --pcport "$devbox_pc_port_num"
+        eval "$({{.DEVBOX_PORTS}} select)"
+        devbox services up \
+          --env "PORT=$RAILS_PORT" \
+          --env "DEVBOX_PC_PORT_NUM=$DEVBOX_PC_PORT_NUM" \
+          -b --pcport "$DEVBOX_PC_PORT_NUM"
+        echo "サービスを起動しました (http://localhost:${RAILS_PORT}/admin)"
       - task: status
 
   health:
@@ -125,20 +152,23 @@ tasks:
     cmds:
       - echo "=== devbox services ==="
       - task: status
-      - echo ""
-      - echo "=== listening ports ==="
-      - lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ':(3000|5432)' || true
       - |
-        if ! curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
-          if (lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1) && ! curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
+        eval "$({{.DEVBOX_PORTS}} read)"
+        echo ""
+        echo "=== listening ports ==="
+        lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ":(${RAILS_PORT}|${DEVBOX_PC_PORT_NUM}|5432)" || true
+        if ! curl -fsS "http://127.0.0.1:${RAILS_PORT}/up" >/dev/null 2>&1; then
+          if (lsof -tiTCP:"$RAILS_PORT" -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1); then
             echo ""
-            echo "WARNING: devbox管理外の孤児プロセスがポートを掴んでいる可能性があります。task recover-force で掃除できます。"
+            echo "WARNING: 想定ポートが使用中ですが、サービスがReadyではありません。task recover で再起動できます。"
           fi
         fi
-      - echo ""
-      - echo "=== HTTP health ==="
-      - curl -s -o /dev/null -w '  /up    status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/up || true
-      - curl -s -o /dev/null -w '  /admin status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/admin || true
+      - |
+        eval "$({{.DEVBOX_PORTS}} read)"
+        echo ""
+        echo "=== HTTP health ==="
+        curl -s -o /dev/null -w '  /up    status=%{http_code} time=%{time_total}s\n' "http://127.0.0.1:${RAILS_PORT}/up" || true
+        curl -s -o /dev/null -w '  /admin status=%{http_code} time=%{time_total}s\n' "http://127.0.0.1:${RAILS_PORT}/admin" || true
 
   doctor:
     desc: healthのエイリアス
@@ -148,69 +178,79 @@ tasks:
   recover:
     desc: devboxサービスを停止して再起動
     cmds:
+      - task: down
+      - task: up
       - |
         set -eu
-        devbox_pc_port_num="${DEVBOX_PC_PORT_NUM:-53178}"
-        devbox_pc_url="http://localhost:${devbox_pc_port_num}"
-        echo "devboxサービスを停止します"
-        curl -fsS -X POST "$devbox_pc_url/project/stop" >/dev/null 2>&1 || devbox services stop --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" 2>/dev/null || true
-        if lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1; then
-          echo "devbox停止後も 3000/5432 のいずれかが使用中です。"
-          echo "孤児プロセスを停止するには task recover-force を実行してください。"
+        eval "$({{.DEVBOX_PORTS}} read)"
+        echo "Railsの /up を待機します"
+        ready=0
+        for i in $(seq 1 30); do
+          if curl -fsS "http://127.0.0.1:${RAILS_PORT}/up" >/dev/null 2>&1; then
+            ready=1
+            break
+          fi
+          sleep 1
+        done
+        if [ "$ready" -eq 1 ]; then
+          echo "Rails is ready (http://localhost:${RAILS_PORT})"
+          task health
+        else
+          echo "Rails did not become ready within 30 seconds"
           task health
           exit 1
         fi
-        echo "devboxサービスをバックグラウンドで起動します"
-        devbox services up --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" -b --pcport "$devbox_pc_port_num"
-        echo "Railsの /up を待機します"
-        for i in $(seq 1 30); do
-          if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
-            echo "Rails is ready"
-            task health
-            exit 0
-          fi
-          sleep 1
-        done
-        echo "Rails did not become ready within 30 seconds"
-        task health
-        exit 1
 
   recover-force:
-    desc: 3000/5432の孤児プロセスを停止して再起動
+    desc: Rails/PostgreSQL/Process Composeの孤児プロセスを停止して再起動
     cmds:
       - |
         set -eu
-        devbox_pc_port_num="${DEVBOX_PC_PORT_NUM:-53178}"
-        devbox_pc_url="http://localhost:${devbox_pc_port_num}"
-        echo "devboxサービスを停止します"
-        curl -fsS -X POST "$devbox_pc_url/project/stop" >/dev/null 2>&1 || devbox services stop --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" 2>/dev/null || true
+        echo "孤児プロセスを強制停止します"
         task kill-orphan-ports
-        echo "devboxサービスをバックグラウンドで起動します"
-        devbox services up --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" -b --pcport "$devbox_pc_port_num"
+      - task: down
+      - task: up
+      - |
+        set -eu
+        eval "$({{.DEVBOX_PORTS}} read)"
         echo "Railsの /up を待機します"
+        ready=0
         for i in $(seq 1 30); do
-          if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
-            echo "Rails is ready"
-            task health
-            exit 0
+          if curl -fsS "http://127.0.0.1:${RAILS_PORT}/up" >/dev/null 2>&1; then
+            ready=1
+            break
           fi
           sleep 1
         done
-        echo "Rails did not become ready within 30 seconds"
-        task health
-        exit 1
+        if [ "$ready" -eq 1 ]; then
+          echo "Rails is ready (http://localhost:${RAILS_PORT})"
+          task health
+        else
+          echo "Rails did not become ready within 30 seconds"
+          task health
+          exit 1
+        fi
 
   kill-orphan-ports:
-    desc: 3000/5432で待ち受ける孤児プロセスを停止
+    desc: Rails/PostgreSQL/Process Composeのポートで待ち受ける孤児プロセスを停止
     cmds:
       - |
-        pids="$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null)"
+        eval "$({{.DEVBOX_PORTS}} read)"
+        pids="$(
+          for port in 3000 "$RAILS_PORT" 5432 "$DEVBOX_PC_PORT_NUM"; do
+            lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+          done | sort -u
+        )"
         if [ -n "$pids" ]; then
           echo "孤児プロセスを停止します: $pids"
           kill $pids 2>/dev/null || true
           sleep 2
         fi
-        pids="$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null)"
+        pids="$(
+          for port in 3000 "$RAILS_PORT" 5432 "$DEVBOX_PC_PORT_NUM"; do
+            lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+          done | sort -u
+        )"
         if [ -n "$pids" ]; then
           echo "通常終了しない孤児プロセスを強制停止します: $pids"
           kill -9 $pids 2>/dev/null || true
@@ -218,9 +258,13 @@ tasks:
         fi
 
   server:
-    desc: Railsサーバーを起動
+    desc: Railsサーバーを起動（ポート競合時は自動切替）
     cmds:
-      - devbox run server
+      - |
+        set -eu
+        eval "$({{.DEVBOX_PORTS}} new)"
+        echo "Railsを http://localhost:${RAILS_PORT} で起動します"
+        exec devbox run --env "PORT=$RAILS_PORT" server
 
   jobs:
     desc: Solid Queue workerを起動

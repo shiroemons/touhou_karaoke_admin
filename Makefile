@@ -6,7 +6,9 @@
 .DEFAULT_GOAL := all
 
 TASK_RUNNER ?= mise exec -- task
+DEVBOX_RAILS_PORT ?=
 DEVBOX_PC_PORT_NUM ?= 53178
+export DEVBOX_RAILS_PORT
 export DEVBOX_PC_PORT_NUM
 
 TASKS := \

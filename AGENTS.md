@@ -12,7 +12,7 @@ Use `devbox` as the default local environment and `task` as the canonical projec
 
 - `task setup`: install dependencies and prepare the database.
 - `task up`: start PostgreSQL, Rails, Solid Queue, and asset watchers.
-- `task server`: run only the Rails server at `http://localhost:3000`.
+- `task server`: run only the Rails server, normally at `http://localhost:3000`; if the port is in use, an available port is selected automatically.
 - `task jobs`: run the Solid Queue worker for async admin operations.
 - `task migrate`: apply database migrations.
 - `task minitest`: run the full Minitest suite.

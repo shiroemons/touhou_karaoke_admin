@@ -32,6 +32,7 @@
     "PGUSER":             "postgres",
     "PGPASSWORD":         "postgres",
     "PGGSSENCMODE":       "disable",
+    "PORT":               "3000",
     "RAILS_ENV":          "development",
     "BUNDLER_VERSION":    "4.0.18"
   },
