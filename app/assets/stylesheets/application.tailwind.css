@@ -2586,6 +2586,10 @@ body[data-admin-navigation="loading"] .admin-main {
   min-height: 0;
 }
 
+.admin-table-wrap.admin-table-wrap-empty > .admin-table {
+  display: none;
+}
+
 .admin-table-scroll-hint {
   align-items: center;
   color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
