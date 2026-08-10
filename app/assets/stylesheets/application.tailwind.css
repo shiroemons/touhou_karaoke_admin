@@ -3501,6 +3501,7 @@ th.admin-actions-column {
   .admin-table-controls {
     align-items: flex-start;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .admin-table-display-settings {
@@ -3685,6 +3686,18 @@ th.admin-actions-column {
   .admin-view-mode-group {
     grid-template-columns: 1fr;
     width: 100%;
+  }
+
+  .admin-table-display-settings {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    width: 100%;
+  }
+
+  .admin-view-mode-option-docked .admin-view-mode-button {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .admin-view-mode-option,
