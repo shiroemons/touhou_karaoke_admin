@@ -8,34 +8,34 @@ Database migrations, schema, seeds, and TSV fixtures live in `db/`. Import/expor
 
 ## Build, Test, and Development Commands
 
-Use `devbox` as the default local environment. Run Rails, test, lint, migration, and job commands through `devbox` or the provided `make` targets.
+Use `devbox` as the default local environment and `task` as the canonical project command runner. Run Rails, test, lint, migration, and job commands through the provided Taskfile targets. The Makefile remains as a compatibility wrapper.
 
-- `make setup`: install dependencies and prepare the database.
-- `make up`: start PostgreSQL, Rails, Solid Queue, and asset watchers.
-- `make server`: run only the Rails server at `http://localhost:3000`.
-- `make jobs`: run the Solid Queue worker for async admin operations.
-- `make migrate`: apply database migrations.
-- `make minitest`: run the full Minitest suite.
-- `make rubocop`: run Ruby lint checks.
-- `yarn build` and `yarn build:css`: build JavaScript and Tailwind assets.
+- `task setup`: install dependencies and prepare the database.
+- `task up`: start PostgreSQL, Rails, Solid Queue, and asset watchers.
+- `task server`: run only the Rails server at `http://localhost:3000`.
+- `task jobs`: run the Solid Queue worker for async admin operations.
+- `task migrate`: apply database migrations.
+- `task minitest`: run the full Minitest suite.
+- `task rubocop`: run Ruby lint checks.
+- `task build` and `task build-css`: build JavaScript and Tailwind assets.
 
-Docker alternatives exist with the `docker-` prefix, such as `make docker-minitest`.
+Docker alternatives remain as Makefile-only targets with the `docker-` prefix, such as `make docker-minitest`.
 
 ## Coding Style & Naming Conventions
 
 Target Ruby `4.0.6`, Node `>=24 <25`, and Yarn `4.18.0`. Follow Rails conventions: `snake_case` files and methods, `CamelCase` classes/modules, and REST-style controller actions. Keep admin behavior inside existing resource, policy, helper, and service boundaries.
 
-RuboCop, `rubocop-rails`, and `rubocop-performance` define Ruby style. Run `make rubocop` before committing, or `make rubocop-correct` for safe automatic fixes.
+RuboCop, `rubocop-rails`, and `rubocop-performance` define Ruby style. Run `task rubocop` before committing, or `task rubocop-correct` for safe automatic fixes.
 
 ## Testing Guidelines
 
 Tests use Minitest with Rails fixtures. Add or update tests for behavior changes, especially admin workflows, authorization policies, imports/exports, database queries, and external scraping failures. Name test files after the class or feature, for example `test/services/delivery_model_manager_test.rb`.
 
-Run `make minitest` locally. For query-sensitive admin pages, include regression coverage that detects repeated SQL patterns or N+1 behavior when practical.
+Run `task minitest` locally. For query-sensitive admin pages, include regression coverage that detects repeated SQL patterns or N+1 behavior when practical.
 
 ## UI Verification
 
-For visible admin UI changes, AI agents must verify behavior with browser automation against the local Rails server started via `make up` or `make server`. Use Playwright or the available browser automation tool to exercise the affected admin workflow, inspect DOM state, capture screenshots when the visual result matters, and check browser console errors when practical.
+For visible admin UI changes, AI agents must verify behavior with browser automation against the local Rails server started via `task up` or `task server`. Use Playwright or the available browser automation tool to exercise the affected admin workflow, inspect DOM state, capture screenshots when the visual result matters, and check browser console errors when practical.
 
 For ad-hoc AI-driven UI verification, prefer the Codex Playwright CLI wrapper at `$CODEX_HOME/skills/playwright/scripts/playwright_cli.sh` when available. For repository scripts, CI, or documentation intended for all developers, use the project-local `@playwright/cli` through `yarn playwright-cli` or `npx playwright-cli` instead of user-local absolute paths.
 
@@ -49,7 +49,7 @@ Report the UI verification result in Japanese, including the browser target URL,
 
 Use Conventional Commits with Japanese descriptions: `feat: ...`, `fix: ...`, `docs: ...`, `chore: ...`, `refactor: ...`. Keep commits focused and describe the user-visible or operational impact in Japanese.
 
-Before opening a PR, run `make minitest` and `make rubocop`. Write PR titles and descriptions in Japanese. Include a concise summary, relevant issue links, migration notes, and screenshots for visible admin UI changes. Mention any required data backfill, environment variable, or deployment step.
+Before opening a PR, run `task minitest` and `task rubocop`. Write PR titles and descriptions in Japanese. Include a concise summary, relevant issue links, migration notes, and screenshots for visible admin UI changes. Mention any required data backfill, environment variable, or deployment step.
 
 ## Security & Configuration Tips
 

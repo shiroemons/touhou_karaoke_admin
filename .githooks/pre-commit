@@ -9,4 +9,4 @@ if [ -n "$changed_files" ] && ! printf '%s\n' "$changed_files" | grep -Eq '(^|/)
 fi
 
 echo "Running RuboCop before commit..."
-make rubocop
+mise exec -- task rubocop

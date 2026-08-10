@@ -23,7 +23,7 @@ do
     has_changes=true
   fi
 
-  if [ -n "$changed_files" ] && printf '%s\n' "$changed_files" | grep -Eq '^\.github/workflows/|^\.ruby-version$|^\.rubocop.*\.yml$|^Gemfile$|^Gemfile\.lock$|^Makefile$|^Procfile|^Rakefile$|^app/|^bin/|^config/|^config\.ru$|^db/|^devbox\.json$|^devbox\.lock$|^docker-compose\.yml$|^Dockerfile$|^lib/|^package\.json$|^process-compose\.yaml$|^public/|^test/|^vendor/|^yarn\.lock$'; then
+  if [ -n "$changed_files" ] && printf '%s\n' "$changed_files" | grep -Eq '^\.github/workflows/|^\.ruby-version$|^\.rubocop.*\.yml$|^Gemfile$|^Gemfile\.lock$|^Makefile$|^Taskfile\.yml$|^mise\.toml$|^\.githooks/|^Procfile|^Rakefile$|^app/|^bin/|^config/|^config\.ru$|^db/|^devbox\.json$|^devbox\.lock$|^docker-compose\.yml$|^Dockerfile$|^lib/|^package\.json$|^process-compose\.yaml$|^public/|^test/|^vendor/|^yarn\.lock$'; then
     has_ci_relevant_changes=true
     break
   fi
@@ -35,4 +35,4 @@ if [ "$has_changes" = true ] && [ "$has_ci_relevant_changes" = false ]; then
 fi
 
 echo "Running tests before push..."
-make minitest
+mise exec -- task minitest

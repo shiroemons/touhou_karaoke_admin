@@ -40,12 +40,15 @@
 - Tailwind CSS 4 / daisyUI 5
 - esbuild
 - Node.js 24 LTS / Yarn 4.18.0
+- mise / Task
 - Minitest
 - RuboCop / rubocop-rails / rubocop-performance
 
 ## 開発環境
 
-このプロジェクトは **devbox** を標準の開発環境として使います。Docker 環境も代替手段として残していますが、通常の開発・テスト・Lint・DB 操作は `make` ターゲット経由で実行してください。
+このプロジェクトは **devbox** を標準の開発環境、**Task** をプロジェクトコマンドの標準ランナーとして使います。Task CLIのバージョンは `mise.toml` で管理しています。Docker 環境も代替手段として残していますが、通常の開発・テスト・Lint・DB 操作は `task` 経由で実行してください。
+
+`Makefile` は既存のスクリプトや開発者向けの互換入口として残しています。`make <task>` はmise管理のTaskへ委譲するため、新しい手順では `task <task>` を使用してください。
 
 Node.js は24系LTSを対象にしています。CIは24.19.0を固定し、DockerはNodeSourceの24系最新パッチ（更新時の検証値は24.19.0）、Devboxはカタログで提供される`nodejs-slim` 24.18.1を使います。YarnはCorepack 0.35.0経由で4.18.0を使用し、依存関係の再現には`yarn install --immutable`を使います。
 
@@ -56,6 +59,24 @@ DevboxのRuby 4.0.6パッケージには`x86_64-darwin`出力がないため、I
 ```shell
 curl -fsSL https://get.jetify.com/devbox | bash
 ```
+
+### mise のインストール
+
+miseをインストールしてシェルを有効化します。zshの場合は次の設定を一度だけ実行してください。
+
+```shell
+curl https://mise.run | sh
+echo 'eval "$(~/.local/bin/mise activate zsh)"' >> ~/.zshrc
+```
+
+シェルを再起動した後、リポジトリの設定を信頼してTask CLIをインストールします。
+
+```shell
+mise trust
+mise install
+```
+
+miseをシェルで有効化していない場合は、`mise exec -- task <task>` の形式で実行できます。
 
 ### 初回セットアップ
 
@@ -69,125 +90,125 @@ Algolia を使う処理を実行する場合は、`.env` の `ALGOLIA_APPLICATIO
 
 管理画面に Basic 認証を付けたい場合は、`.env` に `TOUHOU_KARAOKE_ADMIN_BASIC_AUTH_USERNAME` と `TOUHOU_KARAOKE_ADMIN_BASIC_AUTH_PASSWORD` を両方設定してください。未設定の場合は認証なしで従来通り動作します。
 
-2. devbox シェルに入ります。
+2. 必要に応じてdevboxシェルに入ります。
 
 ```shell
-devbox shell
+task shell
 ```
 
 3. PostgreSQL と開発用プロセスを起動します。
 
 ```shell
-make up
+task up
 ```
 
 4. 依存関係と DB を準備します。
 
 ```shell
-make setup
+task setup
 ```
 
-初回は依存関係のインストール前に Rails / JS / CSS プロセスが一時的に失敗することがあります。その場合は `make setup` 完了後に `make restart` を実行してください。
+初回は依存関係のインストール前に Rails / JS / CSS プロセスが一時的に失敗することがあります。その場合は `task setup` 完了後に `task restart` を実行してください。
 
 5. Git hooks を有効化します。
 
 ```shell
-make setup-git-hooks
+task setup-git-hooks
 ```
 
-Git hooks を有効化すると、コミット前に `make rubocop`、push 前に `make minitest` が実行されます。
+Git hooks を有効化すると、コミット前に `task rubocop`、push 前に `task minitest` が実行されます。
 
 ### サービス管理
 
 ```shell
-make shell    # devbox シェルに入る
-make up       # PostgreSQL / Rails / Solid Queue / JS watcher / CSS watcher をバックグラウンド起動
-make tui      # process-compose の TUI で起動
-make down     # devbox サービスを停止
-make status   # サービス状態を確認
-make ps       # make status のエイリアス
-make restart  # devbox サービスを再起動
-make logs     # Rails development.log を tail
-make fix-pg   # 古い postmaster.pid を削除して PostgreSQL を再起動
-make versions # Ruby / Rails / Node / Yarn / PostgreSQL / Bundler のバージョンを表示
+task shell    # devbox シェルに入る
+task up       # PostgreSQL / Rails / Solid Queue / JS watcher / CSS watcher をバックグラウンド起動
+task tui      # process-compose の TUI で起動
+task down     # devbox サービスを停止
+task status   # サービス状態を確認
+task ps       # task status のエイリアス
+task restart  # devbox サービスを再起動
+task logs     # Rails development.log を tail
+task fix-pg   # 古い postmaster.pid を削除して PostgreSQL を再起動
+task versions # Ruby / Rails / Node / Yarn / PostgreSQL / Bundler のバージョンを表示
 ```
 
-`make up` 後、管理画面は http://localhost:3000/admin で開けます。ヘルスチェックは http://localhost:3000/up です。
+`task up` 後、管理画面は http://localhost:3000/admin で開けます。ヘルスチェックは http://localhost:3000/up です。
 
 Rails サーバーだけを起動したい場合は次を使います。
 
 ```shell
-make server
+task server
 ```
 
 管理画面の非同期操作を処理するには、別ターミナルで Solid Queue worker も起動します。
 
 ```shell
-make jobs
+task jobs
 ```
 
 ### Rails / DB 操作
 
 ```shell
-make console            # Rails コンソール
-make console-sandbox    # サンドボックスモードの Rails コンソール
-make bundle             # bundle install
+task console            # Rails コンソール
+task console-sandbox    # サンドボックスモードの Rails コンソール
+task bundle             # bundle install
 
-make dbinit             # DB を drop して setup
-make dbconsole          # DB コンソール
-make migrate            # マイグレーション実行
-make migrate-redo       # 最後のマイグレーションをやり直し
-make rollback           # ロールバック
-make dbseed             # db/seeds.rb を実行
-make db-dump            # tmp/data/dev.bak に DB バックアップ
-make db-restore         # tmp/data/dev.bak から DB リストア
+task dbinit             # DB を drop して setup
+task dbconsole          # DB コンソール
+task migrate            # マイグレーション実行
+task migrate-redo       # 最後のマイグレーションをやり直し
+task rollback           # ロールバック
+task dbseed             # db/seeds.rb を実行
+task db-dump            # tmp/data/dev.bak に DB バックアップ
+task db-restore         # tmp/data/dev.bak から DB リストア
 ```
 
 ### 原作・原曲データ
 
 ```shell
-make update-originals-all   # 原作・原曲データを upsert
-make seed-originals         # 原作データだけを truncate して再投入
-make seed-original-songs    # 原曲データだけを truncate して再投入
-make seed-originals-all     # 原作・原曲データを truncate して再投入
+task update-originals-all   # 原作・原曲データを upsert
+task seed-originals         # 原作データだけを truncate して再投入
+task seed-original-songs    # 原曲データだけを truncate して再投入
+task seed-originals-all     # 原作・原曲データを truncate して再投入
 ```
 
 ### テスト・Lint・アセット
 
 ```shell
-make minitest               # Minitest を実行
-make js-test                # JavaScript テストを実行
-make minitest-assets        # Minitest 後に CSS / JS アセットをビルド
-make rubocop                # RuboCop を実行
-make rubocop-correct        # RuboCop の安全な自動修正
-make rubocop-correct-all    # RuboCop の全自動修正
+task minitest               # Minitest を実行
+task js-test                # JavaScript テストを実行
+task minitest-assets        # Minitest 後に CSS / JS アセットをビルド
+task rubocop                # RuboCop を実行
+task rubocop-correct        # RuboCop の安全な自動修正
+task rubocop-correct-all    # RuboCop の全自動修正
 
-yarn build                  # JavaScript をビルド
-yarn build:css              # Tailwind CSS をビルド
-yarn test:js                # JavaScript テストを実行
-yarn playwright-cli         # Playwright CLI
+task build                  # JavaScript をビルド
+task build-css              # Tailwind CSS をビルド
+task js-test                # JavaScript テストを実行
+task playwright-cli         # Playwright CLI
 ```
 
 ### データ入出力・保守
 
 ```shell
-make export-for-algolia      # Algolia 向け JSON 出力
-make check-algolia           # Algolia との差分確認
-make export-karaoke-songs    # カラオケ楽曲 TSV 出力
-make import-karaoke-songs    # カラオケ楽曲 TSV インポート
-make export-display-artists  # アーティスト TSV 出力
-make import-display-artists  # アーティスト TSV インポート
-make import-touhou-music     # 東方楽曲データインポート
-make import-touhou-music-slim # 東方楽曲データの軽量インポート
-make stats                   # 統計情報生成
-make data-duplicate-report   # unique index 追加前の重複データ確認
+task export-for-algolia      # Algolia 向け JSON 出力
+task check-algolia           # Algolia との差分確認
+task export-karaoke-songs    # カラオケ楽曲 TSV 出力
+task import-karaoke-songs    # カラオケ楽曲 TSV インポート
+task export-display-artists  # アーティスト TSV 出力
+task import-display-artists  # アーティスト TSV インポート
+task import-touhou-music     # 東方楽曲データインポート
+task import-touhou-music-slim # 東方楽曲データの軽量インポート
+task stats                   # 統計情報生成
+task data-duplicate-report   # unique index 追加前の重複データ確認
 ```
 
 ### JOYSOUND ミュージックポスト保守
 
 ```shell
-make check-expired-joysound  # 配信期限切れの確認
-make delete-expired-joysound # 配信期限切れの削除
+task check-expired-joysound  # 配信期限切れの確認
+task delete-expired-joysound # 配信期限切れの削除
 ```
 
 ## プロジェクト構成
@@ -219,7 +240,7 @@ test/                  # Minitest
 <details>
 <summary><strong>Docker 環境（代替手段）</strong></summary>
 
-Docker 環境を使う場合は、コマンドに `docker-` プレフィックスを付けて実行します。
+Docker 環境を使う場合は、Makefileの `make docker-*` ターゲットを実行します。Docker用ターゲットはTaskfileには含めていません。
 
 ### PostgreSQL 18のvolume移行
 
@@ -303,17 +324,17 @@ make docker-db-restore
 make docker-db-dump
 make docker-down
 devbox shell
-make up
+task up
 createdb touhou_karaoke_admin_development
-make db-restore
-make bundle
-make migrate
+task db-restore
+task bundle
+task migrate
 ```
 
 ### devbox で問題が発生した場合
 
 ```shell
-make down
+task down
 make docker-up
 make docker-server
 ```
@@ -323,5 +344,5 @@ make docker-server
 ## コマンド一覧
 
 ```shell
-make help
+task help
 ```

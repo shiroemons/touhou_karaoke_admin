@@ -53,5 +53,8 @@ bun.lock
 # devbox
 .devbox/
 
+# mise project configuration (the global gitignore may ignore this filename)
+!mise.toml
+
 # Local verification artifacts
 /output/

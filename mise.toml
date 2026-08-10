@@ -1,0 +1,3 @@
+[tools]
+# Task CLI is the canonical project task runner.
+task = "3"
