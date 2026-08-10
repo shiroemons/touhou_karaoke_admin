@@ -2705,7 +2705,7 @@ body[data-admin-navigation="loading"] .admin-main {
 
 .admin-table .admin-select-column,
 .admin-table .admin-actions-column {
-  background-color: inherit;
+  background-color: var(--admin-table-row-background, var(--color-base-100));
   position: sticky;
   z-index: 3;
 }
@@ -2781,17 +2781,20 @@ body[data-admin-navigation="loading"] .admin-main {
 }
 
 .admin-table.table-zebra tbody tr:nth-child(2n) {
-  background: #fbfdff;
+  --admin-table-row-background: #fbfdff;
+  background: var(--admin-table-row-background);
 }
 
 .admin-table tbody tr.admin-row-created,
 .admin-table.table-zebra tbody tr.admin-row-created:nth-child(2n) {
-  background: #ecfdf3;
+  --admin-table-row-background: #ecfdf3;
+  background: var(--admin-table-row-background);
 }
 
 .admin-table tbody tr.admin-row-updated,
 .admin-table.table-zebra tbody tr.admin-row-updated:nth-child(2n) {
-  background: #fff8e6;
+  --admin-table-row-background: #fff8e6;
+  background: var(--admin-table-row-background);
 }
 
 .admin-table tbody tr:hover,
@@ -2800,7 +2803,8 @@ body[data-admin-navigation="loading"] .admin-main {
 .admin-table tbody tr.admin-row-updated:hover,
 .admin-table.table-zebra tbody tr.admin-row-created:nth-child(2n):hover,
 .admin-table.table-zebra tbody tr.admin-row-updated:nth-child(2n):hover {
-  background-color: #fff7ed;
+  --admin-table-row-background: #fff7ed;
+  background-color: var(--admin-table-row-background);
   box-shadow: inset 0 0 0 9999px rgb(249 115 22 / 9%);
 }
 
