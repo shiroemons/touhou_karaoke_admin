@@ -2906,6 +2906,7 @@ body[data-admin-navigation="loading"] .admin-main {
 .admin-actions {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
   white-space: nowrap;

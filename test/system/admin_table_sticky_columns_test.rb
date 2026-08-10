@@ -7,6 +7,7 @@ class AdminTableStickyColumnsTest < ApplicationSystemTestCase
 
   setup do
     create_original_song(is_duplicate: false)
+    Circle.create!(name: "Responsive action circle #{SecureRandom.hex(4)}")
   end
 
   test 'sticky action cells hide horizontally scrolled content' do
@@ -39,6 +40,34 @@ class AdminTableStickyColumnsTest < ApplicationSystemTestCase
     assert_equal true, metrics.fetch('tableOverflow')
     assert metrics.fetch('stickyCellBackgrounds').all? { |color| color != 'rgba(0, 0, 0, 0)' }, metrics
     assert_equal true, metrics.fetch('actionLinkInsideCell')
+  end
+
+  test 'multiple action links wrap inside narrow sticky action cells' do
+    visit admin_circles_path
+    resize_browser(768, 900)
+
+    metrics = page.execute_script(<<~JS)
+      const wrap = document.querySelector('.admin-table-wrap');
+      const actionCells = [...document.querySelectorAll('.admin-table tbody .admin-actions-column')];
+
+      wrap.scrollLeft = wrap.scrollWidth - wrap.clientWidth;
+
+      return {
+        multiActionCellCount: actionCells.filter((cell) => cell.querySelectorAll('a, button').length > 1).length,
+        overflowingLinks: actionCells.flatMap((cell) => {
+          const cellRect = cell.getBoundingClientRect();
+
+          return [...cell.querySelectorAll('a, button')].filter((link) => {
+            const linkRect = link.getBoundingClientRect();
+
+            return linkRect.left < cellRect.left - 1 || linkRect.right > cellRect.right + 1;
+          });
+        }).length
+      };
+    JS
+
+    assert_operator metrics.fetch('multiActionCellCount'), :>, 0
+    assert_equal 0, metrics.fetch('overflowingLinks'), metrics
   end
 
   private
