@@ -1,4 +1,5 @@
 <% selectable_collection_operations = @resource.operations.any? { |operation| operation.scope == :collection && operation.selection != :none } %>
+<% table_needs_horizontal_scroll = @resource.index_fields.length >= 6 %>
 <div class="admin-index-content" data-admin-resource-content aria-busy="false" tabindex="-1">
 <header class="admin-page-header">
   <div>
@@ -85,7 +86,7 @@
   <%= render "display_settings" %>
 </div>
 
-<% if selectable_collection_operations %>
+<% if selectable_collection_operations && @records.present? %>
   <div class="admin-selection-toolbar alert alert-info" data-admin-selection-toolbar role="status" aria-live="polite" aria-atomic="true">
     <%= admin_icon(:select) %>
     <div>
@@ -99,7 +100,14 @@
   </div>
 <% end %>
 
-<div class="admin-table-wrap" tabindex="0" role="region" aria-label="<%= @resource.label %>一覧">
+<% if table_needs_horizontal_scroll && @records.present? %>
+  <p class="admin-table-scroll-hint" role="note">
+    <span aria-hidden="true">↔</span>
+    <span>横にスクロールすると全項目を確認できます。操作列は右端に固定表示されます。</span>
+  </p>
+<% end %>
+
+<div class="admin-table-wrap <%= "admin-table-wrap-empty" if @records.empty? %>" tabindex="0" role="region" aria-label="<%= @resource.label %>一覧">
   <table class="admin-table admin-table-resource-<%= @resource.key.to_s.dasherize %> table table-zebra">
     <caption class="admin-sr-only"><%= @resource.label %>一覧</caption>
     <thead>

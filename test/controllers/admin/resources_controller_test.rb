@@ -410,6 +410,7 @@ module Admin
       get admin_display_artists_path
 
       assert_response :success
+      assert_select '.admin-table-scroll-hint[role="note"]', text: /横にスクロールすると全項目を確認できます。操作列は右端に固定表示されます。/
       assert_select %(tbody tr[data-admin-row-href="#{admin_display_artist_path(@display_artist)}"]), { minimum: 1 }
     end
 
@@ -959,6 +960,7 @@ module Admin
       assert_select '.admin-selection-toolbar [data-admin-selection-note]', text: '一括操作を実行するには、対象行を選択してください。'
       assert_select '.admin-selection-toolbar button[data-admin-resource-selection-clear][disabled]', text: /選択解除/
       assert_select 'input[data-admin-resource-select]', 1
+      assert_select '.admin-table-scroll-hint[role="note"]', text: /横にスクロールすると全項目を確認できます。/
       assert_select 'dialog[data-admin-operation-modal][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '#admin-operation-modal-title-song[data-admin-operation-modal-title]'
       assert_select '[data-admin-operation-panel="export_songs"][aria-labelledby="admin-operation-modal-title-song"]'
@@ -1030,8 +1032,10 @@ module Admin
 
       assert_response :success
       assert_select 'input[type="search"][name="q"][aria-label="カラオケ配信曲をキーワード検索"]'
-      assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ配信曲一覧"]'
+      assert_select '.admin-table-wrap.admin-table-wrap-empty[tabindex="0"][role="region"][aria-label="カラオケ配信曲一覧"]'
       assert_select 'tbody tr', 0
+      assert_select '.admin-selection-toolbar', false
+      assert_select '.admin-table-scroll-hint', false
       assert_select '.admin-empty-state.alert[role="status"]'
       assert_select '.admin-empty-state p', text: '条件に一致するデータがありません'
       assert_select '.admin-empty-state span', text: 'キーワードや絞り込み条件を見直すか、条件をクリアしてください。'
@@ -1331,7 +1335,7 @@ module Admin
       assert_select 'section[aria-labelledby="admin-operation-description-heading"] h2#admin-operation-description-heading', text: '説明'
       assert_select 'section[aria-labelledby="admin-operation-execution-heading"] h2#admin-operation-execution-heading', text: '実行'
       assert_select '.admin-operation-description', text: /入力されたDAM楽曲URLから/
-      assert_select '.admin-operation-description a[href=?]', Constants::Karaoke::Dam::SONG_URL, text: Constants::Karaoke::Dam::SONG_URL
+      assert_select '.admin-operation-description a[href=?][title=?]', Constants::Karaoke::Dam::SONG_URL, Constants::Karaoke::Dam::SONG_URL, text: /www\.clubdam\.com/
       assert_select '.admin-operation-description a[href=?][target="_blank"][rel="noopener"][aria-label=?]',
                     Constants::Karaoke::Dam::SONG_URL,
                     "#{Constants::Karaoke::Dam::SONG_URL}（新しいタブで開く）"

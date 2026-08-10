@@ -12,10 +12,11 @@ module ApplicationHelper
 
       fragments << text[last_index...match.begin(0)]
       fragments << link_to(
-        url,
+        operation_url_link_label(url),
         url,
         target: "_blank",
         rel: "noopener",
+        title: url,
         aria: { label: "#{url}（新しいタブで開く）" }
       )
       last_index = match.end(0)
@@ -24,5 +25,10 @@ module ApplicationHelper
     fragments << text[last_index..]
 
     simple_format(safe_join(fragments), {}, sanitize: false)
+  end
+
+  def operation_url_link_label(url)
+    compact_url = url.to_s.sub(%r{\Ahttps?://}, '').sub(/[?#].*\z/, '…')
+    compact_url.truncate(56, omission: '…')
   end
 end

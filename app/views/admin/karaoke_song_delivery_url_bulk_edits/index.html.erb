@@ -173,7 +173,13 @@
       </div>
     </div>
 
-    <div class="admin-table-wrap" tabindex="0" role="region" aria-label="カラオケ配信URL編集一覧">
+    <% if @songs.present? %>
+      <p class="admin-table-scroll-hint" role="note">
+        <span aria-hidden="true">↔</span>
+        <span>横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。</span>
+      </p>
+    <% end %>
+    <div class="admin-table-wrap <%= "admin-table-wrap-empty" if @songs.empty? %>" tabindex="0" role="region" aria-label="カラオケ配信URL編集一覧">
       <table class="admin-table admin-table-karaoke-song-bulk-edit admin-table-karaoke-delivery-url-bulk-edit table table-zebra" data-admin-bulk-edit-table>
         <caption class="admin-sr-only">カラオケ配信URL編集一覧</caption>
         <thead>
@@ -187,7 +193,7 @@
           <% @songs.each_with_index do |song, row_index| %>
             <tr>
               <td class="admin-table-field-id"><code title="<%= song.id %>"><%= song.id %></code></td>
-              <td><%= song.karaoke_type %></td>
+              <td class="admin-table-field-karaoke-type"><%= song.karaoke_type %></td>
               <td class="admin-table-field-display-artist-name">
                 <button type="button" class="admin-copy-button" data-admin-copy-text="<%= song.display_artist.name %>" aria-label="<%= song.display_artist.name %>をコピー" title="アーティスト名をコピー">
                   <span><%= song.display_artist.name %></span>

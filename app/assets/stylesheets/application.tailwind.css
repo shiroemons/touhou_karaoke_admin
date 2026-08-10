@@ -151,10 +151,10 @@
   background: color-mix(in oklab, var(--color-primary) 40%, transparent);
 }
 
-.admin-nav-link span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.admin-nav-link > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 .admin-nav-icon {
@@ -2581,6 +2581,28 @@ body[data-admin-navigation="loading"] .admin-main {
   width: 100%;
 }
 
+.admin-index-content .admin-table-wrap.admin-table-wrap-empty {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.admin-table-scroll-hint {
+  align-items: center;
+  color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.admin-table-scroll-hint > span:first-child {
+  color: var(--color-primary);
+  flex: 0 0 auto;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .admin-table-wrap:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -2675,6 +2697,29 @@ body[data-admin-navigation="loading"] .admin-main {
   top: 0;
   white-space: nowrap;
   z-index: 2;
+}
+
+.admin-table .admin-select-column,
+.admin-table .admin-actions-column {
+  background-color: inherit;
+  position: sticky;
+  z-index: 3;
+}
+
+.admin-table .admin-select-column {
+  box-shadow: 4px 0 10px -8px rgb(15 23 42 / 56%);
+  left: 0;
+}
+
+.admin-table .admin-actions-column {
+  box-shadow: -4px 0 10px -8px rgb(15 23 42 / 56%);
+  right: 0;
+}
+
+.admin-table thead .admin-select-column,
+.admin-table thead .admin-actions-column {
+  background: #f8fbff;
+  z-index: 4;
 }
 
 .admin-sort-link {
@@ -2878,6 +2923,15 @@ body[data-admin-navigation="loading"] .admin-main {
   min-width: 1720px;
 }
 
+.admin-table-resource-original,
+.admin-table-resource-display-artist {
+  min-width: 980px;
+}
+
+.admin-table-resource-original-song {
+  min-width: 1120px;
+}
+
 .admin-table-resource-song th,
 .admin-table-resource-song td {
   padding-left: 12px;
@@ -2974,6 +3028,29 @@ body[data-admin-navigation="loading"] .admin-main {
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-karaoke-type {
   width: 180px;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-id,
+.admin-table-karaoke-song-bulk-edit .admin-table-field-karaoke-type {
+  background-color: var(--color-base-100);
+  position: sticky;
+  z-index: 3;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-id {
+  box-shadow: 4px 0 10px -8px rgb(15 23 42 / 56%);
+  left: 0;
+}
+
+.admin-table-karaoke-song-bulk-edit .admin-table-field-karaoke-type {
+  box-shadow: 4px 0 10px -8px rgb(15 23 42 / 56%);
+  left: 104px;
+}
+
+.admin-table-karaoke-song-bulk-edit thead .admin-table-field-id,
+.admin-table-karaoke-song-bulk-edit thead .admin-table-field-karaoke-type {
+  background: #f8fbff;
+  z-index: 4;
 }
 
 .admin-table-karaoke-song-bulk-edit .admin-table-field-display-artist-name {
@@ -3442,17 +3519,6 @@ th.admin-actions-column {
   .admin-actions-column {
     min-width: 116px;
     width: 116px;
-  }
-
-  .admin-actions .admin-icon-link span {
-    border: 0;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
   }
 
   .admin-icon-link {
