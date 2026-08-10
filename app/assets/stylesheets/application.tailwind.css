@@ -2483,7 +2483,7 @@ body[data-admin-navigation="loading"] .admin-main {
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(72px, 0.9fr) minmax(168px, 1.6fr);
+  grid-template-columns: minmax(72px, 0.9fr) minmax(0, 1.6fr);
   min-width: 0;
 }
 
@@ -3748,6 +3748,16 @@ th.admin-actions-column {
   .admin-association-dialog .admin-original-song-picker {
     min-width: 0;
     width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .admin-presence-filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-presence-filter-label {
+    white-space: normal;
   }
 }
 
