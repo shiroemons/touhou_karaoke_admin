@@ -411,6 +411,7 @@ module Admin
 
       assert_response :success
       assert_select '.admin-table-scroll-hint[role="note"]', text: /横にスクロールすると全項目を確認できます。操作列は右端に固定表示されます。/
+      assert_select '.admin-table-wrap[aria-describedby="admin-table-scroll-hint-display_artist"]'
       assert_select %(tbody tr[data-admin-row-href="#{admin_display_artist_path(@display_artist)}"]), { minimum: 1 }
     end
 
@@ -961,6 +962,7 @@ module Admin
       assert_select '.admin-selection-toolbar button[data-admin-resource-selection-clear][disabled]', text: /選択解除/
       assert_select 'input[data-admin-resource-select]', 1
       assert_select '.admin-table-scroll-hint[role="note"]', text: /横にスクロールすると全項目を確認できます。/
+      assert_select '.admin-table-wrap[aria-describedby="admin-table-scroll-hint-song"]'
       assert_select 'dialog[data-admin-operation-modal][aria-labelledby="admin-operation-modal-title-song"]'
       assert_select '#admin-operation-modal-title-song[data-admin-operation-modal-title]'
       assert_select '[data-admin-operation-panel="export_songs"][aria-labelledby="admin-operation-modal-title-song"]'

@@ -11,7 +11,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'カラオケ配信URL編集'
-      assert_select '.admin-table-scroll-hint[role="note"]', text: /横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。/
+      assert_select '#admin-delivery-url-bulk-table-scroll-hint.admin-table-scroll-hint[role="note"]', text: /横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。/
+      assert_select '.admin-table-wrap[aria-describedby="admin-delivery-url-bulk-table-scroll-hint"]'
       assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ配信URL編集一覧"]'
       assert_select 'table.admin-table-karaoke-delivery-url-bulk-edit caption.admin-sr-only', text: 'カラオケ配信URL編集一覧'
       KaraokeSongDeliveryUrlBulkEditor::COLUMNS.each do |column|

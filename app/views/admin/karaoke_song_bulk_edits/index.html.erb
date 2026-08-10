@@ -133,12 +133,12 @@
     </datalist>
 
     <% if @songs.present? %>
-      <p class="admin-table-scroll-hint" role="note">
+      <p id="admin-karaoke-song-bulk-table-scroll-hint" class="admin-table-scroll-hint" role="note">
         <span aria-hidden="true">↔</span>
         <span>横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。</span>
       </p>
     <% end %>
-    <div class="admin-table-wrap <%= "admin-table-wrap-empty" if @songs.empty? %>" tabindex="0" role="region" aria-label="カラオケ楽曲紐づけ一覧">
+    <div class="admin-table-wrap <%= "admin-table-wrap-empty" if @songs.empty? %>" tabindex="0" role="region" aria-label="カラオケ楽曲紐づけ一覧" <%= tag.attributes(aria: { describedby: "admin-karaoke-song-bulk-table-scroll-hint" }) if @songs.present? %>>
       <table class="admin-table admin-table-karaoke-song-bulk-edit table table-zebra" data-admin-bulk-edit-table>
         <caption class="admin-sr-only">カラオケ楽曲紐づけ一覧</caption>
         <thead>

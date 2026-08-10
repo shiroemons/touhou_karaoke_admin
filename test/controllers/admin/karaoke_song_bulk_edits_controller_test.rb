@@ -12,7 +12,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'カラオケ楽曲紐づけ'
-      assert_select '.admin-table-scroll-hint[role="note"]', text: /横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。/
+      assert_select '#admin-karaoke-song-bulk-table-scroll-hint.admin-table-scroll-hint[role="note"]', text: /横にスクロールするとすべての入力欄を確認できます。左端の楽曲IDと種別は固定表示されます。/
+      assert_select '.admin-table-wrap[aria-describedby="admin-karaoke-song-bulk-table-scroll-hint"]'
       assert_select '.admin-table-wrap[tabindex="0"][role="region"][aria-label="カラオケ楽曲紐づけ一覧"]'
       assert_select 'table.admin-table-karaoke-song-bulk-edit caption.admin-sr-only', text: 'カラオケ楽曲紐づけ一覧'
       assert_select 'a.admin-nav-link-active[aria-current="page"]', text: /カラオケ楽曲紐づけ/
