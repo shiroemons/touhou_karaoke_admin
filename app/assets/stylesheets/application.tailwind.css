@@ -3742,6 +3742,13 @@ th.admin-actions-column {
   .admin-operation-progress-meta {
     width: 100%;
   }
+
+  .admin-association-dialog-box,
+  .admin-association-dialog-form,
+  .admin-association-dialog .admin-original-song-picker {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .admin-badge {
