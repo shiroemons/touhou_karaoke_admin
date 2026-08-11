@@ -316,15 +316,25 @@ tasks:
     cmds:
       - devbox run db:seed
 
-  db-dump:
-    desc: 開発DBをバックアップ
+  db:backup:
+    desc: 開発DBを圧縮形式で日付付きバックアップ
     cmds:
       - devbox run db:backup
 
-  db-restore:
+  db:restore:
     desc: 開発DBをリストア
     cmds:
       - devbox run db:restore
+
+  db-dump:
+    desc: db:backupの互換エイリアス
+    cmds:
+      - task: db:backup
+
+  db-restore:
+    desc: db:restoreの互換エイリアス
+    cmds:
+      - task: db:restore
 
   update-originals-all:
     desc: 原作・原曲データをupsert

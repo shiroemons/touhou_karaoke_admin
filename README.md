@@ -160,8 +160,10 @@ task migrate            # マイグレーション実行
 task migrate-redo       # 最後のマイグレーションをやり直し
 task rollback           # ロールバック
 task dbseed             # db/seeds.rb を実行
-task db-dump            # tmp/data/dev.bak に DB バックアップ
-task db-restore         # tmp/data/dev.bak から DB リストア
+task db:backup          # tmp/data/touhou_karaoke_admin-YYYYMMDD-HHMMSS.bak に圧縮形式で DB バックアップ
+task db:restore         # 最新の日付付きバックアップから DB リストア
+# 特定のバックアップを使う場合
+BACKUP_FILE=tmp/data/touhou_karaoke_admin-20260811-143000.bak task db:restore
 ```
 
 ### 原作・原曲データ
