@@ -985,10 +985,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-static@npm:^1.30.0":
-  version: 1.30.0
-  resolution: "lucide-static@npm:1.30.0"
-  checksum: 10c0/688c808ae3d8a81c20cd01297ec6c8324ab915aa6d16d3d59f8c381ccd56555960332314855ccddae254e43de68c651db2f73fdc9304f64306ba931678c25d12
+"lucide-static@npm:^1.31.0":
+  version: 1.31.0
+  resolution: "lucide-static@npm:1.31.0"
+  checksum: 10c0/e30168aa78e9223f7285dd8bd36a8c7cb7dfd0a825208d4efd87ecad4a569fc46f36e5aa8571f03d3d4729ae1be5b47061c19c8f471707617c940b976b76856c
   languageName: node
   linkType: hard
 
@@ -1197,7 +1197,7 @@ __metadata:
     "@tailwindcss/cli": "npm:^4.3.3"
     daisyui: "npm:^5.7.16"
     esbuild: "npm:^0.28.2"
-    lucide-static: "npm:^1.30.0"
+    lucide-static: "npm:^1.31.0"
     tailwindcss: "npm:^4.3.3"
   languageName: unknown
   linkType: soft
