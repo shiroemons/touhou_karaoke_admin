@@ -1,4 +1,4 @@
-FROM ruby:4.0.6-bookworm
+FROM ruby:4.0.7-bookworm
 
 ARG NODE_MAJOR=24
 ARG COREPACK_VERSION=0.35.0
