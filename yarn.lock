@@ -643,10 +643,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"daisyui@npm:^5.7.16":
-  version: 5.7.16
-  resolution: "daisyui@npm:5.7.16"
-  checksum: 10c0/45ab84ea1d08ea42124e7e218a409776fdf046b1dab54655a2fa517a33682e5613bce3eb40e70ccaf151744f6640d50dbea883f71edc08cbcc255610f6b805b1
+"daisyui@npm:^5.7.46":
+  version: 5.7.46
+  resolution: "daisyui@npm:5.7.46"
+  checksum: 10c0/26db9625961b3bc30e63e6166c8347065d6c6eb48b8b6e4d94d4d6ad4aa1400a66573349cae8a72e9306846b0285ceada83341383c5ba9cb3bd25a8592d496e3
   languageName: node
   linkType: hard
 
@@ -1195,7 +1195,7 @@ __metadata:
     "@playwright/cli": "npm:0.1.18"
     "@rails/ujs": "npm:7.1.600"
     "@tailwindcss/cli": "npm:^4.3.3"
-    daisyui: "npm:^5.7.16"
+    daisyui: "npm:^5.7.46"
     esbuild: "npm:^0.28.2"
     lucide-static: "npm:^1.30.0"
     tailwindcss: "npm:^4.3.3"
