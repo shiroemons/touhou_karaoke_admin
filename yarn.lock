@@ -424,15 +424,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@playwright/cli@npm:0.1.18":
-  version: 0.1.18
-  resolution: "@playwright/cli@npm:0.1.18"
+"@playwright/cli@npm:0.1.21":
+  version: 0.1.21
+  resolution: "@playwright/cli@npm:0.1.21"
   dependencies:
-    playwright: "npm:1.63.0-alpha-2026-08-05"
-    playwright-core: "npm:1.63.0-alpha-2026-08-05"
+    playwright: "npm:1.64.0-alpha-1789764292000"
+    playwright-core: "npm:1.64.0-alpha-1789764292000"
   bin:
     playwright-cli: playwright-cli.js
-  checksum: 10c0/5b6fb6ed2e8d0950a731a98d645d45f0bec0056b834ca4998b50ba1d63d744c71a78d102312febfa94350571638ee19fcc5900ec63e62b94f230d4f7b5d3f072
+  checksum: 10c0/1f11d7e1c7b71c511e485a63df38f123dbcb21c5566153fdff24da14dabd9b1a39d6ba79f428d1135a31db277e14195fb9f882bd5d4457495c2f91964870868e
   languageName: node
   linkType: hard
 
@@ -800,25 +800,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fsevents@npm:2.3.2":
-  version: 2.3.2
-  resolution: "fsevents@npm:2.3.2"
-  dependencies:
-    node-gyp: "npm:latest"
-  checksum: 10c0/be78a3efa3e181cda3cf7a4637cb527bcebb0bd0ea0440105a3bb45b86f9245b307dc10a2507e8f4498a7d4ec349d1910f4d73e4d4495b16103106e07eee735b
-  conditions: os=darwin
-  languageName: node
-  linkType: hard
-
-"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
-  version: 2.3.2
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
-  dependencies:
-    node-gyp: "npm:latest"
-  conditions: os=darwin
-  languageName: node
-  linkType: hard
-
 "graceful-fs@npm:^4.2.4, graceful-fs@npm:^4.2.6":
   version: 4.2.11
   resolution: "graceful-fs@npm:4.2.11"
@@ -1095,27 +1076,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.63.0-alpha-2026-08-05":
-  version: 1.63.0-alpha-2026-08-05
-  resolution: "playwright-core@npm:1.63.0-alpha-2026-08-05"
+"playwright-core@npm:1.64.0-alpha-1789764292000":
+  version: 1.64.0-alpha-1789764292000
+  resolution: "playwright-core@npm:1.64.0-alpha-1789764292000"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/f3745f3571f662dc399238e2ebe67c102de40dd4bec585e4a2f825917129d765cbb59dd224cc65a9fb4300590cf587e00d61eab3580248454dc76eb93e20c81f
+  checksum: 10c0/0a767fec6abbb12744d313187e84f2d6f1e947dfecdd1216b7522f7ac7bb63f69cd67923bb6a3fb7b4bda4b4ec9484c1289838b91a6206f83d7779a31d32fda2
   languageName: node
   linkType: hard
 
-"playwright@npm:1.63.0-alpha-2026-08-05":
-  version: 1.63.0-alpha-2026-08-05
-  resolution: "playwright@npm:1.63.0-alpha-2026-08-05"
+"playwright@npm:1.64.0-alpha-1789764292000":
+  version: 1.64.0-alpha-1789764292000
+  resolution: "playwright@npm:1.64.0-alpha-1789764292000"
   dependencies:
-    fsevents: "npm:2.3.2"
-    playwright-core: "npm:1.63.0-alpha-2026-08-05"
-  dependenciesMeta:
-    fsevents:
-      optional: true
+    playwright-core: "npm:1.64.0-alpha-1789764292000"
   bin:
     playwright: cli.js
-  checksum: 10c0/6f99f1e7a53e5f681ae0940b250824b847619309617a2173fb776205ef8e5b3b4282293605e01422723c3a10673e53d67ab86df4e057e5e2316dbc4d05d1822d
+  checksum: 10c0/d49e67dc7d2f66abe0d6373646c4fda60eed1b3229b49f6338f858861ddae127fec986725553ebd84ad4c3208ad72abeab4d942155e8106eeb8a9ff6978cec80
   languageName: node
   linkType: hard
 
@@ -1192,7 +1169,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "touhou_karaoke_admin@workspace:."
   dependencies:
-    "@playwright/cli": "npm:0.1.18"
+    "@playwright/cli": "npm:0.1.21"
     "@rails/ujs": "npm:7.1.600"
     "@tailwindcss/cli": "npm:^4.3.3"
     daisyui: "npm:^5.7.16"
