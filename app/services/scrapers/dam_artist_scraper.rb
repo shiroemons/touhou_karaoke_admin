@@ -10,7 +10,7 @@ module Scrapers
 
       loop do
         attempt += 1
-        browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+        browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 900], browser_options: { 'no-sandbox': nil }, pending_connection_errors: true)
         browser.goto(url)
         browser.network.wait_for_idle(duration: 1.0)
         upsert_display_artist(url, browser)

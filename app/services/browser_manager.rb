@@ -5,7 +5,9 @@ class BrowserManager
   DEFAULT_OPTIONS = {
     timeout: 10,
     window_size: [1440, 900],
-    browser_options: { 'no-sandbox': nil, 'disk-cache-size': '1', 'disable-application-cache': nil }
+    browser_options: { 'no-sandbox': nil, 'disk-cache-size': '1', 'disable-application-cache': nil },
+    # Ferrum 0.18で既定値がfalseになり、goto のタイムアウトが黙って無視されるため明示する（Retryableで再試行させる）
+    pending_connection_errors: true
   }.freeze
 
   attr_reader :browser, :options

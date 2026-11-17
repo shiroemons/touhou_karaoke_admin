@@ -7,7 +7,7 @@ module Scrapers
     DIRECT_TITLE_SELECTOR = '[data-testid="card-information"] p'
 
     def fetch_touhou_songs(progress: nil)
-      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil }, pending_connection_errors: true)
       Admin::ProgressReporter.report(progress:, percentage: 2, status: "取得準備中", label: "JOYSOUND東方系検索ページへ接続しています...", detail: nil)
       browser.goto(Constants::Karaoke::Joysound::TOUHOU_GENRE_URL)
       browser.network.wait_for_idle(duration: 1.0)
@@ -45,7 +45,7 @@ module Scrapers
     end
 
     def fetch_song_direct(url:)
-      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+      browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil }, pending_connection_errors: true)
       browser.goto(url)
       browser.network.wait_for_idle(duration: 1.0)
 

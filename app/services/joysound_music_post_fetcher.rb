@@ -9,7 +9,7 @@ class JoysoundMusicPostFetcher
     end
 
     def fetch_music_post_song_joysound_url(progress: nil)
-      browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil })
+      browser = Ferrum::Browser.new(timeout: 10, window_size: [1440, 2000], browser_options: { 'no-sandbox': nil }, pending_connection_errors: true)
       search_option = "?sortOrder=new&orderBy=desc&startIndex=0#songList"
 
       artist_names = JoysoundMusicPost.where(joysound_url: [nil, ""]).distinct.pluck(:artist)
@@ -58,7 +58,7 @@ class JoysoundMusicPostFetcher
       processed_count = 0
 
       loop do
-        browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil })
+        browser = Ferrum::Browser.new(timeout: 30, window_size: [1440, 900], browser_options: { 'no-sandbox': nil }, pending_connection_errors: true)
         begin
           browser.goto(url)
           browser.network.wait_for_idle(duration: 1.0)
