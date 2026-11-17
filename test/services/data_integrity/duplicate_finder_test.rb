@@ -29,9 +29,8 @@ module DataIntegrity
         }
       ]
       # This test intentionally creates already-corrupt data to verify the audit path.
-      # rubocop:disable Rails/SkipsModelValidations
+      # rubocop:disable-next Rails/SkipsModelValidations
       JoysoundMusicPost.insert_all!(records)
-      # rubocop:enable Rails/SkipsModelValidations
 
       results = DuplicateFinder.new(
         checks: [DuplicateFinder::Check.new(table: 'joysound_music_posts', columns: %w[url])]

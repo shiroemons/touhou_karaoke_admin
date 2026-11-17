@@ -11,12 +11,12 @@
   },
   "version": "0.1.0",
   "devDependencies": {
-    "@playwright/cli": "0.1.18",
-    "@tailwindcss/cli": "^4.3.3",
-    "daisyui": "^5.7.16",
+    "@playwright/cli": "0.1.24",
+    "@tailwindcss/cli": "^4.3.5",
+    "daisyui": "^5.8.1",
     "esbuild": "^0.28.2",
-    "lucide-static": "^1.30.0",
-    "tailwindcss": "^4.3.3"
+    "lucide-static": "^1.73.0",
+    "tailwindcss": "^4.3.5"
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets",

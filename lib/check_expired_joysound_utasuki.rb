@@ -25,7 +25,7 @@ require "algolia"
 require "optparse"
 require "json"
 
-# rubocop:disable Metrics/ModuleLength
+# rubocop:disable-next Metrics/ModuleLength
 module CheckExpiredJoysoundUtasuki
   extend self
 
@@ -447,7 +447,6 @@ module CheckExpiredJoysoundUtasuki
     str.to_s + (" " * [width - display_width(str.to_s), 0].max)
   end
 end
-# rubocop:enable Metrics/ModuleLength
 
 # ============================================================
 # コマンドラインオプション解析とメイン実行

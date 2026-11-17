@@ -33,7 +33,7 @@ LOCAL_JSON_PATH = "tmp/karaoke_songs.json"
 # ============================================================
 # モジュール定義
 # ============================================================
-# rubocop:disable Metrics/ModuleLength
+# rubocop:disable-next Metrics/ModuleLength
 module UpdateDamSongsWithDeletedOuchikaraoke
   extend self
 
@@ -183,7 +183,6 @@ module UpdateDamSongsWithDeletedOuchikaraoke
     puts "完了しました。"
   end
 end
-# rubocop:enable Metrics/ModuleLength
 
 # ============================================================
 # メイン処理

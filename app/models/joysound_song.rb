@@ -2,9 +2,8 @@ class JoysoundSong < ApplicationRecord
   validates :display_title, presence: true
   validates :url, presence: true
   # Existing data can contain duplicates; keep this application guard until a non-destructive cleanup is complete.
-  # rubocop:disable Rails/UniqueValidationWithoutIndex
+  # rubocop:disable-next Rails/UniqueValidationWithoutIndex
   validates :url, uniqueness: true
-  # rubocop:enable Rails/UniqueValidationWithoutIndex
 
   scope :enabled_smartphone_service, -> { where(smartphone_service_enabled: true) }
   scope :enabled_home_karaoke, -> { where(home_karaoke_enabled: true) }
