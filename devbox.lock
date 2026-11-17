@@ -113,6 +113,10 @@
         }
       }
     },
+    "github:NixOS/nixpkgs/5d2b81a7a3be3e2f832879028e4d60abbf58e9a0#ruby_4_0": {
+      "last_modified": "1970-01-01T00:00:00Z",
+      "resolved": "github:NixOS/nixpkgs/5d2b81a7a3be3e2f832879028e4d60abbf58e9a0#ruby_4_0"
+    },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
       "last_modified": "2026-02-03T17:56:14Z",
       "resolved": "github:NixOS/nixpkgs/41965737c1797c1d83cfb0b644ed0840a6220bd1?lastModified=1770141374"
@@ -844,57 +848,6 @@
             }
           ],
           "store_path": "/nix/store/rrqlx2czgin1x4w9j8lsvmsmq6v4zkb0-readline-8.3p3"
-        }
-      }
-    },
-    "ruby@4.0.6": {
-      "last_modified": "2026-08-01T16:34:20Z",
-      "plugin_version": "0.0.2",
-      "resolved": "github:NixOS/nixpkgs/a5cbcfe954791221bfffe2307f7d1a1bf61a871e#ruby_4_0",
-      "source": "devbox-search",
-      "version": "4.0.6",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/pcky41vnlih2gxm11ffq5kz6flsp4d3d-ruby-4.0.6",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/95ayw1zvd2lyfl4k2zjzxgd0llrijkaf-ruby-4.0.6-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/pcky41vnlih2gxm11ffq5kz6flsp4d3d-ruby-4.0.6"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/iaz97sd6jjjljhbvvpx4ycx4i10hz2ag-ruby-4.0.6",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/d68njwn26bqs9n9y07p73kff94riks0a-ruby-4.0.6-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/iaz97sd6jjjljhbvvpx4ycx4i10hz2ag-ruby-4.0.6"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/pbcqqy849vimakn6f9z5ch0b2dzivrq7-ruby-4.0.6",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/a2xx650s5cc3ijm4vk3rj79bsbf2lcrs-ruby-4.0.6-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/pbcqqy849vimakn6f9z5ch0b2dzivrq7-ruby-4.0.6"
         }
       }
     },

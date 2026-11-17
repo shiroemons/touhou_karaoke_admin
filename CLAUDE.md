@@ -13,7 +13,7 @@ http://localhost:3000 でアクセス可能。
 
 ## 技術スタック
 
-- Ruby 4.0.5 / Rails 8.1 / PostgreSQL 18
+- Ruby 4.0.9 / Rails 8.1 / PostgreSQL 18
 - devbox (Nix ベース開発環境)
 - Algolia (検索)
 - Ferrum (Webスクレイピング)
