@@ -31,6 +31,6 @@ processes:
     availability:
       restart: on_failure
   css:
-    command: yarn build:css --watch
+    command: yarn build:css --watch=always
     availability:
       restart: on_failure
