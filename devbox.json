@@ -16,16 +16,16 @@
       "excluded_platforms": ["aarch64-darwin"]
     },
     "libpq": "18.4",
-    "github:NixOS/nixpkgs/5d2b81a7a3be3e2f832879028e4d60abbf58e9a0#ruby_4_0": {
+    "path:nix/ruby#default": {
       "excluded_platforms": ["x86_64-darwin"]
     },
     "corepack": "0.35.0",
     "nodejs-slim": "24.18.1"
   },
   "env": {
-    "BUNDLE_PATH":        ".devbox/virtenv/bundle-ruby-4.0.9",
+    "BUNDLE_PATH":        ".devbox/virtenv/bundle-ruby-4.0.10",
     "GEM_HOME":           ".devbox/virtenv/gems",
-    "BOOTSNAP_CACHE_DIR": ".devbox/virtenv/bootsnap-ruby-4.0.9",
+    "BOOTSNAP_CACHE_DIR": ".devbox/virtenv/bootsnap-ruby-4.0.10",
     "PGHOST":             "/tmp",
     "PGPORT":             "5432",
     "PGUSER":             "postgres",

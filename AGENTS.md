@@ -23,7 +23,7 @@ Docker alternatives remain as Makefile-only targets with the `docker-` prefix, s
 
 ## Coding Style & Naming Conventions
 
-Target Ruby `4.0.9`, Node `>=24 <25`, and Yarn `4.18.0`. Follow Rails conventions: `snake_case` files and methods, `CamelCase` classes/modules, and REST-style controller actions. Keep admin behavior inside existing resource, policy, helper, and service boundaries.
+Target Ruby `4.0.10`, Node `>=24 <25`, and Yarn `4.18.0`. Follow Rails conventions: `snake_case` files and methods, `CamelCase` classes/modules, and REST-style controller actions. Keep admin behavior inside existing resource, policy, helper, and service boundaries.
 
 RuboCop, `rubocop-rails`, and `rubocop-performance` define Ruby style. Run `task rubocop` before committing, or `task rubocop-correct` for safe automatic fixes.
 
