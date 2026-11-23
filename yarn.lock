@@ -414,15 +414,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@playwright/cli@npm:0.1.24":
-  version: 0.1.24
-  resolution: "@playwright/cli@npm:0.1.24"
+"@playwright/cli@npm:0.1.25":
+  version: 0.1.25
+  resolution: "@playwright/cli@npm:0.1.25"
   dependencies:
-    playwright: "npm:1.66.0-alpha-1794252756000"
-    playwright-core: "npm:1.66.0-alpha-1794252756000"
+    playwright: "npm:1.66.0-alpha-2026-11-18"
+    playwright-core: "npm:1.66.0-alpha-2026-11-18"
   bin:
     playwright-cli: playwright-cli.js
-  checksum: 10c0/ed801255c264db10de919260867d7591efadce26bc022c4390711774f7ede17132c0d66913cdd1d427d442a98740361c37f1ddeed8e36d62e38de64457cc3d79
+  checksum: 10c0/f5c60c6671d990d35fc6475268e8afd2ecb54418484df0038b4b98e647045580641afd6fb1a745034a75fc61406ae9bded17057992081a026505a169c873a98e
   languageName: node
   linkType: hard
 
@@ -1015,23 +1015,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.66.0-alpha-1794252756000":
-  version: 1.66.0-alpha-1794252756000
-  resolution: "playwright-core@npm:1.66.0-alpha-1794252756000"
+"playwright-core@npm:1.66.0-alpha-2026-11-18":
+  version: 1.66.0-alpha-2026-11-18
+  resolution: "playwright-core@npm:1.66.0-alpha-2026-11-18"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/ff45dc67e4981e1556a09f21e7af52d1e831a09f8f5722d3b9ab29395e19570910421e75d4da1b9288ae935d20260dc3175f3b7a4ef98ea245551ff2dd1b94f3
+  checksum: 10c0/7ef5c77c159dd548c5109b7ee330a51067b64240558da0e4634a411918a5bd7409571ee6ffdf32a252b452a4d4b76f1d9c5ce82cb91bb37763a30befe3dbe304
   languageName: node
   linkType: hard
 
-"playwright@npm:1.66.0-alpha-1794252756000":
-  version: 1.66.0-alpha-1794252756000
-  resolution: "playwright@npm:1.66.0-alpha-1794252756000"
+"playwright@npm:1.66.0-alpha-2026-11-18":
+  version: 1.66.0-alpha-2026-11-18
+  resolution: "playwright@npm:1.66.0-alpha-2026-11-18"
   dependencies:
-    playwright-core: "npm:1.66.0-alpha-1794252756000"
+    playwright-core: "npm:1.66.0-alpha-2026-11-18"
   bin:
     playwright: cli.js
-  checksum: 10c0/282b6328a87eb0e50847deec199e580251dd455fa9e90194c93a76f82433ad0b4d4becf18e79bbf4e803d874ec647a057ca28272f98ffa811f97a118a55cc074
+  checksum: 10c0/76299c8a129b6033762124d09c673dcc1ef03df84b95e42b10f08c518b8cc17675266861e75428a39ae4879c83bb7f2b0ec5cf32b1abd2c73cb06172871fb555
   languageName: node
   linkType: hard
 
@@ -1099,7 +1099,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "touhou_karaoke_admin@workspace:."
   dependencies:
-    "@playwright/cli": "npm:0.1.24"
+    "@playwright/cli": "npm:0.1.25"
     "@rails/ujs": "npm:7.1.600"
     "@tailwindcss/cli": "npm:^4.3.5"
     daisyui: "npm:^5.8.1"
