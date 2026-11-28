@@ -34,6 +34,13 @@ module Scrapers
 
     DELIVERY_MODEL_MORE_BUTTON_SELECTOR = '#song-distribution [data-testid="card-information"] button'
 
+    # 配信終了などで楽曲ページが消えたときにJOYSOUNDが表示する文言（旧DOMの文言も残している）。
+    MISSING_PAGE_MESSAGES = [
+      "このページは存在しません。",
+      "ページが見つかりません",
+      "このページは見つかりませんでした"
+    ].freeze
+
     def initialize(
       browser_manager: BrowserManager.new,
       delivery_model_manager: DeliveryModelManager.instance,
@@ -228,7 +235,7 @@ module Scrapers
 
     def missing_page?
       text = browser_manager.find(@selectors['song_detail']['error'])&.inner_text.to_s
-      text.include?("このページは存在しません。") || text.include?("ページが見つかりません")
+      MISSING_PAGE_MESSAGES.any? { |message| text.include?(message) }
     end
 
     def update_song_with_joysound_utasuki(song, joysound_music_post)
@@ -298,8 +305,9 @@ module Scrapers
       song
     end
 
+    # JoysoundDisplayArtistResolver#resolve は Resolution を返すため、呼び出し側へは DisplayArtist を返す。
     def resolve_display_artist(name:, karaoke_type:, url:, existing_song: nil)
-      display_artist_resolver.resolve(name:, karaoke_type:, url:, existing_song:)
+      display_artist_resolver.resolve(name:, karaoke_type:, url:, existing_song:).artist
     end
 
     def update_song_number(song, song_number)
