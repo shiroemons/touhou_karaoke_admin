@@ -170,6 +170,53 @@ class ParallelProcessorTest < ActiveSupport::TestCase
     assert created_workers.all?(&:torn_down)
   end
 
+  # progress未指定の経路では整数配列がID配列として扱われるため、以下3件は文字列レコードで検証する。
+  test 'progress未指定でもworker_factory指定時は各レコードにworkerが渡され、teardownされる' do
+    records = %w[a b c]
+    torn_down_workers = []
+
+    DummyProcessor.process_with_progress(
+      records,
+      worker_factory: -> { FakeWorker.new },
+      worker_teardown: lambda { |worker|
+        worker.torn_down = true
+        torn_down_workers << worker
+      }
+    ) do |record, worker|
+      worker.processed_records << record
+    end
+
+    assert_equal 1, torn_down_workers.size
+    assert_equal records, torn_down_workers.first.processed_records
+    assert torn_down_workers.first.torn_down
+  end
+
+  test 'progress未指定でもworker_factory指定時はSCRAPING_THREAD_COUNT>1で全レコードがworker付きでちょうど1回処理される' do
+    ENV['SCRAPING_THREAD_COUNT'] = '3'
+    records = ('a'..'t').to_a
+    mutex = Mutex.new
+    processed = []
+
+    DummyProcessor.process_with_progress(records, worker_factory: -> { FakeWorker.new }) do |record, worker|
+      raise 'workerがnilで渡された' if worker.nil?
+
+      mutex.synchronize { processed << record }
+    end
+
+    assert_equal records, processed.sort
+  end
+
+  test 'progress未指定でもworker_factory指定時はcontinue_on_error: trueの失敗集約が返る' do
+    records = %w[a b c]
+
+    result = DummyProcessor.process_with_progress(records, worker_factory: -> { FakeWorker.new }, continue_on_error: true) do |record, _worker|
+      raise "boom #{record}" if record == 'b'
+    end
+
+    assert_equal 1, result[:failed_count]
+    assert_not result[:stopped]
+  end
+
   test 'worker_teardownが例外を投げても他のworkerのteardownは実行され、例外は伝播しない' do
     records = [1, 2]
     teardown_calls = []
