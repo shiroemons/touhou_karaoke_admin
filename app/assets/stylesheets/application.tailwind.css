@@ -1584,10 +1584,6 @@ body[data-admin-navigation="loading"] .admin-main {
   color: color-mix(in oklab, var(--color-primary) 72%, #111827);
 }
 
-.admin-workflow-detail-group {
-  margin-top: 14px;
-}
-
 .admin-workflow-action-number {
   align-items: center;
   background: #071019;
@@ -1641,20 +1637,30 @@ body[data-admin-navigation="loading"] .admin-main {
   border-top: 1px solid #edf3f9;
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   padding-top: 12px;
 }
 
+/* 件数は「ラベル / 数字＋単位」。配信期限のカードと同じ並べ方にそろえる */
 .admin-workflow-metric {
+  align-items: baseline;
+  border-radius: 8px;
   color: var(--color-base-content);
-  display: grid;
+  column-gap: 2px;
+  display: flex;
+  flex-wrap: wrap;
   min-width: 0;
   text-decoration: none;
 }
 
+.admin-workflow-metric span {
+  flex-basis: 100%;
+}
+
 .admin-workflow-metric span,
 .admin-workflow-metric small {
-  color: color-mix(in oklab, var(--color-base-content) 54%, transparent);
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
   font-size: 11px;
   font-weight: 700;
   overflow: hidden;
@@ -1665,6 +1671,375 @@ body[data-admin-navigation="loading"] .admin-main {
 .admin-workflow-metric strong {
   font-size: 22px;
   line-height: 1.1;
+}
+
+/* ステップ実行画面の「現在の状況」は件数が少ないので、横いっぱいに広げず左に寄せる */
+.admin-workflow-snapshot {
+  display: grid;
+  gap: 14px;
+}
+
+/* 件数の列は、下の配信期限カード（広い幅で4列）と左端をそろえる */
+.admin-workflow-snapshot .admin-workflow-metrics {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-workflow-run-warning {
+  margin-bottom: 18px;
+}
+
+.admin-workflow-deadlines {
+  border-top: 1px solid #edf3f9;
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.admin-workflow-deadlines-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  justify-content: space-between;
+}
+
+.admin-workflow-deadlines-heading h3 {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* 見た目の位置は変えずに、押せる範囲だけ高さ24pxに広げる */
+.admin-workflow-deadlines-link {
+  align-items: center;
+  border-radius: 6px;
+  color: color-mix(in oklab, var(--color-primary) 72%, var(--color-base-content));
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 4px;
+  margin: -3px -6px;
+  min-height: 24px;
+  padding: 3px 6px;
+  text-decoration: none;
+}
+
+.admin-workflow-deadlines-link:hover {
+  text-decoration: underline;
+}
+
+.admin-workflow-deadlines-link .admin-icon {
+  height: 14px;
+  width: 14px;
+}
+
+.admin-workflow-deadlines-range {
+  align-items: baseline;
+  color: var(--color-base-content);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+.admin-workflow-deadlines-range strong {
+  font-weight: 800;
+  margin-left: 4px;
+}
+
+.admin-workflow-deadlines-range small,
+.admin-workflow-deadlines-range-separator {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-workflow-deadline-windows {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* フロー一覧のカードは幅が狭いので2列×2段にする（急ぎの2枚が上の段に来る）。段の高さもそろえる */
+.admin-workflow-deadlines-compact .admin-workflow-deadline-windows {
+  grid-auto-rows: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* 色・角丸・余白は、実行状況の枠やステップの行と同じ決まりにそろえる */
+.admin-workflow-deadline-window {
+  align-content: start;
+  background: #f8fbff;
+  border: 1px solid #dfeaf6;
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  position: relative;
+}
+
+.admin-workflow-deadline-window-link {
+  border-radius: 10px;
+  color: var(--color-base-content);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+/* カード全体を押せるようにする */
+.admin-workflow-deadline-window-link::after {
+  border-radius: 10px;
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.admin-workflow-deadline-window:hover {
+  border-color: color-mix(in oklab, var(--color-primary) 60%, var(--color-base-300));
+}
+
+.admin-workflow-deadline-window:hover .admin-workflow-deadline-window-label {
+  text-decoration: underline;
+}
+
+/* フォーカスリングは、件数・カード・一覧リンクで同じものにする */
+.admin-workflow-metric:focus-visible,
+.admin-workflow-deadlines-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.admin-workflow-deadline-window-link:focus-visible {
+  outline: none;
+}
+
+.admin-workflow-deadline-window-link:focus-visible::after {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.admin-workflow-deadline-window-label {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-workflow-deadline-window-link strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.admin-workflow-deadline-window-link strong small {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* 対応の目安はラベルより控えめにする。種類はバッジの文字で区別する（色だけに頼らない） */
+.admin-workflow-deadline-window-hint {
+  color: color-mix(in oklab, var(--color-base-content) 64%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+  /* 対応ブラウザでは文節の切れ目で折り返す */
+  word-break: auto-phrase;
+}
+
+.admin-workflow-deadline-window-badge {
+  border-radius: 999px;
+  color: var(--color-base-content);
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.5;
+  margin-right: 4px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.admin-workflow-deadline-window-hint-action .admin-workflow-deadline-window-badge {
+  background: color-mix(in oklab, var(--color-error) 28%, var(--color-base-100));
+}
+
+.admin-workflow-deadline-window-hint-auto .admin-workflow-deadline-window-badge {
+  background: color-mix(in oklab, var(--color-base-content) 9%, var(--color-base-100));
+}
+
+.admin-workflow-deadline-window-expired {
+  background: color-mix(in oklab, var(--color-error) 10%, var(--color-base-100));
+  border-color: color-mix(in oklab, var(--color-error) 32%, var(--color-base-300));
+}
+
+.admin-workflow-deadline-window-within-30-days {
+  background: color-mix(in oklab, var(--color-warning) 16%, var(--color-base-100));
+  border-color: color-mix(in oklab, var(--color-warning) 44%, var(--color-base-300));
+}
+
+/* 0件のカードは色を付けず、目立たせない */
+.admin-workflow-deadline-window-empty {
+  background: var(--color-base-100);
+  border-color: #e3edf7;
+}
+
+.admin-workflow-deadline-months {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-workflow-deadline-months h4 {
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* position: relative は、中の読み上げ用テキスト（絶対配置）が横スクロールの枠から漏れてページがはみ出すのを防ぐ */
+.admin-workflow-deadline-month-list {
+  column-gap: 0;
+  display: grid;
+  grid-auto-columns: minmax(44px, 1fr);
+  grid-auto-flow: column;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0 0 4px;
+  position: relative;
+}
+
+/* 見た目は「件数 / 棒 / 月」の順。読み上げは月→件数の順になるよう、DOMは月を先に置いている */
+.admin-workflow-deadline-month {
+  align-content: start;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
+  min-width: 0;
+  row-gap: 4px;
+}
+
+.admin-workflow-deadline-month-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  grid-row: 1;
+}
+
+.admin-workflow-deadline-month-track {
+  align-items: flex-end;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-base-content) 18%, var(--color-base-100));
+  display: flex;
+  grid-row: 2;
+  height: 56px;
+  justify-content: center;
+  justify-self: stretch;
+}
+
+.admin-workflow-deadline-month-bar {
+  background: color-mix(in oklab, var(--color-primary) 78%, var(--color-base-100));
+  border-radius: 4px 4px 0 0;
+  height: max(2px, calc(var(--admin-deadline-ratio, 0) * 100%));
+  width: 20px;
+}
+
+.admin-workflow-deadline-month-zero .admin-workflow-deadline-month-bar {
+  display: none;
+}
+
+.admin-workflow-deadline-month-zero .admin-workflow-deadline-month-count {
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+  font-weight: 700;
+}
+
+.admin-workflow-deadline-month-label {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  display: grid;
+  font-size: 11px;
+  font-weight: 700;
+  grid-row: 3;
+  justify-items: center;
+  line-height: 1.3;
+  /* 年を出す月と出さない月で高さが変わると棒の基準線がずれるので、2行分を確保する */
+  min-height: 2.6em;
+  white-space: nowrap;
+}
+
+/* 時間軸の目盛りと同じく、年は月の下に小さく添える */
+.admin-workflow-deadline-month-year {
+  font-size: 10px;
+  order: 1;
+}
+
+/* 狭い幅では横棒にして、1か月を1行で読めるようにする（横スクロールさせない） */
+@media (max-width: 480px) {
+  .admin-workflow-deadlines-range {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .admin-workflow-deadlines-range-separator {
+    display: none;
+  }
+
+  .admin-workflow-deadline-month-list {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: visible;
+    row-gap: 6px;
+  }
+
+  .admin-workflow-deadline-month {
+    align-items: center;
+    column-gap: 8px;
+    grid-template-columns: 6em minmax(0, 1fr) 2.5em;
+    grid-template-rows: auto;
+    justify-items: stretch;
+  }
+
+  .admin-workflow-deadline-month-label {
+    display: flex;
+    gap: 0;
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+  }
+
+  .admin-workflow-deadline-month-year {
+    font-size: 11px;
+    order: 0;
+  }
+
+  .admin-workflow-deadline-month-track {
+    align-items: center;
+    border-bottom: 0;
+    border-left: 1px solid color-mix(in oklab, var(--color-base-content) 18%, var(--color-base-100));
+    grid-column: 2;
+    grid-row: 1;
+    height: 14px;
+    justify-content: flex-start;
+  }
+
+  .admin-workflow-deadline-month-bar {
+    border-radius: 0 4px 4px 0;
+    height: 12px;
+    width: max(2px, calc(var(--admin-deadline-ratio, 0) * 100%));
+  }
+
+  .admin-workflow-deadline-month-count {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
 }
 
 .admin-index-toolbar {
@@ -2941,6 +3316,48 @@ body[data-admin-navigation="loading"] .admin-main {
   min-width: 1120px;
 }
 
+/* 列幅を指定しないと全列が同じ幅になり、配信期限・残り日数が切れるので固定する */
+.admin-table-resource-joysound-music-post,
+.admin-table-resource-song-with-joysound-utasuki {
+  min-width: 1100px;
+}
+
+.admin-table-resource-joysound-music-post .admin-table-field-title {
+  width: 240px;
+}
+
+.admin-table-resource-joysound-music-post .admin-table-field-artist,
+.admin-table-resource-joysound-music-post .admin-table-field-producer {
+  width: 180px;
+}
+
+.admin-table-resource-song-with-joysound-utasuki .admin-table-field-song {
+  width: 320px;
+}
+
+.admin-table-resource-song-with-joysound-utasuki .admin-table-field-url {
+  width: 260px;
+}
+
+.admin-table-resource-joysound-music-post .admin-table-field-delivery-deadline-on,
+.admin-table-resource-song-with-joysound-utasuki .admin-table-field-delivery-deadline-date {
+  font-variant-numeric: tabular-nums;
+  width: 120px;
+}
+
+/* 「期限切れ（142日経過）」が数字の等幅化で約189pxになるので余裕を持たせる */
+.admin-table-resource-joysound-music-post .admin-table-field-remaining-days,
+.admin-table-resource-song-with-joysound-utasuki .admin-table-field-remaining-days {
+  font-variant-numeric: tabular-nums;
+  width: 196px;
+}
+
+/* 7日以内に更新した行は「更新」バッジが付くので、その分も含める */
+.admin-table-resource-joysound-music-post .admin-table-field-updated-at,
+.admin-table-resource-song-with-joysound-utasuki .admin-table-field-updated-at {
+  width: 184px;
+}
+
 .admin-table-resource-song th,
 .admin-table-resource-song td {
   padding-left: 12px;
@@ -3668,7 +4085,17 @@ th.admin-actions-column {
   }
 
   .admin-workflow-metrics {
-    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  /* 狭い幅では配信期限カードが2列になるので、件数も2列にして左端をそろえる */
+  .admin-workflow-snapshot .admin-workflow-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-workflow-deadline-windows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-workflow-status-grid {

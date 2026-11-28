@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Admin
-  Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :options, :link, :helper, :count_association)
+  # sort_by: 表示用の項目（helper で作る値など）を、実際の列で並べ替えるときに指定する
+  Field = Data.define(:name, :label, :type, :index, :show, :form, :readonly, :sortable, :sort_by, :options, :link, :helper, :count_association)
   Filter = Data.define(:name, :label, :type, :options, :apply)
   Operation = Data.define(
     :key,

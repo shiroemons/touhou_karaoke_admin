@@ -12,6 +12,7 @@ module Admin
         form: true,
         readonly: false,
         sortable: false,
+        sort_by: nil,
         options: nil,
         link: false,
         helper: nil,

@@ -1,0 +1,65 @@
+<%# 配信期限の範囲と、期限切れ／残り30日以内／残り31〜90日／残り91日以上の件数。detailed のときは月別の件数も出す %>
+<% heading_id = "#{id_prefix}-deadline-heading" %>
+<section class="admin-workflow-deadlines<%= " admin-workflow-deadlines-compact" unless detailed %>" aria-labelledby="<%= heading_id %>">
+  <div class="admin-workflow-deadlines-heading">
+    <h3 id="<%= heading_id %>"><%= summary[:title] %></h3>
+    <%= link_to summary[:active_path], class: "admin-workflow-deadlines-link" do %>
+      <span>期限内 <%= number_with_delimiter(summary[:active_count]) %>件を一覧で見る</span>
+      <%= admin_icon(:next) %>
+    <% end %>
+  </div>
+
+  <% if summary[:earliest] %>
+    <p class="admin-workflow-deadlines-range">
+      <span>最短 <strong><%= summary[:earliest].to_fs(:db) %></strong><small>（<%= summary[:earliest_remaining] %>）</small></span>
+      <span class="admin-workflow-deadlines-range-separator">〜</span>
+      <span>最長 <strong><%= summary[:latest].to_fs(:db) %></strong><small>（<%= summary[:latest_remaining] %>）</small></span>
+    </p>
+  <% else %>
+    <p class="admin-workflow-deadlines-range">期限内のデータはありません</p>
+  <% end %>
+
+  <%# カード全体を押せるようにリンクを広げているが、対応の目安はリンク名に含めない（押すと削除されると誤解させないため） %>
+  <ul class="admin-workflow-deadline-windows">
+    <% summary[:windows].each do |window| %>
+      <% card_classes = ["admin-workflow-deadline-window", "admin-workflow-deadline-window-#{window[:key].dasherize}"] %>
+      <% card_classes << "admin-workflow-deadline-window-empty" if window[:count].zero? %>
+      <li class="<%= card_classes.join(" ") %>">
+        <%= link_to window[:path], class: "admin-workflow-deadline-window-link" do %>
+          <span class="admin-workflow-deadline-window-label"><%= window[:label] %></span>
+          <strong><%= number_with_delimiter(window[:count]) %><small>件</small></strong>
+        <% end %>
+        <% if window[:hint] %>
+          <p class="admin-workflow-deadline-window-hint admin-workflow-deadline-window-hint-<%= window[:hint][:kind] %>">
+            <% if window[:hint][:badge] %>
+              <span class="admin-workflow-deadline-window-badge"><%= window[:hint][:badge] %></span>
+            <% end %>
+            <%= window[:hint][:text] %>
+          </p>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% if detailed && summary[:months].present? %>
+    <% months_heading_id = "#{id_prefix}-deadline-months-heading" %>
+    <div class="admin-workflow-deadline-months">
+      <h4 id="<%= months_heading_id %>">月別の件数（期限内）</h4>
+      <ol class="admin-workflow-deadline-month-list" aria-labelledby="<%= months_heading_id %>">
+        <% summary[:months].each_with_index do |bar, index| %>
+          <% show_year = index.zero? || bar[:month].month == 1 %>
+          <li class="admin-workflow-deadline-month<%= " admin-workflow-deadline-month-zero" if bar[:count].zero? %>" style="--admin-deadline-ratio: <%= bar[:ratio] %>">
+            <span class="admin-workflow-deadline-month-label">
+              <span class="<%= show_year ? "admin-workflow-deadline-month-year" : "admin-sr-only" %>"><%= bar[:month].year %>年</span>
+              <span><%= bar[:month].month %>月</span>
+            </span>
+            <span class="admin-workflow-deadline-month-count"><%= number_with_delimiter(bar[:count]) %><span class="admin-sr-only">件</span></span>
+            <span class="admin-workflow-deadline-month-track" aria-hidden="true">
+              <span class="admin-workflow-deadline-month-bar"></span>
+            </span>
+          </li>
+        <% end %>
+      </ol>
+    </div>
+  <% end %>
+</section>

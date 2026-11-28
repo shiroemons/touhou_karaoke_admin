@@ -21,12 +21,12 @@ module Admin
         title: 'Music Post Song',
         artist: 'ZUN',
         producer: 'producer',
-        delivery_deadline_on: Date.current,
+        delivery_deadline_on: Admin::DeliveryDeadlineWindows.current_date,
         url: 'https://example.com/music-post/song'
       )
       @dam_artist_url = DamArtistUrl.create!(url: 'https://example.com/dam/artist')
       @dam_ouchikaraoke = SongWithDamOuchikaraoke.create!(song: @song, url: 'https://example.com/ouchikaraoke')
-      @joysound_utasuki = SongWithJoysoundUtasuki.create!(song: @song, delivery_deadline_date: Date.current, url: 'https://example.com/utasuki')
+      @joysound_utasuki = SongWithJoysoundUtasuki.create!(song: @song, delivery_deadline_date: Admin::DeliveryDeadlineWindows.current_date, url: 'https://example.com/utasuki')
     end
 
     test 'dashboard renders navigation to admin resources' do
@@ -133,8 +133,8 @@ module Admin
       assert_select 'a.admin-workflow-action', false
       assert_select 'button.admin-workflow-action[aria-label="DAM候補一覧を取得を個別実行"][data-admin-operation-trigger][data-admin-operation-resource="dam_song"][data-admin-operation-key="fetch_dam_touhou_songs"]'
       assert_select '.admin-workflow-action-number', text: '1'
-      assert_select '.admin-workflow-metric', text: /期限切れ/
-      assert_select '.admin-workflow-metric[aria-label="期限切れを確認"]'
+      assert_select '.admin-workflow-metric', { text: /期限切れ/, count: 0 }
+      assert_select '.admin-workflow-deadline-window-expired', text: /期限切れ/
       assert_select '.admin-workflow-question-list li', text: /JOYSOUND\(うたスキ\) → JOYSOUND → DAM/
     end
 
@@ -911,7 +911,7 @@ module Admin
         title: 'Linked Music Post',
         artist: 'ZUN',
         producer: 'producer',
-        delivery_deadline_on: Date.current,
+        delivery_deadline_on: Admin::DeliveryDeadlineWindows.current_date,
         url: 'https://example.com/music-post/linked',
         joysound_url: 'https://example.com/joysound/linked'
       )
@@ -921,6 +921,113 @@ module Admin
       assert_response :success
       assert_select 'td', text: linked_post.title
       assert_select 'td', { text: @joysound_music_post.title, count: 0 }
+    end
+
+    test 'filters music posts by delivery deadline window and sorts by remaining days' do
+      later_post = JoysoundMusicPost.create!(
+        title: 'Later Music Post',
+        artist: 'ZUN',
+        producer: 'producer',
+        delivery_deadline_on: Admin::DeliveryDeadlineWindows.current_date + 45,
+        url: 'https://example.com/music-post/later'
+      )
+      soon_post = JoysoundMusicPost.create!(
+        title: 'Soon Music Post',
+        artist: 'ZUN',
+        producer: 'producer',
+        delivery_deadline_on: Admin::DeliveryDeadlineWindows.current_date + 10,
+        url: 'https://example.com/music-post/soon'
+      )
+
+      get admin_joysound_music_posts_path, params: { filters: { delivery_deadline_on: 'days_31_to_90' } }
+
+      assert_response :success
+      assert_equal ['', 'expired', 'within_30_days', 'days_31_to_90', 'over_90_days', 'active'],
+                   css_select('input[type="radio"][name="filters[delivery_deadline_on]"]').pluck('value')
+      assert_select 'th', text: /残り日数/
+      assert_select 'td', text: later_post.title
+      assert_select 'td', text: 'あと45日'
+      assert_select 'td', { text: @joysound_music_post.title, count: 0 }
+
+      get admin_joysound_music_posts_path, params: { filters: { delivery_deadline_on: 'within_30_days' }, sort: 'remaining_days', direction: 'asc' }
+
+      assert_response :success
+      assert_select 'td', text: '今日まで'
+      assert_select 'td', { text: later_post.title, count: 0 }
+      assert_operator response.body.index(@joysound_music_post.title), :<, response.body.index(soon_post.title)
+
+      get admin_joysound_music_posts_path, params: { filters: { delivery_deadline_on: 'within_30_days' }, sort: 'remaining_days', direction: 'desc' }
+
+      assert_operator response.body.index(soon_post.title), :<, response.body.index(@joysound_music_post.title)
+    end
+
+    test 'music post workflow marks empty urgent windows as needing no action' do
+      get admin_workflow_steps_path('music_post')
+
+      assert_response :success
+      assert_select '.admin-workflow-deadline-window-expired.admin-workflow-deadline-window-empty .admin-workflow-deadline-window-hint-none', text: '対応なし'
+      assert_select '.admin-workflow-deadline-window-expired .admin-workflow-deadline-window-badge', false
+      assert_select '.admin-workflow-deadline-window-within-30-days:not(.admin-workflow-deadline-window-empty) .admin-workflow-deadline-window-hint-auto', text: /自動\s*手順4で毎回取り直し/
+    end
+
+    test 'music post workflow shows the delivery deadline range, windows and months' do
+      JoysoundMusicPost.create!(
+        title: 'Later Music Post',
+        artist: 'ZUN',
+        producer: 'producer',
+        delivery_deadline_on: Admin::DeliveryDeadlineWindows.current_date + 45,
+        url: 'https://example.com/music-post/later'
+      )
+      JoysoundMusicPost.create!(
+        title: 'Expired Music Post',
+        artist: 'ZUN',
+        producer: 'producer',
+        delivery_deadline_on: Admin::DeliveryDeadlineWindows.current_date - 3,
+        url: 'https://example.com/music-post/expired'
+      )
+      sorted_list_path = ->(value) { admin_joysound_music_posts_path(filters: { delivery_deadline_on: value }, sort: 'delivery_deadline_on', direction: 'asc') }
+
+      [admin_workflow_path, admin_workflow_steps_path('music_post')].each do |path|
+        get path
+
+        assert_response :success
+        assert_select '.admin-workflow-metric', { text: /期限切れ/, count: 0 }
+        assert_select '.admin-workflow-deadlines', 1
+        assert_select '.admin-workflow-deadlines h3', text: '配信期限'
+        assert_select '.admin-workflow-deadlines-range', text: /最短\s*#{Admin::DeliveryDeadlineWindows.current_date.to_fs(:db)}\s*（今日まで）\s*〜\s*最長\s*#{(Admin::DeliveryDeadlineWindows.current_date + 45).to_fs(:db)}\s*（あと45日）/
+        assert_select '.admin-workflow-deadlines-link[href=?]', sorted_list_path.call('active'), text: /期限内 2件を一覧で見る/
+        assert_select '.admin-workflow-deadline-window', 4
+        # 対応の目安はリンク名に含めない（押すと削除されると誤解させない）
+        assert_select '.admin-workflow-deadline-window-expired .admin-workflow-deadline-window-link[href=?]', sorted_list_path.call('expired'), text: /\A\s*期限切れ\s*1\s*件\s*\z/
+        assert_select '.admin-workflow-deadline-window-expired .admin-workflow-deadline-window-hint-action', text: /要対応\s*一覧から「期限切れを削除」/
+        assert_select '.admin-workflow-deadline-window-within-30-days .admin-workflow-deadline-window-link[href=?]', sorted_list_path.call('within_30_days'), text: /\A\s*残り30日以内\s*1\s*件\s*\z/
+        assert_select '.admin-workflow-deadline-window-days-31-to-90', text: /\A\s*残り31〜90日\s*1\s*件\s*\z/
+        assert_select '.admin-workflow-deadline-window-over-90-days.admin-workflow-deadline-window-empty', text: /残り91日以上\s*0\s*件/
+      end
+
+      expected_months = Enumerator.produce(Admin::DeliveryDeadlineWindows.current_date.beginning_of_month, &:next_month).take_while { |month| month <= (Admin::DeliveryDeadlineWindows.current_date + 45).beginning_of_month }
+
+      get admin_workflow_steps_path('music_post')
+
+      assert_select '.admin-workflow-deadline-months h4', text: '月別の件数（期限内）'
+      assert_select '.admin-workflow-deadline-month', expected_months.size
+      assert_select '.admin-workflow-deadline-month:first-child .admin-workflow-deadline-month-label', text: /#{expected_months.first.year}年\s*#{expected_months.first.month}月/
+      assert_select '#admin-workflow-detail-group-music_post', text: '現在の状況'
+      assert_operator response.body.index('現在の状況'), :<, response.body.index('id="admin-workflow-runner-heading"')
+
+      get admin_workflow_path
+
+      assert_select '.admin-workflow-deadline-months', false
+
+      get admin_workflow_steps_path('full')
+
+      assert_select '#admin-workflow-detail-group-full', text: '現在の状況'
+      assert_select '.admin-workflow-deadlines h3', text: 'JOYSOUND(うたスキ)の配信期限'
+      assert_select '.admin-workflow-deadline-window', 4
+
+      get admin_workflow_steps_path('dam')
+
+      assert_select '.admin-workflow-deadlines', false
     end
 
     test 'pagination limits index records' do

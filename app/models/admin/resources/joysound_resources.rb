@@ -46,6 +46,7 @@ module Admin
             field(:artist, label: 'アーティスト', readonly: true, sortable: true),
             field(:producer, label: 'プロデューサー', readonly: true, sortable: true),
             field(:delivery_deadline_on, label: '配信期限', type: :date, readonly: true, sortable: true),
+            field(:remaining_days, label: '残り日数', form: false, sortable: true, sort_by: :delivery_deadline_on, helper: ->(record) { DeliveryDeadlineWindows.remaining_days_label(record.delivery_deadline_on) }),
             field(:url, label: 'URL', type: :url, index: false, sortable: true),
             field(:joysound_url, label: 'JOYSOUND URL', type: :url, index: false, sortable: true)
           ],
@@ -91,6 +92,7 @@ module Admin
             field(:song, label: 'カラオケ配信曲', type: :belongs_to, form: false, link: true, sortable: true),
             field(:song_id, label: 'カラオケ配信曲', type: :belongs_to_select, index: false, show: false, readonly: true, options: -> { Song.order(:title).limit(500).pluck(:title, :id) }),
             field(:delivery_deadline_date, label: '配信期限', type: :date, readonly: true, sortable: true),
+            field(:remaining_days, label: '残り日数', form: false, sortable: true, sort_by: :delivery_deadline_date, helper: ->(record) { DeliveryDeadlineWindows.remaining_days_label(record.delivery_deadline_date) }),
             field(:url, label: 'URL', type: :url, readonly: true, sortable: true)
           ]
         )

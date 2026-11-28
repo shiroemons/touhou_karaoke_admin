@@ -59,12 +59,17 @@ module Admin
     end
 
     def date_status_filter(name, label:)
-      filter(name, label:, type: :radio, options: { active: '期限内', expired: '期限切れ' }) do |scope, value|
-        case value
-        when 'active'
-          scope.where(name => Date.current..)
-        when 'expired'
-          scope.where(name => ...Date.current)
+      # 期限切れ→期限が近い順に並べ、まとめての「期限内すべて」は最後に置く
+      options = DeliveryDeadlineWindows::WINDOWS.to_h { |window| [window.key.to_sym, window.label] }.merge(active: DeliveryDeadlineWindows::ACTIVE_LABEL)
+
+      filter(name, label:, type: :radio, options:) do |scope, value|
+        today = DeliveryDeadlineWindows.current_date
+        window = DeliveryDeadlineWindows.fetch(value)
+
+        if value == 'active'
+          scope.where(name => today..)
+        elsif window
+          scope.where(name => window.range(today))
         else
           scope
         end

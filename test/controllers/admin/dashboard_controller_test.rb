@@ -82,7 +82,7 @@ module Admin
       metrics = controller.send(:priority_metrics).index_by { |metric| metric.fetch(:label) }
       assert_equal Song.missing_original_songs.count, metrics.fetch('原曲未紐付け').fetch(:value)
       assert_equal admin_songs_path(filters: { original_link: 'missing' }), metrics.fetch('原曲未紐付け').fetch(:path)
-      assert_equal JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count, metrics.fetch('期限切れ').fetch(:value)
+      assert_equal JoysoundMusicPost.where(delivery_deadline_on: ...Admin::DeliveryDeadlineWindows.current_date).count, metrics.fetch('期限切れ').fetch(:value)
       assert_equal admin_joysound_music_posts_path(filters: { delivery_deadline_on: 'expired' }), metrics.fetch('期限切れ').fetch(:path)
       assert_equal Song.music_post.missing_original_songs.count, metrics.fetch('MP原曲未紐付け').fetch(:value)
       assert_equal admin_songs_path(filters: { karaoke_type: 'joysound_music_post', original_link: 'missing' }), metrics.fetch('MP原曲未紐付け').fetch(:path)

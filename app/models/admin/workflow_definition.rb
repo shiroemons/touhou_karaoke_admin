@@ -5,7 +5,11 @@ module Admin
     Step = Data.define(:key, :resource_key, :operation_key, :note, :cadence, :kind, :numbered)
     Branch = Data.define(:key, :label, :steps)
     Stage = Data.define(:key, :label, :parallel, :branches)
-    Definition = Data.define(:key, :label, :description, :icon, :stages, :metrics)
+    Definition = Data.define(:key, :label, :description, :icon, :stages, :metrics, :deadline_summary) do
+      def initialize(deadline_summary: nil, **)
+        super
+      end
+    end
 
     class << self
       def all
@@ -57,7 +61,9 @@ module Admin
             Stage.new(key: 'music_post', label: 'JOYSOUND(うたスキ)', parallel: false, branches: [music_post_branch]),
             Stage.new(key: 'karaoke', label: 'JOYSOUND / DAM', parallel: true, branches: [joysound_branch, dam_branch])
           ],
-          metrics: []
+          metrics: [],
+          # 全体更新はうたスキから処理するので、実行前にうたスキの配信期限を確認できるようにする
+          deadline_summary: music_post_deadline_summary(title: 'JOYSOUND(うたスキ)の配信期限')
         )
       end
 
@@ -70,10 +76,25 @@ module Admin
           stages: [Stage.new(key: 'music_post', label: 'JOYSOUND(うたスキ)', parallel: false, branches: [music_post_branch])],
           metrics: [
             metric('取得済み', JoysoundMusicPost.count, '件', :admin_joysound_music_posts_path),
-            metric('配信曲', Song.music_post.count, '曲', :admin_songs_path, filters: { karaoke_type: 'joysound_music_post' }),
-            metric('期限切れ', JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count, '件', :admin_joysound_music_posts_path, filters: { delivery_deadline_on: 'expired' })
-          ]
+            metric('配信曲', Song.music_post.count, '曲', :admin_songs_path, filters: { karaoke_type: 'joysound_music_post' })
+          ],
+          deadline_summary: music_post_deadline_summary
         )
+      end
+
+      # 集計は画面表示時にだけ行う（進捗の問い合わせなどで定義を読むたびに数えないように、ここでは条件だけ渡す）。
+      # hints の kind は、運営者が自分で操作するもの（:action）か、ワークフローが自動で処理するもの（:auto）か。
+      def music_post_deadline_summary(title: '配信期限')
+        {
+          title:,
+          model: JoysoundMusicPost,
+          column: :delivery_deadline_on,
+          route_name: :admin_joysound_music_posts_path,
+          hints: {
+            'expired' => { kind: :action, badge: '要対応', text: '一覧から「期限切れを削除」' },
+            'within_30_days' => { kind: :auto, badge: '自動', text: '手順4で毎回取り直し' }
+          }
+        }
       end
 
       def joysound_workflow
@@ -129,7 +150,7 @@ module Admin
             step(:joysound_music_post, :fetch_music_post, 'Music Post元データを更新する', cadence: '毎回'),
             step(:joysound_music_post, :fetch_music_post_song_joysound_url, 'Music PostとJOYSOUND楽曲URLを紐付ける', cadence: '毎回'),
             step(:display_artist, :fetch_joysound_music_post_artist, '新規アーティストがある時だけ登録・読み補完する', cadence: '新規追加時', kind: :conditional),
-            step(:song, :fetch_joysound_music_post_song, '未登録または期限間近のMusic Postをカラオケ楽曲へ登録・更新する', cadence: '毎回'),
+            step(:song, :fetch_joysound_music_post_song, '未登録、または期限切れ・残り30日以内のMusic Postをカラオケ楽曲へ登録・更新する', cadence: '毎回'),
             step(:song, :refresh_joysound_music_post_song, '登録済みカラオケ楽曲のURL存在確認。削除を伴うので結果確認前提', cadence: '確認時', kind: :check),
             step(:song, :update_joysound_music_post_delivery_deadline_dates, 'Music Post側の期限をカラオケ楽曲へ反映する', cadence: '期限更新時', kind: :check),
             step(:joysound_music_post, :perform_full_joysound_music_post_maintenance, '手順4〜6と期限切れ整理をまとめて行う保守用。手順1〜3の代替ではない', cadence: '保守まとめ', kind: :maintenance, numbered: false)

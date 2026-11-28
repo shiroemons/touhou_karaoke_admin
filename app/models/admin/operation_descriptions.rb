@@ -5,7 +5,7 @@ module Admin
     FULL_JOYSOUND_MUSIC_POST_MAINTENANCE = <<~TEXT.freeze
       実行内容（順番）:
       1. 期限切れクリーンアップ: 配信期限切れのミュージックポストを検証し、無効なレコードを削除します。
-      2. 楽曲取得: 未登録または期限間近のミュージックポストを優先して、JOYSOUND側の楽曲情報を取得します。
+      2. 楽曲取得: 未登録、または期限切れ・残り30日以内のミュージックポストを優先して、JOYSOUND側の楽曲情報を取得します。
       3. URL確認: 取得済みミュージックポスト楽曲のURLを確認し、404など無効な楽曲を削除します。
       4. 配信期限更新: 残った楽曲の配信期限を外部サイトから取得して更新します。
 
@@ -58,7 +58,7 @@ module Admin
         #{Constants::Karaoke::Joysound::SEARCH_URL}
       TEXT
       'fetch_joysound_music_post_song' => <<~TEXT,
-        JOYSOUNDミュージックポストの未登録URLや期限間近の楽曲を優先して確認し、うたスキ楽曲としてカラオケ楽曲へ登録・更新します。
+        JOYSOUNDミュージックポストの未登録URLや、期限切れ・残り30日以内の楽曲を優先して確認し、うたスキ楽曲としてカラオケ楽曲へ登録・更新します。
 
         参照する外部URL:
         #{Constants::Karaoke::Joysound::SEARCH_URL}
