@@ -190,6 +190,62 @@ module Scrapers
       assert_equal new_artist_url, artist.reload.url
     end
 
+    PageTextBrowserManager = Struct.new(:text) do
+      def find(_selector)
+        Struct.new(:inner_text).new(text)
+      end
+    end
+
+    test 'detects missing song pages by the current and legacy JOYSOUND messages' do
+      [
+        "このページは見つかりませんでした\nURLに間違いがないかご確認のうえ、 再度アクセスをお試しください。",
+        'このページは存在しません。',
+        'ページが見つかりません'
+      ].each do |text|
+        scraper = JoysoundScraper.new(browser_manager: PageTextBrowserManager.new(text))
+
+        assert scraper.send(:missing_page?), "#{text.lines.first.strip} を削除済みページとして判定すること"
+      end
+    end
+
+    test 'does not treat a song page as missing' do
+      scraper = JoysoundScraper.new(browser_manager: PageTextBrowserManager.new("楽曲情報\n歌手名\tYEKProject"))
+
+      assert_not scraper.send(:missing_page?)
+    end
+
+    test 'creates a new song for an existing artist' do
+      karaoke_type = 'JOYSOUND(うたスキ)'
+      artist_url = 'https://example.com/joysound/artists/existing'
+      artist = create_display_artist(karaoke_type:, name: '登録済みアーティスト', url: artist_url)
+      scraper = JoysoundScraper.new(browser_manager: ForbiddenBrowserManager.new)
+
+      song = scraper.send(
+        :find_or_create_song,
+        song_attributes: { title: '新曲', karaoke_type:, url: 'https://example.com/joysound/songs/new', song_number: '' },
+        artist_attributes: { name: artist.name, url: artist_url }
+      )
+
+      assert song.persisted?
+      assert_equal artist.id, song.display_artist_id
+    end
+
+    test 'creates a new song and a new artist' do
+      karaoke_type = 'JOYSOUND(うたスキ)'
+      artist_url = 'https://example.com/joysound/artists/brand-new'
+      scraper = JoysoundScraper.new(browser_manager: ForbiddenBrowserManager.new)
+
+      song = scraper.send(
+        :find_or_create_song,
+        song_attributes: { title: '新規アーティストの新曲', karaoke_type:, url: 'https://example.com/joysound/songs/brand-new', song_number: '' },
+        artist_attributes: { name: '新規アーティスト', url: artist_url }
+      )
+
+      assert song.persisted?
+      assert_equal '新規アーティスト', song.display_artist.name
+      assert_equal artist_url, song.display_artist.url
+    end
+
     test 'raises when a Music Post URL belongs to another song' do
       karaoke_type = 'JOYSOUND(うたスキ)'
       other_song = create_song(karaoke_type:, display_artist: create_display_artist(karaoke_type:))
