@@ -161,9 +161,10 @@ module Admin
     def apply_order(scoped)
       sort_field = resource.fields.find { |field| field.sortable && field.name.to_s == scalar_param(:sort).to_s }
       direction = params[:direction] == 'asc' ? :asc : :desc
+      sort_column = (sort_field&.sort_by || sort_field&.name).to_s
 
-      if sort_field && model.column_names.include?(sort_field.name.to_s)
-        scoped.reorder(sort_field.name => direction)
+      if sort_field && model.column_names.include?(sort_column)
+        scoped.reorder(sort_column => direction)
       elsif sort_field&.count_association
         apply_count_order(scoped, sort_field, direction)
       elsif sort_field&.type == :belongs_to

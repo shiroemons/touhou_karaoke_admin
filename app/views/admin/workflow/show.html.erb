@@ -85,6 +85,34 @@
   </section>
 <% end %>
 
+<%# 実行前に判断できるよう、件数と配信期限はステップ一覧より上に出す %>
+<% @workflow_groups.each do |group| %>
+  <% next if group[:metrics].blank? && group[:deadline_summary].blank? %>
+  <% heading_id = "admin-workflow-detail-group-#{group[:key]}" %>
+  <section class="admin-workflow-snapshot admin-workflow-detail-group admin-panel" aria-labelledby="<%= heading_id %>">
+    <div class="admin-section-heading">
+      <h2 id="<%= heading_id %>">現在の状況</h2>
+      <p>このページを開いた時点の件数です。数字やカードを押すと該当する一覧を開きます。</p>
+    </div>
+
+    <% if group[:metrics].present? %>
+      <div class="admin-workflow-metrics">
+        <% group[:metrics].each do |metric| %>
+          <%= link_to metric[:path], class: "admin-workflow-metric" do %>
+            <span><%= metric[:label] %></span>
+            <strong><%= number_with_delimiter(metric[:value]) %></strong>
+            <small><%= metric[:unit] %></small>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if group[:deadline_summary] %>
+      <%= render "admin/workflow/deadline_summary", summary: group[:deadline_summary], id_prefix: heading_id, detailed: true %>
+    <% end %>
+  </section>
+<% end %>
+
 <section class="admin-workflow-runner admin-panel" aria-labelledby="admin-workflow-runner-heading" data-admin-workflow-runner data-admin-workflow-key="<%= @workflow.key %>" data-admin-workflow-run-id="<%= @workflow_run_id %>" data-admin-workflow-state="<%= @workflow_run[:state] if @workflow_run.present? %>" data-admin-workflow-progress-url="<%= admin_workflow_progress_path(@workflow.key, run_id: @workflow_run_id) if @workflow_run_id.present? %>">
   <div class="admin-section-heading">
     <h2 id="admin-workflow-runner-heading">ステップ実行</h2>
@@ -135,29 +163,6 @@
     <% end %>
   </ol>
 </section>
-
-<% @workflow_groups.each do |group| %>
-  <% heading_id = "admin-workflow-detail-group-#{group[:key]}" %>
-  <section class="admin-workflow-group admin-workflow-detail-group" aria-labelledby="<%= heading_id %>">
-    <header>
-      <span class="admin-workflow-group-icon"><%= admin_icon(group[:icon]) %></span>
-      <div>
-        <h2 id="<%= heading_id %>"><%= group[:label] %></h2>
-        <p><%= group[:description] %></p>
-      </div>
-    </header>
-
-    <div class="admin-workflow-metrics">
-      <% group[:metrics].each do |metric| %>
-        <%= link_to metric[:path], class: "admin-workflow-metric" do %>
-          <span><%= metric[:label] %></span>
-          <strong><%= number_with_delimiter(metric[:value]) %></strong>
-          <small><%= metric[:unit] %></small>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
 
 <% @workflow_operation_resources.each do |resource| %>
   <%= render "admin/resources/operation_modal", resource:, operations: resource.operations %>

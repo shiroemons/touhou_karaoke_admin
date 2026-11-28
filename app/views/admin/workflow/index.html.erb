@@ -86,6 +86,10 @@
           <% end %>
         <% end %>
       </div>
+
+      <% if group[:deadline_summary] %>
+        <%= render "admin/workflow/deadline_summary", summary: group[:deadline_summary], id_prefix: heading_id, detailed: false %>
+      <% end %>
     </section>
   <% end %>
 </div>

@@ -19,9 +19,10 @@ class JoysoundMusicPostPrioritizer
     JoysoundMusicPost.where.not(matched_song_exists)
   end
 
+  # 期限切れと、管理画面の「残り30日以内」に入るもの。区切りは Admin::DeliveryDeadlineWindows と揃える
   def upcoming_posts
     JoysoundMusicPost
-      .where(delivery_deadline_on: ...1.month.from_now)
+      .where(delivery_deadline_on: ..Admin::DeliveryDeadlineWindows.soon_until)
       .order(delivery_deadline_on: :asc)
   end
 end

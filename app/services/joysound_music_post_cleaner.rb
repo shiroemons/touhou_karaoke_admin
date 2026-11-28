@@ -34,7 +34,8 @@ class JoysoundMusicPostCleaner
   end
 
   def cleanup_expired_records
-    expired_records = JoysoundMusicPost.where(delivery_deadline_on: ...Date.current)
+    # 期限切れの判定は管理画面の「期限切れ」と同じく日本時間の今日で行う
+    expired_records = JoysoundMusicPost.where(delivery_deadline_on: ...Admin::DeliveryDeadlineWindows.current_date)
     total_count = expired_records.count
 
     expired_records.find_each do |record|

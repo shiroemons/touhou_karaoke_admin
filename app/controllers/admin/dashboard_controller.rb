@@ -64,8 +64,8 @@ module Admin
         originals: Original.count,
         karaoke_delivery_models: KaraokeDeliveryModel.count,
         joysound_music_posts: JoysoundMusicPost.count,
-        music_posts_active: JoysoundMusicPost.where(delivery_deadline_on: Date.current..).count,
-        music_posts_expired: JoysoundMusicPost.where(delivery_deadline_on: ...Date.current).count,
+        music_posts_active: JoysoundMusicPost.where(delivery_deadline_on: DeliveryDeadlineWindows.current_date..).count,
+        music_posts_expired: JoysoundMusicPost.where(delivery_deadline_on: ...DeliveryDeadlineWindows.current_date).count,
         management_counts: management_counts,
         generated_at: Time.current.iso8601
       }

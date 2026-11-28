@@ -88,7 +88,8 @@ module Admin
           description: definition.description,
           icon: definition.icon,
           actions: workflow_actions(definition),
-          metrics: workflow_metrics(definition)
+          metrics: workflow_metrics(definition),
+          deadline_summary: workflow_deadline_summary(definition)
         }
       end
     end
@@ -118,6 +119,46 @@ module Admin
     def workflow_metrics(definition)
       definition.metrics.map do |metric|
         metric.merge(path: public_send(metric[:route_name], metric[:route_options]))
+      end
+    end
+
+    def workflow_deadline_summary(definition)
+      config = definition.deadline_summary
+      return unless config
+
+      summary = DeliveryDeadlineWindows.summarize(config.fetch(:model), config.fetch(:column))
+      # 絞り込んだ一覧は、期限の近い順に並べて開く
+      list_path = ->(value) { public_send(config.fetch(:route_name), filters: { config.fetch(:column) => value }, sort: config.fetch(:column), direction: 'asc') }
+
+      {
+        title: config.fetch(:title, '配信期限'),
+        earliest: summary.earliest,
+        earliest_remaining: DeliveryDeadlineWindows.remaining_days_label(summary.earliest),
+        latest: summary.latest,
+        latest_remaining: DeliveryDeadlineWindows.remaining_days_label(summary.latest),
+        active_count: summary.active_count,
+        active_path: list_path.call('active'),
+        windows: deadline_window_cards(summary, config.fetch(:hints, {}), list_path),
+        months: deadline_month_bars(summary.monthly_counts)
+      }
+    end
+
+    # 対応の目安（hints）がある区切りは、0件なら「対応なし」と出して空のカードにする
+    def deadline_window_cards(summary, hints, list_path)
+      DeliveryDeadlineWindows::WINDOWS.map do |window|
+        count = summary.counts.fetch(window.key)
+        hint = hints[window.key]
+        hint = { kind: :none, text: '対応なし' } if hint && count.zero?
+
+        { key: window.key, label: window.label, count:, hint:, path: list_path.call(window.key) }
+      end
+    end
+
+    def deadline_month_bars(monthly_counts)
+      max_count = monthly_counts.map(&:last).max.to_i
+
+      monthly_counts.map do |month, count|
+        { month:, count:, ratio: max_count.zero? ? 0 : count.fdiv(max_count).round(3) }
       end
     end
 
