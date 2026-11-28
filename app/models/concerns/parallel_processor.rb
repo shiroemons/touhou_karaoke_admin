@@ -60,13 +60,14 @@ module ParallelProcessor
     # @param label [String] ログに表示するラベル
     # @param options [Hash] オプション（batch_size, process_count）
     # @param worker_factory [Proc, nil] スレッド毎の専用ワーカーを生成するProc（例: -> { Scraper.new }）
+    #   指定時はprogressの有無に関わらずスレッド並列で処理する（プロセスforkではワーカーを割り当てられないため）。
     # @param worker_teardown [Proc, nil] worker_factoryが生成したワーカーを後始末するProc
     # @param continue_on_error [Boolean] trueの場合、1レコードの失敗（例外）を握り潰してログ記録し処理を継続する。
     #   ただし連続失敗が閾値（SCRAPING_CONSECUTIVE_FAILURE_LIMIT）に達すると安全のため打ち切る。
     # @yield [record, worker] 各レコードに対する処理（workerはworker_factory未指定ならnil）
-    # @return [Hash, nil] continue_on_error: true の場合は失敗集約情報（failed_count, failures, stopped）。false の場合はnil。
+    # @return [Hash, nil] progressかworker_factoryを指定し、continue_on_error: true の場合は失敗集約情報（failed_count, failures, stopped）。それ以外はnil。
     def process_with_progress(collection, label: nil, progress: nil, progress_options: {}, worker_factory: nil, worker_teardown: nil, continue_on_error: false, **, &)
-      return process_with_server_progress(collection, progress:, label:, progress_options:, worker_factory:, worker_teardown:, continue_on_error:, &) if progress
+      return process_with_server_progress(collection, progress:, label:, progress_options:, worker_factory:, worker_teardown:, continue_on_error:, &) if progress || worker_factory
 
       progress_logger = create_progress_logger(label)
 
